@@ -27,6 +27,8 @@ public sealed class BoardSeite
 
     public ILocator Spaltenbezeichnungen => _seite.Locator("#spaltenbahnen .spaltenbahn-bezeichnung");
 
+    public ILocator Abschlussvermerke => _seite.Locator("#spaltenbahnen .spaltenbahn-vermerk");
+
     public ILocator MeldungUnbekanntesBoard => _seite.Locator("#board-unbekannt");
 
     public ILocator Fehlermeldung => _seite.Locator("#fehlermeldung");

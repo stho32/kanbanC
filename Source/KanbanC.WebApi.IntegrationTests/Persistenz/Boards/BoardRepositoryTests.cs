@@ -107,14 +107,13 @@ public class BoardRepositoryTests
     public void Wenn_zwei_Boards_denselben_Namen_tragen_dann_steht_das_mit_der_kleineren_BoardId_vorn()
     {
         using var datenbank = new TemporaereDatenbank().MitSchema();
-        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
-        repository.LegeAn(new BoardAnlegenAnfrage("Zwischenstand", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
-        repository.LegeAn(new BoardAnlegenAnfrage("Wartung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
-        repository.LegeAn(new BoardAnlegenAnfrage("Wartung", BoardArt.Projekt, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+        FuegeBoardEin(datenbank, 5, "Wartung", BoardArt.Linie);
+        FuegeBoardEin(datenbank, 2, "Wartung", BoardArt.Projekt);
+        FuegeBoardEin(datenbank, 4, "Zwischenstand", BoardArt.Linie);
 
         var boards = new BoardRepository(datenbank.Verbindungsfabrik).LadeAlle();
 
-        Assert.That(boards.Select(b => b.BoardId), Is.EqualTo(new long[] { 2, 3, 1 }));
+        Assert.That(boards.Select(b => b.BoardId), Is.EqualTo(new long[] { 2, 5, 4 }));
     }
 
     [Test]
@@ -191,6 +190,14 @@ public class BoardRepositoryTests
         return verbindung.ExecuteScalar<long>(@"
             SELECT COUNT(*)
               FROM Board");
+    }
+
+    private static void FuegeBoardEin(TemporaereDatenbank datenbank, long boardId, string name, BoardArt art)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Board (BoardId, Name, Art)
+            VALUES (@BoardId, @Name, @Art)", new { BoardId = boardId, Name = name, Art = art.ToString() });
     }
 
     private static (string? Starttermin, string? Zieltermin) GespeicherteTermine(TemporaereDatenbank datenbank, long boardId)
