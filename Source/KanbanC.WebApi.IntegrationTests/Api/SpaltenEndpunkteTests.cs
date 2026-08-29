@@ -428,6 +428,29 @@ public class SpaltenEndpunkteTests
         Assert.That(unveraendert.Spalten, Has.Count.EqualTo(3));
     }
 
+    [Test]
+    public async Task Wenn_ein_Agent_eine_vierte_Spalte_anlegt_und_die_Ordnung_setzt_dann_liefert_der_Boardabruf_die_vier_Spalten_in_dieser_Ordnung()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var boardId = await LegeBoardAn(webApi);
+        var vierte = await LegeSpalteAn(webApi, boardId, new SpalteAnlegenAnfrage("Wartet auf Zulieferung", false, null));
+        var bestand = (await LadeBoard(webApi, boardId)).Spalten;
+        Assert.That(bestand.Select(s => s.Position), Is.EqualTo(new[] { 1, 2, 3, 4 }));
+
+        var antwort = await webApi.Klient.PutAsJsonAsync($"{BoardsRoute}/{boardId}/spalten/reihenfolge",
+            new Spaltenreihenfolge([bestand[0].SpalteId, vierte.SpalteId, bestand[1].SpalteId, bestand[2].SpalteId]));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var board = await LadeBoard(webApi, boardId);
+        Assert.Multiple(() =>
+        {
+            Assert.That(board.Spalten.Select(s => s.Bezeichnung),
+                Is.EqualTo(new[] { "Zu erledigen", "Wartet auf Zulieferung", "In Arbeit", "Erledigt" }));
+            Assert.That(board.Spalten.Select(s => s.Position), Is.EqualTo(new[] { 1, 2, 3, 4 }));
+        });
+    }
+
     private static async Task<long> LegeBoardAn(TestWebApi webApi)
     {
         var antwort = await webApi.Klient.PostAsJsonAsync(BoardsRoute,
