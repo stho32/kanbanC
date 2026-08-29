@@ -14,7 +14,7 @@ zuletzt: 2026-08-29
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | A0001 | Application | — | KanbanC | rot | alle Dialogs gruen | | | | | | Leitplanken: C#/.NET, zwei Projekte KanbanC.Blazor und KanbanC.WebApi, SQLite, Betrieb im LAN, Full-Trust ohne Authentifizierung, Optik an Kanbanflow orientiert. Jede Interaction gilt über beide Systemgrenzen: was die Oberfläche kann, kann die API |
 | D0001 | Dialog | A0001 | Boards führen | rot | alle Interactions gruen | | | | | | aus Vision, kein Requirement |
-| I0001 | Interaction | D0001 | Board anlegen | rot | Ein neues Board entsteht mit Name und Art (Linie oder Projekt) und erscheint in der Board-Liste | | | | | | |
+| I0001 | Interaction | D0001 | Board anlegen | rot | Ein neues Board entsteht mit Name und Art (Linie oder Projekt) und erscheint in der Board-Liste | | | | | R00001 | |
 | I0002 | Interaction | D0001 | Boards auflisten und öffnen | rot | Alle Boards sind mit Name und Art aufgelistet; das gewählte lässt sich öffnen | | | | I0001 | | |
 | I0003 | Interaction | D0001 | Spalten gestalten | rot | Spalten lassen sich anlegen, umbenennen, umsortieren und entfernen; eine Spalte ist als Abschlussspalte mit Anzeigegrenze N markierbar | | | | I0001 | | |
 | I0004 | Interaction | D0001 | Kartenzahl je Spalte anzeigen | rot | Je Board einschaltbar, dass die Zahl der enthaltenen Karten in der Spaltenkopfzeile steht; sie folgt Änderungen ohne Reload | | | | I0003, I0011 | | |
