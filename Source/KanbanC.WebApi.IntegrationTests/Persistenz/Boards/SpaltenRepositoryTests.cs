@@ -136,6 +136,63 @@ public class SpaltenRepositoryTests
         Assert.That(GespeicherteSpaltenAnzahl(datenbank, boardId), Is.EqualTo(3));
     }
 
+    [Test]
+    public void Wenn_die_Reihenfolge_gesetzt_wird_dann_sind_die_Positionen_danach_lueckenlos_1_bis_3()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var repository = new SpaltenRepository(datenbank.Verbindungsfabrik);
+        var erledigt = SpalteIdAnPosition(datenbank, boardId, 3);
+        var zuErledigen = SpalteIdAnPosition(datenbank, boardId, 1);
+        var inArbeit = SpalteIdAnPosition(datenbank, boardId, 2);
+
+        var spalten = repository.SetzeReihenfolge(boardId, [erledigt, zuErledigen, inArbeit]);
+
+        Assert.That(spalten, Is.Not.Null);
+        Assert.That(spalten!.Select(s => s.Position), Is.EqualTo(new[] { 1, 2, 3 }));
+        Assert.That(GespeicherteBezeichnungenNachPosition(datenbank, boardId),
+            Is.EqualTo(new[] { "Erledigt", "Zu erledigen", "In Arbeit" }));
+    }
+
+    [Test]
+    public void Wenn_die_Reihenfolge_fuer_ein_unbekanntes_Board_gesetzt_wird_dann_bleibt_der_Bestand_unveraendert()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var repository = new SpaltenRepository(datenbank.Verbindungsfabrik);
+
+        var spalten = repository.SetzeReihenfolge(boardId + 1, [1, 2, 3]);
+
+        Assert.That(spalten, Is.Null);
+        Assert.That(GespeicherteBezeichnungenNachPosition(datenbank, boardId),
+            Is.EqualTo(new[] { "Zu erledigen", "In Arbeit", "Erledigt" }));
+    }
+
+    [Test]
+    public void Wenn_alle_Spalten_geladen_werden_dann_kommen_sie_in_Positionsreihenfolge()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var repository = new SpaltenRepository(datenbank.Verbindungsfabrik);
+
+        var spalten = repository.LadeAlle(boardId);
+
+        Assert.That(spalten!.Select(s => s.Bezeichnung),
+            Is.EqualTo(new[] { "Zu erledigen", "In Arbeit", "Erledigt" }));
+        Assert.That(spalten![2].Anzeigegrenze, Is.EqualTo(20));
+    }
+
+    [Test]
+    public void Wenn_das_Board_unbekannt_ist_dann_liefert_LadeAlle_null_statt_einer_leeren_Liste()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var repository = new SpaltenRepository(datenbank.Verbindungsfabrik);
+
+        Assert.That(repository.LadeAlle(boardId + 1), Is.Null);
+        Assert.That(repository.LadeAlle(boardId), Has.Count.EqualTo(3));
+    }
+
     private static long LegeBoardAn(TemporaereDatenbank datenbank)
     {
         var repository = new BoardRepository(datenbank.Verbindungsfabrik);

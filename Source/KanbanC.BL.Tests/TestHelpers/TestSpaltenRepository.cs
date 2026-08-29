@@ -12,6 +12,8 @@ public sealed class TestSpaltenRepository : ISpaltenRepository
 
     public bool WurdeGeaendert { get; private set; }
 
+    public bool WurdeUmsortiert { get; private set; }
+
     public long BekannteBoardId { get; private set; }
 
     public static TestSpaltenRepository MitBoardOhneSpalten(long boardId)
@@ -38,6 +40,34 @@ public sealed class TestSpaltenRepository : ISpaltenRepository
         _naechsteSpalteId = _naechsteSpalteId + 1;
         spalten.Add(spalte);
         return spalte;
+    }
+
+    public IReadOnlyList<Spalte>? LadeAlle(long boardId)
+    {
+        if (!_spaltenJeBoard.TryGetValue(boardId, out var spalten))
+        {
+            return null;
+        }
+
+        return spalten;
+    }
+
+    public IReadOnlyList<Spalte>? SetzeReihenfolge(long boardId, IReadOnlyList<long> reihenfolge)
+    {
+        WurdeUmsortiert = true;
+        if (!_spaltenJeBoard.TryGetValue(boardId, out var spalten))
+        {
+            return null;
+        }
+
+        var neueOrdnung = reihenfolge.Select((spalteId, stelle) => AnNeuerPosition(spalten, spalteId, stelle)).ToList();
+        _spaltenJeBoard[boardId] = neueOrdnung;
+        return neueOrdnung;
+    }
+
+    private static Spalte AnNeuerPosition(List<Spalte> spalten, long spalteId, int stelle)
+    {
+        return spalten.Single(spalte => spalte.SpalteId == spalteId) with { Position = stelle + 1 };
     }
 
     public Spalte? Aendere(long boardId, long spalteId, SpalteAendernAnfrage anfrage)

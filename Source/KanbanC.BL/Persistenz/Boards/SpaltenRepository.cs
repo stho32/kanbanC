@@ -49,7 +49,50 @@ public sealed class SpaltenRepository : ISpaltenRepository
         return new Spalte(spalteId, anfrage.Bezeichnung, position, anfrage.IstAbschlussspalte, anfrage.Anzeigegrenze);
     }
 
-    private static bool ExistiertBoard(IDbConnection verbindung, IDbTransaction transaktion, long boardId)
+    public IReadOnlyList<Spalte>? LadeAlle(long boardId)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+
+        var boardIstUnbekannt = !ExistiertBoard(verbindung, null, boardId);
+        if (boardIstUnbekannt)
+        {
+            return null;
+        }
+
+        return Spaltenleser.LiesSpaltenNachPosition(verbindung, null, boardId);
+    }
+
+    public IReadOnlyList<Spalte>? SetzeReihenfolge(long boardId, IReadOnlyList<long> reihenfolge)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+        using var transaktion = verbindung.BeginTransaction();
+
+        var boardIstUnbekannt = !ExistiertBoard(verbindung, transaktion, boardId);
+        if (boardIstUnbekannt)
+        {
+            return null;
+        }
+
+        SchreibePositionen(verbindung, transaktion, boardId, reihenfolge);
+        var spalten = Spaltenleser.LiesSpaltenNachPosition(verbindung, transaktion, boardId);
+        transaktion.Commit();
+        return spalten;
+    }
+
+    private static void SchreibePositionen(IDbConnection verbindung, IDbTransaction transaktion, long boardId, IReadOnlyList<long> reihenfolge)
+    {
+        for (var stelle = 0; stelle < reihenfolge.Count; stelle++)
+        {
+            var parameter = new { SpalteId = reihenfolge[stelle], Board = boardId, Position = stelle + 1 };
+            verbindung.Execute(@"
+                UPDATE Spalte
+                   SET Position = @Position
+                 WHERE SpalteId = @SpalteId
+                   AND Board = @Board", parameter, transaktion);
+        }
+    }
+
+    private static bool ExistiertBoard(IDbConnection verbindung, IDbTransaction? transaktion, long boardId)
     {
         var anzahl = verbindung.ExecuteScalar<long>(@"
             SELECT COUNT(*)

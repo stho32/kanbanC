@@ -57,12 +57,8 @@ public sealed class BoardRepository : IBoardRepository
             return null;
         }
 
-        var spaltenZeilen = verbindung.Query<SpalteZeile>(@"
-            SELECT SpalteId, Bezeichnung, Position, IstAbschlussspalte, Anzeigegrenze
-              FROM Spalte
-             WHERE Board = @BoardId
-             ORDER BY Position", new { BoardId = boardId });
-        return AlsBoard(boardZeile, spaltenZeilen.Select(AlsSpalte).ToList());
+        var spalten = Spaltenleser.LiesSpaltenNachPosition(verbindung, null, boardId);
+        return AlsBoard(boardZeile, spalten);
     }
 
     private static long FuegeBoardEin(IDbConnection verbindung, IDbTransaction transaktion, BoardAnlegenAnfrage anfrage)
@@ -125,12 +121,4 @@ public sealed class BoardRepository : IBoardRepository
     {
         return new Board(zeile.BoardId, zeile.Name, Enum.Parse<BoardArt>(zeile.Art), AlsTermin(zeile.Starttermin), AlsTermin(zeile.Zieltermin), spalten);
     }
-
-    private static Spalte AlsSpalte(SpalteZeile zeile)
-    {
-        var istAbschlussspalte = zeile.IstAbschlussspalte != 0;
-        return new Spalte(zeile.SpalteId, zeile.Bezeichnung, (int)zeile.Position, istAbschlussspalte, (int?)zeile.Anzeigegrenze);
-    }
-
-    private sealed record SpalteZeile(long SpalteId, string Bezeichnung, long Position, long IstAbschlussspalte, long? Anzeigegrenze);
 }
