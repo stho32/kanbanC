@@ -50,7 +50,7 @@ zuletzt: 2026-08-29
 | B0026 | Bubble | F0005 | Umsortieren in der Oberflaeche | gruen | Test gruen | Hoch/Runter → Boards.razor + SpaltenApiKlient → neue Ordnung; E2E US-3 | 2 |  |  |  | UI; sendet die ganze Reihenfolge, nicht eine Einzelposition |
 | F0006 | Feature | I0003 | Spalte entfernen | gelb | AK „Spalte entfernen" ueber API und Oberflaeche; US-4, US-5 |  |  |  | F0004 | R00002 |  |
 | B0027 | Bubble | F0006 | Spalte loeschen und verdichten | gruen | Test gruen | boardId + spalteId → SpaltenRepository.Entferne → geloescht, verbleibende Positionen 1..n | 0,4 |  |  |  | Provider, eine Transaktion; belegt |
-| B0028 | Bubble | F0006 | Entfernen ueber die API | rot | Test gruen | HTTP DELETE → SpaltenService + SpaltenEndpunkte → 204 / 404 | 2 |  |  |  | Integration |
+| B0028 | Bubble | F0006 | Entfernen ueber die API | gruen | Test gruen | HTTP DELETE → SpaltenService + SpaltenEndpunkte → 204 / 404 | 2 |  |  |  | Integration |
 | B0029 | Bubble | F0006 | Entfernen in der Oberflaeche | rot | Test gruen | Entfernen → Boards.razor + SpaltenApiKlient → Spalte verschwindet; E2E US-4, US-5 | 2 |  |  |  | UI |
 | I0004 | Interaction | D0001 | Kartenzahl je Spalte anzeigen | rot | Je Board einschaltbar, dass die Zahl der enthaltenen Karten in der Spaltenkopfzeile steht; sie folgt Änderungen ohne Reload | | | | I0003, I0011 | | |
 | I0005 | Interaction | D0001 | Board umbenennen und archivieren | rot | Ein Board lässt sich umbenennen und archivieren; das archivierte ist aus der Standardliste verschwunden, bleibt aber abrufbar | | | | I0001 | | |

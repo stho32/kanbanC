@@ -344,6 +344,90 @@ public class SpaltenEndpunkteTests
         Assert.That(unveraendert.Spalten.Select(s => s.Position), Is.EqualTo(new[] { 1, 2, 3 }));
     }
 
+    [Test]
+    public async Task Wenn_die_mittlere_Spalte_per_DELETE_entfernt_wird_dann_antwortet_die_API_mit_204_und_die_uebrigen_haben_Position_1_und_2()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var boardId = await LegeBoardAn(webApi);
+        var board = await LadeBoard(webApi, boardId);
+
+        var antwort = await webApi.Klient.DeleteAsync($"{BoardsRoute}/{boardId}/spalten/{board.Spalten[1].SpalteId}");
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+        var verbleibend = await LadeBoard(webApi, boardId);
+        Assert.Multiple(() =>
+        {
+            Assert.That(verbleibend.Spalten.Select(s => s.Bezeichnung), Is.EqualTo(new[] { "Zu erledigen", "Erledigt" }));
+            Assert.That(verbleibend.Spalten.Select(s => s.Position), Is.EqualTo(new[] { 1, 2 }));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_auch_die_letzte_Spalte_entfernt_wird_dann_bleibt_das_Board_mit_leerer_Spaltenliste()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var boardId = await LegeBoardAn(webApi);
+        var board = await LadeBoard(webApi, boardId);
+        foreach (var spalte in board.Spalten)
+        {
+            var antwort = await webApi.Klient.DeleteAsync($"{BoardsRoute}/{boardId}/spalten/{spalte.SpalteId}");
+            Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+        }
+
+        var leer = await LadeBoard(webApi, boardId);
+        Assert.That(leer.Spalten, Is.Empty);
+
+        var neue = await LegeSpalteAn(webApi, boardId, new SpalteAnlegenAnfrage("Eingang", false, null));
+        Assert.That(neue.Position, Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task Wenn_eine_Abschlussspalte_entfernt_wird_dann_antwortet_die_API_ohne_Vorbedingung_mit_204()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var boardId = await LegeBoardAn(webApi);
+        var board = await LadeBoard(webApi, boardId);
+
+        var antwort = await webApi.Klient.DeleteAsync($"{BoardsRoute}/{boardId}/spalten/{board.Spalten[2].SpalteId}");
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+        var verbleibend = await LadeBoard(webApi, boardId);
+        Assert.That(verbleibend.Spalten.Any(s => s.IstAbschlussspalte), Is.False);
+    }
+
+    [Test]
+    public async Task Wenn_die_SpalteId_beim_Entfernen_unbekannt_ist_dann_antwortet_die_API_mit_404()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var boardId = await LegeBoardAn(webApi);
+
+        var antwort = await webApi.Klient.DeleteAsync($"{BoardsRoute}/{boardId}/spalten/999");
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var board = await LadeBoard(webApi, boardId);
+        Assert.That(board.Spalten, Has.Count.EqualTo(3));
+    }
+
+    [Test]
+    public async Task Wenn_die_zu_entfernende_Spalte_zu_einem_anderen_Board_gehoert_dann_antwortet_die_API_mit_404()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var erstesBoard = await LegeBoardAn(webApi);
+        var zweitesBoard = await LegeBoardAn(webApi);
+        var fremde = (await LadeBoard(webApi, erstesBoard)).Spalten[0];
+
+        var antwort = await webApi.Klient.DeleteAsync($"{BoardsRoute}/{zweitesBoard}/spalten/{fremde.SpalteId}");
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var unveraendert = await LadeBoard(webApi, erstesBoard);
+        Assert.That(unveraendert.Spalten, Has.Count.EqualTo(3));
+    }
+
     private static async Task<long> LegeBoardAn(TestWebApi webApi)
     {
         var antwort = await webApi.Klient.PostAsJsonAsync(BoardsRoute,

@@ -151,4 +151,32 @@ public class SpaltenServiceTests
         Assert.That(ergebnis, Is.Null);
         Assert.That(repository.WurdeUmsortiert, Is.False);
     }
+
+    [Test]
+    public void Wenn_eine_Spalte_entfernt_wird_dann_liegt_sie_danach_nicht_mehr_im_Repository()
+    {
+        var repository = TestSpaltenRepository.MitBoardOhneSpalten(1);
+        var erste = repository.LegeAn(1, new SpalteAnlegenAnfrage("Zu erledigen", false, null));
+        repository.LegeAn(1, new SpalteAnlegenAnfrage("In Arbeit", false, null));
+        var service = new SpaltenService(repository);
+
+        var wurdeEntfernt = service.EntferneSpalte(1, erste!.SpalteId);
+
+        Assert.That(wurdeEntfernt, Is.True);
+        Assert.That(repository.Spalten(1).Select(s => s.Bezeichnung), Is.EqualTo(new[] { "In Arbeit" }));
+        Assert.That(repository.Spalten(1)[0].Position, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Wenn_die_SpalteId_unbekannt_ist_dann_meldet_EntferneSpalte_false_und_der_Bestand_bleibt()
+    {
+        var repository = TestSpaltenRepository.MitBoardOhneSpalten(1);
+        repository.LegeAn(1, new SpalteAnlegenAnfrage("Zu erledigen", false, null));
+        var service = new SpaltenService(repository);
+
+        var wurdeEntfernt = service.EntferneSpalte(1, 99);
+
+        Assert.That(wurdeEntfernt, Is.False);
+        Assert.That(repository.Spalten(1), Has.Count.EqualTo(1));
+    }
 }

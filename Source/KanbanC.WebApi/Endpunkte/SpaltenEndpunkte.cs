@@ -12,6 +12,7 @@ public static class SpaltenEndpunkte
         routen.MapPost(Basisroute, LegeSpalteAn).WithName("SpalteAnlegen");
         routen.MapPut(Basisroute + "/{spalteId:long}", AendereSpalte).WithName("SpalteAendern");
         routen.MapPut(Basisroute + "/reihenfolge", SetzeReihenfolge).WithName("SpaltenreihenfolgeSetzen");
+        routen.MapDelete(Basisroute + "/{spalteId:long}", EntferneSpalte).WithName("SpalteEntfernen");
     }
 
     private static IResult LegeSpalteAn(long boardId, SpalteAnlegenAnfrage anfrage, SpaltenService spaltenService)
@@ -74,5 +75,17 @@ public static class SpaltenEndpunkte
         }
 
         return Results.Ok(ergebnis.Wert);
+    }
+
+    private static IResult EntferneSpalte(long boardId, long spalteId, SpaltenService spaltenService)
+    {
+        var wurdeEntfernt = spaltenService.EntferneSpalte(boardId, spalteId);
+        var spalteIstUnbekannt = !wurdeEntfernt;
+        if (spalteIstUnbekannt)
+        {
+            return Results.NotFound();
+        }
+
+        return Results.NoContent();
     }
 }

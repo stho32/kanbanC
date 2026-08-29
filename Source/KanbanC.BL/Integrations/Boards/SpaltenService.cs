@@ -74,4 +74,9 @@ public sealed class SpaltenService
 
         return Ergebnis<Spalte>.Erfolg(spalte);
     }
+
+    public bool EntferneSpalte(long boardId, long spalteId)
+    {
+        return _repository.Entferne(boardId, spalteId);
+    }
 }
