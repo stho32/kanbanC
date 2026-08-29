@@ -1,6 +1,6 @@
 ---
 id: R00002
-status: In Arbeit
+status: Erledigt
 datum: 2026-08-29
 ---
 
@@ -80,13 +80,13 @@ Die Standardspalten aus `R00001` passen auf kein zweites Board. Ohne diesen Slic
 - [x] Jede Zurückweisung liefert den Rumpf `Zurueckweisung` mit mindestens einem lesbaren Befund.
 
 ### Oberfläche
-- [ ] Die Spaltenansicht eines Boards zeigt je Spalte Bezeichnung, Position und die Abschlussspalten-Markierung mit ihrer Anzeigegrenze.
-- [ ] Ein Formular legt eine weitere Spalte an; sie erscheint danach am Ende der Liste.
-- [ ] Je Spalte lassen sich Bezeichnung, Markierung und Anzeigegrenze bearbeiten und speichern.
-- [ ] Je Spalte verschieben zwei Bedienelemente sie um eine Position nach oben bzw. unten; die Liste zeigt die neue Ordnung.
-- [ ] Je Spalte entfernt ein Bedienelement sie; sie verschwindet aus der Liste.
-- [ ] Eine Zurückweisung der API erscheint als lesbare Meldung, ohne dass die Seite abstürzt.
-- [ ] Die Oberfläche erreicht die Spalten ausschließlich über HTTP-Aufrufe der WebApi.
+- [x] Die Spaltenansicht eines Boards zeigt je Spalte Bezeichnung, Position und die Abschlussspalten-Markierung mit ihrer Anzeigegrenze.
+- [x] Ein Formular legt eine weitere Spalte an; sie erscheint danach am Ende der Liste.
+- [x] Je Spalte lassen sich Bezeichnung, Markierung und Anzeigegrenze bearbeiten und speichern.
+- [x] Je Spalte verschieben zwei Bedienelemente sie um eine Position nach oben bzw. unten; die Liste zeigt die neue Ordnung.
+- [x] Je Spalte entfernt ein Bedienelement sie; sie verschwindet aus der Liste.
+- [x] Eine Zurückweisung der API erscheint als lesbare Meldung, ohne dass die Seite abstürzt.
+- [x] Die Oberfläche erreicht die Spalten ausschließlich über HTTP-Aufrufe der WebApi.
 
 ## Betroffene Verzeichnisstruktur
 
