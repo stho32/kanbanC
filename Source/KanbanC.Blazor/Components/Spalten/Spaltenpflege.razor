@@ -59,6 +59,7 @@
                 <button type="button" class="btn btn-sm btn-outline-primary spalte-speichern" @onclick="() => SpeichereSpalte(spalte.SpalteId)">Speichern</button>
                 <button type="button" class="btn btn-sm btn-outline-secondary spalte-hoch" @onclick="() => SchiebeHoch(spalte.SpalteId)">Hoch</button>
                 <button type="button" class="btn btn-sm btn-outline-secondary spalte-runter" @onclick="() => SchiebeRunter(spalte.SpalteId)">Runter</button>
+                <button type="button" class="btn btn-sm btn-outline-danger spalte-entfernen" @onclick="() => EntferneSpalte(spalte.SpalteId)">Entfernen</button>
             </span>
         </li>
     }
@@ -127,6 +128,18 @@
         if (ergebnis.WurdeZurueckgewiesen)
         {
             _zurueckweisung = ergebnis.Zurueckweisung;
+            return;
+        }
+
+        await UebernimmAenderung();
+    }
+
+    private async Task EntferneSpalte(long spalteId)
+    {
+        var zurueckweisung = await SpaltenKlient.EntferneSpalte(BoardId, spalteId);
+        if (zurueckweisung is not null)
+        {
+            _zurueckweisung = zurueckweisung;
             return;
         }
 

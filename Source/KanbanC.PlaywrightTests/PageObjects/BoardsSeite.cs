@@ -113,6 +113,11 @@ public sealed class BoardsSeite
         await zeile.Locator(".spalte-runter").ClickAsync();
     }
 
+    public async Task EntferneSpalte(ILocator zeile)
+    {
+        await zeile.Locator(".spalte-entfernen").ClickAsync();
+    }
+
     public async Task BearbeiteSpalte(ILocator zeile, string bezeichnung, bool istAbschlussspalte, string anzeigegrenze)
     {
         await zeile.Locator(".spalte-bezeichnung").FillAsync(bezeichnung);

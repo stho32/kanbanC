@@ -126,4 +126,36 @@ public class SpaltenApiKlientTests
         Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
         Assert.That(ergebnis.Zurueckweisung.Befunde[0], Does.Contain("alle Spalten"));
     }
+
+    [Test]
+    public async Task Wenn_die_WebApi_die_Spalte_entfernt_dann_meldet_der_Klient_keine_Zurueckweisung()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwortOhneRumpf(HttpStatusCode.NoContent);
+        var klient = new SpaltenApiKlient(fabrik);
+
+        var zurueckweisung = await klient.EntferneSpalte(1, 2);
+
+        Assert.That(zurueckweisung, Is.Null);
+    }
+
+    [Test]
+    public async Task Wenn_die_zu_entfernende_Spalte_unbekannt_ist_dann_meldet_der_Klient_eine_lesbare_Zurueckweisung()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwortOhneRumpf(HttpStatusCode.NotFound);
+        var klient = new SpaltenApiKlient(fabrik);
+
+        var zurueckweisung = await klient.EntferneSpalte(1, 999);
+
+        Assert.That(zurueckweisung, Is.Not.Null);
+        Assert.That(zurueckweisung!.Befunde[0], Does.Contain("gibt es nicht mehr"));
+    }
+
+    [Test]
+    public void Wenn_die_WebApi_beim_Entfernen_einen_Serverfehler_meldet_dann_bleibt_der_Fehler_sichtbar()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwortOhneRumpf(HttpStatusCode.InternalServerError);
+        var klient = new SpaltenApiKlient(fabrik);
+
+        Assert.That(async () => await klient.EntferneSpalte(1, 2), Throws.TypeOf<HttpRequestException>());
+    }
 }

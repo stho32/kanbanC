@@ -37,6 +37,20 @@ public sealed class SpaltenApiKlient
         return await AlsErgebnis<IReadOnlyList<Spalte>>(antwort);
     }
 
+    public async Task<Zurueckweisung?> EntferneSpalte(long boardId, long spalteId)
+    {
+        using var klient = _klientFabrik.CreateClient(KlientName);
+        using var antwort = await klient.DeleteAsync($"{SpaltenRoute(boardId)}/{spalteId}");
+        var spalteIstUnbekannt = antwort.StatusCode == HttpStatusCode.NotFound;
+        if (spalteIstUnbekannt)
+        {
+            return SpalteOderBoardVerschwunden;
+        }
+
+        antwort.EnsureSuccessStatusCode();
+        return null;
+    }
+
     private static string SpaltenRoute(long boardId)
     {
         return $"{BoardsRoute}/{boardId}/spalten";
