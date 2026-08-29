@@ -133,6 +133,71 @@ public class BoardEndpunkteTests
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
     }
 
+    [Test]
+    public async Task Wenn_der_Name_leer_ist_dann_antwortet_POST_mit_400_und_einem_lesbaren_Befund_und_es_entsteht_kein_Board()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var anfrage = new BoardAnlegenAnfrage("   ", BoardArt.Linie, null, null);
+
+        var antwort = await webApi.Klient.PostAsJsonAsync(BoardsRoute, anfrage);
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var zurueckweisung = await antwort.Content.ReadFromJsonAsync<Zurueckweisung>();
+        Assert.That(zurueckweisung, Is.Not.Null);
+        Assert.That(zurueckweisung.Befunde, Is.EqualTo(new[] { "Der Name darf nicht leer sein." }));
+        var boards = await webApi.Klient.GetFromJsonAsync<List<BoardUebersicht>>(BoardsRoute);
+        Assert.That(boards, Is.Empty);
+    }
+
+    [Test]
+    public async Task Wenn_der_Zieltermin_vor_dem_Starttermin_liegt_dann_antwortet_POST_mit_400_und_es_entsteht_kein_Board()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var anfrage = new BoardAnlegenAnfrage("KanbanC 1.0", BoardArt.Projekt, new DateOnly(2026, 9, 1), new DateOnly(2026, 8, 1));
+
+        var antwort = await webApi.Klient.PostAsJsonAsync(BoardsRoute, anfrage);
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var zurueckweisung = await antwort.Content.ReadFromJsonAsync<Zurueckweisung>();
+        Assert.That(zurueckweisung, Is.Not.Null);
+        Assert.That(zurueckweisung.Befunde[0], Does.Contain("Zieltermin"));
+        var boards = await webApi.Klient.GetFromJsonAsync<List<BoardUebersicht>>(BoardsRoute);
+        Assert.That(boards, Is.Empty);
+    }
+
+    [Test]
+    public async Task Wenn_die_Art_ein_unbekannter_Text_ist_dann_antwortet_POST_mit_400_und_es_entsteht_kein_Board()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var rumpf = new { name = "Entwicklung", art = "Sprint" };
+
+        var antwort = await webApi.Klient.PostAsJsonAsync(BoardsRoute, rumpf);
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var boards = await webApi.Klient.GetFromJsonAsync<List<BoardUebersicht>>(BoardsRoute);
+        Assert.That(boards, Is.Empty);
+    }
+
+    [Test]
+    public async Task Wenn_die_Art_eine_unbekannte_Zahl_ist_dann_antwortet_POST_mit_400_und_einem_Befund_zur_Art()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var rumpf = new { name = "Entwicklung", art = 7 };
+
+        var antwort = await webApi.Klient.PostAsJsonAsync(BoardsRoute, rumpf);
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var zurueckweisung = await antwort.Content.ReadFromJsonAsync<Zurueckweisung>();
+        Assert.That(zurueckweisung, Is.Not.Null);
+        Assert.That(zurueckweisung.Befunde[0], Does.Contain("Board-Art"));
+        var boards = await webApi.Klient.GetFromJsonAsync<List<BoardUebersicht>>(BoardsRoute);
+        Assert.That(boards, Is.Empty);
+    }
+
     private static async Task<Board> LegeBoardAn(TestWebApi webApi, BoardAnlegenAnfrage anfrage)
     {
         var antwort = await webApi.Klient.PostAsJsonAsync(BoardsRoute, anfrage);

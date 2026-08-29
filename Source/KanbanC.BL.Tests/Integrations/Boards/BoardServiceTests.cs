@@ -13,17 +13,51 @@ public class BoardServiceTests
         var service = new BoardService(repository);
         var anfrage = new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null);
 
-        var board = service.LegeBoardAn(anfrage);
+        var ergebnis = service.LegeBoardAn(anfrage);
 
+        Assert.That(ergebnis.IstErfolg, Is.True);
         Assert.Multiple(() =>
         {
             Assert.That(repository.ErhalteneAnfrage, Is.EqualTo(anfrage));
             Assert.That(repository.ErhalteneSpalten, Is.Not.Null);
             Assert.That(repository.ErhalteneSpalten!.SpaltenAnzahl, Is.EqualTo(3));
             Assert.That(repository.ErhalteneSpalten[2].IstAbschlussspalte, Is.True);
-            Assert.That(board.BoardId, Is.EqualTo(1));
+            Assert.That(ergebnis.Wert.BoardId, Is.EqualTo(1));
             Assert.That(repository.LadeAlle(), Has.Count.EqualTo(1));
         });
+    }
+
+    [Test]
+    public void Wenn_die_Anfrage_einen_leeren_Namen_hat_dann_wird_sie_zurueckgewiesen_und_das_Repository_nicht_aufgerufen()
+    {
+        var repository = new TestBoardRepository();
+        var service = new BoardService(repository);
+        var anfrage = new BoardAnlegenAnfrage("   ", BoardArt.Linie, null, null);
+
+        var ergebnis = service.LegeBoardAn(anfrage);
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde.BefundAnzahl, Is.EqualTo(1));
+            Assert.That(repository.ErhalteneAnfrage, Is.Null);
+            Assert.That(repository.LadeAlle(), Is.Empty);
+        });
+        Assert.That(() => ergebnis.Wert, Throws.InvalidOperationException);
+    }
+
+    [Test]
+    public void Wenn_der_Zieltermin_vor_dem_Starttermin_liegt_dann_wird_die_Anfrage_zurueckgewiesen_und_kein_Board_gespeichert()
+    {
+        var repository = new TestBoardRepository();
+        var service = new BoardService(repository);
+        var anfrage = new BoardAnlegenAnfrage("KanbanC 1.0", BoardArt.Projekt, new DateOnly(2026, 9, 1), new DateOnly(2026, 8, 1));
+
+        var ergebnis = service.LegeBoardAn(anfrage);
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Assert.That(ergebnis.Befunde[0], Does.Contain("Zieltermin"));
+        Assert.That(repository.LadeAlle(), Is.Empty);
     }
 
     [Test]

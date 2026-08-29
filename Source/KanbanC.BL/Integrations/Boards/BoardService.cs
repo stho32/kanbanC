@@ -1,4 +1,5 @@
 using KanbanC.BL.Interfaces.Boards;
+using KanbanC.BL.Models;
 using KanbanC.BL.Operations.Boards;
 using KanbanC.Contracts.Boards;
 
@@ -13,10 +14,18 @@ public sealed class BoardService
         _repository = repository;
     }
 
-    public Board LegeBoardAn(BoardAnlegenAnfrage anfrage)
+    public Ergebnis<Board> LegeBoardAn(BoardAnlegenAnfrage anfrage)
     {
+        var befunde = BoardAnlegenValidator.Pruefe(anfrage);
+        var anfrageIstUngueltig = !befunde.IstOhneBefund;
+        if (anfrageIstUngueltig)
+        {
+            return Ergebnis<Board>.Zurueckgewiesen(befunde);
+        }
+
         var standardspalten = StandardspaltenVorlage.FuerNeuesBoard();
-        return _repository.LegeAn(anfrage, standardspalten);
+        var board = _repository.LegeAn(anfrage, standardspalten);
+        return Ergebnis<Board>.Erfolg(board);
     }
 
     public IReadOnlyList<BoardUebersicht> LadeAlleBoards()

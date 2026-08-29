@@ -1,4 +1,5 @@
 using KanbanC.BL.Integrations.Boards;
+using KanbanC.BL.Models.Boards;
 using KanbanC.Contracts.Boards;
 
 namespace KanbanC.WebApi.Endpunkte;
@@ -16,8 +17,26 @@ public static class BoardEndpunkte
 
     private static IResult LegeBoardAn(BoardAnlegenAnfrage anfrage, BoardService boardService)
     {
-        var board = boardService.LegeBoardAn(anfrage);
+        var ergebnis = boardService.LegeBoardAn(anfrage);
+        var anfrageWurdeZurueckgewiesen = !ergebnis.IstErfolg;
+        if (anfrageWurdeZurueckgewiesen)
+        {
+            return Results.BadRequest(AlsZurueckweisung(ergebnis.Befunde));
+        }
+
+        var board = ergebnis.Wert;
         return Results.Created($"{Basisroute}/{board.BoardId}", board);
+    }
+
+    private static Zurueckweisung AlsZurueckweisung(Pruefbefunde befunde)
+    {
+        var meldungen = new List<string>();
+        foreach (var meldung in befunde)
+        {
+            meldungen.Add(meldung);
+        }
+
+        return new Zurueckweisung(meldungen);
     }
 
     private static IResult LadeAlleBoards(BoardService boardService)
