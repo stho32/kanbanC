@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>&lt;Ticket-Nr&gt; - &lt;Fall&gt;</title>
+<!--
+  Grundgerüst für /erstelle-fallbeschreibung.
+  Bewusste Ausnahmen vom HTML-Regelwerk (_html-bericht.md): nur Light, kein Theme-Toggle,
+  kein JavaScript, Auftraggeber-Farbe als Literal statt Token-Set — das Dokument verlässt
+  das Repo und wird per Mail/Chat weitergereicht und gedruckt.
+  Hat das Projekt ein Farbschema, dessen Markenfarbe (#1396ca) und Textfarben übernehmen.
+-->
+<style>
+  body { font-family: "Trebuchet MS", Tahoma, Arial, sans-serif; font-size: 10.5pt;
+         line-height: 1.4; color: #000; background: #fff; margin: 0; padding: 18px; }
+  .blatt { max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 13pt; margin: 0 0 2px 0; color: #1396ca; }
+  .meta { font-size: 9pt; color: #404040; border-bottom: 2px solid #1396ca;
+          padding-bottom: 6px; margin-bottom: 10px; }
+  h2 { font-size: 10.5pt; margin: 12px 0 3px 0; color: #1396ca; }
+  ul { margin: 0; padding-left: 18px; }  li { margin-bottom: 2px; }
+  table.t { border-collapse: collapse; border: 1px solid #1396ca; margin: 4px 0; font-size: 9.5pt; }
+  table.t th { color: #fff; background: #1396ca; border: 1px solid #1396ca; padding: 2px 6px; text-align: left; }
+  table.t td { border: 1px solid #1396ca; padding: 2px 6px; }
+  td.zahl { text-align: right; white-space: nowrap; }
+  .badge { background: #e0ffe0; color: #006400; border: 1px solid #006400;
+           padding: 0 5px; font-weight: bold; white-space: nowrap; }
+  .badge.warnung { background: #ffe0e0; color: #8B0000; border-color: #8B0000; }
+</style>
+</head>
+<body>
+<div class="blatt">
+  <h1>&lt;Ticket-Nr&gt; &ndash; &lt;Fall in fünf Wörtern&gt;</h1>
+  <div class="meta">&lt;Vorgangsnummer&gt; &middot; &lt;Kunde&gt; &middot; &lt;Verursacher/Bearbeiter&gt; &middot; &lt;Zeitpunkt&gt; &middot; &lt;Umfang&gt;</div>
+  <h2>Problem</h2>
+  <p>&lt;was abgewichen ist, mit Zahlen&gt;</p>
+  <table class="t">
+    <tr><th>Gegenstand</th><th>Menge</th><th>Soll</th><th>Ist</th><th>Differenz</th></tr>
+    <tr><td>&lt;Posten&gt;</td><td class="zahl">&lt;n&gt;</td><td class="zahl">&lt;Soll&gt;</td><td class="zahl">&lt;Ist&gt;</td><td class="zahl">&lt;Differenz&gt;</td></tr>
+  </table>
+  <h2>Ursache</h2>
+  <ul>
+    <li>&lt;belegte Ursache&gt;</li>
+    <li>&lt;was ausgeschlossen wurde&gt;</li>
+  </ul>
+  <h2>Schaden</h2>
+  <ul>
+    <li><span class="badge">&lt;Fazit, z. B. kein Verlust&gt;</span> &lt;eingetreten oder abgewendet, wodurch; Betrag mit Richtung&gt;</li>
+    <li>&lt;Einzelfall oder Muster, Restrisiko&gt;</li>
+  </ul>
+</div>
+</body>
+</html>
