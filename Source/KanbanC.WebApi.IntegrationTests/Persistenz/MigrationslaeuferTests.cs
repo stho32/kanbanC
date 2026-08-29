@@ -1,6 +1,6 @@
 using Dapper;
-using KanbanC.BL.Persistenz;
 using KanbanC.BL.Persistenz.Migrationen;
+using KanbanC.WebApi.IntegrationTests.Infrastructure;
 
 namespace KanbanC.WebApi.IntegrationTests.Persistenz;
 
@@ -9,26 +9,17 @@ public class MigrationslaeuferTests
     [Test]
     public void Wenn_die_Datei_leer_ist_dann_legt_FuehreAus_die_Tabellen_Board_und_Spalte_an()
     {
-        var dateipfad = Path.Combine(Path.GetTempPath(), $"kanbanc-test-{Guid.NewGuid():N}.db");
-        var fabrik = new SqliteVerbindungsfabrik($"Data Source={dateipfad}");
+        using var datenbank = new TemporaereDatenbank();
+        Assert.That(Tabellennamen(datenbank), Is.Empty);
 
-        try
-        {
-            Assert.That(Tabellennamen(fabrik), Is.Empty);
+        new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus();
 
-            new Migrationslaeufer(fabrik).FuehreAus();
-
-            Assert.That(Tabellennamen(fabrik), Is.SupersetOf(new[] { "Board", "Spalte" }));
-        }
-        finally
-        {
-            File.Delete(dateipfad);
-        }
+        Assert.That(Tabellennamen(datenbank), Is.SupersetOf(new[] { "Board", "Spalte" }));
     }
 
-    private static List<string> Tabellennamen(SqliteVerbindungsfabrik fabrik)
+    private static List<string> Tabellennamen(TemporaereDatenbank datenbank)
     {
-        using var verbindung = fabrik.Oeffne();
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
         return verbindung.Query<string>(@"
             SELECT name
               FROM sqlite_master

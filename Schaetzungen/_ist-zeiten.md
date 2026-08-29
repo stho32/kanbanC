@@ -12,3 +12,4 @@ Nie vom User erfragen.
 | 2026-08-29 | R00001 Board anlegen | B0001 Standardspalten erzeugen | Standard | 2h | 0,3h | 0,4h | moderat |
 | 2026-08-29 | R00001 Board anlegen | B0015 Datenbankverbindung öffnen | Standard | 2h | 0,0h | 0,1h | moderat |
 | 2026-08-29 | R00001 Board anlegen | B0002 Schema anlegen | Standard | 2h | 0,1h | 0,1h | moderat |
+| 2026-08-29 | R00001 Board anlegen | B0003 Board mit Spalten speichern | Standard | 2h | 1,5h | 1,5h | moderat |

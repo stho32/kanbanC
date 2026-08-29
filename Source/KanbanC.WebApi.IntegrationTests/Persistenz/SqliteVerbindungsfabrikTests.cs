@@ -1,5 +1,5 @@
 using System.Data;
-using KanbanC.BL.Persistenz;
+using KanbanC.WebApi.IntegrationTests.Infrastructure;
 
 namespace KanbanC.WebApi.IntegrationTests.Persistenz;
 
@@ -8,20 +8,12 @@ public class SqliteVerbindungsfabrikTests
     [Test]
     public void Wenn_die_Datei_fehlt_dann_liefert_Oeffne_eine_offene_Verbindung_und_legt_die_Datei_an()
     {
-        var dateipfad = Path.Combine(Path.GetTempPath(), $"kanbanc-test-{Guid.NewGuid():N}.db");
-        var fabrik = new SqliteVerbindungsfabrik($"Data Source={dateipfad}");
-        Assert.That(File.Exists(dateipfad), Is.False);
+        using var datenbank = new TemporaereDatenbank();
+        Assert.That(File.Exists(datenbank.Dateipfad), Is.False);
 
-        try
-        {
-            using var verbindung = fabrik.Oeffne();
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
 
-            Assert.That(verbindung.State, Is.EqualTo(ConnectionState.Open));
-            Assert.That(File.Exists(dateipfad), Is.True);
-        }
-        finally
-        {
-            File.Delete(dateipfad);
-        }
+        Assert.That(verbindung.State, Is.EqualTo(ConnectionState.Open));
+        Assert.That(File.Exists(datenbank.Dateipfad), Is.True);
     }
 }
