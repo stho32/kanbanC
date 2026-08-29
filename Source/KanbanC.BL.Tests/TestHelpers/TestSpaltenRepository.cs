@@ -14,6 +14,8 @@ public sealed class TestSpaltenRepository : ISpaltenRepository
 
     public bool WurdeUmsortiert { get; private set; }
 
+    public bool WurdeEntfernt { get; private set; }
+
     public long BekannteBoardId { get; private set; }
 
     public static TestSpaltenRepository MitBoardOhneSpalten(long boardId)
@@ -40,6 +42,36 @@ public sealed class TestSpaltenRepository : ISpaltenRepository
         _naechsteSpalteId = _naechsteSpalteId + 1;
         spalten.Add(spalte);
         return spalte;
+    }
+
+    public bool Entferne(long boardId, long spalteId)
+    {
+        WurdeEntfernt = true;
+        if (!_spaltenJeBoard.TryGetValue(boardId, out var spalten))
+        {
+            return false;
+        }
+
+        var entfernteAnzahl = spalten.RemoveAll(spalte => spalte.SpalteId == spalteId);
+        var spalteGehoertNichtZumBoard = entfernteAnzahl == 0;
+        if (spalteGehoertNichtZumBoard)
+        {
+            return false;
+        }
+
+        _spaltenJeBoard[boardId] = MitLueckenlosenPositionen(spalten);
+        return true;
+    }
+
+    private static List<Spalte> MitLueckenlosenPositionen(List<Spalte> spalten)
+    {
+        var verdichtet = new List<Spalte>();
+        for (var stelle = 0; stelle < spalten.Count; stelle++)
+        {
+            verdichtet.Add(spalten[stelle] with { Position = stelle + 1 });
+        }
+
+        return verdichtet;
     }
 
     public IReadOnlyList<Spalte>? LadeAlle(long boardId)

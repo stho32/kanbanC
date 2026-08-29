@@ -79,6 +79,39 @@ public sealed class SpaltenRepository : ISpaltenRepository
         return spalten;
     }
 
+    public bool Entferne(long boardId, long spalteId)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+        using var transaktion = verbindung.BeginTransaction();
+
+        var geloeschteZeilen = LoescheSpalte(verbindung, transaktion, boardId, spalteId);
+        var spalteGehoertNichtZumBoard = geloeschteZeilen == 0;
+        if (spalteGehoertNichtZumBoard)
+        {
+            return false;
+        }
+
+        VerdichtePositionen(verbindung, transaktion, boardId);
+        transaktion.Commit();
+        return true;
+    }
+
+    private static int LoescheSpalte(IDbConnection verbindung, IDbTransaction transaktion, long boardId, long spalteId)
+    {
+        return verbindung.Execute(@"
+            DELETE
+              FROM Spalte
+             WHERE SpalteId = @SpalteId
+               AND Board = @Board", new { SpalteId = spalteId, Board = boardId }, transaktion);
+    }
+
+    private static void VerdichtePositionen(IDbConnection verbindung, IDbTransaction transaktion, long boardId)
+    {
+        var verbleibendeSpalten = Spaltenleser.LiesSpaltenNachPosition(verbindung, transaktion, boardId);
+        var lueckenloseReihenfolge = verbleibendeSpalten.Select(spalte => spalte.SpalteId).ToList();
+        SchreibePositionen(verbindung, transaktion, boardId, lueckenloseReihenfolge);
+    }
+
     private static void SchreibePositionen(IDbConnection verbindung, IDbTransaction transaktion, long boardId, IReadOnlyList<long> reihenfolge)
     {
         for (var stelle = 0; stelle < reihenfolge.Count; stelle++)

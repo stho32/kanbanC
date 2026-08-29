@@ -193,6 +193,82 @@ public class SpaltenRepositoryTests
         Assert.That(repository.LadeAlle(boardId), Has.Count.EqualTo(3));
     }
 
+    [Test]
+    public void Wenn_die_mittlere_von_drei_Spalten_entfernt_wird_dann_haben_die_beiden_uebrigen_Position_1_und_2()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var repository = new SpaltenRepository(datenbank.Verbindungsfabrik);
+        var inArbeit = SpalteIdAnPosition(datenbank, boardId, 2);
+
+        var wurdeEntfernt = repository.Entferne(boardId, inArbeit);
+
+        Assert.That(wurdeEntfernt, Is.True);
+        Assert.That(GespeicherteBezeichnungenNachPosition(datenbank, boardId),
+            Is.EqualTo(new[] { "Zu erledigen", "Erledigt" }));
+        Assert.That(repository.LadeAlle(boardId)!.Select(s => s.Position), Is.EqualTo(new[] { 1, 2 }));
+    }
+
+    [Test]
+    public void Wenn_die_letzte_verbliebene_Spalte_entfernt_wird_dann_bleibt_das_Board_mit_leerer_Spaltenliste()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var repository = new SpaltenRepository(datenbank.Verbindungsfabrik);
+        foreach (var spalte in repository.LadeAlle(boardId)!)
+        {
+            repository.Entferne(boardId, spalte.SpalteId);
+        }
+
+        Assert.That(repository.LadeAlle(boardId), Is.Empty);
+        Assert.That(new BoardRepository(datenbank.Verbindungsfabrik).Lade(boardId), Is.Not.Null);
+        Assert.That(GespeicherteSpaltenAnzahl(datenbank, boardId), Is.EqualTo(0));
+    }
+
+    [Test]
+    public void Wenn_die_entfernte_Spalte_eine_Abschlussspalte_ist_dann_verschwindet_sie_ohne_Vorbedingung()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var repository = new SpaltenRepository(datenbank.Verbindungsfabrik);
+        var erledigt = SpalteIdAnPosition(datenbank, boardId, 3);
+
+        var wurdeEntfernt = repository.Entferne(boardId, erledigt);
+
+        Assert.That(wurdeEntfernt, Is.True);
+        Assert.That(GespeicherteBezeichnungenNachPosition(datenbank, boardId),
+            Is.EqualTo(new[] { "Zu erledigen", "In Arbeit" }));
+    }
+
+    [Test]
+    public void Wenn_die_SpalteId_zu_einem_anderen_Board_gehoert_dann_wird_nichts_geloescht()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var erstesBoard = LegeBoardAn(datenbank);
+        var zweitesBoard = LegeBoardAn(datenbank);
+        var repository = new SpaltenRepository(datenbank.Verbindungsfabrik);
+        var fremdeSpalteId = SpalteIdAnPosition(datenbank, erstesBoard, 1);
+
+        var wurdeEntfernt = repository.Entferne(zweitesBoard, fremdeSpalteId);
+
+        Assert.That(wurdeEntfernt, Is.False);
+        Assert.That(GespeicherteSpaltenAnzahl(datenbank, erstesBoard), Is.EqualTo(3));
+        Assert.That(GespeicherteSpaltenAnzahl(datenbank, zweitesBoard), Is.EqualTo(3));
+    }
+
+    [Test]
+    public void Wenn_die_SpalteId_unbekannt_ist_dann_liefert_Entferne_false()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var repository = new SpaltenRepository(datenbank.Verbindungsfabrik);
+
+        var wurdeEntfernt = repository.Entferne(boardId, 999);
+
+        Assert.That(wurdeEntfernt, Is.False);
+        Assert.That(GespeicherteSpaltenAnzahl(datenbank, boardId), Is.EqualTo(3));
+    }
+
     private static long LegeBoardAn(TemporaereDatenbank datenbank)
     {
         var repository = new BoardRepository(datenbank.Verbindungsfabrik);
