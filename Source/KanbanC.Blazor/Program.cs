@@ -1,4 +1,5 @@
 using KanbanC.Blazor.Components;
+using KanbanC.Blazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +14,7 @@ builder.Services.AddHttpClient("KanbanC", client =>
     client.BaseAddress = new Uri(builder.Configuration["WebApi:BasisAdresse"]
         ?? throw new InvalidOperationException("WebApi:BasisAdresse fehlt in der Konfiguration."));
 });
+builder.Services.AddScoped<BoardApiKlient>();
 
 var app = builder.Build();
 
