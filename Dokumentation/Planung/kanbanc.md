@@ -37,7 +37,7 @@ zuletzt: 2026-08-29
 | I0003 | Interaction | D0001 | Spalten gestalten | gelb | Spalten lassen sich anlegen, umbenennen, umsortieren und entfernen; eine Spalte ist als Abschlussspalte mit Anzeigegrenze N markierbar | | | | I0001 | R00002 | |
 | F0004 | Feature | I0003 | Spalten anlegen und aendern | gelb | AK „Spalte anlegen", „Spalte umbenennen und markieren", „Abschlussspalte und Anzeigegrenze" ueber API und Oberflaeche; US-1, US-2, US-6, US-7, US-8 |  |  |  |  | R00002 |  |
 | B0016 | Bubble | F0004 | Spalten-Anfrage pruefen | gruen | Test gruen | SpalteAnlegenAnfrage / SpalteAendernAnfrage → SpaltenValidator.Pruefe → Pruefbefunde | 0,4 |  |  |  | Operation; die Contracts-DTOs entstehen hier, Pruefbefunde wandert nach Models/; belegt |
-| B0017 | Bubble | F0004 | Spalte speichern und aendern | rot | Test gruen | boardId + Anfrage → SpaltenRepository.LegeAn / Aendere → Spalte? | 0,4 |  |  |  | Provider; Position = hoechste + 1, eine Transaktion; belegt |
+| B0017 | Bubble | F0004 | Spalte speichern und aendern | gruen | Test gruen | boardId + Anfrage → SpaltenRepository.LegeAn / Aendere → Spalte? | 0,4 |  |  |  | Provider; Position = hoechste + 1, eine Transaktion; belegt |
 | B0018 | Bubble | F0004 | Spalten-Anlage verdrahten | rot | Test gruen | boardId + Anfrage → SpaltenService → Ergebnis<Spalte>? | 0,4 |  |  |  | Integration, Test-Repository; belegt |
 | B0019 | Bubble | F0004 | Spalten-Endpunkte anlegen und aendern | rot | Test gruen | HTTP POST/PUT → SpaltenEndpunkte → 201 / 200 / 400 / 404 | 2 |  |  |  | Integration; kein Messwert fuer Endpunkt-Bubbles |
 | B0020 | Bubble | F0004 | API-Klient der Spalten | rot | Test gruen | Anfrage → SpaltenApiKlient → ApiErgebnis<Spalte> | 2 |  |  |  | Integration; Fehlerpfade in KanbanC.Blazor.Tests |
