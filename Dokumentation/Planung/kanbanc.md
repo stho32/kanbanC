@@ -43,8 +43,8 @@ zuletzt: 2026-08-29
 | B0020 | Bubble | F0004 | API-Klient der Spalten | gruen | Test gruen | Anfrage → SpaltenApiKlient → ApiErgebnis<Spalte> | 2 |  |  |  | Integration; Fehlerpfade in KanbanC.Blazor.Tests |
 | B0021 | Bubble | F0004 | Spaltenpflege in der Oberflaeche | gruen | Test gruen | Board-Detail → Boards.razor → Spalte angelegt und geaendert, Meldung bei Zurueckweisung | 2 |  |  |  | UI |
 | B0022 | Bubble | F0004 | E2E Spalte anlegen und aendern | gruen | Test gruen | beide Prozesse auf freien Ports → Playwright → US-1, US-2, US-6, US-7, US-8 | 2-4 |  |  |  | unklar: Erweiterung des Seitenobjekts BoardsSeite |
-| F0005 | Feature | I0003 | Spalten umsortieren | rot | AK „Spalten umsortieren" ueber API und Oberflaeche; US-3, US-9 |  |  |  | F0004 | R00002 |  |
-| B0023 | Bubble | F0005 | Reihenfolge pruefen | rot | Test gruen | gewuenschte SpalteIds + vorhandene SpalteIds → SpaltenreihenfolgeValidator.Pruefe → Pruefbefunde | 0,4 |  |  |  | Operation; Contracts-DTO Spaltenreihenfolge entsteht hier; belegt |
+| F0005 | Feature | I0003 | Spalten umsortieren | gelb | AK „Spalten umsortieren" ueber API und Oberflaeche; US-3, US-9 |  |  |  | F0004 | R00002 |  |
+| B0023 | Bubble | F0005 | Reihenfolge pruefen | gruen | Test gruen | gewuenschte SpalteIds + vorhandene SpalteIds → SpaltenreihenfolgeValidator.Pruefe → Pruefbefunde | 0,4 |  |  |  | Operation; Contracts-DTO Spaltenreihenfolge entsteht hier; belegt |
 | B0024 | Bubble | F0005 | Reihenfolge speichern | rot | Test gruen | boardId + SpalteIds → SpaltenRepository.SetzeReihenfolge → Spalten mit Position 1..n | 0,4 |  |  |  | Provider, eine Transaktion; belegt |
 | B0025 | Bubble | F0005 | Reihenfolge ueber die API | rot | Test gruen | HTTP PUT /spalten/reihenfolge → SpaltenService + SpaltenEndpunkte → 200 / 400 / 404 | 2 |  |  |  | Integration |
 | B0026 | Bubble | F0005 | Umsortieren in der Oberflaeche | rot | Test gruen | Hoch/Runter → Boards.razor + SpaltenApiKlient → neue Ordnung; E2E US-3 | 2 |  |  |  | UI; sendet die ganze Reihenfolge, nicht eine Einzelposition |
