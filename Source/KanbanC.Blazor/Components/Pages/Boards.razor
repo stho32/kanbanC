@@ -1,6 +1,5 @@
 @page "/boards"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
-@using System.Globalization
 @using KanbanC.Blazor.Services
 @using KanbanC.Contracts.Boards
 @inject BoardApiKlient ApiKlient
@@ -87,8 +86,8 @@
                         <td>@board.BoardId</td>
                         <td>@board.Name</td>
                         <td>@board.Art</td>
-                        <td>@AlsText(board.Starttermin)</td>
-                        <td>@AlsText(board.Zieltermin)</td>
+                        <td>@Terminformatierer.AlsText(board.Starttermin)</td>
+                        <td>@Terminformatierer.AlsText(board.Zieltermin)</td>
                         <td>
                             <button type="button" class="btn btn-link p-0" @onclick="() => ZeigeSpalten(board.BoardId)">Spalten anzeigen</button>
                         </td>
@@ -105,8 +104,8 @@
         <h2>Board @_gewaehltesBoard.BoardId: @_gewaehltesBoard.Name</h2>
         <p>
             Art @_gewaehltesBoard.Art,
-            Starttermin <span id="details-starttermin">@AlsText(_gewaehltesBoard.Starttermin)</span>,
-            Zieltermin <span id="details-zieltermin">@AlsText(_gewaehltesBoard.Zieltermin)</span>
+            Starttermin <span id="details-starttermin">@Terminformatierer.AlsText(_gewaehltesBoard.Starttermin)</span>,
+            Zieltermin <span id="details-zieltermin">@Terminformatierer.AlsText(_gewaehltesBoard.Zieltermin)</span>
         </p>
         <ol id="spalten-liste">
             @foreach (var spalte in _gewaehltesBoard.Spalten)
@@ -124,8 +123,6 @@
 }
 
 @code {
-    private const string IsoDatumsformat = "yyyy-MM-dd";
-    private const string KeinTermin = "—";
     private const string WebApiNichtErreichbar = "Die WebApi ist nicht erreichbar. Bitte später erneut versuchen.";
     private readonly BoardFormular _formular = new();
     private IReadOnlyList<BoardUebersicht>? _boards;
@@ -171,16 +168,6 @@
         {
             _fehlermeldung = WebApiNichtErreichbar;
         }
-    }
-
-    private static string AlsText(DateOnly? termin)
-    {
-        if (termin is null)
-        {
-            return KeinTermin;
-        }
-
-        return termin.Value.ToString(IsoDatumsformat, CultureInfo.InvariantCulture);
     }
 
     // Adaptermodell des Formular-Bindings: veränderlich, weil EditForm es so braucht; verlässt die Seite nie.
