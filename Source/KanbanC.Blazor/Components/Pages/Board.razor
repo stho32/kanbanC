@@ -5,14 +5,21 @@
 
 <PageTitle>Board @BoardId</PageTitle>
 
-<p><a href="/boards" id="zur-board-liste">Zurück zur Board-Liste</a></p>
-
-@if (_board is null)
+@if (!_ladenIstAbgeschlossen)
 {
     <p id="board-wird-geladen">Das Board wird geladen …</p>
 }
+else if (_board is null)
+{
+    <div class="alert alert-warning" role="alert" id="board-unbekannt">
+        <p class="mb-1">Ein Board mit der Nummer @BoardId gibt es nicht.</p>
+        <a href="/boards" id="zur-board-liste">Zurück zur Board-Liste</a>
+    </div>
+}
 else
 {
+    <p><a href="/boards" id="zur-board-liste">Zurück zur Board-Liste</a></p>
+
     <header id="board-kopf">
         <h1 id="board-name">@_board.Name</h1>
         <p>
@@ -40,14 +47,17 @@ else
 }
 
 @code {
-    // Vollqualifiziert, weil der Komponentenname Board den gleichnamigen Vertragstyp sonst verdeckt.
+    // Vollqualifiziert, weil der Komponentenname Board den gleichnamigen Vertragstyp verdeckt.
     private KanbanC.Contracts.Boards.Board? _board;
+    private bool _ladenIstAbgeschlossen;
 
     [Parameter]
     public long BoardId { get; set; }
 
     protected override async Task OnParametersSetAsync()
     {
+        _ladenIstAbgeschlossen = false;
         _board = await ApiKlient.LadeBoard(BoardId);
+        _ladenIstAbgeschlossen = true;
     }
 }

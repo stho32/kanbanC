@@ -27,6 +27,8 @@ public sealed class BoardSeite
 
     public ILocator Spaltenbezeichnungen => _seite.Locator("#spaltenbahnen .spaltenbahn-bezeichnung");
 
+    public ILocator MeldungUnbekanntesBoard => _seite.Locator("#board-unbekannt");
+
     public ILocator VerweisZurListe => _seite.Locator("#zur-board-liste");
 
     public string Adresse(long boardId)
