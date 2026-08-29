@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json;
 using KanbanC.Contracts.Boards;
 
 namespace KanbanC.Blazor.Services;
@@ -7,6 +8,8 @@ public sealed class BoardApiKlient
 {
     private const string KlientName = "KanbanC";
     private const string BoardsRoute = "api/boards";
+    private static readonly Zurueckweisung ZurueckweisungOhneLesbareBefunde =
+        new(["Die WebApi hat die Anfrage zurückgewiesen (HTTP 400)."]);
     private readonly IHttpClientFactory _klientFabrik;
 
     public BoardApiKlient(IHttpClientFactory klientFabrik)
@@ -63,18 +66,36 @@ public sealed class BoardApiKlient
 
     private static async Task<Zurueckweisung> LeseZurueckweisung(HttpResponseMessage antwort)
     {
+        var gemeldeteZurueckweisung = await LiesZurueckweisungAusRumpf(antwort);
+        if (gemeldeteZurueckweisung is null)
+        {
+            return ZurueckweisungOhneLesbareBefunde;
+        }
+
+        var befundeFehlen = gemeldeteZurueckweisung.Befunde is null || gemeldeteZurueckweisung.Befunde.Count == 0;
+        if (befundeFehlen)
+        {
+            return ZurueckweisungOhneLesbareBefunde;
+        }
+
+        return gemeldeteZurueckweisung;
+    }
+
+    private static async Task<Zurueckweisung?> LiesZurueckweisungAusRumpf(HttpResponseMessage antwort)
+    {
         var rumpfIstLeer = antwort.Content.Headers.ContentLength == 0;
         if (rumpfIstLeer)
         {
-            return new Zurueckweisung(["Die WebApi hat die Anfrage zurückgewiesen (HTTP 400)."]);
+            return null;
         }
 
-        var zurueckweisung = await antwort.Content.ReadFromJsonAsync<Zurueckweisung>();
-        if (zurueckweisung is null)
+        try
         {
-            return new Zurueckweisung(["Die WebApi hat die Anfrage zurückgewiesen (HTTP 400)."]);
+            return await antwort.Content.ReadFromJsonAsync<Zurueckweisung>();
         }
-
-        return zurueckweisung;
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 }
