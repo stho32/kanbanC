@@ -30,8 +30,8 @@ zuletzt: 2026-08-29
 | B0010 | Bubble | F0002 | Anfrage prüfen | gruen | Test gruen | BoardAnlegenAnfrage → BoardAnlegenValidator → Pruefbefunde | 2 | | | | Operation |
 | B0011 | Bubble | F0002 | Zurückweisung über die API | gruen | Test gruen | Pruefbefunde → BoardService / BoardEndpunkte → 400 Zurueckweisung | 2 | | | | Integration |
 | B0012 | Bubble | F0002 | Zurückweisung in der Oberfläche | gruen | Test gruen | Zurueckweisung → Boards.razor → Meldung; E2E US-4, US-5 | 2 | | | | UI |
-| F0003 | Feature | I0001 | Datenbestand überlebt Neustart | rot | AK „Datenhaltung"; US-6 | | | | F0001 | R00001 | |
-| B0013 | Bubble | F0003 | Migration idempotent | rot | Test gruen | zweiter Lauf auf bestehender Datei → Migrationslaeufer → Schema und Daten unverändert | 2 | | | | Integration |
+| F0003 | Feature | I0001 | Datenbestand überlebt Neustart | gelb | AK „Datenhaltung"; US-6 |  |  |  | F0001 | R00001 |  |
+| B0013 | Bubble | F0003 | Migration idempotent | gruen | Test gruen | zweiter Lauf auf bestehender Datei → Migrationslaeufer → Schema und Daten unverändert | 2 | | | | Integration |
 | B0014 | Bubble | F0003 | Neustart der WebApi | rot | Test gruen | zweite Instanz auf derselben Datei → Boards bleiben, nächste Nummer 3 | 2 | | | | Integration; US-6 |
 | I0002 | Interaction | D0001 | Boards auflisten und öffnen | rot | Alle Boards sind mit Name und Art aufgelistet; das gewählte lässt sich öffnen | | | | I0001 | | |
 | I0003 | Interaction | D0001 | Spalten gestalten | rot | Spalten lassen sich anlegen, umbenennen, umsortieren und entfernen; eine Spalte ist als Abschlussspalte mit Anzeigegrenze N markierbar | | | | I0001 | | |
