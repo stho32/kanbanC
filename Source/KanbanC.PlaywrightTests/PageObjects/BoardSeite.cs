@@ -29,6 +29,10 @@ public sealed class BoardSeite
 
     public ILocator MeldungUnbekanntesBoard => _seite.Locator("#board-unbekannt");
 
+    public ILocator Fehlermeldung => _seite.Locator("#fehlermeldung");
+
+    public ILocator Ausnahmeanzeige => _seite.Locator("#blazor-error-ui");
+
     public ILocator VerweisZurListe => _seite.Locator("#zur-board-liste");
 
     public string Adresse(long boardId)
