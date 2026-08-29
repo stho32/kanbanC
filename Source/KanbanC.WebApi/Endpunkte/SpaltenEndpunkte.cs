@@ -11,6 +11,7 @@ public static class SpaltenEndpunkte
     {
         routen.MapPost(Basisroute, LegeSpalteAn).WithName("SpalteAnlegen");
         routen.MapPut(Basisroute + "/{spalteId:long}", AendereSpalte).WithName("SpalteAendern");
+        routen.MapPut(Basisroute + "/reihenfolge", SetzeReihenfolge).WithName("SpaltenreihenfolgeSetzen");
     }
 
     private static IResult LegeSpalteAn(long boardId, SpalteAnlegenAnfrage anfrage, SpaltenService spaltenService)
@@ -29,6 +30,33 @@ public static class SpaltenEndpunkte
 
         var spalte = ergebnis.Wert;
         return Results.Created($"/api/boards/{boardId}/spalten/{spalte.SpalteId}", spalte);
+    }
+
+    private static IResult SetzeReihenfolge(long boardId, Spaltenreihenfolge reihenfolge, SpaltenService spaltenService)
+    {
+        var ergebnis = spaltenService.SetzeReihenfolge(boardId, GenannteSpalteIds(reihenfolge));
+        if (ergebnis is null)
+        {
+            return Results.NotFound();
+        }
+
+        var reihenfolgeWurdeZurueckgewiesen = !ergebnis.IstErfolg;
+        if (reihenfolgeWurdeZurueckgewiesen)
+        {
+            return Results.BadRequest(Zurueckweisungen.Aus(ergebnis.Befunde));
+        }
+
+        return Results.Ok(ergebnis.Wert);
+    }
+
+    private static IReadOnlyList<long> GenannteSpalteIds(Spaltenreihenfolge reihenfolge)
+    {
+        if (reihenfolge.SpalteIds is null)
+        {
+            return [];
+        }
+
+        return reihenfolge.SpalteIds;
     }
 
     private static IResult AendereSpalte(long boardId, long spalteId, SpalteAendernAnfrage anfrage, SpaltenService spaltenService)

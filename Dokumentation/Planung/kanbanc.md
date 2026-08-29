@@ -46,7 +46,7 @@ zuletzt: 2026-08-29
 | F0005 | Feature | I0003 | Spalten umsortieren | gelb | AK „Spalten umsortieren" ueber API und Oberflaeche; US-3, US-9 |  |  |  | F0004 | R00002 |  |
 | B0023 | Bubble | F0005 | Reihenfolge pruefen | gruen | Test gruen | gewuenschte SpalteIds + vorhandene SpalteIds → SpaltenreihenfolgeValidator.Pruefe → Pruefbefunde | 0,4 |  |  |  | Operation; Contracts-DTO Spaltenreihenfolge entsteht hier; belegt |
 | B0024 | Bubble | F0005 | Reihenfolge speichern | gruen | Test gruen | boardId + SpalteIds → SpaltenRepository.SetzeReihenfolge → Spalten mit Position 1..n | 0,4 |  |  |  | Provider, eine Transaktion; belegt |
-| B0025 | Bubble | F0005 | Reihenfolge ueber die API | rot | Test gruen | HTTP PUT /spalten/reihenfolge → SpaltenService + SpaltenEndpunkte → 200 / 400 / 404 | 2 |  |  |  | Integration |
+| B0025 | Bubble | F0005 | Reihenfolge ueber die API | gruen | Test gruen | HTTP PUT /spalten/reihenfolge → SpaltenService + SpaltenEndpunkte → 200 / 400 / 404 | 2 |  |  |  | Integration |
 | B0026 | Bubble | F0005 | Umsortieren in der Oberflaeche | rot | Test gruen | Hoch/Runter → Boards.razor + SpaltenApiKlient → neue Ordnung; E2E US-3 | 2 |  |  |  | UI; sendet die ganze Reihenfolge, nicht eine Einzelposition |
 | F0006 | Feature | I0003 | Spalte entfernen | rot | AK „Spalte entfernen" ueber API und Oberflaeche; US-4, US-5 |  |  |  | F0004 | R00002 |  |
 | B0027 | Bubble | F0006 | Spalte loeschen und verdichten | rot | Test gruen | boardId + spalteId → SpaltenRepository.Entferne → geloescht, verbleibende Positionen 1..n | 0,4 |  |  |  | Provider, eine Transaktion; belegt |

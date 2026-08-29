@@ -106,4 +106,49 @@ public class SpaltenServiceTests
         Assert.That(ergebnis, Is.Null);
         Assert.That(repository.Spalten(1)[0].Bezeichnung, Is.EqualTo("In Arbeit"));
     }
+
+    [Test]
+    public void Wenn_die_Reihenfolge_vollstaendig_ist_dann_liegen_die_Spalten_danach_in_der_neuen_Ordnung()
+    {
+        var repository = TestSpaltenRepository.MitBoardOhneSpalten(1);
+        var erste = repository.LegeAn(1, new SpalteAnlegenAnfrage("Zu erledigen", false, null));
+        var zweite = repository.LegeAn(1, new SpalteAnlegenAnfrage("In Arbeit", false, null));
+        var service = new SpaltenService(repository);
+
+        var ergebnis = service.SetzeReihenfolge(1, [zweite!.SpalteId, erste!.SpalteId]);
+
+        Assert.That(ergebnis!.IstErfolg, Is.True);
+        Assert.That(ergebnis.Wert.Select(s => s.Bezeichnung), Is.EqualTo(new[] { "In Arbeit", "Zu erledigen" }));
+        Assert.That(repository.Spalten(1).Select(s => s.Position), Is.EqualTo(new[] { 1, 2 }));
+    }
+
+    [Test]
+    public void Wenn_die_Reihenfolge_unvollstaendig_ist_dann_erreicht_sie_das_Repository_nicht()
+    {
+        var repository = TestSpaltenRepository.MitBoardOhneSpalten(1);
+        var erste = repository.LegeAn(1, new SpalteAnlegenAnfrage("Zu erledigen", false, null));
+        repository.LegeAn(1, new SpalteAnlegenAnfrage("In Arbeit", false, null));
+        var service = new SpaltenService(repository);
+
+        var ergebnis = service.SetzeReihenfolge(1, [erste!.SpalteId]);
+
+        Assert.That(ergebnis!.IstErfolg, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(repository.WurdeUmsortiert, Is.False);
+            Assert.That(repository.Spalten(1).Select(s => s.Bezeichnung), Is.EqualTo(new[] { "Zu erledigen", "In Arbeit" }));
+        });
+    }
+
+    [Test]
+    public void Wenn_das_Board_unbekannt_ist_dann_liefert_SetzeReihenfolge_null()
+    {
+        var repository = TestSpaltenRepository.MitBoardOhneSpalten(1);
+        var service = new SpaltenService(repository);
+
+        var ergebnis = service.SetzeReihenfolge(2, [1]);
+
+        Assert.That(ergebnis, Is.Null);
+        Assert.That(repository.WurdeUmsortiert, Is.False);
+    }
 }

@@ -245,6 +245,105 @@ public class SpaltenEndpunkteTests
         });
     }
 
+    [Test]
+    public async Task Wenn_die_Reihenfolge_gesetzt_wird_dann_liefert_die_API_200_und_lueckenlose_Positionen_1_bis_3()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var boardId = await LegeBoardAn(webApi);
+        var board = await LadeBoard(webApi, boardId);
+        var gewuenscht = new[] { board.Spalten[2].SpalteId, board.Spalten[0].SpalteId, board.Spalten[1].SpalteId };
+
+        var antwort = await webApi.Klient.PutAsJsonAsync($"{BoardsRoute}/{boardId}/spalten/reihenfolge",
+            new Spaltenreihenfolge(gewuenscht));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var spalten = await antwort.Content.ReadFromJsonAsync<List<Spalte>>();
+        Assert.That(spalten, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(spalten.Select(s => s.Bezeichnung), Is.EqualTo(new[] { "Erledigt", "Zu erledigen", "In Arbeit" }));
+            Assert.That(spalten.Select(s => s.Position), Is.EqualTo(new[] { 1, 2, 3 }));
+        });
+        var neuGeladen = await LadeBoard(webApi, boardId);
+        Assert.That(neuGeladen.Spalten.Select(s => s.Bezeichnung),
+            Is.EqualTo(new[] { "Erledigt", "Zu erledigen", "In Arbeit" }));
+    }
+
+    [Test]
+    public async Task Wenn_die_Reihenfolge_nur_zwei_von_drei_Spalten_nennt_dann_antwortet_die_API_mit_400_und_die_Ordnung_bleibt()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var boardId = await LegeBoardAn(webApi);
+        var board = await LadeBoard(webApi, boardId);
+
+        var antwort = await webApi.Klient.PutAsJsonAsync($"{BoardsRoute}/{boardId}/spalten/reihenfolge",
+            new Spaltenreihenfolge([board.Spalten[1].SpalteId, board.Spalten[0].SpalteId]));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var zurueckweisung = await antwort.Content.ReadFromJsonAsync<Zurueckweisung>();
+        Assert.That(zurueckweisung!.Befunde[0], Does.Contain("alle Spalten"));
+        var unveraendert = await LadeBoard(webApi, boardId);
+        Assert.That(unveraendert.Spalten.Select(s => s.Bezeichnung),
+            Is.EqualTo(new[] { "Zu erledigen", "In Arbeit", "Erledigt" }));
+    }
+
+    [Test]
+    public async Task Wenn_die_Reihenfolge_eine_SpalteId_doppelt_nennt_dann_antwortet_die_API_mit_400()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var boardId = await LegeBoardAn(webApi);
+        var board = await LadeBoard(webApi, boardId);
+        var ersteSpalteId = board.Spalten[0].SpalteId;
+
+        var antwort = await webApi.Klient.PutAsJsonAsync($"{BoardsRoute}/{boardId}/spalten/reihenfolge",
+            new Spaltenreihenfolge([ersteSpalteId, ersteSpalteId, board.Spalten[1].SpalteId]));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var zurueckweisung = await antwort.Content.ReadFromJsonAsync<Zurueckweisung>();
+        Assert.That(zurueckweisung!.Befunde[0], Does.Contain("mehrfach"));
+        var unveraendert = await LadeBoard(webApi, boardId);
+        Assert.That(unveraendert.Spalten.Select(s => s.Bezeichnung),
+            Is.EqualTo(new[] { "Zu erledigen", "In Arbeit", "Erledigt" }));
+    }
+
+    [Test]
+    public async Task Wenn_die_Reihenfolge_eine_SpalteId_eines_anderen_Boards_nennt_dann_antwortet_die_API_mit_400()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var erstesBoard = await LegeBoardAn(webApi);
+        var zweitesBoard = await LegeBoardAn(webApi);
+        var eigene = (await LadeBoard(webApi, zweitesBoard)).Spalten;
+        var fremde = (await LadeBoard(webApi, erstesBoard)).Spalten[0];
+
+        var antwort = await webApi.Klient.PutAsJsonAsync($"{BoardsRoute}/{zweitesBoard}/spalten/reihenfolge",
+            new Spaltenreihenfolge([eigene[0].SpalteId, eigene[1].SpalteId, fremde.SpalteId]));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var zurueckweisung = await antwort.Content.ReadFromJsonAsync<Zurueckweisung>();
+        Assert.That(zurueckweisung!.Befunde, Has.Some.Contains("nicht zu diesem Board"));
+        var unveraendert = await LadeBoard(webApi, zweitesBoard);
+        Assert.That(unveraendert.Spalten.Select(s => s.SpalteId), Is.EqualTo(eigene.Select(s => s.SpalteId)));
+    }
+
+    [Test]
+    public async Task Wenn_das_Board_der_Reihenfolge_unbekannt_ist_dann_antwortet_die_API_mit_404()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var boardId = await LegeBoardAn(webApi);
+
+        var antwort = await webApi.Klient.PutAsJsonAsync($"{BoardsRoute}/{boardId + 1}/spalten/reihenfolge",
+            new Spaltenreihenfolge([1, 2, 3]));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var unveraendert = await LadeBoard(webApi, boardId);
+        Assert.That(unveraendert.Spalten.Select(s => s.Position), Is.EqualTo(new[] { 1, 2, 3 }));
+    }
+
     private static async Task<long> LegeBoardAn(TestWebApi webApi)
     {
         var antwort = await webApi.Klient.PostAsJsonAsync(BoardsRoute,
