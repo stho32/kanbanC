@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -22,7 +22,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update=".runsettings" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\KanbanC.Blazor\KanbanC.Blazor.csproj" />
+    <ProjectReference Include="..\KanbanC.WebApi\KanbanC.WebApi.csproj" />
   </ItemGroup>
 
 </Project>

@@ -15,7 +15,7 @@ zuletzt: 2026-08-29
 | A0001 | Application | — | KanbanC | gelb | alle Dialogs gruen |  |  |  |  |  | Leitplanken: C#/.NET, zwei Projekte KanbanC.Blazor und KanbanC.WebApi, SQLite, Betrieb im LAN, Full-Trust ohne Authentifizierung, Optik an Kanbanflow orientiert. Jede Interaction gilt über beide Systemgrenzen: was die Oberfläche kann, kann die API |
 | D0001 | Dialog | A0001 | Boards führen | gelb | alle Interactions gruen |  |  |  |  |  | aus Vision, kein Requirement |
 | I0001 | Interaction | D0001 | Board anlegen | gelb | Ein neues Board entsteht mit Name und Art (Linie oder Projekt) und erscheint in der Board-Liste |  |  |  |  | R00001 |  |
-| F0001 | Feature | I0001 | Board anlegen und abrufen | gelb | AK „Board anlegen" und „Standardspalten" über API und Oberfläche (Liste, Formular); US-1, US-2, US-3 |  |  |  |  | R00001 |  |
+| F0001 | Feature | I0001 | Board anlegen und abrufen | gruen | AK „Board anlegen" und „Standardspalten" über API und Oberfläche (Liste, Formular); US-1, US-2, US-3 |  |  |  |  | R00001 |  |
 | B0001 | Bubble | F0001 | Standardspalten erzeugen | gruen | Test gruen | — → StandardspaltenVorlage → 3 Spalten (mit Contracts-DTOs) | 2 | | | | Operation |
 | B0015 | Bubble | F0001 | Datenbankverbindung öffnen | gruen | Test gruen | Verbindungszeichenfolge → SqliteVerbindungsfabrik.Oeffne → offene IDbConnection, Datei entsteht | 2 | | | | Provider; aus B0002 herausgeschnitten (Deckel) |
 | B0002 | Bubble | F0001 | Schema anlegen | gruen | Test gruen | Verbindungszeichenfolge → Migrationslaeufer + Migration 001 → Tabellen in Datei | 2 | | | | Integration + Provider |
@@ -23,9 +23,9 @@ zuletzt: 2026-08-29
 | B0004 | Bubble | F0001 | Boards laden | gruen | Test gruen | — / Nummer → LadeAlle / Lade → Boards / Board? | 2 | | | | Provider |
 | B0005 | Bubble | F0001 | Board-Anlage verdrahten | gruen | Test gruen | Anfrage → BoardService → Ergebnis<Board> | 2 | | | | Integration, Test-Repository |
 | B0006 | Bubble | F0001 | Board-Endpunkte | gruen | Test gruen | HTTP → BoardEndpunkte + Start-Migration → 201 / 200 / 404 | 2 | | | | Integration |
-| B0007 | Bubble | F0001 | API-Klient der Oberfläche | gelb | Test gruen | Anfrage → BoardApiKlient → Boards / ApiErgebnis | 2 | | | | Integration; Abdeckung über E2E |
-| B0008 | Bubble | F0001 | Board-Seite | gelb | Test gruen | Liste + Formular → Boards.razor, NavMenu → Board angelegt | 2 | | | | UI; Abdeckung über E2E |
-| B0009 | Bubble | F0001 | E2E Board anlegen | rot | Test gruen | beide Prozesse auf freien Ports → Playwright → US-1, US-2, US-3 gruen | 2-4 | | | | unklar: Prozessstart-Infrastruktur |
+| B0007 | Bubble | F0001 | API-Klient der Oberfläche | gruen | Test gruen | Anfrage → BoardApiKlient → Boards / ApiErgebnis | 2 | | | | Integration; Abdeckung über E2E |
+| B0008 | Bubble | F0001 | Board-Seite | gruen | Test gruen | Liste + Formular → Boards.razor, NavMenu → Board angelegt | 2 | | | | UI; Abdeckung über E2E |
+| B0009 | Bubble | F0001 | E2E Board anlegen | gruen | Test gruen | beide Prozesse auf freien Ports → Playwright → US-1, US-2, US-3 gruen | 2-4 | | | | unklar: Prozessstart-Infrastruktur |
 | F0002 | Feature | I0001 | Ungültige Eingaben zurückweisen | rot | AK „Zurückweisung ungültiger Eingaben" und lesbare Meldung in der Oberfläche; US-4, US-5 | | | | F0001 | R00001 | |
 | B0010 | Bubble | F0002 | Anfrage prüfen | rot | Test gruen | BoardAnlegenAnfrage → BoardAnlegenValidator → Pruefbefunde | 2 | | | | Operation |
 | B0011 | Bubble | F0002 | Zurückweisung über die API | rot | Test gruen | Pruefbefunde → BoardService / BoardEndpunkte → 400 Zurueckweisung | 2 | | | | Integration |
