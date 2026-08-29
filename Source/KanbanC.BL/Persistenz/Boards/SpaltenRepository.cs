@@ -56,7 +56,7 @@ public sealed class SpaltenRepository : ISpaltenRepository
         var boardIstUnbekannt = !ExistiertBoard(verbindung, null, boardId);
         if (boardIstUnbekannt)
         {
-            return null;
+            return null; // stil-check: C25 null heisst "Board unbekannt" (404); die leere Liste heisst "Board ohne Spalten"
         }
 
         return Spaltenleser.LiesSpaltenNachPosition(verbindung, null, boardId);
@@ -70,7 +70,7 @@ public sealed class SpaltenRepository : ISpaltenRepository
         var boardIstUnbekannt = !ExistiertBoard(verbindung, transaktion, boardId);
         if (boardIstUnbekannt)
         {
-            return null;
+            return null; // stil-check: C25 null heisst "Board unbekannt" (404); die leere Liste heisst "Board ohne Spalten"
         }
 
         SchreibePositionen(verbindung, transaktion, boardId, reihenfolge);

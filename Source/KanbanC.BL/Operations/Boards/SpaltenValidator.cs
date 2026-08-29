@@ -7,12 +7,27 @@ public static class SpaltenValidator
     public static Pruefbefunde Pruefe(string bezeichnung, bool istAbschlussspalte, int? anzeigegrenze)
     {
         var meldungen = new List<string>();
+        meldungen.AddRange(PruefeBezeichnung(bezeichnung));
+        meldungen.AddRange(PruefeMarkierung(istAbschlussspalte, anzeigegrenze));
+        return new Pruefbefunde(meldungen);
+    }
+
+    private static IReadOnlyList<string> PruefeBezeichnung(string bezeichnung)
+    {
+        var meldungen = new List<string>();
 
         var bezeichnungIstLeer = string.IsNullOrWhiteSpace(bezeichnung);
         if (bezeichnungIstLeer)
         {
             meldungen.Add("Die Bezeichnung darf nicht leer sein.");
         }
+
+        return meldungen;
+    }
+
+    private static IReadOnlyList<string> PruefeMarkierung(bool istAbschlussspalte, int? anzeigegrenze)
+    {
+        var meldungen = new List<string>();
 
         var markierungOhneGrenze = istAbschlussspalte && anzeigegrenze is null;
         if (markierungOhneGrenze)
@@ -32,6 +47,6 @@ public static class SpaltenValidator
             meldungen.Add("Eine Anzeigegrenze ist nur an einer Abschlussspalte erlaubt.");
         }
 
-        return new Pruefbefunde(meldungen);
+        return meldungen;
     }
 }
