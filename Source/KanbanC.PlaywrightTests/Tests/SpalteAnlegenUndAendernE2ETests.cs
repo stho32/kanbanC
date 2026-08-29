@@ -11,18 +11,18 @@ public class SpalteAnlegenUndAendernE2ETests : PageTest
     public async Task Wenn_eine_vierte_Spalte_angelegt_wird_dann_steht_sie_am_Ende_der_Liste_mit_Position_4()
     {
         var seite = await BoardMitStandardspalten();
-        await Expect(seite.Spalten).ToHaveCountAsync(3);
+        await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(3);
 
         await seite.FuelleNeueSpalte("Wartet auf Zulieferung", false, null);
         await seite.LegeSpalteAn();
 
-        await Expect(seite.Spalten).ToHaveCountAsync(4);
-        await Expect(seite.Spalten.Nth(3)).ToHaveTextAsync("Wartet auf Zulieferung");
-        await Expect(seite.SpaltenzeileAnStelle(3)).ToContainTextAsync("Position 4");
+        await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(4);
+        await Expect(seite.Spaltenpflegeanzeigen.Nth(3)).ToHaveTextAsync("Wartet auf Zulieferung");
+        await Expect(seite.SpaltenpflegezeileAnStelle(3)).ToContainTextAsync("Position 4");
+        await Expect(seite.Spaltenbezeichnungen.Nth(3)).ToHaveTextAsync("Wartet auf Zulieferung");
 
-        await seite.Oeffne();
-        await seite.ZeigeSpalten(1);
-        await Expect(seite.Spalten.Nth(3)).ToHaveTextAsync("Wartet auf Zulieferung");
+        await seite.Oeffne(1);
+        await Expect(seite.Spaltenpflegeanzeigen.Nth(3)).ToHaveTextAsync("Wartet auf Zulieferung");
     }
 
     [Test]
@@ -30,17 +30,16 @@ public class SpalteAnlegenUndAendernE2ETests : PageTest
     public async Task Wenn_In_Arbeit_umbenannt_wird_dann_zeigt_die_Liste_In_Umsetzung_an_derselben_Stelle()
     {
         var seite = await BoardMitStandardspalten();
-        await Expect(seite.Spalten.Nth(1)).ToHaveTextAsync("In Arbeit");
+        await Expect(seite.Spaltenpflegeanzeigen.Nth(1)).ToHaveTextAsync("In Arbeit");
 
-        await seite.BearbeiteSpalte(seite.SpaltenzeileAnStelle(1), "In Umsetzung", false, "");
+        await seite.BearbeiteSpalte(seite.SpaltenpflegezeileAnStelle(1), "In Umsetzung", false, "");
 
-        await Expect(seite.Spalten.Nth(1)).ToHaveTextAsync("In Umsetzung");
-        await Expect(seite.SpaltenzeileAnStelle(1)).ToContainTextAsync("Position 2");
-        await Expect(seite.Spalten.Nth(0)).ToHaveTextAsync("Zu erledigen");
+        await Expect(seite.Spaltenpflegeanzeigen.Nth(1)).ToHaveTextAsync("In Umsetzung");
+        await Expect(seite.SpaltenpflegezeileAnStelle(1)).ToContainTextAsync("Position 2");
+        await Expect(seite.Spaltenpflegeanzeigen.Nth(0)).ToHaveTextAsync("Zu erledigen");
 
-        await seite.Oeffne();
-        await seite.ZeigeSpalten(1);
-        await Expect(seite.Spalten.Nth(1)).ToHaveTextAsync("In Umsetzung");
+        await seite.Oeffne(1);
+        await Expect(seite.Spaltenpflegeanzeigen.Nth(1)).ToHaveTextAsync("In Umsetzung");
     }
 
     [Test]
@@ -50,17 +49,17 @@ public class SpalteAnlegenUndAendernE2ETests : PageTest
         var seite = await BoardMitStandardspalten();
         await seite.FuelleNeueSpalte("Abgenommen", false, null);
         await seite.LegeSpalteAn();
-        await Expect(seite.Spalten).ToHaveCountAsync(4);
+        await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(4);
 
-        await seite.BearbeiteSpalte(seite.SpaltenzeileAnStelle(3), "Abgenommen", true, "10");
+        await seite.BearbeiteSpalte(seite.SpaltenpflegezeileAnStelle(3), "Abgenommen", true, "10");
 
-        await Expect(seite.Spalten.Nth(3)).ToContainTextAsync("Abschlussspalte, Anzeigegrenze 10");
-        await Expect(seite.Spalten.Nth(2)).ToContainTextAsync("Abschlussspalte, Anzeigegrenze 20");
+        await Expect(seite.Spaltenpflegeanzeigen.Nth(3)).ToContainTextAsync("Abschlussspalte, Anzeigegrenze 10");
+        await Expect(seite.Spaltenpflegeanzeigen.Nth(2)).ToContainTextAsync("Abschlussspalte, Anzeigegrenze 20");
+        await Expect(seite.Abschlussvermerke).ToHaveCountAsync(2);
 
-        await seite.Oeffne();
-        await seite.ZeigeSpalten(1);
-        await Expect(seite.Spalten.Nth(3)).ToContainTextAsync("Anzeigegrenze 10");
-        await Expect(seite.Spalten.Nth(2)).ToContainTextAsync("Anzeigegrenze 20");
+        await seite.Oeffne(1);
+        await Expect(seite.Spaltenpflegeanzeigen.Nth(3)).ToContainTextAsync("Anzeigegrenze 10");
+        await Expect(seite.Spaltenpflegeanzeigen.Nth(2)).ToContainTextAsync("Anzeigegrenze 20");
     }
 
     [Test]
@@ -68,18 +67,18 @@ public class SpalteAnlegenUndAendernE2ETests : PageTest
     public async Task Wenn_eine_Spalte_ohne_Bezeichnung_angelegt_wird_dann_erscheint_eine_lesbare_Meldung_und_die_Liste_bleibt_unveraendert()
     {
         var seite = await BoardMitStandardspalten();
-        await Expect(seite.Spalten).ToHaveCountAsync(3);
+        await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(3);
 
         await seite.FuelleNeueSpalte("", false, null);
         await seite.LegeSpalteAn();
 
         await Expect(seite.SpaltenZurueckweisung).ToBeVisibleAsync();
         await Expect(seite.SpaltenZurueckweisung).ToContainTextAsync("Die Bezeichnung darf nicht leer sein.");
-        await Expect(seite.Spalten).ToHaveCountAsync(3);
+        await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(3);
+        await Expect(seite.Ausnahmeanzeige).ToBeHiddenAsync();
 
-        await seite.Oeffne();
-        await seite.ZeigeSpalten(1);
-        await Expect(seite.Spalten).ToHaveCountAsync(3);
+        await seite.Oeffne(1);
+        await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(3);
     }
 
     [Test]
@@ -93,9 +92,9 @@ public class SpalteAnlegenUndAendernE2ETests : PageTest
 
         await Expect(seite.SpaltenZurueckweisung).ToBeVisibleAsync();
         await Expect(seite.SpaltenZurueckweisung).ToContainTextAsync("Eine Abschlussspalte braucht eine Anzeigegrenze.");
-        await Expect(seite.Spalten).ToHaveCountAsync(3);
-        await Expect(seite.Spaltenzeilen.Filter(new() { HasTextString = "Abgenommen" })).ToHaveCountAsync(0);
-        await Expect(seite.Spaltenzeilen.Filter(new() { HasTextString = "Abschlussspalte" })).ToHaveCountAsync(1);
+        await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(3);
+        await Expect(seite.Spaltenpflegezeilen.Filter(new() { HasTextString = "Abgenommen" })).ToHaveCountAsync(0);
+        await Expect(seite.Spaltenpflegezeilen.Filter(new() { HasTextString = "Abschlussspalte" })).ToHaveCountAsync(1);
     }
 
     [Test]
@@ -103,26 +102,26 @@ public class SpalteAnlegenUndAendernE2ETests : PageTest
     {
         var seite = await BoardMitStandardspalten();
 
-        await seite.BearbeiteSpalte(seite.SpaltenzeileAnStelle(1), "", false, "");
+        await seite.BearbeiteSpalte(seite.SpaltenpflegezeileAnStelle(1), "", false, "");
 
         await Expect(seite.SpaltenZurueckweisung).ToBeVisibleAsync();
         await Expect(seite.SpaltenZurueckweisung).ToContainTextAsync("Die Bezeichnung darf nicht leer sein.");
-        await Expect(seite.Spalten.Nth(1)).ToHaveTextAsync("In Arbeit");
+        await Expect(seite.Spaltenpflegeanzeigen.Nth(1)).ToHaveTextAsync("In Arbeit");
 
-        await seite.Oeffne();
-        await seite.ZeigeSpalten(1);
-        await Expect(seite.Spalten.Nth(1)).ToHaveTextAsync("In Arbeit");
+        await seite.Oeffne(1);
+        await Expect(seite.Spaltenpflegeanzeigen.Nth(1)).ToHaveTextAsync("In Arbeit");
     }
 
-    private async Task<BoardsSeite> BoardMitStandardspalten()
+    private async Task<BoardSeite> BoardMitStandardspalten()
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
-        var seite = new BoardsSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
-        await seite.Oeffne();
-        await seite.FuelleFormular("Entwicklung", "Linie", null, null);
-        await seite.SendeFormularAb();
-        await Expect(seite.Boardzeile(1)).ToBeVisibleAsync();
-        await seite.ZeigeSpalten(1);
+        var liste = new BoardsSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await liste.Oeffne();
+        await liste.FuelleFormular("Entwicklung", "Linie", null, null);
+        await liste.SendeFormularAb();
+        await Expect(liste.Boardzeile(1)).ToBeVisibleAsync();
+        var seite = new BoardSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await seite.Oeffne(1);
         return seite;
     }
 }

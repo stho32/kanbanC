@@ -62,4 +62,63 @@ public sealed class BoardSeite
     {
         await _seite.ReloadAsync();
     }
+
+    public ILocator Spaltenpflegeanzeigen => _seite.Locator("#spalten-liste li .spalte-anzeige");
+
+    public ILocator Spaltenpflegezeilen => _seite.Locator("#spalten-liste li");
+
+    public ILocator SpaltenZurueckweisung => _seite.Locator("#spalten-zurueckweisung");
+
+    public ILocator SpaltenFehlermeldung => _seite.Locator("#spalten-fehlermeldung");
+
+    public ILocator HinweisKeineSpalten => _seite.Locator("#keine-spalten");
+
+    public ILocator Spaltenpflegezeile(long spalteId)
+    {
+        return _seite.Locator($"#spalten-liste li[data-spalte-id='{spalteId}']");
+    }
+
+    public ILocator SpaltenpflegezeileAnStelle(int stelle)
+    {
+        return Spaltenpflegezeilen.Nth(stelle);
+    }
+
+    public async Task FuelleNeueSpalte(string bezeichnung, bool istAbschlussspalte, string? anzeigegrenze)
+    {
+        await _seite.FillAsync("#neue-spalte-bezeichnung", bezeichnung);
+        await _seite.SetCheckedAsync("#neue-spalte-abschluss", istAbschlussspalte);
+        var anzeigegrenzeIstGesetzt = anzeigegrenze is not null;
+        if (anzeigegrenzeIstGesetzt)
+        {
+            await _seite.FillAsync("#neue-spalte-grenze", anzeigegrenze!);
+        }
+    }
+
+    public async Task LegeSpalteAn()
+    {
+        await _seite.GetByRole(AriaRole.Button, new() { Name = "Spalte anlegen" }).ClickAsync();
+    }
+
+    public async Task BearbeiteSpalte(ILocator zeile, string bezeichnung, bool istAbschlussspalte, string anzeigegrenze)
+    {
+        await zeile.Locator(".spalte-bezeichnung").FillAsync(bezeichnung);
+        await zeile.Locator(".spalte-abschluss").SetCheckedAsync(istAbschlussspalte);
+        await zeile.Locator(".spalte-grenze").FillAsync(anzeigegrenze);
+        await zeile.Locator(".spalte-speichern").ClickAsync();
+    }
+
+    public async Task SchiebeSpalteHoch(ILocator zeile)
+    {
+        await zeile.Locator(".spalte-hoch").ClickAsync();
+    }
+
+    public async Task SchiebeSpalteRunter(ILocator zeile)
+    {
+        await zeile.Locator(".spalte-runter").ClickAsync();
+    }
+
+    public async Task EntferneSpalte(ILocator zeile)
+    {
+        await zeile.Locator(".spalte-entfernen").ClickAsync();
+    }
 }

@@ -21,18 +21,6 @@ public sealed class BoardsSeite
 
     public ILocator Boardzeilen => _seite.Locator("#board-liste tbody tr");
 
-    // Die Spaltenpflege haengt noch am abgebauten Detail-Panel; diese Zugriffe zeigen ins Leere,
-    // bis sie mit der Komponente auf die Board-Seite umgezogen ist.
-    public ILocator Spalten => _seite.Locator("#spalten-liste li .spalte-anzeige");
-
-    public ILocator Spaltenzeilen => _seite.Locator("#spalten-liste li");
-
-    public ILocator SpaltenZurueckweisung => _seite.Locator("#spalten-zurueckweisung");
-
-    public ILocator SpaltenFehlermeldung => _seite.Locator("#spalten-fehlermeldung");
-
-    public ILocator HinweisKeineSpalten => _seite.Locator("#keine-spalten");
-
     public async Task Oeffne()
     {
         await OeffneOhneBoardliste();
@@ -66,12 +54,6 @@ public sealed class BoardsSeite
         await _seite.GetByRole(AriaRole.Button, new() { Name = "Board anlegen" }).ClickAsync();
     }
 
-    public async Task ZeigeSpalten(long boardId)
-    {
-        await Boardzeile(boardId).GetByRole(AriaRole.Button, new() { Name = "Spalten anzeigen" }).ClickAsync();
-        await Assertions.Expect(_seite.Locator("#board-details")).ToBeVisibleAsync();
-    }
-
     public ILocator Boardzeile(long boardId)
     {
         return _seite.Locator($"#board-liste tbody tr[data-board-id='{boardId}']");
@@ -85,54 +67,5 @@ public sealed class BoardsSeite
     public async Task OeffneBoard(long boardId)
     {
         await Boardverweis(boardId).ClickAsync();
-    }
-
-    public ILocator Spaltenzeile(long spalteId)
-    {
-        return _seite.Locator($"#spalten-liste li[data-spalte-id='{spalteId}']");
-    }
-
-    public ILocator SpaltenzeileAnStelle(int stelle)
-    {
-        return _seite.Locator("#spalten-liste li").Nth(stelle);
-    }
-
-    public async Task FuelleNeueSpalte(string bezeichnung, bool istAbschlussspalte, string? anzeigegrenze)
-    {
-        await _seite.FillAsync("#neue-spalte-bezeichnung", bezeichnung);
-        await _seite.SetCheckedAsync("#neue-spalte-abschluss", istAbschlussspalte);
-        var anzeigegrenzeIstGesetzt = anzeigegrenze is not null;
-        if (anzeigegrenzeIstGesetzt)
-        {
-            await _seite.FillAsync("#neue-spalte-grenze", anzeigegrenze!);
-        }
-    }
-
-    public async Task LegeSpalteAn()
-    {
-        await _seite.GetByRole(AriaRole.Button, new() { Name = "Spalte anlegen" }).ClickAsync();
-    }
-
-    public async Task SchiebeSpalteHoch(ILocator zeile)
-    {
-        await zeile.Locator(".spalte-hoch").ClickAsync();
-    }
-
-    public async Task SchiebeSpalteRunter(ILocator zeile)
-    {
-        await zeile.Locator(".spalte-runter").ClickAsync();
-    }
-
-    public async Task EntferneSpalte(ILocator zeile)
-    {
-        await zeile.Locator(".spalte-entfernen").ClickAsync();
-    }
-
-    public async Task BearbeiteSpalte(ILocator zeile, string bezeichnung, bool istAbschlussspalte, string anzeigegrenze)
-    {
-        await zeile.Locator(".spalte-bezeichnung").FillAsync(bezeichnung);
-        await zeile.Locator(".spalte-abschluss").SetCheckedAsync(istAbschlussspalte);
-        await zeile.Locator(".spalte-grenze").FillAsync(anzeigegrenze);
-        await zeile.Locator(".spalte-speichern").ClickAsync();
     }
 }
