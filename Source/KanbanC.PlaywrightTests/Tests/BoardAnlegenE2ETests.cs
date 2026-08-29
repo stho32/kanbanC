@@ -40,9 +40,11 @@ public class BoardAnlegenE2ETests : PageTest
 
         await Expect(seite.Boardzeile(1)).ToContainTextAsync("KanbanC 1.0");
         await Expect(seite.Boardzeile(1)).ToContainTextAsync("Projekt");
-        await seite.ZeigeSpalten(1);
-        await Expect(seite.DetailsStarttermin).ToHaveTextAsync("2026-09-01");
-        await Expect(seite.DetailsZieltermin).ToHaveTextAsync("2026-12-31");
+        var board = new BoardSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await seite.OeffneBoard(1);
+        await board.ErwarteGeoeffnet();
+        await Expect(board.Starttermin).ToHaveTextAsync("2026-09-01");
+        await Expect(board.Zieltermin).ToHaveTextAsync("2026-12-31");
     }
 
     [Test]
@@ -56,12 +58,15 @@ public class BoardAnlegenE2ETests : PageTest
         await seite.SendeFormularAb();
         await Expect(seite.Boardzeile(1)).ToBeVisibleAsync();
 
-        await seite.ZeigeSpalten(1);
+        var board = new BoardSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await seite.OeffneBoard(1);
+        await board.ErwarteGeoeffnet();
 
-        await Expect(seite.Spalten).ToHaveCountAsync(3);
-        await Expect(seite.Spalten.Nth(0)).ToHaveTextAsync("Zu erledigen");
-        await Expect(seite.Spalten.Nth(1)).ToHaveTextAsync("In Arbeit");
-        await Expect(seite.Spalten.Nth(2)).ToContainTextAsync("Erledigt");
-        await Expect(seite.Spalten.Nth(2)).ToContainTextAsync("Abschlussspalte, Anzeigegrenze 20");
+        await Expect(board.Spaltenbahnen).ToHaveCountAsync(3);
+        await Expect(board.Spaltenbezeichnungen.Nth(0)).ToHaveTextAsync("Zu erledigen");
+        await Expect(board.Spaltenbezeichnungen.Nth(1)).ToHaveTextAsync("In Arbeit");
+        await Expect(board.Spaltenbahnen.Nth(2)).ToContainTextAsync("Erledigt");
+        await Expect(board.Abschlussvermerke).ToHaveCountAsync(1);
+        await Expect(board.Abschlussvermerke).ToHaveTextAsync(["Abschlussspalte, Anzeigegrenze 20"]);
     }
 }

@@ -54,6 +54,40 @@ public class BoardEndpunkteTests
     }
 
     [Test]
+    public async Task Wenn_die_Boardnamen_gemischt_gross_und_klein_geschrieben_sind_dann_liefert_GET_sie_alphabetisch()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        await LegeBoardAn(webApi, new BoardAnlegenAnfrage("Wartung", BoardArt.Linie, null, null));
+        await LegeBoardAn(webApi, new BoardAnlegenAnfrage("beschaffung", BoardArt.Linie, null, null));
+        await LegeBoardAn(webApi, new BoardAnlegenAnfrage("KanbanC", BoardArt.Projekt, null, null));
+
+        var boards = await webApi.Klient.GetFromJsonAsync<List<BoardUebersicht>>(BoardsRoute);
+
+        Assert.That(boards, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(boards.Select(b => b.Name), Is.EqualTo(new[] { "beschaffung", "KanbanC", "Wartung" }));
+            Assert.That(boards.Select(b => b.BoardId), Is.EqualTo(new long[] { 2, 3, 1 }));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_zwei_Boards_denselben_Namen_tragen_dann_liefert_GET_das_mit_der_kleineren_BoardId_zuerst()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        await LegeBoardAn(webApi, new BoardAnlegenAnfrage("Zwischenstand", BoardArt.Linie, null, null));
+        await LegeBoardAn(webApi, new BoardAnlegenAnfrage("Wartung", BoardArt.Linie, null, null));
+        await LegeBoardAn(webApi, new BoardAnlegenAnfrage("Wartung", BoardArt.Projekt, null, null));
+
+        var boards = await webApi.Klient.GetFromJsonAsync<List<BoardUebersicht>>(BoardsRoute);
+
+        Assert.That(boards, Is.Not.Null);
+        Assert.That(boards.Select(b => b.BoardId), Is.EqualTo(new long[] { 2, 3, 1 }));
+    }
+
+    [Test]
     public async Task Wenn_ein_Projektboard_mit_Terminen_angelegt_wird_dann_liefert_GET_die_Termine_unveraendert()
     {
         using var datenbank = new TemporaereDatenbank();

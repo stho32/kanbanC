@@ -1,0 +1,80 @@
+@page "/boards/{BoardId:long}"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using KanbanC.Blazor.Services
+@inject BoardApiKlient ApiKlient
+
+<PageTitle>Board @BoardId</PageTitle>
+
+@if (_webApiIstNichtErreichbar)
+{
+    <div class="alert alert-warning" role="alert" id="fehlermeldung">
+        <p class="mb-1">@WebApiAusfall.Meldung</p>
+        <a href="/boards" id="zur-board-liste">Zurück zur Board-Liste</a>
+    </div>
+}
+else if (!_ladenIstAbgeschlossen)
+{
+    <p>Das Board wird geladen …</p>
+}
+else if (_board is null)
+{
+    <div class="alert alert-warning" role="alert" id="board-unbekannt">
+        <p class="mb-1">Ein Board mit der Nummer @BoardId gibt es nicht.</p>
+        <a href="/boards" id="zur-board-liste">Zurück zur Board-Liste</a>
+    </div>
+}
+else
+{
+    <p><a href="/boards" id="zur-board-liste">Zurück zur Board-Liste</a></p>
+
+    <header id="board-kopf">
+        <h1 id="board-name">@_board.Name</h1>
+        <p>
+            Art <span id="board-art">@_board.Art</span>,
+            Starttermin <span id="board-starttermin">@Terminformatierer.AlsText(_board.Starttermin)</span>,
+            Zieltermin <span id="board-zieltermin">@Terminformatierer.AlsText(_board.Zieltermin)</span>
+        </p>
+    </header>
+
+    <div class="spaltenbahnen" id="spaltenbahnen">
+        @foreach (var spalte in _board.Spalten)
+        {
+            <section class="spaltenbahn">
+                <header class="spaltenbahn-kopf">
+                    <span class="spaltenbahn-bezeichnung">@spalte.Bezeichnung</span>
+                    @if (spalte.IstAbschlussspalte)
+                    {
+                        <span class="spaltenbahn-vermerk">Abschlussspalte, Anzeigegrenze @spalte.Anzeigegrenze</span>
+                    }
+                </header>
+                <div class="spaltenbahn-flaeche"></div>
+            </section>
+        }
+    </div>
+}
+
+@code {
+    // Vollqualifiziert, weil der Komponentenname Board den gleichnamigen Vertragstyp verdeckt.
+    private KanbanC.Contracts.Boards.Board? _board;
+    private bool _ladenIstAbgeschlossen;
+    private bool _webApiIstNichtErreichbar;
+
+    [Parameter]
+    public long BoardId { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _ladenIstAbgeschlossen = false;
+        try
+        {
+            _board = await ApiKlient.LadeBoard(BoardId);
+            _webApiIstNichtErreichbar = false;
+        }
+        catch (HttpRequestException)
+        {
+            _webApiIstNichtErreichbar = true;
+        }
+
+        _ladenIstAbgeschlossen = true;
+    }
+}

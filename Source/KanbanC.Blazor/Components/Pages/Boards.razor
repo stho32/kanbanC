@@ -1,6 +1,5 @@
 @page "/boards"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
-@using System.Globalization
 @using KanbanC.Blazor.Services
 @using KanbanC.Contracts.Boards
 @inject BoardApiKlient ApiKlient
@@ -77,7 +76,6 @@
                     <th>Art</th>
                     <th>Starttermin</th>
                     <th>Zieltermin</th>
-                    <th></th>
                 </tr>
             </thead>
             <tbody>
@@ -85,13 +83,10 @@
                 {
                     <tr data-board-id="@board.BoardId">
                         <td>@board.BoardId</td>
-                        <td>@board.Name</td>
+                        <td><NavLink class="board-verweis" href="@($"/boards/{board.BoardId}")">@board.Name</NavLink></td>
                         <td>@board.Art</td>
-                        <td>@AlsText(board.Starttermin)</td>
-                        <td>@AlsText(board.Zieltermin)</td>
-                        <td>
-                            <button type="button" class="btn btn-link p-0" @onclick="() => ZeigeSpalten(board.BoardId)">Spalten anzeigen</button>
-                        </td>
+                        <td>@Terminformatierer.AlsText(board.Starttermin)</td>
+                        <td>@Terminformatierer.AlsText(board.Zieltermin)</td>
                     </tr>
                 }
             </tbody>
@@ -99,29 +94,11 @@
     }
 </section>
 
-@if (_gewaehltesBoard is not null)
-{
-    <section id="board-details">
-        <h2>Board @_gewaehltesBoard.BoardId: @_gewaehltesBoard.Name</h2>
-        <p>
-            Art @_gewaehltesBoard.Art,
-            Starttermin <span id="details-starttermin">@AlsText(_gewaehltesBoard.Starttermin)</span>,
-            Zieltermin <span id="details-zieltermin">@AlsText(_gewaehltesBoard.Zieltermin)</span>
-        </p>
-        <Spaltenpflege BoardId="_gewaehltesBoard.BoardId"
-                       Spalten="_gewaehltesBoard.Spalten"
-                       SpaltenHabenSichGeaendert="() => ZeigeSpalten(_gewaehltesBoard.BoardId)" />
-    </section>
-}
-
 @code {
-    private const string IsoDatumsformat = "yyyy-MM-dd";
-    private const string KeinTermin = "—";
     private readonly BoardFormular _formular = new();
     private IReadOnlyList<BoardUebersicht>? _boards;
     private Zurueckweisung? _zurueckweisung;
     private string? _fehlermeldung;
-    private Board? _gewaehltesBoard;
 
     protected override async Task OnInitializedAsync()
     {
@@ -145,24 +122,9 @@
         });
     }
 
-    private async Task ZeigeSpalten(long boardId)
-    {
-        await MitErreichbarerWebApi(async () => _gewaehltesBoard = await ApiKlient.LadeBoard(boardId));
-    }
-
     private async Task MitErreichbarerWebApi(Func<Task> aufruf)
     {
         _fehlermeldung = await WebApiAufruf.MitAusfallmeldung(aufruf);
-    }
-
-    private static string AlsText(DateOnly? termin)
-    {
-        if (termin is null)
-        {
-            return KeinTermin;
-        }
-
-        return termin.Value.ToString(IsoDatumsformat, CultureInfo.InvariantCulture);
     }
 
     // Adaptermodell des Formular-Bindings: veränderlich, weil EditForm es so braucht; verlässt die Seite nie.

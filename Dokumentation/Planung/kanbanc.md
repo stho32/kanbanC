@@ -33,27 +33,41 @@ zuletzt: 2026-08-29
 | F0003 | Feature | I0001 | Datenbestand überlebt Neustart | gruen | AK „Datenhaltung"; US-6 |  |  |  | F0001 | R00001 |  |
 | B0013 | Bubble | F0003 | Migration idempotent | gruen | Test gruen | zweiter Lauf auf bestehender Datei → Migrationslaeufer → Schema und Daten unverändert | 2 | | | | Integration |
 | B0014 | Bubble | F0003 | Neustart der WebApi | gruen | Test gruen | zweite Instanz auf derselben Datei → Boards bleiben, nächste Nummer 3 | 2 | | | | Integration; US-6 |
-| I0002 | Interaction | D0001 | Boards auflisten und öffnen | rot | Alle Boards sind mit Name und Art aufgelistet; das gewählte lässt sich öffnen | | | | I0001 | | |
-| I0003 | Interaction | D0001 | Spalten gestalten | gruen | Spalten lassen sich anlegen, umbenennen, umsortieren und entfernen; eine Spalte ist als Abschlussspalte mit Anzeigegrenze N markierbar | | | | I0001 | R00002 | |
-| F0004 | Feature | I0003 | Spalten anlegen und aendern | gruen | AK „Spalte anlegen", „Spalte umbenennen und markieren", „Abschlussspalte und Anzeigegrenze" ueber API und Oberflaeche; US-1, US-2, US-6, US-7, US-8 |  |  |  |  | R00002 |  |
-| B0016 | Bubble | F0004 | Spalten-Anfrage pruefen | gruen | Test gruen | SpalteAnlegenAnfrage / SpalteAendernAnfrage → SpaltenValidator.Pruefe → Pruefbefunde | 0,4 |  |  |  | Operation; die Contracts-DTOs entstehen hier, Pruefbefunde wandert nach Models/; belegt |
-| B0017 | Bubble | F0004 | Spalte speichern und aendern | gruen | Test gruen | boardId + Anfrage → SpaltenRepository.LegeAn / Aendere → Spalte? | 0,4 |  |  |  | Provider; Position = hoechste + 1, eine Transaktion; belegt |
-| B0018 | Bubble | F0004 | Spalten-Anlage verdrahten | gruen | Test gruen | boardId + Anfrage → SpaltenService → Ergebnis<Spalte>? | 0,4 |  |  |  | Integration, Test-Repository; belegt |
-| B0019 | Bubble | F0004 | Spalten-Endpunkte anlegen und aendern | gruen | Test gruen | HTTP POST/PUT → SpaltenEndpunkte → 201 / 200 / 400 / 404 | 2 |  |  |  | Integration; kein Messwert fuer Endpunkt-Bubbles |
-| B0020 | Bubble | F0004 | API-Klient der Spalten | gruen | Test gruen | Anfrage → SpaltenApiKlient → ApiErgebnis<Spalte> | 2 |  |  |  | Integration; Fehlerpfade in KanbanC.Blazor.Tests |
-| B0021 | Bubble | F0004 | Spaltenpflege in der Oberflaeche | gruen | Test gruen | Board-Detail → Boards.razor → Spalte angelegt und geaendert, Meldung bei Zurueckweisung | 2 |  |  |  | UI |
-| B0022 | Bubble | F0004 | E2E Spalte anlegen und aendern | gruen | Test gruen | beide Prozesse auf freien Ports → Playwright → US-1, US-2, US-6, US-7, US-8 | 2-4 |  |  |  | unklar: Erweiterung des Seitenobjekts BoardsSeite |
-| B0030 | Bubble | F0004 | Ausfall der WebApi in der Spaltenpflege | gruen | Test gruen | HttpRequestException → WebApiAusfall.BeimAufruf → Ausfallmeldung statt Absturz | 0,4 |  |  |  | Operation; Klammer aus Boards.razor hochgezogen, zweiter Nutzer (C23) |
-| F0005 | Feature | I0003 | Spalten umsortieren | gruen | AK „Spalten umsortieren" ueber API und Oberflaeche; US-3, US-9 |  |  |  | F0004 | R00002 |  |
-| B0023 | Bubble | F0005 | Reihenfolge pruefen | gruen | Test gruen | gewuenschte SpalteIds + vorhandene SpalteIds → SpaltenreihenfolgeValidator.Pruefe → Pruefbefunde | 0,4 |  |  |  | Operation; Contracts-DTO Spaltenreihenfolge entsteht hier; belegt |
-| B0024 | Bubble | F0005 | Reihenfolge speichern | gruen | Test gruen | boardId + SpalteIds → SpaltenRepository.SetzeReihenfolge → Spalten mit Position 1..n | 0,4 |  |  |  | Provider, eine Transaktion; belegt |
-| B0025 | Bubble | F0005 | Reihenfolge ueber die API | gruen | Test gruen | HTTP PUT /spalten/reihenfolge → SpaltenService + SpaltenEndpunkte → 200 / 400 / 404 | 2 |  |  |  | Integration |
-| B0026 | Bubble | F0005 | Umsortieren in der Oberflaeche | gruen | Test gruen | Hoch/Runter → Boards.razor + SpaltenApiKlient → neue Ordnung; E2E US-3 | 2 |  |  |  | UI; sendet die ganze Reihenfolge, nicht eine Einzelposition |
-| B0031 | Bubble | F0005 | Reihenfolge in derselben Transaktion pruefen | gruen | Test gruen | boardId + SpalteIds → SpaltenRepository.SetzeReihenfolge → Ergebnis<Spalten> oder Zurueckweisung, Rollback | 0,4 |  |  |  | Provider; schliesst das Fenster zwischen Pruefung und Schreiben |
-| F0006 | Feature | I0003 | Spalte entfernen | gruen | AK „Spalte entfernen" ueber API und Oberflaeche; US-4, US-5 |  |  |  | F0004 | R00002 |  |
-| B0027 | Bubble | F0006 | Spalte loeschen und verdichten | gruen | Test gruen | boardId + spalteId → SpaltenRepository.Entferne → geloescht, verbleibende Positionen 1..n | 0,4 |  |  |  | Provider, eine Transaktion; belegt |
-| B0028 | Bubble | F0006 | Entfernen ueber die API | gruen | Test gruen | HTTP DELETE → SpaltenService + SpaltenEndpunkte → 204 / 404 | 2 |  |  |  | Integration |
-| B0029 | Bubble | F0006 | Entfernen in der Oberflaeche | gruen | Test gruen | Entfernen → Boards.razor + SpaltenApiKlient → Spalte verschwindet; E2E US-4, US-5 | 2 |  |  |  | UI |
+| I0002 | Interaction | D0001 | Boards auflisten und öffnen | gruen | Alle Boards sind mit Name und Art aufgelistet; das gewählte lässt sich öffnen | | | | I0001 | R00003 | |
+| F0004 | Feature | I0002 | Boards in fester Reihenfolge auflisten | gruen | AK „Liste" ohne den Verweis-Punkt: API und Oberfläche liefern die Boards alphabetisch nach Name, Groß-/Kleinschreibung ohne Einfluss, BoardId als Zweitschlüssel; US-4 | | | | I0001 | R00003 | |
+| B0016 | Bubble | F0004 | Sortierung in der Abfrage | gruen | Test gruen | Boards gemischter Schreibweise → BoardRepository.LadeAlle (ORDER BY Name COLLATE NOCASE, BoardId) → BoardUebersichten alphabetisch | 0,4 | | | | Provider; Aufwand belegt; US-4 |
+| B0017 | Bubble | F0004 | Sortierung erreicht die API | gruen | Test gruen | HTTP GET /api/boards → BoardEndpunkte + BoardService → Liste in Repository-Reihenfolge | 0,4 | | | | Integration; nur Test, kein Produktionscode; Aufwand belegt |
+| B0018 | Bubble | F0004 | E2E Liste alphabetisch | gruen | Test gruen | drei Boards gemischter Schreibweise → Playwright auf Boards.razor → Zeilen alphabetisch | 0,4 | | | | E2E; US-4; Aufwand belegt |
+| F0005 | Feature | I0002 | Board als eigene Seite öffnen | gruen | AK „Board öffnen" plus der Verweis-Punkt aus „Liste": eigene Route, Kopfdaten, Spaltenbahnen, Reload-fest, Rückweg; US-1, US-2, US-3 | | | | I0001 | R00003 | |
+| B0019 | Bubble | F0005 | Board-Seite mit Route | gruen | Test gruen | Route /boards/{BoardId:long} → Board.razor + BoardApiKlient.LadeBoard → Kopfzeile mit Name, Art, Terminen | 0,4 | | | | UI; US-2; Aufwand belegt |
+| B0020 | Bubble | F0005 | Spaltenbahnen | gruen | Test gruen | Board.Spalten → Bahnen-Layout in Board.razor → Spalten nebeneinander, Abschlussspalte mit Anzeigegrenze markiert | 0,4 | | | | UI; Aufwand belegt |
+| B0021 | Bubble | F0005 | Verweis aus der Liste | gruen | Test gruen | BoardUebersicht → NavLink in Boards.razor → /boards/{BoardId} | 0,4 | | | | UI; US-1; Aufwand belegt |
+| B0022 | Bubble | F0005 | Detail-Panel abbauen, Seitenobjekte umziehen | gruen | Test gruen | Panel in Boards.razor + BoardsSeite → BoardSeite; die zwei R00001-E2E-Tests auf die neue Seite | 0,4-1,5 | | | | Umbau; unklar: Umfang des Testumzugs; R00001-Suite muss gruen bleiben |
+| B0023 | Bubble | F0005 | E2E Board öffnen | gruen | Test gruen | Klick aus der Liste, Direktaufruf, Reload, Rückweg → Playwright → US-1, US-2, US-3 | 0,4 | | | | E2E; Aufwand belegt |
+| F0006 | Feature | I0002 | Fehlerpfade beim Öffnen | gruen | AK „Unbekanntes Board": lesbare Meldung mit Nummer und Rückweg, kein Absturz; Meldung bei nicht erreichbarer WebApi; US-5, US-6 | | | | F0005 | R00003 | |
+| B0024 | Bubble | F0006 | Unbekannte Board-Nummer | gruen | Test gruen | LadeBoard liefert null → Board.razor → Meldung mit der Nummer und Verweis zur Liste | 0,4 | | | | UI; US-5; Aufwand belegt |
+| B0025 | Bubble | F0006 | WebApi nicht erreichbar | gruen | Test gruen | HttpRequestException → Board.razor → lesbare Meldung statt Ausnahmeseite | 0,4 | | | | UI; US-6; Aufwand belegt |
+| B0026 | Bubble | F0006 | E2E Fehlerpfade | gruen | Test gruen | /boards/999 und angehaltene WebApi → Playwright → US-5, US-6 | 0,4 | | | | E2E; Aufwand belegt |
+| I0003 | Interaction | D0001 | Spalten gestalten | gelb | Spalten lassen sich anlegen, umbenennen, umsortieren und entfernen; eine Spalte ist als Abschlussspalte mit Anzeigegrenze N markierbar | | | | I0001 | R00002 | |
+| F0007 | Feature | I0003 | Spalten anlegen und aendern | gelb | AK „Spalte anlegen", „Spalte umbenennen und markieren", „Abschlussspalte und Anzeigegrenze" ueber API und Oberflaeche; US-1, US-2, US-6, US-7, US-8 |  |  |  |  | R00002 |  |
+| B0027 | Bubble | F0007 | Spalten-Anfrage pruefen | gruen | Test gruen | SpalteAnlegenAnfrage / SpalteAendernAnfrage → SpaltenValidator.Pruefe → Pruefbefunde | 0,4 |  |  |  | Operation; die Contracts-DTOs entstehen hier, Pruefbefunde wandert nach Models/; belegt |
+| B0028 | Bubble | F0007 | Spalte speichern und aendern | gruen | Test gruen | boardId + Anfrage → SpaltenRepository.LegeAn / Aendere → Spalte? | 0,4 |  |  |  | Provider; Position = hoechste + 1, eine Transaktion; belegt |
+| B0029 | Bubble | F0007 | Spalten-Anlage verdrahten | gruen | Test gruen | boardId + Anfrage → SpaltenService → Ergebnis<Spalte>? | 0,4 |  |  |  | Integration, Test-Repository; belegt |
+| B0030 | Bubble | F0007 | Spalten-Endpunkte anlegen und aendern | gruen | Test gruen | HTTP POST/PUT → SpaltenEndpunkte → 201 / 200 / 400 / 404 | 2 |  |  |  | Integration; kein Messwert fuer Endpunkt-Bubbles |
+| B0031 | Bubble | F0007 | API-Klient der Spalten | gruen | Test gruen | Anfrage → SpaltenApiKlient → ApiErgebnis<Spalte> | 2 |  |  |  | Integration; Fehlerpfade in KanbanC.Blazor.Tests |
+| B0032 | Bubble | F0007 | Spaltenpflege in der Oberflaeche | rot | Test gruen | Board-Detail → Boards.razor → Spalte angelegt und geaendert, Meldung bei Zurueckweisung | 2 |  |  |  | UI |
+| B0033 | Bubble | F0007 | E2E Spalte anlegen und aendern | rot | Test gruen | beide Prozesse auf freien Ports → Playwright → US-1, US-2, US-6, US-7, US-8 | 2-4 |  |  |  | unklar: Erweiterung des Seitenobjekts BoardsSeite |
+| B0041 | Bubble | F0007 | Ausfall der WebApi in der Spaltenpflege | rot | Test gruen | HttpRequestException → WebApiAusfall.BeimAufruf → Ausfallmeldung statt Absturz | 0,4 |  |  |  | Operation; Klammer aus Boards.razor hochgezogen, zweiter Nutzer (C23) |
+| F0008 | Feature | I0003 | Spalten umsortieren | gelb | AK „Spalten umsortieren" ueber API und Oberflaeche; US-3, US-9 |  |  |  | F0007 | R00002 |  |
+| B0034 | Bubble | F0008 | Reihenfolge pruefen | gruen | Test gruen | gewuenschte SpalteIds + vorhandene SpalteIds → SpaltenreihenfolgeValidator.Pruefe → Pruefbefunde | 0,4 |  |  |  | Operation; Contracts-DTO Spaltenreihenfolge entsteht hier; belegt |
+| B0035 | Bubble | F0008 | Reihenfolge speichern | gruen | Test gruen | boardId + SpalteIds → SpaltenRepository.SetzeReihenfolge → Spalten mit Position 1..n | 0,4 |  |  |  | Provider, eine Transaktion; belegt |
+| B0036 | Bubble | F0008 | Reihenfolge ueber die API | gruen | Test gruen | HTTP PUT /spalten/reihenfolge → SpaltenService + SpaltenEndpunkte → 200 / 400 / 404 | 2 |  |  |  | Integration |
+| B0037 | Bubble | F0008 | Umsortieren in der Oberflaeche | rot | Test gruen | Hoch/Runter → Boards.razor + SpaltenApiKlient → neue Ordnung; E2E US-3 | 2 |  |  |  | UI; sendet die ganze Reihenfolge, nicht eine Einzelposition |
+| B0042 | Bubble | F0008 | Reihenfolge in derselben Transaktion pruefen | gruen | Test gruen | boardId + SpalteIds → SpaltenRepository.SetzeReihenfolge → Ergebnis<Spalten> oder Zurueckweisung, Rollback | 0,4 |  |  |  | Provider; schliesst das Fenster zwischen Pruefung und Schreiben |
+| F0009 | Feature | I0003 | Spalte entfernen | gelb | AK „Spalte entfernen" ueber API und Oberflaeche; US-4, US-5 |  |  |  | F0007 | R00002 |  |
+| B0038 | Bubble | F0009 | Spalte loeschen und verdichten | gruen | Test gruen | boardId + spalteId → SpaltenRepository.Entferne → geloescht, verbleibende Positionen 1..n | 0,4 |  |  |  | Provider, eine Transaktion; belegt |
+| B0039 | Bubble | F0009 | Entfernen ueber die API | gruen | Test gruen | HTTP DELETE → SpaltenService + SpaltenEndpunkte → 204 / 404 | 2 |  |  |  | Integration |
+| B0040 | Bubble | F0009 | Entfernen in der Oberflaeche | rot | Test gruen | Entfernen → Boards.razor + SpaltenApiKlient → Spalte verschwindet; E2E US-4, US-5 | 2 |  |  |  | UI |
 | I0004 | Interaction | D0001 | Kartenzahl je Spalte anzeigen | rot | Je Board einschaltbar, dass die Zahl der enthaltenen Karten in der Spaltenkopfzeile steht; sie folgt Änderungen ohne Reload | | | | I0003, I0011 | | |
 | I0005 | Interaction | D0001 | Board umbenennen und archivieren | rot | Ein Board lässt sich umbenennen und archivieren; das archivierte ist aus der Standardliste verschwunden, bleibt aber abrufbar | | | | I0001 | | |
 | I0038 | Interaction | D0001 | Board exportieren | rot | Ein einzelnes Board wird als eigenstaendige Datei herausgeschrieben; sie enthaelt Board, Spalten, Karten, Klassenzuordnungen und Zeiteintraege vollstaendig und ist ohne die Anwendung lesbar | | | | I0011, I0021, I0024 | | Ersetzt die Portabilitaet, die eine Datei je Board gebracht haette |
@@ -101,7 +115,8 @@ zuletzt: 2026-08-29
 
 ## Offene Fragen
 
-Keine.
+- ~~`B0019`: Verhalten des Blazor-Routers bei `/boards/abc`~~ — beantwortet in R00003: der `:long`-Constraint greift nicht, die Anfrage endet über `UseStatusCodePagesWithReExecute` auf der `NotFound`-Seite. Kein Absturz, kein Standardwert. Belegt durch `BoardFehlerpfadeE2ETests`.
+- ~~`B0022`: Umfang des Testumzugs~~ — gemessen: zwei E2E-Tests aus `R00001` und vier Locator in `BoardsSeite`; der Umzug lag am unteren Ende der Bandbreite.
 
 ## Notizen / Quellen
 

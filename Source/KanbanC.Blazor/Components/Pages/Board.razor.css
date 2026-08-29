@@ -1,0 +1,38 @@
+.spaltenbahnen {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    overflow-x: auto;
+    padding-bottom: 1rem;
+}
+
+.spaltenbahn {
+    display: flex;
+    flex: 0 0 16rem;
+    flex-direction: column;
+    background-color: #f1f3f5;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+}
+
+.spaltenbahn-kopf {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.spaltenbahn-bezeichnung {
+    font-weight: 600;
+}
+
+.spaltenbahn-vermerk {
+    color: #6c757d;
+    font-size: 0.8rem;
+}
+
+.spaltenbahn-flaeche {
+    min-height: 12rem;
+    padding: 0.75rem;
+}

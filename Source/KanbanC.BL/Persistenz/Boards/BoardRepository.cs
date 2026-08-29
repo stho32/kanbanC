@@ -41,7 +41,7 @@ public sealed class BoardRepository : IBoardRepository
         var zeilen = verbindung.Query<BoardZeile>(@"
             SELECT BoardId, Name, Art, Starttermin, Zieltermin
               FROM Board
-             ORDER BY BoardId");
+             ORDER BY Name COLLATE NOCASE, BoardId");
         return zeilen.Select(AlsUebersicht).ToList();
     }
 

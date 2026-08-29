@@ -72,7 +72,7 @@ public class BoardRepositoryTests
     }
 
     [Test]
-    public void Wenn_zwei_Boards_gespeichert_sind_dann_liefert_LadeAlle_beide_in_Reihenfolge_der_BoardId()
+    public void Wenn_zwei_Boards_gespeichert_sind_dann_liefert_LadeAlle_beide()
     {
         using var datenbank = new TemporaereDatenbank().MitSchema();
         var repository = new BoardRepository(datenbank.Verbindungsfabrik);
@@ -86,6 +86,49 @@ public class BoardRepositoryTests
             new BoardUebersicht(1, "Entwicklung", BoardArt.Linie, null, null),
             new BoardUebersicht(2, "KanbanC 1.0", BoardArt.Projekt, null, null),
         }));
+    }
+
+    [Test]
+    public void Wenn_die_Namen_gemischt_gross_und_klein_geschrieben_sind_dann_liefert_LadeAlle_sie_alphabetisch()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        repository.LegeAn(new BoardAnlegenAnfrage("Wartung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+        repository.LegeAn(new BoardAnlegenAnfrage("beschaffung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+        repository.LegeAn(new BoardAnlegenAnfrage("KanbanC", BoardArt.Projekt, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+
+        var boards = new BoardRepository(datenbank.Verbindungsfabrik).LadeAlle();
+
+        Assert.That(boards.Select(b => b.Name), Is.EqualTo(new[] { "beschaffung", "KanbanC", "Wartung" }));
+        Assert.That(boards.Select(b => b.BoardId), Is.EqualTo(new long[] { 2, 3, 1 }));
+    }
+
+    [Test]
+    public void Wenn_zwei_Boards_denselben_Namen_tragen_dann_steht_das_mit_der_kleineren_BoardId_vorn()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        FuegeBoardEin(datenbank, 5, "Wartung", BoardArt.Linie);
+        FuegeBoardEin(datenbank, 2, "Wartung", BoardArt.Projekt);
+        FuegeBoardEin(datenbank, 4, "Zwischenstand", BoardArt.Linie);
+
+        var boards = new BoardRepository(datenbank.Verbindungsfabrik).LadeAlle();
+
+        Assert.That(boards.Select(b => b.BoardId), Is.EqualTo(new long[] { 2, 5, 4 }));
+    }
+
+    [Test]
+    public void Wenn_dieselbe_Liste_zweimal_geladen_wird_dann_ist_die_Reihenfolge_identisch()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        repository.LegeAn(new BoardAnlegenAnfrage("Wartung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+        repository.LegeAn(new BoardAnlegenAnfrage("beschaffung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+
+        var ersterAbruf = repository.LadeAlle();
+        var zweiterAbruf = repository.LadeAlle();
+
+        Assert.That(zweiterAbruf.Select(b => b.BoardId), Is.EqualTo(ersterAbruf.Select(b => b.BoardId)));
+        Assert.That(ersterAbruf.Select(b => b.Name), Is.EqualTo(new[] { "beschaffung", "Wartung" }));
     }
 
     [Test]
@@ -147,6 +190,14 @@ public class BoardRepositoryTests
         return verbindung.ExecuteScalar<long>(@"
             SELECT COUNT(*)
               FROM Board");
+    }
+
+    private static void FuegeBoardEin(TemporaereDatenbank datenbank, long boardId, string name, BoardArt art)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Board (BoardId, Name, Art)
+            VALUES (@BoardId, @Name, @Art)", new { BoardId = boardId, Name = name, Art = art.ToString() });
     }
 
     private static (string? Starttermin, string? Zieltermin) GespeicherteTermine(TemporaereDatenbank datenbank, long boardId)

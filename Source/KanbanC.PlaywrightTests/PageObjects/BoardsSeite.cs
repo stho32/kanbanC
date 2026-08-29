@@ -21,6 +21,8 @@ public sealed class BoardsSeite
 
     public ILocator Boardzeilen => _seite.Locator("#board-liste tbody tr");
 
+    // Die Spaltenpflege haengt noch am abgebauten Detail-Panel; diese Zugriffe zeigen ins Leere,
+    // bis sie mit der Komponente auf die Board-Seite umgezogen ist.
     public ILocator Spalten => _seite.Locator("#spalten-liste li .spalte-anzeige");
 
     public ILocator Spaltenzeilen => _seite.Locator("#spalten-liste li");
@@ -30,10 +32,6 @@ public sealed class BoardsSeite
     public ILocator SpaltenFehlermeldung => _seite.Locator("#spalten-fehlermeldung");
 
     public ILocator HinweisKeineSpalten => _seite.Locator("#keine-spalten");
-
-    public ILocator DetailsStarttermin => _seite.Locator("#details-starttermin");
-
-    public ILocator DetailsZieltermin => _seite.Locator("#details-zieltermin");
 
     public async Task Oeffne()
     {
@@ -68,15 +66,25 @@ public sealed class BoardsSeite
         await _seite.GetByRole(AriaRole.Button, new() { Name = "Board anlegen" }).ClickAsync();
     }
 
+    public async Task ZeigeSpalten(long boardId)
+    {
+        await Boardzeile(boardId).GetByRole(AriaRole.Button, new() { Name = "Spalten anzeigen" }).ClickAsync();
+        await Assertions.Expect(_seite.Locator("#board-details")).ToBeVisibleAsync();
+    }
+
     public ILocator Boardzeile(long boardId)
     {
         return _seite.Locator($"#board-liste tbody tr[data-board-id='{boardId}']");
     }
 
-    public async Task ZeigeSpalten(long boardId)
+    public ILocator Boardverweis(long boardId)
     {
-        await Boardzeile(boardId).GetByRole(AriaRole.Button, new() { Name = "Spalten anzeigen" }).ClickAsync();
-        await Assertions.Expect(_seite.Locator("#board-details")).ToBeVisibleAsync();
+        return Boardzeile(boardId).Locator(".board-verweis");
+    }
+
+    public async Task OeffneBoard(long boardId)
+    {
+        await Boardverweis(boardId).ClickAsync();
     }
 
     public ILocator Spaltenzeile(long spalteId)
