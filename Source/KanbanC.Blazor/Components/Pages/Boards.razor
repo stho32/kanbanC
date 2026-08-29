@@ -95,7 +95,6 @@
 </section>
 
 @code {
-    private const string WebApiNichtErreichbar = "Die WebApi ist nicht erreichbar. Bitte später erneut versuchen.";
     private readonly BoardFormular _formular = new();
     private IReadOnlyList<BoardUebersicht>? _boards;
     private Zurueckweisung? _zurueckweisung;
@@ -132,7 +131,7 @@
         }
         catch (HttpRequestException)
         {
-            _fehlermeldung = WebApiNichtErreichbar;
+            _fehlermeldung = WebApiAusfall.Meldung;
         }
     }
 

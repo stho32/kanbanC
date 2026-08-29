@@ -46,7 +46,7 @@ zuletzt: 2026-08-29
 | B0023 | Bubble | F0005 | E2E Board öffnen | gruen | Test gruen | Klick aus der Liste, Direktaufruf, Reload, Rückweg → Playwright → US-1, US-2, US-3 | 0,4 | | | | E2E; Aufwand belegt |
 | F0006 | Feature | I0002 | Fehlerpfade beim Öffnen | gelb | AK „Unbekanntes Board": lesbare Meldung mit Nummer und Rückweg, kein Absturz; Meldung bei nicht erreichbarer WebApi; US-5, US-6 | | | | F0005 | R00003 | |
 | B0024 | Bubble | F0006 | Unbekannte Board-Nummer | gelb | Test gruen | LadeBoard liefert null → Board.razor → Meldung mit der Nummer und Verweis zur Liste | 0,4 | | | | UI; US-5; Aufwand belegt |
-| B0025 | Bubble | F0006 | WebApi nicht erreichbar | rot | Test gruen | HttpRequestException → Board.razor → lesbare Meldung statt Ausnahmeseite | 0,4 | | | | UI; US-6; Aufwand belegt |
+| B0025 | Bubble | F0006 | WebApi nicht erreichbar | gelb | Test gruen | HttpRequestException → Board.razor → lesbare Meldung statt Ausnahmeseite | 0,4 | | | | UI; US-6; Aufwand belegt |
 | B0026 | Bubble | F0006 | E2E Fehlerpfade | rot | Test gruen | /boards/999 und angehaltene WebApi → Playwright → US-5, US-6 | 0,4 | | | | E2E; Aufwand belegt |
 | I0003 | Interaction | D0001 | Spalten gestalten | rot | Spalten lassen sich anlegen, umbenennen, umsortieren und entfernen; eine Spalte ist als Abschlussspalte mit Anzeigegrenze N markierbar | | | | I0001 | | |
 | I0004 | Interaction | D0001 | Kartenzahl je Spalte anzeigen | rot | Je Board einschaltbar, dass die Zahl der enthaltenen Karten in der Spaltenkopfzeile steht; sie folgt Änderungen ohne Reload | | | | I0003, I0011 | | |

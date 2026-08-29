@@ -5,7 +5,14 @@
 
 <PageTitle>Board @BoardId</PageTitle>
 
-@if (!_ladenIstAbgeschlossen)
+@if (_webApiIstNichtErreichbar)
+{
+    <div class="alert alert-warning" role="alert" id="fehlermeldung">
+        <p class="mb-1">@WebApiAusfall.Meldung</p>
+        <a href="/boards" id="zur-board-liste">Zurück zur Board-Liste</a>
+    </div>
+}
+else if (!_ladenIstAbgeschlossen)
 {
     <p id="board-wird-geladen">Das Board wird geladen …</p>
 }
@@ -50,6 +57,7 @@ else
     // Vollqualifiziert, weil der Komponentenname Board den gleichnamigen Vertragstyp verdeckt.
     private KanbanC.Contracts.Boards.Board? _board;
     private bool _ladenIstAbgeschlossen;
+    private bool _webApiIstNichtErreichbar;
 
     [Parameter]
     public long BoardId { get; set; }
@@ -57,7 +65,16 @@ else
     protected override async Task OnParametersSetAsync()
     {
         _ladenIstAbgeschlossen = false;
-        _board = await ApiKlient.LadeBoard(BoardId);
+        try
+        {
+            _board = await ApiKlient.LadeBoard(BoardId);
+            _webApiIstNichtErreichbar = false;
+        }
+        catch (HttpRequestException)
+        {
+            _webApiIstNichtErreichbar = true;
+        }
+
         _ladenIstAbgeschlossen = true;
     }
 }
