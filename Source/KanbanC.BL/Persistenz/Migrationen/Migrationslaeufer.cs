@@ -33,13 +33,12 @@ public sealed class Migrationslaeufer
     private static string LeseSkript(string skriptName)
     {
         using var strom = typeof(Migrationslaeufer).Assembly.GetManifestResourceStream(skriptName);
-        var skriptIstNichtLesbar = strom is null;
-        if (skriptIstNichtLesbar)
+        if (strom is null)
         {
             throw new InvalidOperationException($"Migrationsskript {skriptName} ist nicht lesbar.");
         }
 
-        using var leser = new StreamReader(strom!);
+        using var leser = new StreamReader(strom);
         return leser.ReadToEnd();
     }
 }

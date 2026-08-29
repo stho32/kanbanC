@@ -71,6 +71,66 @@ public class BoardRepositoryTests
         Assert.That(GespeicherteTermine(datenbank, board.BoardId), Is.EqualTo(((string?)null, (string?)null)));
     }
 
+    [Test]
+    public void Wenn_zwei_Boards_gespeichert_sind_dann_liefert_LadeAlle_beide_in_Reihenfolge_der_BoardId()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        repository.LegeAn(new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+        repository.LegeAn(new BoardAnlegenAnfrage("KanbanC 1.0", BoardArt.Projekt, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+
+        var boards = new BoardRepository(datenbank.Verbindungsfabrik).LadeAlle();
+
+        Assert.That(boards, Is.EqualTo(new[]
+        {
+            new BoardUebersicht(1, "Entwicklung", BoardArt.Linie, null, null),
+            new BoardUebersicht(2, "KanbanC 1.0", BoardArt.Projekt, null, null),
+        }));
+    }
+
+    [Test]
+    public void Wenn_keine_Boards_gespeichert_sind_dann_liefert_LadeAlle_eine_leere_Liste()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+
+        var boards = new BoardRepository(datenbank.Verbindungsfabrik).LadeAlle();
+
+        Assert.That(boards, Is.Empty);
+    }
+
+    [Test]
+    public void Wenn_ein_Board_mit_Terminen_geladen_wird_dann_kommen_Spalten_und_Termine_wie_gespeichert()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var anfrage = new BoardAnlegenAnfrage("KanbanC 1.0", BoardArt.Projekt, new DateOnly(2026, 9, 1), new DateOnly(2026, 12, 31));
+        var gespeichert = new BoardRepository(datenbank.Verbindungsfabrik).LegeAn(anfrage, StandardspaltenVorlage.FuerNeuesBoard());
+
+        var geladen = new BoardRepository(datenbank.Verbindungsfabrik).Lade(gespeichert.BoardId);
+
+        Assert.That(geladen, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(geladen.BoardId, Is.EqualTo(gespeichert.BoardId));
+            Assert.That(geladen.Name, Is.EqualTo("KanbanC 1.0"));
+            Assert.That(geladen.Art, Is.EqualTo(BoardArt.Projekt));
+            Assert.That(geladen.Starttermin, Is.EqualTo(new DateOnly(2026, 9, 1)));
+            Assert.That(geladen.Zieltermin, Is.EqualTo(new DateOnly(2026, 12, 31)));
+            Assert.That(geladen.Spalten, Is.EqualTo(gespeichert.Spalten));
+        });
+    }
+
+    [Test]
+    public void Wenn_die_BoardId_nicht_vergeben_ist_dann_liefert_Lade_null()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        repository.LegeAn(new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+
+        var geladen = repository.Lade(99);
+
+        Assert.That(geladen, Is.Null);
+    }
+
     private static List<string> GespeicherteSpaltenbezeichnungen(TemporaereDatenbank datenbank, long boardId)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();

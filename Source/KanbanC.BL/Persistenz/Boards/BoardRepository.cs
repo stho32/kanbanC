@@ -35,6 +35,36 @@ public sealed class BoardRepository : IBoardRepository
         return new Board(boardId, anfrage.Name, anfrage.Art, anfrage.Starttermin, anfrage.Zieltermin, spalten);
     }
 
+    public IReadOnlyList<BoardUebersicht> LadeAlle()
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+        var zeilen = verbindung.Query<BoardZeile>(@"
+            SELECT BoardId, Name, Art, Starttermin, Zieltermin
+              FROM Board
+             ORDER BY BoardId");
+        return zeilen.Select(AlsUebersicht).ToList();
+    }
+
+    public Board? Lade(long boardId)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+        var boardZeile = verbindung.QuerySingleOrDefault<BoardZeile>(@"
+            SELECT BoardId, Name, Art, Starttermin, Zieltermin
+              FROM Board
+             WHERE BoardId = @BoardId", new { BoardId = boardId });
+        if (boardZeile is null)
+        {
+            return null;
+        }
+
+        var spaltenZeilen = verbindung.Query<SpalteZeile>(@"
+            SELECT SpalteId, Bezeichnung, Position, IstAbschlussspalte, Anzeigegrenze
+              FROM Spalte
+             WHERE Board = @BoardId
+             ORDER BY Position", new { BoardId = boardId });
+        return AlsBoard(boardZeile, spaltenZeilen.Select(AlsSpalte).ToList());
+    }
+
     private static long FuegeBoardEin(IDbConnection verbindung, IDbTransaction transaktion, BoardAnlegenAnfrage anfrage)
     {
         var parameter = new
@@ -75,4 +105,32 @@ public sealed class BoardRepository : IBoardRepository
 
         return termin.Value.ToString(IsoDatumsformat, CultureInfo.InvariantCulture);
     }
+    private static BoardUebersicht AlsUebersicht(BoardZeile zeile)
+    {
+        return new BoardUebersicht(zeile.BoardId, zeile.Name, Enum.Parse<BoardArt>(zeile.Art), AlsTermin(zeile.Starttermin), AlsTermin(zeile.Zieltermin));
+    }
+
+    private static DateOnly? AlsTermin(string? isoText)
+    {
+        if (isoText is null)
+        {
+            return null;
+        }
+
+        return DateOnly.ParseExact(isoText, IsoDatumsformat, CultureInfo.InvariantCulture);
+    }
+
+    private sealed record BoardZeile(long BoardId, string Name, string Art, string? Starttermin, string? Zieltermin);
+    private static Board AlsBoard(BoardZeile zeile, IReadOnlyList<Spalte> spalten)
+    {
+        return new Board(zeile.BoardId, zeile.Name, Enum.Parse<BoardArt>(zeile.Art), AlsTermin(zeile.Starttermin), AlsTermin(zeile.Zieltermin), spalten);
+    }
+
+    private static Spalte AlsSpalte(SpalteZeile zeile)
+    {
+        var istAbschlussspalte = zeile.IstAbschlussspalte != 0;
+        return new Spalte(zeile.SpalteId, zeile.Bezeichnung, (int)zeile.Position, istAbschlussspalte, (int?)zeile.Anzeigegrenze);
+    }
+
+    private sealed record SpalteZeile(long SpalteId, string Bezeichnung, long Position, long IstAbschlussspalte, long? Anzeigegrenze);
 }
