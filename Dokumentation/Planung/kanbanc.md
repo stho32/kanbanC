@@ -26,10 +26,10 @@ zuletzt: 2026-08-29
 | B0007 | Bubble | F0001 | API-Klient der Oberfläche | gruen | Test gruen | Anfrage → BoardApiKlient → Boards / ApiErgebnis | 2 | | | | Integration; Abdeckung über E2E |
 | B0008 | Bubble | F0001 | Board-Seite | gruen | Test gruen | Liste + Formular → Boards.razor, NavMenu → Board angelegt | 2 | | | | UI; Abdeckung über E2E |
 | B0009 | Bubble | F0001 | E2E Board anlegen | gruen | Test gruen | beide Prozesse auf freien Ports → Playwright → US-1, US-2, US-3 gruen | 2-4 | | | | unklar: Prozessstart-Infrastruktur |
-| F0002 | Feature | I0001 | Ungültige Eingaben zurückweisen | gelb | AK „Zurückweisung ungültiger Eingaben" und lesbare Meldung in der Oberfläche; US-4, US-5 |  |  |  | F0001 | R00001 |  |
+| F0002 | Feature | I0001 | Ungültige Eingaben zurückweisen | gruen | AK „Zurückweisung ungültiger Eingaben" und lesbare Meldung in der Oberfläche; US-4, US-5 |  |  |  | F0001 | R00001 |  |
 | B0010 | Bubble | F0002 | Anfrage prüfen | gruen | Test gruen | BoardAnlegenAnfrage → BoardAnlegenValidator → Pruefbefunde | 2 | | | | Operation |
 | B0011 | Bubble | F0002 | Zurückweisung über die API | gruen | Test gruen | Pruefbefunde → BoardService / BoardEndpunkte → 400 Zurueckweisung | 2 | | | | Integration |
-| B0012 | Bubble | F0002 | Zurückweisung in der Oberfläche | rot | Test gruen | Zurueckweisung → Boards.razor → Meldung; E2E US-4, US-5 | 2 | | | | UI |
+| B0012 | Bubble | F0002 | Zurückweisung in der Oberfläche | gruen | Test gruen | Zurueckweisung → Boards.razor → Meldung; E2E US-4, US-5 | 2 | | | | UI |
 | F0003 | Feature | I0001 | Datenbestand überlebt Neustart | rot | AK „Datenhaltung"; US-6 | | | | F0001 | R00001 | |
 | B0013 | Bubble | F0003 | Migration idempotent | rot | Test gruen | zweiter Lauf auf bestehender Datei → Migrationslaeufer → Schema und Daten unverändert | 2 | | | | Integration |
 | B0014 | Bubble | F0003 | Neustart der WebApi | rot | Test gruen | zweite Instanz auf derselben Datei → Boards bleiben, nächste Nummer 3 | 2 | | | | Integration; US-6 |

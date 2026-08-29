@@ -58,6 +58,7 @@ public sealed class Testumgebung
     public async Task StarteWebApiMitLeererDatenbank()
     {
         StoppeWebApi();
+        LoescheDatenbank();
         _datenbankDateipfad = Path.Combine(Path.GetTempPath(), $"kanbanc-e2e-{Guid.NewGuid():N}.db");
         await StarteWebApi();
     }
@@ -84,13 +85,20 @@ public sealed class Testumgebung
     public void StoppeAlles()
     {
         StoppeWebApi();
+        LoescheDatenbank();
         _blazor?.Dispose();
         _aktuelle = null;
-        var datenbankExistiert = _datenbankDateipfad is not null && File.Exists(_datenbankDateipfad);
-        if (datenbankExistiert)
+    }
+
+    private void LoescheDatenbank()
+    {
+        if (_datenbankDateipfad is null)
         {
-            File.Delete(_datenbankDateipfad!);
+            return;
         }
+
+        File.Delete(_datenbankDateipfad);
+        _datenbankDateipfad = null;
     }
 
     private string Assembly(string projektverzeichnis)
