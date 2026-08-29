@@ -29,6 +29,7 @@ Grund: Das Zielbild verlangt, dass die API alles kann, was die Oberfläche kann 
 **Dapper + Microsoft.Data.Sqlite**, kein EF Core. SQL wird geschrieben, nicht generiert — die wertvollen Abfragen (Burndown, Puffer-Verbrauch, Soll-Ist, Zeitsummen) sind analytisch.
 
 - SQL nach Skill `sql-stil`: Fluss-Ausrichtung, explizite Spalten, Schlüsselwörter GROSS.
+- Primärschlüssel heißen `<Tabelle>Id` (`BoardId`, `SpalteId`), Fremdschlüssel tragen den Namen der referenzierten Tabelle (`Board`), nie `<Tabelle>Nummer` — im ganzen Stack, auch in DTOs und Contracts (C06).
 - Repositories sind IOSP-**Integrations**, nie Operations.
 - Schema als versionierte, idempotente `.sql`-Dateien unter `Source/KanbanC.BL/Persistenz/Migrationen/` (`/erstelle-db-migration`).
 - Für `I0031 Import wiederholen` liegt das Muster bereit: `.claude/app-architectures/Common/snippets/SollIstVergleich.md`.
