@@ -84,7 +84,7 @@
                 {
                     <tr data-board-id="@board.BoardId">
                         <td>@board.BoardId</td>
-                        <td>@board.Name</td>
+                        <td><NavLink class="board-verweis" href="@($"/boards/{board.BoardId}")">@board.Name</NavLink></td>
                         <td>@board.Art</td>
                         <td>@Terminformatierer.AlsText(board.Starttermin)</td>
                         <td>@Terminformatierer.AlsText(board.Zieltermin)</td>

@@ -65,6 +65,16 @@ public sealed class BoardsSeite
         return _seite.Locator($"#board-liste tbody tr[data-board-id='{boardId}']");
     }
 
+    public ILocator Boardverweis(long boardId)
+    {
+        return Boardzeile(boardId).Locator(".board-verweis");
+    }
+
+    public async Task OeffneBoard(long boardId)
+    {
+        await Boardverweis(boardId).ClickAsync();
+    }
+
     public async Task ZeigeSpalten(long boardId)
     {
         await Boardzeile(boardId).GetByRole(AriaRole.Button, new() { Name = "Spalten anzeigen" }).ClickAsync();

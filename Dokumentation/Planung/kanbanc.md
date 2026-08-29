@@ -41,7 +41,7 @@ zuletzt: 2026-08-29
 | F0005 | Feature | I0002 | Board als eigene Seite öffnen | gelb | AK „Board öffnen" plus der Verweis-Punkt aus „Liste": eigene Route, Kopfdaten, Spaltenbahnen, Reload-fest, Rückweg; US-1, US-2, US-3 | | | | I0001 | R00003 | |
 | B0019 | Bubble | F0005 | Board-Seite mit Route | gruen | Test gruen | Route /boards/{BoardId:long} → Board.razor + BoardApiKlient.LadeBoard → Kopfzeile mit Name, Art, Terminen | 0,4 | | | | UI; US-2; Aufwand belegt |
 | B0020 | Bubble | F0005 | Spaltenbahnen | gruen | Test gruen | Board.Spalten → Bahnen-Layout in Board.razor → Spalten nebeneinander, Abschlussspalte mit Anzeigegrenze markiert | 0,4 | | | | UI; Aufwand belegt |
-| B0021 | Bubble | F0005 | Verweis aus der Liste | rot | Test gruen | BoardUebersicht → NavLink in Boards.razor → /boards/{BoardId} | 0,4 | | | | UI; US-1; Aufwand belegt |
+| B0021 | Bubble | F0005 | Verweis aus der Liste | gruen | Test gruen | BoardUebersicht → NavLink in Boards.razor → /boards/{BoardId} | 0,4 | | | | UI; US-1; Aufwand belegt |
 | B0022 | Bubble | F0005 | Detail-Panel abbauen, Seitenobjekte umziehen | rot | Test gruen | Panel in Boards.razor + BoardsSeite → BoardSeite; die zwei R00001-E2E-Tests auf die neue Seite | 0,4-1,5 | | | | Umbau; unklar: Umfang des Testumzugs; R00001-Suite muss gruen bleiben |
 | B0023 | Bubble | F0005 | E2E Board öffnen | rot | Test gruen | Klick aus der Liste, Direktaufruf, Reload, Rückweg → Playwright → US-1, US-2, US-3 | 0,4 | | | | E2E; Aufwand belegt |
 | F0006 | Feature | I0002 | Fehlerpfade beim Öffnen | rot | AK „Unbekanntes Board": lesbare Meldung mit Nummer und Rückweg, kein Absturz; Meldung bei nicht erreichbarer WebApi; US-5, US-6 | | | | F0005 | R00003 | |
