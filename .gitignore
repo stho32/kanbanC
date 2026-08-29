@@ -24,6 +24,7 @@ appsettings.*.local.json
 
 ## Generate der Command-Familien
 .claude/planung/*.html
+.claude/schaetzungen/*.html
 
 ## Lokale Datenhaltung
 *.db
