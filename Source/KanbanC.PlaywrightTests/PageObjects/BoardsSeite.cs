@@ -21,7 +21,13 @@ public sealed class BoardsSeite
 
     public ILocator Boardzeilen => _seite.Locator("#board-liste tbody tr");
 
-    public ILocator Spalten => _seite.Locator("#spalten-liste li");
+    public ILocator Spalten => _seite.Locator("#spalten-liste li .spalte-anzeige");
+
+    public ILocator Spaltenzeilen => _seite.Locator("#spalten-liste li");
+
+    public ILocator SpaltenZurueckweisung => _seite.Locator("#spalten-zurueckweisung");
+
+    public ILocator HinweisKeineSpalten => _seite.Locator("#keine-spalten");
 
     public ILocator DetailsStarttermin => _seite.Locator("#details-starttermin");
 
@@ -69,5 +75,39 @@ public sealed class BoardsSeite
     {
         await Boardzeile(boardId).GetByRole(AriaRole.Button, new() { Name = "Spalten anzeigen" }).ClickAsync();
         await Assertions.Expect(_seite.Locator("#board-details")).ToBeVisibleAsync();
+    }
+
+    public ILocator Spaltenzeile(long spalteId)
+    {
+        return _seite.Locator($"#spalten-liste li[data-spalte-id='{spalteId}']");
+    }
+
+    public ILocator SpaltenzeileAnStelle(int stelle)
+    {
+        return _seite.Locator("#spalten-liste li").Nth(stelle);
+    }
+
+    public async Task FuelleNeueSpalte(string bezeichnung, bool istAbschlussspalte, string? anzeigegrenze)
+    {
+        await _seite.FillAsync("#neue-spalte-bezeichnung", bezeichnung);
+        await _seite.SetCheckedAsync("#neue-spalte-abschluss", istAbschlussspalte);
+        var anzeigegrenzeIstGesetzt = anzeigegrenze is not null;
+        if (anzeigegrenzeIstGesetzt)
+        {
+            await _seite.FillAsync("#neue-spalte-grenze", anzeigegrenze!);
+        }
+    }
+
+    public async Task LegeSpalteAn()
+    {
+        await _seite.GetByRole(AriaRole.Button, new() { Name = "Spalte anlegen" }).ClickAsync();
+    }
+
+    public async Task BearbeiteSpalte(ILocator zeile, string bezeichnung, bool istAbschlussspalte, string anzeigegrenze)
+    {
+        await zeile.Locator(".spalte-bezeichnung").FillAsync(bezeichnung);
+        await zeile.Locator(".spalte-abschluss").SetCheckedAsync(istAbschlussspalte);
+        await zeile.Locator(".spalte-grenze").FillAsync(anzeigegrenze);
+        await zeile.Locator(".spalte-speichern").ClickAsync();
     }
 }

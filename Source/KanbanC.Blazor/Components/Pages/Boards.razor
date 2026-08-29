@@ -108,18 +108,9 @@
             Starttermin <span id="details-starttermin">@AlsText(_gewaehltesBoard.Starttermin)</span>,
             Zieltermin <span id="details-zieltermin">@AlsText(_gewaehltesBoard.Zieltermin)</span>
         </p>
-        <ol id="spalten-liste">
-            @foreach (var spalte in _gewaehltesBoard.Spalten)
-            {
-                <li>
-                    @spalte.Bezeichnung
-                    @if (spalte.IstAbschlussspalte)
-                    {
-                        <span class="text-secondary">(Abschlussspalte, Anzeigegrenze @spalte.Anzeigegrenze)</span>
-                    }
-                </li>
-            }
-        </ol>
+        <Spaltenpflege BoardId="_gewaehltesBoard.BoardId"
+                       Spalten="_gewaehltesBoard.Spalten"
+                       SpaltenHabenSichGeaendert="() => ZeigeSpalten(_gewaehltesBoard.BoardId)" />
     </section>
 }
 
