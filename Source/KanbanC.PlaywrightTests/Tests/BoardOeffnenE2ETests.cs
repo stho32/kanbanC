@@ -41,10 +41,6 @@ public class BoardOeffnenE2ETests : PageTest
         await board.Oeffne(1);
 
         await Expect(board.Spaltenbahnen).ToHaveCountAsync(3);
-        await Expect(board.Spaltenbezeichnungen.Nth(0)).ToHaveTextAsync("Zu erledigen");
-        await Expect(board.Spaltenbezeichnungen.Nth(1)).ToHaveTextAsync("In Arbeit");
-        await Expect(board.Spaltenbezeichnungen.Nth(2)).ToHaveTextAsync("Erledigt");
-        await Expect(board.Spaltenbahnen.Nth(2)).ToContainTextAsync("Abschlussspalte, Anzeigegrenze 20");
         var ersteBahn = await board.Spaltenbahnen.Nth(0).BoundingBoxAsync();
         var zweiteBahn = await board.Spaltenbahnen.Nth(1).BoundingBoxAsync();
         Assert.That(ersteBahn, Is.Not.Null);

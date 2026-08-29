@@ -21,12 +21,6 @@ public sealed class BoardsSeite
 
     public ILocator Boardzeilen => _seite.Locator("#board-liste tbody tr");
 
-    public ILocator Spalten => _seite.Locator("#spalten-liste li");
-
-    public ILocator DetailsStarttermin => _seite.Locator("#details-starttermin");
-
-    public ILocator DetailsZieltermin => _seite.Locator("#details-zieltermin");
-
     public async Task Oeffne()
     {
         await OeffneOhneBoardliste();
@@ -73,11 +67,5 @@ public sealed class BoardsSeite
     public async Task OeffneBoard(long boardId)
     {
         await Boardverweis(boardId).ClickAsync();
-    }
-
-    public async Task ZeigeSpalten(long boardId)
-    {
-        await Boardzeile(boardId).GetByRole(AriaRole.Button, new() { Name = "Spalten anzeigen" }).ClickAsync();
-        await Assertions.Expect(_seite.Locator("#board-details")).ToBeVisibleAsync();
     }
 }

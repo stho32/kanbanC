@@ -76,7 +76,6 @@
                     <th>Art</th>
                     <th>Starttermin</th>
                     <th>Zieltermin</th>
-                    <th></th>
                 </tr>
             </thead>
             <tbody>
@@ -88,9 +87,6 @@
                         <td>@board.Art</td>
                         <td>@Terminformatierer.AlsText(board.Starttermin)</td>
                         <td>@Terminformatierer.AlsText(board.Zieltermin)</td>
-                        <td>
-                            <button type="button" class="btn btn-link p-0" @onclick="() => ZeigeSpalten(board.BoardId)">Spalten anzeigen</button>
-                        </td>
                     </tr>
                 }
             </tbody>
@@ -98,38 +94,12 @@
     }
 </section>
 
-@if (_gewaehltesBoard is not null)
-{
-    <section id="board-details">
-        <h2>Board @_gewaehltesBoard.BoardId: @_gewaehltesBoard.Name</h2>
-        <p>
-            Art @_gewaehltesBoard.Art,
-            Starttermin <span id="details-starttermin">@Terminformatierer.AlsText(_gewaehltesBoard.Starttermin)</span>,
-            Zieltermin <span id="details-zieltermin">@Terminformatierer.AlsText(_gewaehltesBoard.Zieltermin)</span>
-        </p>
-        <ol id="spalten-liste">
-            @foreach (var spalte in _gewaehltesBoard.Spalten)
-            {
-                <li>
-                    @spalte.Bezeichnung
-                    @if (spalte.IstAbschlussspalte)
-                    {
-                        <span class="text-secondary">(Abschlussspalte, Anzeigegrenze @spalte.Anzeigegrenze)</span>
-                    }
-                </li>
-            }
-        </ol>
-    </section>
-}
-
 @code {
     private const string WebApiNichtErreichbar = "Die WebApi ist nicht erreichbar. Bitte später erneut versuchen.";
     private readonly BoardFormular _formular = new();
     private IReadOnlyList<BoardUebersicht>? _boards;
     private Zurueckweisung? _zurueckweisung;
     private string? _fehlermeldung;
-    // Vollqualifiziert, weil die Komponente Board den gleichnamigen Vertragstyp im Namespace verdeckt.
-    private KanbanC.Contracts.Boards.Board? _gewaehltesBoard;
 
     protected override async Task OnInitializedAsync()
     {
@@ -151,11 +121,6 @@
             _formular.Leere();
             _boards = await ApiKlient.LadeAlleBoards();
         });
-    }
-
-    private async Task ZeigeSpalten(long boardId)
-    {
-        await MitErreichbarerWebApi(async () => _gewaehltesBoard = await ApiKlient.LadeBoard(boardId));
     }
 
     private async Task MitErreichbarerWebApi(Func<Task> aufruf)

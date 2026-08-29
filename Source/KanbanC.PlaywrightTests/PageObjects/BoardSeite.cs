@@ -37,6 +37,11 @@ public sealed class BoardSeite
     public async Task Oeffne(long boardId)
     {
         await Rufe(boardId);
+        await ErwarteGeoeffnet();
+    }
+
+    public async Task ErwarteGeoeffnet()
+    {
         await Assertions.Expect(Kopfzeile).ToBeVisibleAsync();
     }
 
