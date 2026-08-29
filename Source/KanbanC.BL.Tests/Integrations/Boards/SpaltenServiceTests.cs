@@ -1,5 +1,6 @@
 using KanbanC.BL.Integrations.Boards;
 using KanbanC.BL.Interfaces.Boards;
+using KanbanC.BL.Models;
 using KanbanC.BL.Tests.TestHelpers;
 using KanbanC.Contracts.Boards;
 
@@ -204,7 +205,7 @@ public class SpaltenServiceTests
             return [new Spalte(1, "Zu erledigen", 1, false, null), new Spalte(2, "In Arbeit", 2, false, null)];
         }
 
-        public IReadOnlyList<Spalte>? SetzeReihenfolge(long boardId, IReadOnlyList<long> reihenfolge)
+        public Ergebnis<IReadOnlyList<Spalte>>? SetzeReihenfolge(long boardId, IReadOnlyList<long> reihenfolge)
         {
             WurdeUmsortiert = true;
             return null;

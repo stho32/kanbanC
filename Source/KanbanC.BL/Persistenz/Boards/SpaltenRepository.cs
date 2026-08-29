@@ -2,12 +2,15 @@ using System.Data;
 using Dapper;
 using KanbanC.BL.Interfaces.Boards;
 using KanbanC.BL.Interfaces.Persistenz;
+using KanbanC.BL.Models;
 using KanbanC.Contracts.Boards;
 
 namespace KanbanC.BL.Persistenz.Boards;
 
 public sealed class SpaltenRepository : ISpaltenRepository
 {
+    private static readonly Pruefbefunde SpaltenbestandHatSichGeaendert =
+        new(["Die Spalten des Boards haben sich zwischenzeitlich geändert; bitte die Reihenfolge erneut setzen."]);
     private readonly IDatenbankVerbindungsfabrik _verbindungsfabrik;
 
     public SpaltenRepository(IDatenbankVerbindungsfabrik verbindungsfabrik)
@@ -62,7 +65,7 @@ public sealed class SpaltenRepository : ISpaltenRepository
         return Spaltenleser.LiesSpaltenNachPosition(verbindung, null, boardId);
     }
 
-    public IReadOnlyList<Spalte>? SetzeReihenfolge(long boardId, IReadOnlyList<long> reihenfolge)
+    public Ergebnis<IReadOnlyList<Spalte>>? SetzeReihenfolge(long boardId, IReadOnlyList<long> reihenfolge)
     {
         using var verbindung = _verbindungsfabrik.Oeffne();
         using var transaktion = verbindung.BeginTransaction();
@@ -73,10 +76,16 @@ public sealed class SpaltenRepository : ISpaltenRepository
             return null; // stil-check: C25 null heisst "Board unbekannt" (404); die leere Liste heisst "Board ohne Spalten"
         }
 
-        SchreibePositionen(verbindung, transaktion, boardId, reihenfolge);
+        var getroffeneZeilen = SchreibePositionen(verbindung, transaktion, boardId, reihenfolge);
         var spalten = Spaltenleser.LiesSpaltenNachPosition(verbindung, transaktion, boardId);
+        var reihenfolgeDecktDenBestandNichtMehr = getroffeneZeilen != reihenfolge.Count || spalten.Count != reihenfolge.Count;
+        if (reihenfolgeDecktDenBestandNichtMehr)
+        {
+            return Ergebnis<IReadOnlyList<Spalte>>.Zurueckgewiesen(SpaltenbestandHatSichGeaendert);
+        }
+
         transaktion.Commit();
-        return spalten;
+        return Ergebnis<IReadOnlyList<Spalte>>.Erfolg(spalten);
     }
 
     public bool Entferne(long boardId, long spalteId)
@@ -112,17 +121,20 @@ public sealed class SpaltenRepository : ISpaltenRepository
         SchreibePositionen(verbindung, transaktion, boardId, lueckenloseReihenfolge);
     }
 
-    private static void SchreibePositionen(IDbConnection verbindung, IDbTransaction transaktion, long boardId, IReadOnlyList<long> reihenfolge)
+    private static int SchreibePositionen(IDbConnection verbindung, IDbTransaction transaktion, long boardId, IReadOnlyList<long> reihenfolge)
     {
+        var getroffeneZeilen = 0;
         for (var stelle = 0; stelle < reihenfolge.Count; stelle++)
         {
             var parameter = new { SpalteId = reihenfolge[stelle], Board = boardId, Position = stelle + 1 };
-            verbindung.Execute(@"
+            getroffeneZeilen += verbindung.Execute(@"
                 UPDATE Spalte
                    SET Position = @Position
                  WHERE SpalteId = @SpalteId
                    AND Board = @Board", parameter, transaktion);
         }
+
+        return getroffeneZeilen;
     }
 
     private static bool ExistiertBoard(IDbConnection verbindung, IDbTransaction? transaktion, long boardId)

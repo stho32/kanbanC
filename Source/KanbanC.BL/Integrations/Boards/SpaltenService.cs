@@ -48,13 +48,7 @@ public sealed class SpaltenService
             return Ergebnis<IReadOnlyList<Spalte>>.Zurueckgewiesen(befunde);
         }
 
-        var neueOrdnung = _repository.SetzeReihenfolge(boardId, gewuenschteReihenfolge);
-        if (neueOrdnung is null)
-        {
-            return null;
-        }
-
-        return Ergebnis<IReadOnlyList<Spalte>>.Erfolg(neueOrdnung);
+        return _repository.SetzeReihenfolge(boardId, gewuenschteReihenfolge);
     }
 
     public Ergebnis<Spalte>? AendereSpalte(long boardId, long spalteId, SpalteAendernAnfrage anfrage)

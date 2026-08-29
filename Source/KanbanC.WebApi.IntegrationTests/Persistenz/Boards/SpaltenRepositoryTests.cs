@@ -146,10 +146,11 @@ public class SpaltenRepositoryTests
         var zuErledigen = SpalteIdAnPosition(datenbank, boardId, 1);
         var inArbeit = SpalteIdAnPosition(datenbank, boardId, 2);
 
-        var spalten = repository.SetzeReihenfolge(boardId, [erledigt, zuErledigen, inArbeit]);
+        var ergebnis = repository.SetzeReihenfolge(boardId, [erledigt, zuErledigen, inArbeit]);
 
-        Assert.That(spalten, Is.Not.Null);
-        Assert.That(spalten!.Select(s => s.Position), Is.EqualTo(new[] { 1, 2, 3 }));
+        Assert.That(ergebnis, Is.Not.Null);
+        Assert.That(ergebnis!.IstErfolg, Is.True);
+        Assert.That(ergebnis.Wert.Select(s => s.Position), Is.EqualTo(new[] { 1, 2, 3 }));
         Assert.That(GespeicherteBezeichnungenNachPosition(datenbank, boardId),
             Is.EqualTo(new[] { "Erledigt", "Zu erledigen", "In Arbeit" }));
     }
@@ -166,6 +167,45 @@ public class SpaltenRepositoryTests
         Assert.That(spalten, Is.Null);
         Assert.That(GespeicherteBezeichnungenNachPosition(datenbank, boardId),
             Is.EqualTo(new[] { "Zu erledigen", "In Arbeit", "Erledigt" }));
+    }
+
+    [Test]
+    public void Wenn_eine_Spalte_der_Reihenfolge_inzwischen_geloescht_ist_dann_bleiben_die_Positionen_stehen()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var repository = new SpaltenRepository(datenbank.Verbindungsfabrik);
+        var erledigt = SpalteIdAnPosition(datenbank, boardId, 3);
+        var zuErledigen = SpalteIdAnPosition(datenbank, boardId, 1);
+        var inArbeit = SpalteIdAnPosition(datenbank, boardId, 2);
+        repository.Entferne(boardId, inArbeit);
+
+        var ergebnis = repository.SetzeReihenfolge(boardId, [erledigt, zuErledigen, inArbeit]);
+
+        Assert.That(ergebnis, Is.Not.Null);
+        Assert.That(ergebnis!.IstErfolg, Is.False);
+        Assert.That(ergebnis.Befunde.BefundAnzahl, Is.EqualTo(1));
+        Assert.That(GespeicherteBezeichnungenNachPosition(datenbank, boardId),
+            Is.EqualTo(new[] { "Zu erledigen", "Erledigt" }));
+    }
+
+    [Test]
+    public void Wenn_die_Reihenfolge_eine_inzwischen_angelegte_Spalte_auslaesst_dann_bleiben_die_Positionen_stehen()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var repository = new SpaltenRepository(datenbank.Verbindungsfabrik);
+        var erledigt = SpalteIdAnPosition(datenbank, boardId, 3);
+        var zuErledigen = SpalteIdAnPosition(datenbank, boardId, 1);
+        var inArbeit = SpalteIdAnPosition(datenbank, boardId, 2);
+        repository.LegeAn(boardId, new SpalteAnlegenAnfrage("Wartet auf Zulieferung", false, null));
+
+        var ergebnis = repository.SetzeReihenfolge(boardId, [erledigt, zuErledigen, inArbeit]);
+
+        Assert.That(ergebnis, Is.Not.Null);
+        Assert.That(ergebnis!.IstErfolg, Is.False);
+        Assert.That(GespeicherteBezeichnungenNachPosition(datenbank, boardId),
+            Is.EqualTo(new[] { "Zu erledigen", "In Arbeit", "Erledigt", "Wartet auf Zulieferung" }));
     }
 
     [Test]

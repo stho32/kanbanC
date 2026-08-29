@@ -1,4 +1,5 @@
 using KanbanC.BL.Interfaces.Boards;
+using KanbanC.BL.Models;
 using KanbanC.Contracts.Boards;
 
 namespace KanbanC.BL.Tests.TestHelpers;
@@ -84,7 +85,7 @@ public sealed class TestSpaltenRepository : ISpaltenRepository
         return spalten;
     }
 
-    public IReadOnlyList<Spalte>? SetzeReihenfolge(long boardId, IReadOnlyList<long> reihenfolge)
+    public Ergebnis<IReadOnlyList<Spalte>>? SetzeReihenfolge(long boardId, IReadOnlyList<long> reihenfolge)
     {
         WurdeUmsortiert = true;
         if (!_spaltenJeBoard.TryGetValue(boardId, out var spalten))
@@ -94,7 +95,7 @@ public sealed class TestSpaltenRepository : ISpaltenRepository
 
         var neueOrdnung = reihenfolge.Select((spalteId, stelle) => AnNeuerPosition(spalten, spalteId, stelle)).ToList();
         _spaltenJeBoard[boardId] = neueOrdnung;
-        return neueOrdnung;
+        return Ergebnis<IReadOnlyList<Spalte>>.Erfolg(neueOrdnung);
     }
 
     private static Spalte AnNeuerPosition(List<Spalte> spalten, long spalteId, int stelle)
