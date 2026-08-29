@@ -33,7 +33,21 @@ zuletzt: 2026-08-29
 | F0003 | Feature | I0001 | Datenbestand überlebt Neustart | gruen | AK „Datenhaltung"; US-6 |  |  |  | F0001 | R00001 |  |
 | B0013 | Bubble | F0003 | Migration idempotent | gruen | Test gruen | zweiter Lauf auf bestehender Datei → Migrationslaeufer → Schema und Daten unverändert | 2 | | | | Integration |
 | B0014 | Bubble | F0003 | Neustart der WebApi | gruen | Test gruen | zweite Instanz auf derselben Datei → Boards bleiben, nächste Nummer 3 | 2 | | | | Integration; US-6 |
-| I0002 | Interaction | D0001 | Boards auflisten und öffnen | rot | Alle Boards sind mit Name und Art aufgelistet; das gewählte lässt sich öffnen | | | | I0001 | | |
+| I0002 | Interaction | D0001 | Boards auflisten und öffnen | gelb | Alle Boards sind mit Name und Art aufgelistet; das gewählte lässt sich öffnen | | | | I0001 | R00003 | |
+| F0004 | Feature | I0002 | Boards in fester Reihenfolge auflisten | gelb | AK „Liste" ohne den Verweis-Punkt: API und Oberfläche liefern die Boards alphabetisch nach Name, Groß-/Kleinschreibung ohne Einfluss, BoardId als Zweitschlüssel; US-4 | | | | I0001 | R00003 | |
+| B0016 | Bubble | F0004 | Sortierung in der Abfrage | gruen | Test gruen | Boards gemischter Schreibweise → BoardRepository.LadeAlle (ORDER BY Name COLLATE NOCASE, BoardId) → BoardUebersichten alphabetisch | 0,4 | | | | Provider; Aufwand belegt; US-4 |
+| B0017 | Bubble | F0004 | Sortierung erreicht die API | rot | Test gruen | HTTP GET /api/boards → BoardEndpunkte + BoardService → Liste in Repository-Reihenfolge | 0,4 | | | | Integration; nur Test, kein Produktionscode; Aufwand belegt |
+| B0018 | Bubble | F0004 | E2E Liste alphabetisch | rot | Test gruen | drei Boards gemischter Schreibweise → Playwright auf Boards.razor → Zeilen alphabetisch | 0,4 | | | | E2E; US-4; Aufwand belegt |
+| F0005 | Feature | I0002 | Board als eigene Seite öffnen | rot | AK „Board öffnen" plus der Verweis-Punkt aus „Liste": eigene Route, Kopfdaten, Spaltenbahnen, Reload-fest, Rückweg; US-1, US-2, US-3 | | | | I0001 | R00003 | |
+| B0019 | Bubble | F0005 | Board-Seite mit Route | rot | Test gruen | Route /boards/{BoardId:long} → Board.razor + BoardApiKlient.LadeBoard → Kopfzeile mit Name, Art, Terminen | 0,4 | | | | UI; US-2; Aufwand belegt |
+| B0020 | Bubble | F0005 | Spaltenbahnen | rot | Test gruen | Board.Spalten → Bahnen-Layout in Board.razor → Spalten nebeneinander, Abschlussspalte mit Anzeigegrenze markiert | 0,4 | | | | UI; Aufwand belegt |
+| B0021 | Bubble | F0005 | Verweis aus der Liste | rot | Test gruen | BoardUebersicht → NavLink in Boards.razor → /boards/{BoardId} | 0,4 | | | | UI; US-1; Aufwand belegt |
+| B0022 | Bubble | F0005 | Detail-Panel abbauen, Seitenobjekte umziehen | rot | Test gruen | Panel in Boards.razor + BoardsSeite → BoardSeite; die zwei R00001-E2E-Tests auf die neue Seite | 0,4-1,5 | | | | Umbau; unklar: Umfang des Testumzugs; R00001-Suite muss gruen bleiben |
+| B0023 | Bubble | F0005 | E2E Board öffnen | rot | Test gruen | Klick aus der Liste, Direktaufruf, Reload, Rückweg → Playwright → US-1, US-2, US-3 | 0,4 | | | | E2E; Aufwand belegt |
+| F0006 | Feature | I0002 | Fehlerpfade beim Öffnen | rot | AK „Unbekanntes Board": lesbare Meldung mit Nummer und Rückweg, kein Absturz; Meldung bei nicht erreichbarer WebApi; US-5, US-6 | | | | F0005 | R00003 | |
+| B0024 | Bubble | F0006 | Unbekannte Board-Nummer | rot | Test gruen | LadeBoard liefert null → Board.razor → Meldung mit der Nummer und Verweis zur Liste | 0,4 | | | | UI; US-5; Aufwand belegt |
+| B0025 | Bubble | F0006 | WebApi nicht erreichbar | rot | Test gruen | HttpRequestException → Board.razor → lesbare Meldung statt Ausnahmeseite | 0,4 | | | | UI; US-6; Aufwand belegt |
+| B0026 | Bubble | F0006 | E2E Fehlerpfade | rot | Test gruen | /boards/999 und angehaltene WebApi → Playwright → US-5, US-6 | 0,4 | | | | E2E; Aufwand belegt |
 | I0003 | Interaction | D0001 | Spalten gestalten | rot | Spalten lassen sich anlegen, umbenennen, umsortieren und entfernen; eine Spalte ist als Abschlussspalte mit Anzeigegrenze N markierbar | | | | I0001 | | |
 | I0004 | Interaction | D0001 | Kartenzahl je Spalte anzeigen | rot | Je Board einschaltbar, dass die Zahl der enthaltenen Karten in der Spaltenkopfzeile steht; sie folgt Änderungen ohne Reload | | | | I0003, I0011 | | |
 | I0005 | Interaction | D0001 | Board umbenennen und archivieren | rot | Ein Board lässt sich umbenennen und archivieren; das archivierte ist aus der Standardliste verschwunden, bleibt aber abrufbar | | | | I0001 | | |
@@ -82,7 +96,8 @@ zuletzt: 2026-08-29
 
 ## Offene Fragen
 
-Keine.
+- `B0019`: Verhalten des Blazor-Routers bei `/boards/abc` — ob der `:long`-Constraint die `NotFoundPage` zieht oder die Seite mit Standardwert rendert, ist nicht belegt (auch als Missing-Doc in `R00003` vermerkt). Betrifft das Kriterium „stürzt nicht ab".
+- `B0022`: Der Umfang des Testumzugs ist geschätzt, nicht gemessen — zwei E2E-Tests aus `R00001` hängen am entfallenden Detail-Panel. Deshalb als einzige Bubble mit Bandbreite.
 
 ## Notizen / Quellen
 
