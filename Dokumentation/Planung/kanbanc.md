@@ -17,6 +17,7 @@ zuletzt: 2026-08-29
 | I0001 | Interaction | D0001 | Board anlegen | gelb | Ein neues Board entsteht mit Name und Art (Linie oder Projekt) und erscheint in der Board-Liste |  |  |  |  | R00001 |  |
 | F0001 | Feature | I0001 | Board anlegen und abrufen | gelb | AK „Board anlegen" und „Standardspalten" über API und Oberfläche (Liste, Formular); US-1, US-2, US-3 |  |  |  |  | R00001 |  |
 | B0001 | Bubble | F0001 | Standardspalten erzeugen | gruen | Test gruen | — → StandardspaltenVorlage → 3 Spalten (mit Contracts-DTOs) | 2 | | | | Operation |
+| B0015 | Bubble | F0001 | Datenbankverbindung öffnen | gruen | Test gruen | Verbindungszeichenfolge → SqliteVerbindungsfabrik.Oeffne → offene IDbConnection, Datei entsteht | 2 | | | | Provider; aus B0002 herausgeschnitten (Deckel) |
 | B0002 | Bubble | F0001 | Schema anlegen | rot | Test gruen | Verbindungszeichenfolge → Migrationslaeufer + Migration 001 → Tabellen in Datei | 2 | | | | Integration + Provider |
 | B0003 | Bubble | F0001 | Board mit Spalten speichern | rot | Test gruen | Anfrage + Spalten → BoardRepository.LegeAn → Board mit Nummer | 2 | | | | Provider, eine Transaktion |
 | B0004 | Bubble | F0001 | Boards laden | rot | Test gruen | — / Nummer → LadeAlle / Lade → Boards / Board? | 2 | | | | Provider |
