@@ -24,6 +24,11 @@
     </div>
 </div>
 
+@if (_fehlermeldung is not null)
+{
+    <div class="alert alert-warning" role="alert" id="spalten-fehlermeldung">@_fehlermeldung</div>
+}
+
 @if (_zurueckweisung is not null)
 {
     <div class="alert alert-danger" role="alert" id="spalten-zurueckweisung">
@@ -69,6 +74,7 @@
     private readonly SpaltenFormular _neueSpalte = new();
     private Dictionary<long, SpaltenFormular> _formulare = [];
     private Zurueckweisung? _zurueckweisung;
+    private string? _fehlermeldung;
 
     [Parameter]
     [EditorRequired]
@@ -89,6 +95,11 @@
 
     private async Task LegeSpalteAn()
     {
+        await MitErreichbarerWebApi(LegeNeueSpalteAn);
+    }
+
+    private async Task LegeNeueSpalteAn()
+    {
         var ergebnis = await SpaltenKlient.LegeSpalteAn(BoardId, _neueSpalte.AlsAnlegenAnfrage());
         if (ergebnis.WurdeZurueckgewiesen)
         {
@@ -101,6 +112,11 @@
     }
 
     private async Task SpeichereSpalte(long spalteId)
+    {
+        await MitErreichbarerWebApi(() => SchreibeSpalte(spalteId));
+    }
+
+    private async Task SchreibeSpalte(long spalteId)
     {
         var ergebnis = await SpaltenKlient.AendereSpalte(BoardId, spalteId, _formulare[spalteId].AlsAendernAnfrage());
         if (ergebnis.WurdeZurueckgewiesen)
@@ -124,6 +140,11 @@
 
     private async Task SetzeReihenfolge(IReadOnlyList<long> reihenfolge)
     {
+        await MitErreichbarerWebApi(() => SchreibeReihenfolge(reihenfolge));
+    }
+
+    private async Task SchreibeReihenfolge(IReadOnlyList<long> reihenfolge)
+    {
         var ergebnis = await SpaltenKlient.SetzeReihenfolge(BoardId, new Spaltenreihenfolge(reihenfolge));
         if (ergebnis.WurdeZurueckgewiesen)
         {
@@ -136,6 +157,11 @@
 
     private async Task EntferneSpalte(long spalteId)
     {
+        await MitErreichbarerWebApi(() => LoescheSpalte(spalteId));
+    }
+
+    private async Task LoescheSpalte(long spalteId)
+    {
         var zurueckweisung = await SpaltenKlient.EntferneSpalte(BoardId, spalteId);
         if (zurueckweisung is not null)
         {
@@ -144,6 +170,11 @@
         }
 
         await UebernimmAenderung();
+    }
+
+    private async Task MitErreichbarerWebApi(Func<Task> aufruf)
+    {
+        _fehlermeldung = await WebApiAufruf.MitAusfallmeldung(aufruf);
     }
 
     private async Task UebernimmAenderung()

@@ -29,3 +29,5 @@ Nie vom User erfragen.
 | 2026-08-29 | R00002 Spalten gestalten | B0027 Spalte löschen und verdichten | Standard | 0,4h | 0,0h | 0,0h | autonom |
 | 2026-08-29 | R00002 Spalten gestalten | B0028 Entfernen über die API | Standard | 2h | 0,0h | 0,0h | autonom |
 | 2026-08-29 | R00002 Spalten gestalten | B0029 Entfernen in der Oberfläche | Standard | 2h | 0,0h | 0,0h | autonom |
+| 2026-08-29 | R00002 Spalten gestalten | B0030 Ausfall der WebApi in der Spaltenpflege | Standard | 0,4h | 0,3h | 0,3h | autonom |
+| 2026-08-29 | R00002 Spalten gestalten | B0031 Reihenfolge in derselben Transaktion pruefen | Standard | 0,4h | 0,3h | 0,3h | autonom |

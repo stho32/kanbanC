@@ -117,7 +117,6 @@
 @code {
     private const string IsoDatumsformat = "yyyy-MM-dd";
     private const string KeinTermin = "—";
-    private const string WebApiNichtErreichbar = "Die WebApi ist nicht erreichbar. Bitte später erneut versuchen.";
     private readonly BoardFormular _formular = new();
     private IReadOnlyList<BoardUebersicht>? _boards;
     private Zurueckweisung? _zurueckweisung;
@@ -153,15 +152,7 @@
 
     private async Task MitErreichbarerWebApi(Func<Task> aufruf)
     {
-        try
-        {
-            await aufruf();
-            _fehlermeldung = null;
-        }
-        catch (HttpRequestException)
-        {
-            _fehlermeldung = WebApiNichtErreichbar;
-        }
+        _fehlermeldung = await WebApiAufruf.MitAusfallmeldung(aufruf);
     }
 
     private static string AlsText(DateOnly? termin)

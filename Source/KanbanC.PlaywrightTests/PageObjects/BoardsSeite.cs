@@ -27,6 +27,8 @@ public sealed class BoardsSeite
 
     public ILocator SpaltenZurueckweisung => _seite.Locator("#spalten-zurueckweisung");
 
+    public ILocator SpaltenFehlermeldung => _seite.Locator("#spalten-fehlermeldung");
+
     public ILocator HinweisKeineSpalten => _seite.Locator("#keine-spalten");
 
     public ILocator DetailsStarttermin => _seite.Locator("#details-starttermin");
