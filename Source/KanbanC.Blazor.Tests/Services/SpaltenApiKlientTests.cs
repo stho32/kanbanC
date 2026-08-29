@@ -98,4 +98,32 @@ public class SpaltenApiKlientTests
         Assert.That(async () => await klient.LegeSpalteAn(1, new SpalteAnlegenAnfrage("Eingang", false, null)),
             Throws.InvalidOperationException);
     }
+
+    [Test]
+    public async Task Wenn_die_WebApi_die_neue_Reihenfolge_liefert_dann_stehen_die_Spalten_im_Ergebnis()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK,
+            """[{"spalteId":3,"bezeichnung":"Erledigt","position":1,"istAbschlussspalte":true,"anzeigegrenze":20},""" +
+            """{"spalteId":1,"bezeichnung":"Zu erledigen","position":2,"istAbschlussspalte":false,"anzeigegrenze":null}]""",
+            JsonInhaltstyp);
+        var klient = new SpaltenApiKlient(fabrik);
+
+        var ergebnis = await klient.SetzeReihenfolge(1, new Spaltenreihenfolge([3, 1]));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.False);
+        Assert.That(ergebnis.Wert.Select(s => s.Bezeichnung), Is.EqualTo(new[] { "Erledigt", "Zu erledigen" }));
+    }
+
+    [Test]
+    public async Task Wenn_die_WebApi_die_Reihenfolge_zurueckweist_dann_stehen_die_Befunde_im_Ergebnis()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.BadRequest,
+            """{"befunde":["Die Reihenfolge muss alle Spalten des Boards nennen."]}""", JsonInhaltstyp);
+        var klient = new SpaltenApiKlient(fabrik);
+
+        var ergebnis = await klient.SetzeReihenfolge(1, new Spaltenreihenfolge([3]));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.That(ergebnis.Zurueckweisung.Befunde[0], Does.Contain("alle Spalten"));
+    }
 }

@@ -57,6 +57,8 @@
                 <input class="spalte-abschluss" type="checkbox" aria-label="Abschlussspalte" @bind="formular.IstAbschlussspalte" />
                 <input class="spalte-grenze" type="number" aria-label="Anzeigegrenze" @bind="formular.Anzeigegrenze" />
                 <button type="button" class="btn btn-sm btn-outline-primary spalte-speichern" @onclick="() => SpeichereSpalte(spalte.SpalteId)">Speichern</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary spalte-hoch" @onclick="() => SchiebeHoch(spalte.SpalteId)">Hoch</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary spalte-runter" @onclick="() => SchiebeRunter(spalte.SpalteId)">Runter</button>
             </span>
         </li>
     }
@@ -100,6 +102,28 @@
     private async Task SpeichereSpalte(long spalteId)
     {
         var ergebnis = await SpaltenKlient.AendereSpalte(BoardId, spalteId, _formulare[spalteId].AlsAendernAnfrage());
+        if (ergebnis.WurdeZurueckgewiesen)
+        {
+            _zurueckweisung = ergebnis.Zurueckweisung;
+            return;
+        }
+
+        await UebernimmAenderung();
+    }
+
+    private async Task SchiebeHoch(long spalteId)
+    {
+        await SetzeReihenfolge(Spaltenordnung.MitSpalteWeiterVorn(Spalten, spalteId));
+    }
+
+    private async Task SchiebeRunter(long spalteId)
+    {
+        await SetzeReihenfolge(Spaltenordnung.MitSpalteWeiterHinten(Spalten, spalteId));
+    }
+
+    private async Task SetzeReihenfolge(IReadOnlyList<long> reihenfolge)
+    {
+        var ergebnis = await SpaltenKlient.SetzeReihenfolge(BoardId, new Spaltenreihenfolge(reihenfolge));
         if (ergebnis.WurdeZurueckgewiesen)
         {
             _zurueckweisung = ergebnis.Zurueckweisung;

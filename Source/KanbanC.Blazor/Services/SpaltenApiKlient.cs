@@ -20,14 +20,21 @@ public sealed class SpaltenApiKlient
     {
         using var klient = _klientFabrik.CreateClient(KlientName);
         using var antwort = await klient.PostAsJsonAsync(SpaltenRoute(boardId), anfrage);
-        return await AlsSpaltenErgebnis(antwort);
+        return await AlsErgebnis<Spalte>(antwort);
     }
 
     public async Task<ApiErgebnis<Spalte>> AendereSpalte(long boardId, long spalteId, SpalteAendernAnfrage anfrage)
     {
         using var klient = _klientFabrik.CreateClient(KlientName);
         using var antwort = await klient.PutAsJsonAsync($"{SpaltenRoute(boardId)}/{spalteId}", anfrage);
-        return await AlsSpaltenErgebnis(antwort);
+        return await AlsErgebnis<Spalte>(antwort);
+    }
+
+    public async Task<ApiErgebnis<IReadOnlyList<Spalte>>> SetzeReihenfolge(long boardId, Spaltenreihenfolge reihenfolge)
+    {
+        using var klient = _klientFabrik.CreateClient(KlientName);
+        using var antwort = await klient.PutAsJsonAsync($"{SpaltenRoute(boardId)}/reihenfolge", reihenfolge);
+        return await AlsErgebnis<IReadOnlyList<Spalte>>(antwort);
     }
 
     private static string SpaltenRoute(long boardId)
@@ -35,28 +42,29 @@ public sealed class SpaltenApiKlient
         return $"{BoardsRoute}/{boardId}/spalten";
     }
 
-    private static async Task<ApiErgebnis<Spalte>> AlsSpaltenErgebnis(HttpResponseMessage antwort)
+    private static async Task<ApiErgebnis<T>> AlsErgebnis<T>(HttpResponseMessage antwort)
+        where T : class
     {
         var anfrageWurdeZurueckgewiesen = antwort.StatusCode == HttpStatusCode.BadRequest;
         if (anfrageWurdeZurueckgewiesen)
         {
             var zurueckweisung = await Zurueckweisungsleser.Lies(antwort);
-            return ApiErgebnis<Spalte>.Zurueckgewiesen(zurueckweisung);
+            return ApiErgebnis<T>.Zurueckgewiesen(zurueckweisung);
         }
 
         var spalteIstUnbekannt = antwort.StatusCode == HttpStatusCode.NotFound;
         if (spalteIstUnbekannt)
         {
-            return ApiErgebnis<Spalte>.Zurueckgewiesen(SpalteOderBoardVerschwunden);
+            return ApiErgebnis<T>.Zurueckgewiesen(SpalteOderBoardVerschwunden);
         }
 
         antwort.EnsureSuccessStatusCode();
-        var spalte = await antwort.Content.ReadFromJsonAsync<Spalte>();
-        if (spalte is null)
+        var wert = await antwort.Content.ReadFromJsonAsync<T>();
+        if (wert is null)
         {
-            throw new InvalidOperationException("Die WebApi hat keine Spalte zurückgegeben.");
+            throw new InvalidOperationException("Die WebApi hat keine verwertbare Antwort zurückgegeben.");
         }
 
-        return ApiErgebnis<Spalte>.Erfolg(spalte);
+        return ApiErgebnis<T>.Erfolg(wert);
     }
 }

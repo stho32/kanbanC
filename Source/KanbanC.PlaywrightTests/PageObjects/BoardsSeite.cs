@@ -103,6 +103,16 @@ public sealed class BoardsSeite
         await _seite.GetByRole(AriaRole.Button, new() { Name = "Spalte anlegen" }).ClickAsync();
     }
 
+    public async Task SchiebeSpalteHoch(ILocator zeile)
+    {
+        await zeile.Locator(".spalte-hoch").ClickAsync();
+    }
+
+    public async Task SchiebeSpalteRunter(ILocator zeile)
+    {
+        await zeile.Locator(".spalte-runter").ClickAsync();
+    }
+
     public async Task BearbeiteSpalte(ILocator zeile, string bezeichnung, bool istAbschlussspalte, string anzeigegrenze)
     {
         await zeile.Locator(".spalte-bezeichnung").FillAsync(bezeichnung);
