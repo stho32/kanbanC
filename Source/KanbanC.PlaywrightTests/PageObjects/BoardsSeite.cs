@@ -17,6 +17,8 @@ public sealed class BoardsSeite
 
     public ILocator Zurueckweisung => _seite.Locator("#zurueckweisung");
 
+    public ILocator Fehlermeldung => _seite.Locator("#fehlermeldung");
+
     public ILocator Boardzeilen => _seite.Locator("#board-liste tbody tr");
 
     public ILocator Spalten => _seite.Locator("#spalten-liste li");
@@ -27,8 +29,13 @@ public sealed class BoardsSeite
 
     public async Task Oeffne()
     {
-        await _seite.GotoAsync($"{_basisAdresse}/boards");
+        await OeffneOhneBoardliste();
         await Assertions.Expect(_seite.Locator("#board-liste, #keine-boards")).ToBeVisibleAsync();
+    }
+
+    public async Task OeffneOhneBoardliste()
+    {
+        await _seite.GotoAsync($"{_basisAdresse}/boards");
     }
 
     public async Task FuelleFormular(string name, string art, string? starttermin, string? zieltermin)

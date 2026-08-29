@@ -69,6 +69,11 @@ public sealed class Testumgebung
         await StarteWebApi();
     }
 
+    public void HalteWebApiAn()
+    {
+        StoppeWebApi();
+    }
+
     private async Task StarteWebApi()
     {
         var umgebung = new Dictionary<string, string> { ["Datenhaltung__Verbindungszeichenfolge"] = $"Data Source={_datenbankDateipfad}" };
