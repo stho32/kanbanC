@@ -24,7 +24,7 @@ zuletzt: 2026-08-29
 | B0005 | Bubble | F0001 | Board-Anlage verdrahten | gruen | Test gruen | Anfrage → BoardService → Ergebnis<Board> | 2 | | | | Integration, Test-Repository |
 | B0006 | Bubble | F0001 | Board-Endpunkte | gruen | Test gruen | HTTP → BoardEndpunkte + Start-Migration → 201 / 200 / 404 | 2 | | | | Integration |
 | B0007 | Bubble | F0001 | API-Klient der Oberfläche | gelb | Test gruen | Anfrage → BoardApiKlient → Boards / ApiErgebnis | 2 | | | | Integration; Abdeckung über E2E |
-| B0008 | Bubble | F0001 | Board-Seite | rot | Test gruen | Liste + Formular → Boards.razor, NavMenu → Board angelegt | 2 | | | | UI; Abdeckung über E2E |
+| B0008 | Bubble | F0001 | Board-Seite | gelb | Test gruen | Liste + Formular → Boards.razor, NavMenu → Board angelegt | 2 | | | | UI; Abdeckung über E2E |
 | B0009 | Bubble | F0001 | E2E Board anlegen | rot | Test gruen | beide Prozesse auf freien Ports → Playwright → US-1, US-2, US-3 gruen | 2-4 | | | | unklar: Prozessstart-Infrastruktur |
 | F0002 | Feature | I0001 | Ungültige Eingaben zurückweisen | rot | AK „Zurückweisung ungültiger Eingaben" und lesbare Meldung in der Oberfläche; US-4, US-5 | | | | F0001 | R00001 | |
 | B0010 | Bubble | F0002 | Anfrage prüfen | rot | Test gruen | BoardAnlegenAnfrage → BoardAnlegenValidator → Pruefbefunde | 2 | | | | Operation |

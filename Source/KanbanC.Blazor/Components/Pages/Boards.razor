@@ -1,0 +1,187 @@
+@page "/boards"
+@rendermode InteractiveServer
+@using System.Globalization
+@using KanbanC.Blazor.Services
+@using KanbanC.Contracts.Boards
+@inject BoardApiKlient ApiKlient
+
+<PageTitle>Boards</PageTitle>
+
+<h1>Boards</h1>
+
+<section class="mb-5">
+    <h2>Neues Board</h2>
+    <EditForm Model="_formular" OnSubmit="LegeBoardAn" FormName="board-anlegen">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label for="name" class="form-label">Name</label>
+                <InputText id="name" class="form-control" @bind-Value="_formular.Name" />
+            </div>
+            <div class="col-md-2">
+                <label for="art" class="form-label">Art</label>
+                <InputSelect id="art" class="form-select" @bind-Value="_formular.Art">
+                    <option value="@BoardArt.Linie">Linie</option>
+                    <option value="@BoardArt.Projekt">Projekt</option>
+                </InputSelect>
+            </div>
+            <div class="col-md-2">
+                <label for="starttermin" class="form-label">Starttermin</label>
+                <InputDate id="starttermin" class="form-control" @bind-Value="_formular.Starttermin" />
+            </div>
+            <div class="col-md-2">
+                <label for="zieltermin" class="form-label">Zieltermin</label>
+                <InputDate id="zieltermin" class="form-control" @bind-Value="_formular.Zieltermin" />
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary">Board anlegen</button>
+            </div>
+        </div>
+    </EditForm>
+
+    @if (_zurueckweisung is not null)
+    {
+        <div class="alert alert-danger mt-3" role="alert" id="zurueckweisung">
+            <p class="mb-1">Das Board wurde nicht angelegt:</p>
+            <ul class="mb-0">
+                @foreach (var befund in _zurueckweisung.Befunde)
+                {
+                    <li>@befund</li>
+                }
+            </ul>
+        </div>
+    }
+</section>
+
+<section class="mb-5">
+    <h2>Alle Boards</h2>
+    @if (_boards is null)
+    {
+        <p>Boards werden geladen …</p>
+    }
+    else if (_boards.Count == 0)
+    {
+        <p id="keine-boards">Noch kein Board vorhanden.</p>
+    }
+    else
+    {
+        <table class="table" id="board-liste">
+            <thead>
+                <tr>
+                    <th>Nr.</th>
+                    <th>Name</th>
+                    <th>Art</th>
+                    <th>Starttermin</th>
+                    <th>Zieltermin</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var board in _boards)
+                {
+                    <tr data-board-id="@board.BoardId">
+                        <td>@board.BoardId</td>
+                        <td>@board.Name</td>
+                        <td>@board.Art</td>
+                        <td>@AlsText(board.Starttermin)</td>
+                        <td>@AlsText(board.Zieltermin)</td>
+                        <td>
+                            <button type="button" class="btn btn-link p-0" @onclick="() => ZeigeSpalten(board.BoardId)">Spalten anzeigen</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>
+
+@if (_gewaehltesBoard is not null)
+{
+    <section id="board-details">
+        <h2>Board @_gewaehltesBoard.BoardId: @_gewaehltesBoard.Name</h2>
+        <p>
+            Art @_gewaehltesBoard.Art,
+            Starttermin <span id="details-starttermin">@AlsText(_gewaehltesBoard.Starttermin)</span>,
+            Zieltermin <span id="details-zieltermin">@AlsText(_gewaehltesBoard.Zieltermin)</span>
+        </p>
+        <ol id="spalten-liste">
+            @foreach (var spalte in _gewaehltesBoard.Spalten)
+            {
+                <li>
+                    @spalte.Bezeichnung
+                    @if (spalte.IstAbschlussspalte)
+                    {
+                        <span class="text-secondary">(Abschlussspalte, Anzeigegrenze @spalte.Anzeigegrenze)</span>
+                    }
+                </li>
+            }
+        </ol>
+    </section>
+}
+
+@code {
+    private const string IsoDatumsformat = "yyyy-MM-dd";
+    private const string KeinTermin = "—";
+    private readonly BoardFormular _formular = new();
+    private IReadOnlyList<BoardUebersicht>? _boards;
+    private Zurueckweisung? _zurueckweisung;
+    private Board? _gewaehltesBoard;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _boards = await ApiKlient.LadeAlleBoards();
+    }
+
+    private async Task LegeBoardAn()
+    {
+        var ergebnis = await ApiKlient.LegeBoardAn(_formular.AlsAnfrage());
+        if (ergebnis.WurdeZurueckgewiesen)
+        {
+            _zurueckweisung = ergebnis.Zurueckweisung;
+            return;
+        }
+
+        _zurueckweisung = null;
+        _formular.Leere();
+        _boards = await ApiKlient.LadeAlleBoards();
+    }
+
+    private async Task ZeigeSpalten(long boardId)
+    {
+        _gewaehltesBoard = await ApiKlient.LadeBoard(boardId);
+    }
+
+    private static string AlsText(DateOnly? termin)
+    {
+        if (termin is null)
+        {
+            return KeinTermin;
+        }
+
+        return termin.Value.ToString(IsoDatumsformat, CultureInfo.InvariantCulture);
+    }
+
+    // Adaptermodell des Formular-Bindings: veränderlich, weil EditForm es so braucht; verlässt die Seite nie.
+    private sealed class BoardFormular
+    {
+        public string Name { get; set; } = "";
+
+        public BoardArt Art { get; set; } = BoardArt.Linie;
+
+        public DateOnly? Starttermin { get; set; }
+
+        public DateOnly? Zieltermin { get; set; }
+
+        public BoardAnlegenAnfrage AlsAnfrage()
+        {
+            return new BoardAnlegenAnfrage(Name, Art, Starttermin, Zieltermin);
+        }
+
+        public void Leere()
+        {
+            Name = "";
+            Art = BoardArt.Linie;
+            Starttermin = null;
+            Zieltermin = null;
+        }
+    }
+}
