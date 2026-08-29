@@ -1,6 +1,6 @@
 ---
 id: R00002
-status: Neu
+status: Erledigt
 datum: 2026-08-29
 ---
 
@@ -40,53 +40,53 @@ Die Standardspalten aus `R00001` passen auf kein zweites Board. Ohne diesen Slic
 ## Akzeptanzkriterien
 
 ### Spalte anlegen
-- [ ] `POST /api/boards/{boardId}/spalten` mit einer Bezeichnung legt eine Spalte an und liefert sie mit vergebener `SpalteId` zurück (HTTP 201).
-- [ ] Die neue Spalte steht als letzte in der Reihenfolge: bei drei vorhandenen Spalten erhält sie Position 4.
-- [ ] Die neue Spalte erscheint danach in `GET /api/boards/{boardId}` an dieser Stelle.
-- [ ] Zwei Spalten mit derselben Bezeichnung sind erlaubt und erhalten verschiedene `SpalteId`.
-- [ ] Eine Spalte lässt sich auch an einem Board anlegen, das keine Spalte mehr hat — sie erhält Position 1.
-- [ ] `POST` auf eine nicht vergebene `boardId` liefert HTTP 404; es entsteht keine Spalte.
+- [x] `POST /api/boards/{boardId}/spalten` mit einer Bezeichnung legt eine Spalte an und liefert sie mit vergebener `SpalteId` zurück (HTTP 201).
+- [x] Die neue Spalte steht als letzte in der Reihenfolge: bei drei vorhandenen Spalten erhält sie Position 4.
+- [x] Die neue Spalte erscheint danach in `GET /api/boards/{boardId}` an dieser Stelle.
+- [x] Zwei Spalten mit derselben Bezeichnung sind erlaubt und erhalten verschiedene `SpalteId`.
+- [x] Eine Spalte lässt sich auch an einem Board anlegen, das keine Spalte mehr hat — sie erhält Position 1.
+- [x] `POST` auf eine nicht vergebene `boardId` liefert HTTP 404; es entsteht keine Spalte.
 
 ### Spalte umbenennen und markieren
-- [ ] `PUT /api/boards/{boardId}/spalten/{spalteId}` ändert die Bezeichnung; der Abruf des Boards liefert die neue Bezeichnung.
-- [ ] Derselbe Aufruf setzt und entfernt die Abschlussspalten-Markierung samt Anzeigegrenze.
-- [ ] Die Position der Spalte bleibt dabei unverändert.
-- [ ] `PUT` auf eine `spalteId`, die zu einem anderen Board gehört, liefert HTTP 404 und ändert nichts.
-- [ ] `PUT` auf eine nicht vergebene `spalteId` liefert HTTP 404.
+- [x] `PUT /api/boards/{boardId}/spalten/{spalteId}` ändert die Bezeichnung; der Abruf des Boards liefert die neue Bezeichnung.
+- [x] Derselbe Aufruf setzt und entfernt die Abschlussspalten-Markierung samt Anzeigegrenze.
+- [x] Die Position der Spalte bleibt dabei unverändert.
+- [x] `PUT` auf eine `spalteId`, die zu einem anderen Board gehört, liefert HTTP 404 und ändert nichts.
+- [x] `PUT` auf eine nicht vergebene `spalteId` liefert HTTP 404.
 
 ### Abschlussspalte und Anzeigegrenze
-- [ ] Mehrere Spalten desselben Boards lassen sich gleichzeitig als Abschlussspalte markieren; alle behalten ihre eigene Anzeigegrenze.
-- [ ] Ein Board ohne markierte Spalte ist zulässig — das Entmarkieren der einzigen Abschlussspalte wird nicht abgelehnt.
-- [ ] Eine markierte Spalte ohne Anzeigegrenze wird mit HTTP 400 zurückgewiesen.
-- [ ] Eine Anzeigegrenze von 0 oder kleiner wird mit HTTP 400 zurückgewiesen.
-- [ ] Eine Anzeigegrenze an einer nicht markierten Spalte wird mit HTTP 400 zurückgewiesen; eine nicht markierte Spalte trägt danach keine Grenze.
+- [x] Mehrere Spalten desselben Boards lassen sich gleichzeitig als Abschlussspalte markieren; alle behalten ihre eigene Anzeigegrenze.
+- [x] Ein Board ohne markierte Spalte ist zulässig — das Entmarkieren der einzigen Abschlussspalte wird nicht abgelehnt.
+- [x] Eine markierte Spalte ohne Anzeigegrenze wird mit HTTP 400 zurückgewiesen.
+- [x] Eine Anzeigegrenze von 0 oder kleiner wird mit HTTP 400 zurückgewiesen.
+- [x] Eine Anzeigegrenze an einer nicht markierten Spalte wird mit HTTP 400 zurückgewiesen; eine nicht markierte Spalte trägt danach keine Grenze.
 
 ### Spalten umsortieren
-- [ ] `PUT /api/boards/{boardId}/spalten/reihenfolge` mit der vollständigen Liste der `SpalteId` setzt die Reihenfolge und liefert die Spalten in der neuen Ordnung (HTTP 200).
-- [ ] Die Positionen sind danach lückenlos aufsteigend 1..n: aus `[C, A, B]` wird C=1, A=2, B=3.
-- [ ] Eine unvollständige Liste (2 von 3 Spalten) wird mit HTTP 400 zurückgewiesen; die bestehende Reihenfolge bleibt unverändert.
-- [ ] Eine Liste mit einer doppelten `SpalteId` wird mit HTTP 400 zurückgewiesen.
-- [ ] Eine Liste, die eine `SpalteId` eines anderen Boards enthält, wird mit HTTP 400 zurückgewiesen.
+- [x] `PUT /api/boards/{boardId}/spalten/reihenfolge` mit der vollständigen Liste der `SpalteId` setzt die Reihenfolge und liefert die Spalten in der neuen Ordnung (HTTP 200).
+- [x] Die Positionen sind danach lückenlos aufsteigend 1..n: aus `[C, A, B]` wird C=1, A=2, B=3.
+- [x] Eine unvollständige Liste (2 von 3 Spalten) wird mit HTTP 400 zurückgewiesen; die bestehende Reihenfolge bleibt unverändert.
+- [x] Eine Liste mit einer doppelten `SpalteId` wird mit HTTP 400 zurückgewiesen.
+- [x] Eine Liste, die eine `SpalteId` eines anderen Boards enthält, wird mit HTTP 400 zurückgewiesen.
 
 ### Spalte entfernen
-- [ ] `DELETE /api/boards/{boardId}/spalten/{spalteId}` entfernt die Spalte (HTTP 204); der Abruf des Boards zeigt sie nicht mehr.
-- [ ] Die Positionen der verbleibenden Spalten sind danach wieder lückenlos 1..n: nach dem Entfernen der mittleren von drei Spalten haben die beiden übrigen Position 1 und 2.
-- [ ] Auch die letzte verbliebene Spalte lässt sich entfernen; das Board bleibt bestehen und liefert eine leere Spaltenliste.
-- [ ] Eine als Abschlussspalte markierte Spalte lässt sich ohne Vorbedingung entfernen.
-- [ ] `DELETE` auf eine nicht vergebene `spalteId` oder auf eine Spalte eines anderen Boards liefert HTTP 404.
+- [x] `DELETE /api/boards/{boardId}/spalten/{spalteId}` entfernt die Spalte (HTTP 204); der Abruf des Boards zeigt sie nicht mehr.
+- [x] Die Positionen der verbleibenden Spalten sind danach wieder lückenlos 1..n: nach dem Entfernen der mittleren von drei Spalten haben die beiden übrigen Position 1 und 2.
+- [x] Auch die letzte verbliebene Spalte lässt sich entfernen; das Board bleibt bestehen und liefert eine leere Spaltenliste.
+- [x] Eine als Abschlussspalte markierte Spalte lässt sich ohne Vorbedingung entfernen.
+- [x] `DELETE` auf eine nicht vergebene `spalteId` oder auf eine Spalte eines anderen Boards liefert HTTP 404.
 
 ### Zurückweisung ungültiger Eingaben
-- [ ] Eine leere oder nur aus Leerzeichen bestehende Bezeichnung wird beim Anlegen und beim Ändern mit HTTP 400 zurückgewiesen; der Bestand bleibt unverändert.
-- [ ] Jede Zurückweisung liefert den Rumpf `Zurueckweisung` mit mindestens einem lesbaren Befund.
+- [x] Eine leere oder nur aus Leerzeichen bestehende Bezeichnung wird beim Anlegen und beim Ändern mit HTTP 400 zurückgewiesen; der Bestand bleibt unverändert.
+- [x] Jede Zurückweisung liefert den Rumpf `Zurueckweisung` mit mindestens einem lesbaren Befund.
 
 ### Oberfläche
-- [ ] Die Spaltenansicht eines Boards zeigt je Spalte Bezeichnung, Position und die Abschlussspalten-Markierung mit ihrer Anzeigegrenze.
-- [ ] Ein Formular legt eine weitere Spalte an; sie erscheint danach am Ende der Liste.
-- [ ] Je Spalte lassen sich Bezeichnung, Markierung und Anzeigegrenze bearbeiten und speichern.
-- [ ] Je Spalte verschieben zwei Bedienelemente sie um eine Position nach oben bzw. unten; die Liste zeigt die neue Ordnung.
-- [ ] Je Spalte entfernt ein Bedienelement sie; sie verschwindet aus der Liste.
-- [ ] Eine Zurückweisung der API erscheint als lesbare Meldung, ohne dass die Seite abstürzt.
-- [ ] Die Oberfläche erreicht die Spalten ausschließlich über HTTP-Aufrufe der WebApi.
+- [x] Die Spaltenansicht eines Boards zeigt je Spalte Bezeichnung, Position und die Abschlussspalten-Markierung mit ihrer Anzeigegrenze.
+- [x] Ein Formular legt eine weitere Spalte an; sie erscheint danach am Ende der Liste.
+- [x] Je Spalte lassen sich Bezeichnung, Markierung und Anzeigegrenze bearbeiten und speichern.
+- [x] Je Spalte verschieben zwei Bedienelemente sie um eine Position nach oben bzw. unten; die Liste zeigt die neue Ordnung.
+- [x] Je Spalte entfernt ein Bedienelement sie; sie verschwindet aus der Liste.
+- [x] Eine Zurückweisung der API erscheint als lesbare Meldung, ohne dass die Seite abstürzt.
+- [x] Die Oberfläche erreicht die Spalten ausschließlich über HTTP-Aufrufe der WebApi.
 
 ## Betroffene Verzeichnisstruktur
 
