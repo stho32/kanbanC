@@ -1,6 +1,6 @@
 ---
 id: R00001
-status: Neu
+status: Erledigt
 datum: 2026-08-29
 ---
 
@@ -39,35 +39,35 @@ Ohne Board gibt es nichts, woran gearbeitet werden kann — jeder weitere Slice 
 ## Akzeptanzkriterien
 
 ### Board anlegen
-- [ ] `POST /api/boards` mit Name und Art legt ein Board an und liefert es mit vergebener Nummer zurück (HTTP 201).
-- [ ] Das angelegte Board erscheint danach in `GET /api/boards`.
-- [ ] Ein Board lässt sich mit Art `Linie` und mit Art `Projekt` anlegen.
-- [ ] Start- und Zieltermin sind bei beiden Arten setzbar und werden zurückgegeben.
-- [ ] Wird kein Termin angegeben, bleiben beide Felder leer — das Anlegen scheitert nicht.
-- [ ] Zwei Boards mit demselben Namen sind erlaubt und erhalten verschiedene Nummern.
-- [ ] Die erste vergebene Nummer ist 1, die zweite 2 — die Nummer wächst und wird nicht wiederverwendet.
+- [x] `POST /api/boards` mit Name und Art legt ein Board an und liefert es mit vergebener Nummer zurück (HTTP 201).
+- [x] Das angelegte Board erscheint danach in `GET /api/boards`.
+- [x] Ein Board lässt sich mit Art `Linie` und mit Art `Projekt` anlegen.
+- [x] Start- und Zieltermin sind bei beiden Arten setzbar und werden zurückgegeben.
+- [x] Wird kein Termin angegeben, bleiben beide Felder leer — das Anlegen scheitert nicht.
+- [x] Zwei Boards mit demselben Namen sind erlaubt und erhalten verschiedene Nummern.
+- [x] Die erste vergebene Nummer ist 1, die zweite 2 — die Nummer wächst und wird nicht wiederverwendet.
 
 ### Standardspalten
-- [ ] Ein neu angelegtes Board hat genau drei Spalten in der Reihenfolge `Zu erledigen`, `In Arbeit`, `Erledigt`.
-- [ ] `GET /api/boards/{id}` liefert das Board samt dieser drei Spalten.
-- [ ] Genau eine dieser Spalten ist als Abschlussspalte markiert: `Erledigt`.
-- [ ] Die Abschlussspalte trägt die Anzeigegrenze 20.
+- [x] Ein neu angelegtes Board hat genau drei Spalten in der Reihenfolge `Zu erledigen`, `In Arbeit`, `Erledigt`.
+- [x] `GET /api/boards/{id}` liefert das Board samt dieser drei Spalten.
+- [x] Genau eine dieser Spalten ist als Abschlussspalte markiert: `Erledigt`.
+- [x] Die Abschlussspalte trägt die Anzeigegrenze 20.
 
 ### Zurückweisung ungültiger Eingaben
-- [ ] Ein leerer oder nur aus Leerzeichen bestehender Name wird mit HTTP 400 zurückgewiesen; es entsteht kein Board.
-- [ ] Ein Zieltermin vor dem Starttermin wird mit HTTP 400 zurückgewiesen (Start `2026-09-01`, Ziel `2026-08-01` → abgelehnt).
-- [ ] Eine unbekannte Board-Art wird mit HTTP 400 zurückgewiesen.
-- [ ] `GET /api/boards/{id}` auf eine nicht vergebene Nummer liefert HTTP 404.
+- [x] Ein leerer oder nur aus Leerzeichen bestehender Name wird mit HTTP 400 zurückgewiesen; es entsteht kein Board.
+- [x] Ein Zieltermin vor dem Starttermin wird mit HTTP 400 zurückgewiesen (Start `2026-09-01`, Ziel `2026-08-01` → abgelehnt).
+- [x] Eine unbekannte Board-Art wird mit HTTP 400 zurückgewiesen.
+- [x] `GET /api/boards/{id}` auf eine nicht vergebene Nummer liefert HTTP 404.
 
 ### Oberfläche
-- [ ] Die Board-Liste zeigt alle Boards mit Name und Art.
-- [ ] Ein Formular legt ein Board mit Name, Art und optionalen Terminen an; danach steht es in der Liste.
-- [ ] Eine Zurückweisung der API erscheint als lesbare Meldung, ohne dass die Seite abstürzt.
-- [ ] Die Oberfläche erreicht die Daten ausschließlich über HTTP-Aufrufe der WebApi.
+- [x] Die Board-Liste zeigt alle Boards mit Name und Art.
+- [x] Ein Formular legt ein Board mit Name, Art und optionalen Terminen an; danach steht es in der Liste.
+- [x] Eine Zurückweisung der API erscheint als lesbare Meldung, ohne dass die Seite abstürzt.
+- [x] Die Oberfläche erreicht die Daten ausschließlich über HTTP-Aufrufe der WebApi.
 
 ### Datenhaltung
-- [ ] Beim Start der WebApi entsteht die SQLite-Datei mit dem Schema, falls sie fehlt.
-- [ ] Ein zweiter Start ändert an einer bestehenden Datei nichts — angelegte Boards bleiben erhalten.
+- [x] Beim Start der WebApi entsteht die SQLite-Datei mit dem Schema, falls sie fehlt.
+- [x] Ein zweiter Start ändert an einer bestehenden Datei nichts — angelegte Boards bleiben erhalten.
 
 ## Betroffene Verzeichnisstruktur
 
@@ -75,7 +75,7 @@ Ohne Board gibt es nichts, woran gearbeitet werden kann — jeder weitere Slice 
 - **API:** `Source/KanbanC.WebApi/Endpunkte/` — je Thema eine Datei mit Minimal-API-Endpunkten.
 - **Fachlogik:** `Source/KanbanC.BL/Operations/`, `Integrations/`, `Interfaces/` nach IOSP; Datenzugriff unter `Source/KanbanC.BL/Persistenz/`, Schema unter `Source/KanbanC.BL/Persistenz/Migrationen/` als eingebettete `.sql`-Dateien.
 - **Verträge:** `Source/KanbanC.Contracts/Boards/` — DTOs, die Oberfläche und API teilen.
-- **Tests:** `Source/KanbanC.BL.Tests/Operations/` und `Integrations/` (spiegeln die BL-Struktur), `Source/KanbanC.WebApi.IntegrationTests/Api/`, `Source/KanbanC.PlaywrightTests/Tests/` mit Seitenobjekt unter `PageObjects/`.
+- **Tests:** `Source/KanbanC.BL.Tests/Operations/` und `Integrations/` (spiegeln die BL-Struktur), `Source/KanbanC.Blazor.Tests/Services/` (Dienste der Oberfläche), `Source/KanbanC.WebApi.IntegrationTests/Api/` und `Persistenz/`, `Source/KanbanC.PlaywrightTests/Tests/` mit Seitenobjekt unter `PageObjects/`.
 
 ## Technische Überlegungen
 
@@ -103,37 +103,38 @@ Ohne Board gibt es nichts, woran gearbeitet werden kann — jeder weitere Slice 
 
 **KanbanC.Contracts**
 - `BoardArt` (Enum) — `Linie`, `Projekt`
-- `Board` (DTO, immutable record) — Nummer, Name, Art, Starttermin, Zieltermin, Angelegt-Zeitpunkt, Spalten
-- `Spalte` (DTO, immutable record) — Nummer, Bezeichnung, Position, ob Abschlussspalte, Anzeigegrenze
-- `Spalten` (benannte Collection) — beantwortet „welche Spalte ist die Abschlussspalte", „in welcher Reihenfolge stehen sie"
-  - `Spalte? Abschlussspalte()`
-- `Boards` (benannte Collection) — die Liste der Boards für Liste und API-Antwort
+- `Board` (DTO, immutable record) — `BoardId`, Name, Art, Starttermin, Zieltermin, Spalten
+- `Spalte` (DTO, immutable record) — `SpalteId`, Bezeichnung, Position, ob Abschlussspalte, Anzeigegrenze
+- `BoardUebersicht` (DTO, immutable record) — `BoardId`, Name, Art, Starttermin, Zieltermin; die Listendarstellung ohne Spalten
 - `BoardAnlegenAnfrage` (DTO, immutable record) — Name, Art, Starttermin, Zieltermin
+- `Zurueckweisung` (DTO, immutable record) — die Befunde einer abgelehnten Anfrage; Rumpf der HTTP-400-Antwort
+
+Die Contracts sind das Adaptermodell der JSON-Serialisierung (C04): Listen als `IReadOnlyList<T>`, keine benannten Collections. Siehe Implementierungs-Historie.
 
 **KanbanC.BL**
 - `IBoardRepository` (Provider, Interface) — Zugriff auf Boards und ihre Spalten
-  - `Board LegeAn(BoardAnlegenAnfrage anfrage, Spalten standardspalten)`
-  - `Boards LadeAlle()`
-  - `Board? Lade(int boardNummer)`
+  - `Board LegeAn(BoardAnlegenAnfrage anfrage, Spaltenvorlagen standardspalten)`
+  - `IReadOnlyList<BoardUebersicht> LadeAlle()`
+  - `Board? Lade(long boardId)`
 - `BoardRepository` (Provider, Dapper) — Implementierung gegen SQLite; Board und Spalten in einer Transaktion
 - `IDatenbankVerbindungsfabrik` (Provider, Interface) — liefert geöffnete Verbindungen
   - `IDbConnection Oeffne()`
 - `SqliteVerbindungsfabrik` (Provider) — Implementierung über die Verbindungszeichenfolge
 - `StandardspaltenVorlage` (Operation) — liefert die drei Spalten eines neuen Boards; reine Logik, keine Abhängigkeiten
-  - `Spalten FuerNeuesBoard()`
+  - `Spaltenvorlagen FuerNeuesBoard()`
+- `Spaltenvorlage` / `Spaltenvorlagen` (BL-Modell) — eine noch nicht gespeicherte Spalte und ihre benannte Collection; vor dem Speichern hat eine Spalte keine `SpalteId`
 - `BoardAnlegenValidator` (Operation) — prüft eine Anfrage; liefert Befunde, wirft nicht
   - `Pruefbefunde Pruefe(BoardAnlegenAnfrage anfrage)`
 - `Pruefbefunde` (benannte Collection) — die Befunde einer Prüfung
   - `bool IstOhneBefund()`
+- `Ergebnis<T>` (BL-Modell) — entweder ein Wert oder die `Pruefbefunde` einer Zurückweisung; der Zugriff auf die jeweils andere Seite wirft
 - `BoardService` (Integration) — verdrahtet Validator, Vorlage und Repository; enthält keine eigene Logik
   - `Ergebnis<Board> LegeBoardAn(BoardAnlegenAnfrage anfrage)`
-  - `Boards LadeAlleBoards()`
-  - `Board? LadeBoard(int boardNummer)`
-- `Migrationslaeufer` (Integration) — liest die eingebetteten `.sql`-Dateien und führt sie in Namensreihenfolge aus
+  - `IReadOnlyList<BoardUebersicht> LadeAlleBoards()`
+  - `Board? LadeBoard(long boardId)`
+- `Migrationslaeufer` — liest die eingebetteten `.sql`-Dateien und führt sie in Namensreihenfolge aus
   - `void FuehreAus()`
-- `IMigrationsQuelle` (Provider, Interface) — liefert die Migrationsskripte
-  - `MigrationsSkripte LadeAlle()`
-- `EingebetteteMigrationsQuelle` (Provider) — liest sie aus den Ressourcen der Assembly
+  - Der geplante Provider `IMigrationsQuelle` / `EingebetteteMigrationsQuelle` wurde nicht gebaut; siehe Implementierungs-Historie.
 
 **KanbanC.WebApi**
 - `BoardEndpunkte` (Integration, statische Registrierung) — bildet die drei Routen auf den `BoardService` ab und übersetzt Befunde in HTTP-Status
@@ -141,12 +142,14 @@ Ohne Board gibt es nichts, woran gearbeitet werden kann — jeder weitere Slice 
 
 **KanbanC.Blazor**
 - `BoardApiKlient` (Integration) — ruft die WebApi über den benannten `HttpClient`; kennt kein SQL und keine BL
-  - `Task<Boards> LadeAlleBoards()`
+  - `Task<IReadOnlyList<BoardUebersicht>> LadeAlleBoards()`
+  - `Task<Board?> LadeBoard(long boardId)`
   - `Task<ApiErgebnis<Board>> LegeBoardAn(BoardAnlegenAnfrage anfrage)`
-- `Components/Pages/Boards.razor` — Liste und Anlegeformular
+- `ApiErgebnis<T>` — entweder ein Wert oder eine `Zurueckweisung`
+- `Components/Pages/Boards.razor` — Liste, Anlegeformular, Spaltenansicht und Meldung bei nicht erreichbarer WebApi
 
 **Migration**
-- `Persistenz/Migrationen/001-boards-und-spalten.sql` — Tabellen `Board` und `Spalte`, beide mit `CREATE TABLE IF NOT EXISTS`; `Spalte.BoardNummer` als Fremdschlüssel. Formatierung nach Skill `sql-stil`.
+- `Persistenz/Migrationen/001-boards-und-spalten.sql` — Tabellen `Board` und `Spalte`, beide mit `CREATE TABLE IF NOT EXISTS`; Primärschlüssel `BoardId` und `SpalteId`, Fremdschlüssel `Spalte.Board` (nach der referenzierten Tabelle benannt, Konvention aus `CLAUDE.md`). Formatierung nach Skill `sql-stil`.
 
 ### Änderungen an bestehenden Klassen
 
@@ -162,7 +165,8 @@ Nach Skill `test-pyramide`: alle drei Ebenen, die Given/When/Then-Szenarien der 
 **Kandidaten für Unit-Tests (pure Logik nach IOSP):**
 - `StandardspaltenVorlage` — liefert eine feste Struktur ohne Seiteneffekte; prüft Anzahl, Reihenfolge, Abschlussspalte, Anzeigegrenze.
 - `BoardAnlegenValidator` — reine Entscheidungslogik; je ein Test für leeren Namen, unbekannte Art, Zieltermin vor Starttermin und den gültigen Fall.
-- `Spalten.Abschlussspalte()` und `Pruefbefunde.IstOhneBefund()` — benannte Collections mit fachlicher Frage.
+- `Pruefbefunde.IstOhneBefund()` — benannte Collection mit fachlicher Frage. Das geplante `Spalten.Abschlussspalte()` entfällt samt Test, weil es keinen produktiven Aufrufer bekam (C16).
+- `Ergebnis<T>` — die Guards beider Seiten; `BoardApiKlient` und `ApiErgebnis<T>` in `KanbanC.Blazor.Tests`, weil ihre Fehlerpfade über die Oberfläche nicht auslösbar sind.
 
 **Integration:** `BoardRepository` gegen eine echte SQLite-Datei im Temp-Verzeichnis (je Test frisch, danach gelöscht) — Anlegen mit Spalten in einer Transaktion, Auflisten, Lesen, laufende Nummernvergabe. `Migrationslaeufer` zweimal hintereinander auf derselben Datei (Idempotenz). Die drei Endpunkte über `WebApplicationFactory` samt Statuscodes 201, 400 und 404.
 
@@ -189,8 +193,42 @@ Der Auslöser ist, dass es die Anwendung noch nicht gibt: das Gerüst steht, abe
 
 ## Missing-Docs
 
-- Dapper mit SQLite und Transaktionen über mehrere Tabellen: das Zusammenspiel `IDbConnection` / `IDbTransaction` / `connection.Execute(..., transaction)` ist aus der Erinnerung gebaut, nicht aus einer Quelle. Vor der Umsetzung prüfen.
-- Eingebettete Ressourcen in .NET 10 (`EmbeddedResource`, `Assembly.GetManifestResourceNames`) — Namensbildung der Ressourcenschlüssel je nach Ordnerstruktur.
+Beide Lücken wurden vor der Umsetzung geschlossen und belegt:
+
+- Dapper mit SQLite und Transaktionen über mehrere Tabellen → [Dokumentation/Bibliotheken/dapper-sqlite-transaktionen.md](../Dokumentation/Bibliotheken/dapper-sqlite-transaktionen.md)
+- Eingebettete Ressourcen in .NET 10, Namensbildung der Ressourcenschlüssel → [Dokumentation/Bibliotheken/dotnet-eingebettete-ressourcen.md](../Dokumentation/Bibliotheken/dotnet-eingebettete-ressourcen.md)
+
+## Implementierungs-Historie
+
+Umgesetzt am 2026-08-29 als Knoten `I0001` (14 Bubbles, 3 Features). Alle 21 Akzeptanzkriterien sind durch mindestens einen Test belegt; 67 Tests über vier Ebenen, 99,4 % Line Coverage auf dem im Testprozess messbaren Code.
+
+### Abweichungen von der ursprünglichen Planung
+
+| Geplant | Umgesetzt | Grund |
+|---------|-----------|-------|
+| `Nummer` als Schlüsselbegriff | `BoardId`, `SpalteId`, Fremdschlüssel `Spalte.Board` | Konvention aus `CLAUDE.md`: Primärschlüssel `<Tabelle>Id`, Fremdschlüssel nach der referenzierten Tabelle — im ganzen Stack, auch in DTOs |
+| `Spalten` / `Boards` als benannte Collections in Contracts | `IReadOnlyList<Spalte>` / `IReadOnlyList<BoardUebersicht>` | Contracts sind das Adaptermodell der JSON-Serialisierung (C04); benannte Collections gelten BL-intern (`Spaltenvorlagen`, `Pruefbefunde`) |
+| `Spalten.Abschlussspalte()` | — | Kein produktiver Aufrufer entstanden (C16); der geplante Unit-Test entfällt mit |
+| Angelegt-Zeitpunkt im `Board` | — | Kein Akzeptanzkriterium verlangt ihn; kein `DateTime.Now` im Code |
+| `IMigrationsQuelle` + `EingebetteteMigrationsQuelle` | `Migrationslaeufer` liest die Ressourcen selbst | Nicht nachgezogen; die Klasse ist dadurch nur integrationstestbar. Offener Punkt, siehe unten |
+| — | `BoardUebersicht` | Die Liste braucht kein Board samt Spalten |
+| — | `Zurueckweisung`, `Ergebnis<T>`, `ApiErgebnis<T>` | Zurückweisung als Wert statt als Ausnahme; der Fehlerpfad bleibt sichtbar (C24) |
+| — | `Spaltenvorlage` / `Spaltenvorlagen` in der BL | Vor dem Speichern hat eine Spalte keine `SpalteId`; das Contracts-DTO passt dafür nicht |
+| — | Testprojekt `KanbanC.Blazor.Tests` | Vierte bewusste Abweichung von der Architektur-Vorlage: der HTTP-Klient liegt wegen der Kernregel in der Oberflächenschicht, seine Fehlerpfade sind über den Browser nicht auslösbar |
+
+### Lessons Learned
+
+- Ein HTTP 400 mit fremdem Rumpf (ProblemDetails der Framework-Validierung, HTML einer Fehlerseite) deserialisiert zu einem Record mit `null`-Collection. Wer die Antwort direkt iteriert, stürzt ab — die Zurückweisung braucht einen Guard auf fehlende, leere und nicht lesbare Befunde.
+- Der Fehlerpfad einer nicht erreichbaren API entsteht leicht ohne Test, weil er sich weder über das Formular noch über die API auslösen lässt. Er braucht eine Testumgebung, die den Dienst gezielt anhält.
+- Coverage über alle Ebenen ist irreführend, solange E2E-Tests die Oberfläche als eigenen Prozess starten: coverlet instrumentiert nur den Testhost, die Razor-Komponenten erscheinen als 0 %, obwohl sie durchlaufen werden.
+- Ohne `ASPNETCORE_ENVIRONMENT=Development` liefert die aus dem Projektverzeichnis gestartete Blazor-App alle fingerprinted Assets als HTTP 500 — die Static-Web-Assets-Auflösung greift nur in Development. Nach `dotnet publish` ist das kein Thema.
+
+### Offene Punkte für spätere Slices
+
+- **Migrations-Journal vor `I0003`**: Die Idempotenz trägt heute allein `CREATE TABLE IF NOT EXISTS`. Ab der ersten `ALTER TABLE`-Migration reicht das nicht mehr; es braucht eine `SchemaVersion`-Tabelle.
+- **Wächtertest für die Kernregel**: Dass `KanbanC.Blazor` keine Projektreferenz auf `KanbanC.BL` hat, ist heute nur Konvention. Ein Test über die referenzierten Assemblies macht den Bruch sofort sichtbar.
+- **`IMigrationsQuelle` nachziehen** oder die Abweichung als ADR festhalten.
+- **`Pruefbefunde` aus `Models/Boards/` hochziehen**, sobald der zweite Slice ein `Ergebnis<T>` braucht.
 
 ## Notizen
 
