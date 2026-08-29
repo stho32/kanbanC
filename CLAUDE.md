@@ -12,11 +12,12 @@ Umfang: [Dokumentation/Planung/kanbanc.md](Dokumentation/Planung/kanbanc.md) —
 
 `.claude/app-architectures/dotnet-server-side-blazor/` — lokal kopiert, kanonisch für Projektstruktur, IOSP, Test-Pyramide und Deployment. Vor strukturellen Entscheidungen dort nachsehen, nicht raten.
 
-Drei bewusste Abweichungen von der Vorlage:
+Vier bewusste Abweichungen von der Vorlage:
 
 1. **Zwei Startprojekte** statt einem: `KanbanC.Blazor` und `KanbanC.WebApi`.
 2. **`KanbanC.Contracts`** kommt hinzu — DTOs, die beide Prozesse sprechen.
 3. **Integrationstests hängen an der WebApi**, nicht an der Web-App.
+4. **`KanbanC.Blazor.Tests`** kommt hinzu — Tests der Blazor-Dienste (`BoardApiKlient`, `ApiErgebnis`) unterhalb der E2E-Ebene. Die Vorlage kennt kein solches Projekt, weil ihre Oberfläche direkt auf die BL zugreift; hier liegt wegen der Kernregel ein fachnaher HTTP-Klient in der Oberflächenschicht, dessen Fehlerpfade über den Browser nicht auslösbar sind. Die Razor-Komponenten bleiben bei der E2E-Abdeckung.
 
 ## Die eine Regel, die den Aufbau trägt
 
