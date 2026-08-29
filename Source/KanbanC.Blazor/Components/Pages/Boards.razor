@@ -128,7 +128,8 @@
     private IReadOnlyList<BoardUebersicht>? _boards;
     private Zurueckweisung? _zurueckweisung;
     private string? _fehlermeldung;
-    private Board? _gewaehltesBoard;
+    // Vollqualifiziert, weil die Komponente Board den gleichnamigen Vertragstyp im Namespace verdeckt.
+    private KanbanC.Contracts.Boards.Board? _gewaehltesBoard;
 
     protected override async Task OnInitializedAsync()
     {

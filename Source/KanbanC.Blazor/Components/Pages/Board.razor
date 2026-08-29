@@ -1,0 +1,37 @@
+@page "/boards/{BoardId:long}"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using KanbanC.Blazor.Services
+@inject BoardApiKlient ApiKlient
+
+<PageTitle>Board @BoardId</PageTitle>
+
+<p><a href="/boards" id="zur-board-liste">Zurück zur Board-Liste</a></p>
+
+@if (_board is null)
+{
+    <p id="board-wird-geladen">Das Board wird geladen …</p>
+}
+else
+{
+    <header id="board-kopf">
+        <h1 id="board-name">@_board.Name</h1>
+        <p>
+            Art <span id="board-art">@_board.Art</span>,
+            Starttermin <span id="board-starttermin">@Terminformatierer.AlsText(_board.Starttermin)</span>,
+            Zieltermin <span id="board-zieltermin">@Terminformatierer.AlsText(_board.Zieltermin)</span>
+        </p>
+    </header>
+}
+
+@code {
+    // Vollqualifiziert, weil der Komponentenname Board den gleichnamigen Vertragstyp sonst verdeckt.
+    private KanbanC.Contracts.Boards.Board? _board;
+
+    [Parameter]
+    public long BoardId { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _board = await ApiKlient.LadeBoard(BoardId);
+    }
+}
