@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text;
 using KanbanC.Contracts.Boards;
 using KanbanC.WebApi.IntegrationTests.Infrastructure;
 
@@ -449,6 +450,24 @@ public class SpaltenEndpunkteTests
                 Is.EqualTo(new[] { "Zu erledigen", "Wartet auf Zulieferung", "In Arbeit", "Erledigt" }));
             Assert.That(board.Spalten.Select(s => s.Position), Is.EqualTo(new[] { 1, 2, 3, 4 }));
         });
+    }
+
+    [Test]
+    public async Task Wenn_der_Rumpf_keine_SpalteIds_nennt_dann_antwortet_die_API_mit_400_und_die_Ordnung_bleibt()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var boardId = await LegeBoardAn(webApi);
+        using var rumpfOhneSpalteIds = new StringContent("""{"spalteIds":null}""", Encoding.UTF8, "application/json");
+
+        var antwort = await webApi.Klient.PutAsync($"{BoardsRoute}/{boardId}/spalten/reihenfolge", rumpfOhneSpalteIds);
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var zurueckweisung = await antwort.Content.ReadFromJsonAsync<Zurueckweisung>();
+        Assert.That(zurueckweisung!.Befunde[0], Does.Contain("alle Spalten"));
+        var unveraendert = await LadeBoard(webApi, boardId);
+        Assert.That(unveraendert.Spalten.Select(s => s.Bezeichnung),
+            Is.EqualTo(new[] { "Zu erledigen", "In Arbeit", "Erledigt" }));
     }
 
     private static async Task<long> LegeBoardAn(TestWebApi webApi)

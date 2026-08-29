@@ -1,4 +1,5 @@
 using KanbanC.BL.Integrations.Boards;
+using KanbanC.BL.Interfaces.Boards;
 using KanbanC.BL.Tests.TestHelpers;
 using KanbanC.Contracts.Boards;
 
@@ -178,5 +179,50 @@ public class SpaltenServiceTests
 
         Assert.That(wurdeEntfernt, Is.False);
         Assert.That(repository.Spalten(1), Has.Count.EqualTo(1));
+    }
+
+    [Test]
+    public void Wenn_das_Board_zwischen_Pruefung_und_Schreiben_verschwindet_dann_liefert_SetzeReihenfolge_null()
+    {
+        var repository = new VerschwindendesSpaltenRepository();
+        var service = new SpaltenService(repository);
+
+        var ergebnis = service.SetzeReihenfolge(1, [2, 1]);
+
+        Assert.That(ergebnis, Is.Null);
+        Assert.That(repository.WurdeUmsortiert, Is.True);
+    }
+
+    // Das Board existiert bei der Pruefung noch und ist beim Schreiben weg - der Zustand,
+    // den ein zweiter Zugriff zwischen den beiden Aufrufen herstellt.
+    private sealed class VerschwindendesSpaltenRepository : ISpaltenRepository
+    {
+        public bool WurdeUmsortiert { get; private set; }
+
+        public IReadOnlyList<Spalte>? LadeAlle(long boardId)
+        {
+            return [new Spalte(1, "Zu erledigen", 1, false, null), new Spalte(2, "In Arbeit", 2, false, null)];
+        }
+
+        public IReadOnlyList<Spalte>? SetzeReihenfolge(long boardId, IReadOnlyList<long> reihenfolge)
+        {
+            WurdeUmsortiert = true;
+            return null;
+        }
+
+        public Spalte? LegeAn(long boardId, SpalteAnlegenAnfrage anfrage)
+        {
+            throw new NotSupportedException();
+        }
+
+        public Spalte? Aendere(long boardId, long spalteId, SpalteAendernAnfrage anfrage)
+        {
+            throw new NotSupportedException();
+        }
+
+        public bool Entferne(long boardId, long spalteId)
+        {
+            throw new NotSupportedException();
+        }
     }
 }
