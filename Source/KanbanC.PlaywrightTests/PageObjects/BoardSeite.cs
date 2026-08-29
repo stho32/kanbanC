@@ -23,6 +23,10 @@ public sealed class BoardSeite
 
     public ILocator Zieltermin => _seite.Locator("#board-zieltermin");
 
+    public ILocator Spaltenbahnen => _seite.Locator("#spaltenbahnen .spaltenbahn");
+
+    public ILocator Spaltenbezeichnungen => _seite.Locator("#spaltenbahnen .spaltenbahn-bezeichnung");
+
     public ILocator VerweisZurListe => _seite.Locator("#zur-board-liste");
 
     public string Adresse(long boardId)

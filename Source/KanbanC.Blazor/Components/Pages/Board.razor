@@ -21,6 +21,22 @@ else
             Zieltermin <span id="board-zieltermin">@Terminformatierer.AlsText(_board.Zieltermin)</span>
         </p>
     </header>
+
+    <div class="spaltenbahnen" id="spaltenbahnen">
+        @foreach (var spalte in _board.Spalten)
+        {
+            <section class="spaltenbahn" data-spalte-id="@spalte.SpalteId">
+                <header class="spaltenbahn-kopf">
+                    <span class="spaltenbahn-bezeichnung">@spalte.Bezeichnung</span>
+                    @if (spalte.IstAbschlussspalte)
+                    {
+                        <span class="spaltenbahn-vermerk">Abschlussspalte, Anzeigegrenze @spalte.Anzeigegrenze</span>
+                    }
+                </header>
+                <div class="spaltenbahn-karten"></div>
+            </section>
+        }
+    </div>
 }
 
 @code {
