@@ -40,7 +40,7 @@ zuletzt: 2026-08-29
 | B0017 | Bubble | F0004 | Spalte speichern und aendern | gruen | Test gruen | boardId + Anfrage → SpaltenRepository.LegeAn / Aendere → Spalte? | 0,4 |  |  |  | Provider; Position = hoechste + 1, eine Transaktion; belegt |
 | B0018 | Bubble | F0004 | Spalten-Anlage verdrahten | gruen | Test gruen | boardId + Anfrage → SpaltenService → Ergebnis<Spalte>? | 0,4 |  |  |  | Integration, Test-Repository; belegt |
 | B0019 | Bubble | F0004 | Spalten-Endpunkte anlegen und aendern | gruen | Test gruen | HTTP POST/PUT → SpaltenEndpunkte → 201 / 200 / 400 / 404 | 2 |  |  |  | Integration; kein Messwert fuer Endpunkt-Bubbles |
-| B0020 | Bubble | F0004 | API-Klient der Spalten | rot | Test gruen | Anfrage → SpaltenApiKlient → ApiErgebnis<Spalte> | 2 |  |  |  | Integration; Fehlerpfade in KanbanC.Blazor.Tests |
+| B0020 | Bubble | F0004 | API-Klient der Spalten | gruen | Test gruen | Anfrage → SpaltenApiKlient → ApiErgebnis<Spalte> | 2 |  |  |  | Integration; Fehlerpfade in KanbanC.Blazor.Tests |
 | B0021 | Bubble | F0004 | Spaltenpflege in der Oberflaeche | rot | Test gruen | Board-Detail → Boards.razor → Spalte angelegt und geaendert, Meldung bei Zurueckweisung | 2 |  |  |  | UI |
 | B0022 | Bubble | F0004 | E2E Spalte anlegen und aendern | rot | Test gruen | beide Prozesse auf freien Ports → Playwright → US-1, US-2, US-6, US-7, US-8 | 2-4 |  |  |  | unklar: Erweiterung des Seitenobjekts BoardsSeite |
 | F0005 | Feature | I0003 | Spalten umsortieren | rot | AK „Spalten umsortieren" ueber API und Oberflaeche; US-3, US-9 |  |  |  | F0004 | R00002 |  |
