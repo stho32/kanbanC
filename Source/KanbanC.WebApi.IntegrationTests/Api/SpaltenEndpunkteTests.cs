@@ -321,7 +321,7 @@ public class SpaltenEndpunkteTests
         var fremde = (await LadeBoard(webApi, erstesBoard)).Spalten[0];
 
         var antwort = await webApi.Klient.PutAsJsonAsync($"{BoardsRoute}/{zweitesBoard}/spalten/reihenfolge",
-            new Spaltenreihenfolge([eigene[0].SpalteId, eigene[1].SpalteId, fremde.SpalteId]));
+            new Spaltenreihenfolge([eigene[2].SpalteId, eigene[1].SpalteId, fremde.SpalteId]));
 
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
         var zurueckweisung = await antwort.Content.ReadFromJsonAsync<Zurueckweisung>();

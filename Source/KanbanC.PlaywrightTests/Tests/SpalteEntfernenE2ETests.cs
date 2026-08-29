@@ -53,6 +53,23 @@ public class SpalteEntfernenE2ETests : PageTest
         await Expect(seite.Spalten.Nth(0)).ToHaveTextAsync("Eingang");
     }
 
+    [Test]
+    public async Task Wenn_eine_zweite_Sicht_eine_bereits_entfernte_Spalte_entfernt_dann_erscheint_eine_Meldung_statt_eines_Absturzes()
+    {
+        var seite = await BoardMitStandardspalten();
+        var zweiteSeite = new BoardsSeite(await Context.NewPageAsync(), Testumgebung.Aktuelle.BlazorAdresse);
+        await zweiteSeite.Oeffne();
+        await zweiteSeite.ZeigeSpalten(1);
+        await Expect(zweiteSeite.Spalten).ToHaveCountAsync(3);
+
+        await seite.EntferneSpalte(seite.SpaltenzeileAnStelle(1));
+        await Expect(seite.Spalten).ToHaveCountAsync(2);
+        await zweiteSeite.EntferneSpalte(zweiteSeite.SpaltenzeileAnStelle(1));
+
+        await Expect(zweiteSeite.SpaltenZurueckweisung).ToBeVisibleAsync();
+        await Expect(seite.Spalten).ToHaveCountAsync(2);
+    }
+
     private async Task<BoardsSeite> BoardMitStandardspalten()
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();

@@ -55,4 +55,30 @@ public class SpaltenUmsortierenE2ETests : PageTest
         await Expect(seite.Spalten.Nth(1)).ToHaveTextAsync("Zu erledigen");
         await Expect(seite.SpaltenzeileAnStelle(1)).ToContainTextAsync("Position 2");
     }
+
+    [Test]
+    public async Task Wenn_eine_zweite_Sicht_mit_veralteter_Spaltenliste_umsortiert_dann_erscheint_eine_Meldung_und_die_Ordnung_bleibt()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        var seite = new BoardsSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await seite.Oeffne();
+        await seite.FuelleFormular("Entwicklung", "Linie", null, null);
+        await seite.SendeFormularAb();
+        await seite.ZeigeSpalten(1);
+        var zweiteSeite = new BoardsSeite(await Context.NewPageAsync(), Testumgebung.Aktuelle.BlazorAdresse);
+        await zweiteSeite.Oeffne();
+        await zweiteSeite.ZeigeSpalten(1);
+        await Expect(zweiteSeite.Spalten).ToHaveCountAsync(3);
+
+        await seite.EntferneSpalte(seite.SpaltenzeileAnStelle(1));
+        await Expect(seite.Spalten).ToHaveCountAsync(2);
+        await zweiteSeite.SchiebeSpalteHoch(zweiteSeite.SpaltenzeileAnStelle(2));
+
+        await Expect(zweiteSeite.SpaltenZurueckweisung).ToBeVisibleAsync();
+        await seite.Oeffne();
+        await seite.ZeigeSpalten(1);
+        await Expect(seite.Spalten.Nth(0)).ToHaveTextAsync("Zu erledigen");
+        await Expect(seite.Spalten.Nth(1)).ToContainTextAsync("Erledigt");
+        await Expect(seite.SpaltenzeileAnStelle(1)).ToContainTextAsync("Position 2");
+    }
 }

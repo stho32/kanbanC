@@ -94,7 +94,24 @@ public class SpalteAnlegenUndAendernE2ETests : PageTest
         await Expect(seite.SpaltenZurueckweisung).ToBeVisibleAsync();
         await Expect(seite.SpaltenZurueckweisung).ToContainTextAsync("Eine Abschlussspalte braucht eine Anzeigegrenze.");
         await Expect(seite.Spalten).ToHaveCountAsync(3);
-        await Expect(seite.Spalten.Nth(0)).Not.ToContainTextAsync("Abschlussspalte");
+        await Expect(seite.Spaltenzeilen.Filter(new() { HasTextString = "Abgenommen" })).ToHaveCountAsync(0);
+        await Expect(seite.Spaltenzeilen.Filter(new() { HasTextString = "Abschlussspalte" })).ToHaveCountAsync(1);
+    }
+
+    [Test]
+    public async Task Wenn_eine_bestehende_Spalte_auf_eine_leere_Bezeichnung_gespeichert_wird_dann_erscheint_eine_Meldung_und_sie_behaelt_ihren_Namen()
+    {
+        var seite = await BoardMitStandardspalten();
+
+        await seite.BearbeiteSpalte(seite.SpaltenzeileAnStelle(1), "", false, "");
+
+        await Expect(seite.SpaltenZurueckweisung).ToBeVisibleAsync();
+        await Expect(seite.SpaltenZurueckweisung).ToContainTextAsync("Die Bezeichnung darf nicht leer sein.");
+        await Expect(seite.Spalten.Nth(1)).ToHaveTextAsync("In Arbeit");
+
+        await seite.Oeffne();
+        await seite.ZeigeSpalten(1);
+        await Expect(seite.Spalten.Nth(1)).ToHaveTextAsync("In Arbeit");
     }
 
     private async Task<BoardsSeite> BoardMitStandardspalten()
