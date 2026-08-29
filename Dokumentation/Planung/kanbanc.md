@@ -19,6 +19,8 @@ zuletzt: 2026-08-29
 | I0003 | Interaction | D0001 | Spalten gestalten | rot | Spalten lassen sich anlegen, umbenennen, umsortieren und entfernen; eine Spalte ist als Abschlussspalte mit Anzeigegrenze N markierbar | | | | I0001 | | |
 | I0004 | Interaction | D0001 | Kartenzahl je Spalte anzeigen | rot | Je Board einschaltbar, dass die Zahl der enthaltenen Karten in der Spaltenkopfzeile steht; sie folgt Änderungen ohne Reload | | | | I0003, I0011 | | |
 | I0005 | Interaction | D0001 | Board umbenennen und archivieren | rot | Ein Board lässt sich umbenennen und archivieren; das archivierte ist aus der Standardliste verschwunden, bleibt aber abrufbar | | | | I0001 | | |
+| I0038 | Interaction | D0001 | Board exportieren | rot | Ein einzelnes Board wird als eigenstaendige Datei herausgeschrieben; sie enthaelt Board, Spalten, Karten, Klassenzuordnungen und Zeiteintraege vollstaendig und ist ohne die Anwendung lesbar | | | | I0011, I0021, I0024 | | Ersetzt die Portabilitaet, die eine Datei je Board gebracht haette |
+| I0039 | Interaction | D0001 | Board importieren | rot | Eine exportierte Board-Datei wird eingelesen; das Board erscheint mit seinem Inhalt in der Liste, ohne bestehende Boards zu veraendern | | | | I0038 | | |
 | D0002 | Dialog | A0001 | Kontributoren führen | rot | alle Interactions gruen | | | | | | aus Vision, kein Requirement |
 | I0006 | Interaction | D0002 | Kontributor anlegen | rot | Ein Kontributor entsteht mit Name und Art (Mensch, Agent, abgebildet) und steht zur Auswahl bereit | | | | | | |
 | I0007 | Interaction | D0002 | Kontributoren bearbeiten | rot | Alle Kontributoren sind sichtbar; Name und Art lassen sich ändern | | | | I0006 | | |
@@ -70,4 +72,5 @@ Keine.
 - Entschieden beim Anlegen: **eine** Application statt zweier — `KanbanC.Blazor` und `KanbanC.WebApi` sind Container derselben Anwendung; zwei WBS-Dateien würden den Umfang nach Schichten schneiden.
 - Entschieden beim Anlegen: Oberfläche und API sind **zwei Systemgrenzen einer Interaction**, kein eigener Ast. Dass die API alles kann, ist Fertig-Kriterium an jedem Slice.
 - Ausdrücklich nicht aufgenommen (geprüft und verworfen): WIP-Limits je Spalte, Swimlanes, wiederkehrende Karten.
+- Entschieden bei R00001: **eine** SQLite-Datei fuer alle Boards, jede Zeile mit ihrer Board-Nummer — keine Datei je Board. Cross-Board-Abfragen (I0022, I0033, I0034, I0036, I0037) waeren sonst ein Merge ueber N Dateien. Die Portabilitaet kommt stattdessen ueber I0038/I0039.
 - Recherche zur Abschlussspalte (I0013): Kanbanflow gruppiert erledigte Aufgaben nach Fertigstellungsdatum und zeigt standardmäßig nur die 20 neuesten; manuelles Archivieren entfällt dadurch. Quelle: https://kanbanflow.com/features
