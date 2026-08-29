@@ -1,6 +1,6 @@
 ---
 id: R00003
-status: Neu
+status: Erledigt
 datum: 2026-08-29
 ---
 
@@ -42,30 +42,30 @@ Zweitens wird die Liste bei wachsender Board-Zahl erst durch eine verlässliche 
 ## Akzeptanzkriterien
 
 ### Liste
-- [ ] `GET /api/boards` liefert die Boards alphabetisch nach Name sortiert.
-- [ ] Die Sortierung ignoriert Groß- und Kleinschreibung: Boards `Wartung`, `beschaffung`, `KanbanC` erscheinen in der Folge `beschaffung`, `KanbanC`, `Wartung` — unabhängig davon, in welcher Reihenfolge sie angelegt wurden.
-- [ ] Bei gleichem Namen steht das Board mit der kleineren `BoardId` vorn (zwei Boards `Wartung` mit `BoardId` 5 und 2 → Folge 2, 5).
-- [ ] Die Board-Liste der Oberfläche zeigt jedes Board mit Name und Art in derselben Reihenfolge wie die API.
-- [ ] Jeder Listeneintrag trägt einen Verweis auf `/boards/{boardId}` des jeweiligen Boards.
+- [x] `GET /api/boards` liefert die Boards alphabetisch nach Name sortiert.
+- [x] Die Sortierung ignoriert Groß- und Kleinschreibung: Boards `Wartung`, `beschaffung`, `KanbanC` erscheinen in der Folge `beschaffung`, `KanbanC`, `Wartung` — unabhängig davon, in welcher Reihenfolge sie angelegt wurden.
+- [x] Bei gleichem Namen steht das Board mit der kleineren `BoardId` vorn (zwei Boards `Wartung` mit `BoardId` 5 und 2 → Folge 2, 5).
+- [x] Die Board-Liste der Oberfläche zeigt jedes Board mit Name und Art in derselben Reihenfolge wie die API.
+- [x] Jeder Listeneintrag trägt einen Verweis auf `/boards/{boardId}` des jeweiligen Boards.
 
 ### Board öffnen
-- [ ] Der Aufruf von `/boards/3` zeigt das Board mit der `BoardId` 3, ohne dass zuvor die Liste besucht wurde.
-- [ ] Das geöffnete Board zeigt Name, Art, Starttermin und Zieltermin; fehlende Termine erscheinen als `—`.
-- [ ] Das geöffnete Board zeigt genau die Spalten des Boards in der Reihenfolge ihrer Position — bei einem neu angelegten Board `Zu erledigen`, `In Arbeit`, `Erledigt`.
-- [ ] Die Spalten stehen nebeneinander als Bahnen, nicht als Aufzählung untereinander.
-- [ ] Die Abschlussspalte ist in ihrer Kopfzeile als solche markiert und nennt ihre Anzeigegrenze (`Erledigt`, Abschlussspalte, Anzeigegrenze 20).
-- [ ] Ein Klick auf einen Listeneintrag öffnet dieses Board; die Adresszeile zeigt danach `/boards/{boardId}`.
-- [ ] Ein Reload des geöffneten Boards zeigt dasselbe Board erneut.
-- [ ] Vom geöffneten Board führt ein Verweis zurück zur Board-Liste.
+- [x] Der Aufruf von `/boards/3` zeigt das Board mit der `BoardId` 3, ohne dass zuvor die Liste besucht wurde.
+- [x] Das geöffnete Board zeigt Name, Art, Starttermin und Zieltermin; fehlende Termine erscheinen als `—`.
+- [x] Das geöffnete Board zeigt genau die Spalten des Boards in der Reihenfolge ihrer Position — bei einem neu angelegten Board `Zu erledigen`, `In Arbeit`, `Erledigt`.
+- [x] Die Spalten stehen nebeneinander als Bahnen, nicht als Aufzählung untereinander.
+- [x] Die Abschlussspalte ist in ihrer Kopfzeile als solche markiert und nennt ihre Anzeigegrenze (`Erledigt`, Abschlussspalte, Anzeigegrenze 20).
+- [x] Ein Klick auf einen Listeneintrag öffnet dieses Board; die Adresszeile zeigt danach `/boards/{boardId}`.
+- [x] Ein Reload des geöffneten Boards zeigt dasselbe Board erneut.
+- [x] Vom geöffneten Board führt ein Verweis zurück zur Board-Liste.
 
 ### Unbekanntes Board
-- [ ] Der Aufruf von `/boards/999` bei nicht vergebener Nummer 999 zeigt eine lesbare Meldung, die die Nummer nennt; die Seite stürzt nicht ab.
-- [ ] Diese Meldung enthält einen Verweis zurück zur Board-Liste.
-- [ ] Ist die WebApi beim Öffnen eines Boards nicht erreichbar, erscheint eine lesbare Meldung statt einer Ausnahmeseite.
+- [x] Der Aufruf von `/boards/999` bei nicht vergebener Nummer 999 zeigt eine lesbare Meldung, die die Nummer nennt; die Seite stürzt nicht ab.
+- [x] Diese Meldung enthält einen Verweis zurück zur Board-Liste.
+- [x] Ist die WebApi beim Öffnen eines Boards nicht erreichbar, erscheint eine lesbare Meldung statt einer Ausnahmeseite.
 
 ### Abgrenzung
-- [ ] Das geöffnete Board zeigt keine Karten und bietet kein Anlegen von Karten an (`I0011`).
-- [ ] Das geöffnete Board bietet kein Umbenennen, Anlegen oder Entfernen von Spalten an (`I0003`).
+- [x] Das geöffnete Board zeigt keine Karten und bietet kein Anlegen von Karten an (`I0011`).
+- [x] Das geöffnete Board bietet kein Umbenennen, Anlegen oder Entfernen von Spalten an (`I0003`).
 
 ## Betroffene Verzeichnisstruktur
 
