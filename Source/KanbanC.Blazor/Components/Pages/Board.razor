@@ -51,6 +51,8 @@ else
             </section>
         }
     </div>
+
+    <Spaltenpflege BoardId="BoardId" Spalten="_board.Spalten" SpaltenHabenSichGeaendert="LadeBoard" />
 }
 
 @code {
@@ -67,7 +69,7 @@ else
         _ladenIstAbgeschlossen = false;
         try
         {
-            _board = await ApiKlient.LadeBoard(BoardId);
+            await LadeBoard();
             _webApiIstNichtErreichbar = false;
         }
         catch (HttpRequestException)
@@ -76,5 +78,10 @@ else
         }
 
         _ladenIstAbgeschlossen = true;
+    }
+
+    private async Task LadeBoard()
+    {
+        _board = await ApiKlient.LadeBoard(BoardId);
     }
 }
