@@ -19,7 +19,9 @@ if (verbindungszeichenfolge is null)
 builder.Services.AddSingleton<IDatenbankVerbindungsfabrik>(new SqliteVerbindungsfabrik(verbindungszeichenfolge));
 builder.Services.AddSingleton<Migrationslaeufer>();
 builder.Services.AddSingleton<IBoardRepository, BoardRepository>();
+builder.Services.AddSingleton<ISpaltenRepository, SpaltenRepository>();
 builder.Services.AddSingleton<BoardService>();
+builder.Services.AddSingleton<SpaltenService>();
 
 var app = builder.Build();
 
@@ -34,6 +36,7 @@ app.MapGet("/api/zustand", () => Results.Ok(new { dienst = "KanbanC.WebApi", ber
    .WithName("ZustandLesen");
 
 BoardEndpunkte.Registriere(app);
+SpaltenEndpunkte.Registriere(app);
 
 app.Run();
 
