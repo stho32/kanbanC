@@ -21,7 +21,7 @@ zuletzt: 2026-08-29
 | B0002 | Bubble | F0001 | Schema anlegen | gruen | Test gruen | Verbindungszeichenfolge → Migrationslaeufer + Migration 001 → Tabellen in Datei | 2 | | | | Integration + Provider |
 | B0003 | Bubble | F0001 | Board mit Spalten speichern | gruen | Test gruen | Anfrage + Spalten → BoardRepository.LegeAn → Board mit Nummer | 2 | | | | Provider, eine Transaktion |
 | B0004 | Bubble | F0001 | Boards laden | gruen | Test gruen | — / Nummer → LadeAlle / Lade → Boards / Board? | 2 | | | | Provider |
-| B0005 | Bubble | F0001 | Board-Anlage verdrahten | rot | Test gruen | Anfrage → BoardService → Ergebnis<Board> | 2 | | | | Integration, Test-Repository |
+| B0005 | Bubble | F0001 | Board-Anlage verdrahten | gruen | Test gruen | Anfrage → BoardService → Ergebnis<Board> | 2 | | | | Integration, Test-Repository |
 | B0006 | Bubble | F0001 | Board-Endpunkte | rot | Test gruen | HTTP → BoardEndpunkte + Start-Migration → 201 / 200 / 404 | 2 | | | | Integration |
 | B0007 | Bubble | F0001 | API-Klient der Oberfläche | rot | Test gruen | Anfrage → BoardApiKlient → Boards / ApiErgebnis | 2 | | | | Integration; Abdeckung über E2E |
 | B0008 | Bubble | F0001 | Board-Seite | rot | Test gruen | Liste + Formular → Boards.razor, NavMenu → Board angelegt | 2 | | | | UI; Abdeckung über E2E |

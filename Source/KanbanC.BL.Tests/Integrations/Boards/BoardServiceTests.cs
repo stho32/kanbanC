@@ -1,0 +1,66 @@
+using KanbanC.BL.Integrations.Boards;
+using KanbanC.BL.Tests.TestHelpers;
+using KanbanC.Contracts.Boards;
+
+namespace KanbanC.BL.Tests.Integrations.Boards;
+
+public class BoardServiceTests
+{
+    [Test]
+    public void Wenn_ein_Board_angelegt_wird_dann_erhaelt_das_Repository_die_Anfrage_und_die_drei_Standardspalten()
+    {
+        var repository = new TestBoardRepository();
+        var service = new BoardService(repository);
+        var anfrage = new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null);
+
+        var board = service.LegeBoardAn(anfrage);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(repository.ErhalteneAnfrage, Is.EqualTo(anfrage));
+            Assert.That(repository.ErhalteneSpalten, Is.Not.Null);
+            Assert.That(repository.ErhalteneSpalten!.SpaltenAnzahl, Is.EqualTo(3));
+            Assert.That(repository.ErhalteneSpalten[2].IstAbschlussspalte, Is.True);
+            Assert.That(board.BoardId, Is.EqualTo(1));
+            Assert.That(repository.LadeAlle(), Has.Count.EqualTo(1));
+        });
+    }
+
+    [Test]
+    public void Wenn_alle_Boards_geladen_werden_dann_kommen_die_gespeicherten_als_Uebersicht()
+    {
+        var repository = new TestBoardRepository();
+        repository.Speichere(new Board(1, "Entwicklung", BoardArt.Linie, null, null, []));
+        repository.Speichere(new Board(2, "KanbanC 1.0", BoardArt.Projekt, null, null, []));
+        var service = new BoardService(repository);
+
+        var boards = service.LadeAlleBoards();
+
+        Assert.That(boards.Select(b => b.Name), Is.EqualTo(new[] { "Entwicklung", "KanbanC 1.0" }));
+    }
+
+    [Test]
+    public void Wenn_ein_Board_geladen_wird_dann_fragt_der_Service_das_Repository_nach_genau_dieser_BoardId()
+    {
+        var repository = new TestBoardRepository();
+        var gespeichert = repository.Speichere(new Board(7, "Entwicklung", BoardArt.Linie, null, null, []));
+        var service = new BoardService(repository);
+
+        var geladen = service.LadeBoard(7);
+
+        Assert.That(repository.ErfragteBoardId, Is.EqualTo(7));
+        Assert.That(geladen, Is.EqualTo(gespeichert));
+    }
+
+    [Test]
+    public void Wenn_die_BoardId_unbekannt_ist_dann_liefert_LadeBoard_null()
+    {
+        var repository = new TestBoardRepository();
+        repository.Speichere(new Board(1, "Entwicklung", BoardArt.Linie, null, null, []));
+        var service = new BoardService(repository);
+
+        var geladen = service.LadeBoard(2);
+
+        Assert.That(geladen, Is.Null);
+    }
+}

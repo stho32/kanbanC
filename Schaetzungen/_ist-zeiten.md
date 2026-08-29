@@ -14,3 +14,4 @@ Nie vom User erfragen.
 | 2026-08-29 | R00001 Board anlegen | B0002 Schema anlegen | Standard | 2h | 0,1h | 0,1h | moderat |
 | 2026-08-29 | R00001 Board anlegen | B0003 Board mit Spalten speichern | Standard | 2h | 1,5h | 1,5h | moderat |
 | 2026-08-29 | R00001 Board anlegen | B0004 Boards laden | Standard | 2h | 0,1h | 0,1h | moderat |
+| 2026-08-29 | R00001 Board anlegen | B0005 Board-Anlage verdrahten | Standard | 2h | 0,1h | 0,1h | moderat |
