@@ -8,7 +8,8 @@ namespace KanbanC.PlaywrightTests.Tests;
 public class BoardAnlegenE2ETests : PageTest
 {
     [Test]
-    public async Task US1_Wenn_ein_Linienboard_Entwicklung_angelegt_wird_dann_steht_es_mit_Nummer_1_und_Art_Linie_in_der_Liste()
+    [Category("US-1")]
+    public async Task Wenn_ein_Linienboard_Entwicklung_angelegt_wird_dann_steht_es_mit_Nummer_1_und_Art_Linie_in_der_Liste()
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
         var seite = new BoardsSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
@@ -27,7 +28,8 @@ public class BoardAnlegenE2ETests : PageTest
     }
 
     [Test]
-    public async Task US2_Wenn_ein_Projektboard_mit_Terminen_angelegt_wird_dann_zeigt_der_Abruf_beide_Termine_unveraendert()
+    [Category("US-2")]
+    public async Task Wenn_ein_Projektboard_mit_Terminen_angelegt_wird_dann_zeigt_der_Abruf_beide_Termine_unveraendert()
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
         var seite = new BoardsSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
@@ -44,7 +46,8 @@ public class BoardAnlegenE2ETests : PageTest
     }
 
     [Test]
-    public async Task US3_Wenn_ein_neues_Board_abgerufen_wird_dann_hat_es_die_drei_Standardspalten_mit_Erledigt_als_Abschlussspalte()
+    [Category("US-3")]
+    public async Task Wenn_ein_neues_Board_abgerufen_wird_dann_hat_es_die_drei_Standardspalten_mit_Erledigt_als_Abschlussspalte()
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
         var seite = new BoardsSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);

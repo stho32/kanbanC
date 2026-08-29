@@ -37,5 +37,5 @@ BoardEndpunkte.Registriere(app);
 
 app.Run();
 
-// Sichtbar fuer die Integrationstests (WebApplicationFactory braucht die Einstiegsklasse).
+// Sichtbar für die Integrationstests (WebApplicationFactory braucht die Einstiegsklasse).
 public partial class Program;

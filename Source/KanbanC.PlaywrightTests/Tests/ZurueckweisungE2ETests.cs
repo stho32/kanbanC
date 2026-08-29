@@ -8,7 +8,8 @@ namespace KanbanC.PlaywrightTests.Tests;
 public class ZurueckweisungE2ETests : PageTest
 {
     [Test]
-    public async Task US4_Wenn_das_Formular_ohne_Namen_abgesendet_wird_dann_erscheint_eine_lesbare_Meldung_und_die_Liste_bleibt_unveraendert()
+    [Category("US-4")]
+    public async Task Wenn_das_Formular_ohne_Namen_abgesendet_wird_dann_erscheint_eine_lesbare_Meldung_und_die_Liste_bleibt_unveraendert()
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
         var seite = new BoardsSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
@@ -29,7 +30,8 @@ public class ZurueckweisungE2ETests : PageTest
     }
 
     [Test]
-    public async Task US5_Wenn_der_Zieltermin_vor_dem_Starttermin_liegt_dann_erscheint_eine_lesbare_Meldung_und_es_entsteht_kein_Board()
+    [Category("US-5")]
+    public async Task Wenn_der_Zieltermin_vor_dem_Starttermin_liegt_dann_erscheint_eine_lesbare_Meldung_und_es_entsteht_kein_Board()
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
         var seite = new BoardsSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);

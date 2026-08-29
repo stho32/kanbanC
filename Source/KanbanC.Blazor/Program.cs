@@ -7,12 +7,17 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-// Die Oberflaeche spricht ausschliesslich ueber die WebApi mit den Daten -
+// Die Oberfläche spricht ausschließlich über die WebApi mit den Daten -
 // es gibt bewusst keine Projektreferenz auf KanbanC.BL.
+var webApiBasisAdresse = builder.Configuration["WebApi:BasisAdresse"];
+if (webApiBasisAdresse is null)
+{
+    throw new InvalidOperationException("WebApi:BasisAdresse fehlt in der Konfiguration.");
+}
+
 builder.Services.AddHttpClient("KanbanC", client =>
 {
-    client.BaseAddress = new Uri(builder.Configuration["WebApi:BasisAdresse"]
-        ?? throw new InvalidOperationException("WebApi:BasisAdresse fehlt in der Konfiguration."));
+    client.BaseAddress = new Uri(webApiBasisAdresse);
 });
 builder.Services.AddScoped<BoardApiKlient>();
 

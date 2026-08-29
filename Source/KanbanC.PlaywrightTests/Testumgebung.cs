@@ -45,7 +45,7 @@ public sealed class Testumgebung
 
     public string BlazorAdresse { get; }
 
-    [OneTimeSetUp]
+    [OneTimeSetUp] // stil-check: C18 Prozess-Infrastruktur (Blazor einmal je Lauf), kein Arrange eines Tests
     public async Task StarteBlazor()
     {
         // Die Shell-Variable BROWSER (Standardbrowser des Nutzers) würde die .runsettings von Playwright überstimmen.
@@ -81,7 +81,7 @@ public sealed class Testumgebung
         _webApi = null;
     }
 
-    [OneTimeTearDown]
+    [OneTimeTearDown] // stil-check: C18 Prozess-Infrastruktur, stoppt die Dienste nach dem letzten Test
     public void StoppeAlles()
     {
         StoppeWebApi();

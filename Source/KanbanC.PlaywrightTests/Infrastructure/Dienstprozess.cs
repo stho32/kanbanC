@@ -6,6 +6,7 @@ namespace KanbanC.PlaywrightTests.Infrastructure;
 public sealed class Dienstprozess : IDisposable
 {
     private static readonly TimeSpan Startfrist = TimeSpan.FromSeconds(60);
+    private static readonly TimeSpan Abfrageintervall = TimeSpan.FromMilliseconds(200);
     private readonly Process _prozess;
     private readonly StringBuilder _ausgabe = new();
 
@@ -69,7 +70,7 @@ public sealed class Dienstprozess : IDisposable
                 return;
             }
 
-            await Task.Delay(200);
+            await Task.Delay(Abfrageintervall);
         }
 
         throw new TimeoutException($"Der Dienst unter {bereitschaftsAdresse} wurde nicht bereit:{Environment.NewLine}{_ausgabe}");

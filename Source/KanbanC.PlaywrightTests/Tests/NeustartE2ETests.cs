@@ -8,7 +8,8 @@ namespace KanbanC.PlaywrightTests.Tests;
 public class NeustartE2ETests : PageTest
 {
     [Test]
-    public async Task US6_Wenn_die_WebApi_neu_startet_dann_stehen_beide_Boards_noch_in_der_Liste_und_das_dritte_bekommt_Nummer_3()
+    [Category("US-6")]
+    public async Task Wenn_die_WebApi_neu_startet_dann_stehen_beide_Boards_noch_in_der_Liste_und_das_dritte_bekommt_Nummer_3()
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
         var seite = new BoardsSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);

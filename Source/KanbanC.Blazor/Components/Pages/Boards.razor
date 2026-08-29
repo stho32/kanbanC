@@ -38,6 +38,11 @@
         </div>
     </EditForm>
 
+    @if (_fehlermeldung is not null)
+    {
+        <div class="alert alert-warning mt-3" role="alert" id="fehlermeldung">@_fehlermeldung</div>
+    }
+
     @if (_zurueckweisung is not null)
     {
         <div class="alert alert-danger mt-3" role="alert" id="zurueckweisung">
@@ -121,33 +126,51 @@
 @code {
     private const string IsoDatumsformat = "yyyy-MM-dd";
     private const string KeinTermin = "—";
+    private const string WebApiNichtErreichbar = "Die WebApi ist nicht erreichbar. Bitte später erneut versuchen.";
     private readonly BoardFormular _formular = new();
     private IReadOnlyList<BoardUebersicht>? _boards;
     private Zurueckweisung? _zurueckweisung;
+    private string? _fehlermeldung;
     private Board? _gewaehltesBoard;
 
     protected override async Task OnInitializedAsync()
     {
-        _boards = await ApiKlient.LadeAlleBoards();
+        await MitErreichbarerWebApi(async () => _boards = await ApiKlient.LadeAlleBoards());
     }
 
     private async Task LegeBoardAn()
     {
-        var ergebnis = await ApiKlient.LegeBoardAn(_formular.AlsAnfrage());
-        if (ergebnis.WurdeZurueckgewiesen)
+        await MitErreichbarerWebApi(async () =>
         {
-            _zurueckweisung = ergebnis.Zurueckweisung;
-            return;
-        }
+            var ergebnis = await ApiKlient.LegeBoardAn(_formular.AlsAnfrage());
+            if (ergebnis.WurdeZurueckgewiesen)
+            {
+                _zurueckweisung = ergebnis.Zurueckweisung;
+                return;
+            }
 
-        _zurueckweisung = null;
-        _formular.Leere();
-        _boards = await ApiKlient.LadeAlleBoards();
+            _zurueckweisung = null;
+            _formular.Leere();
+            _boards = await ApiKlient.LadeAlleBoards();
+        });
     }
 
     private async Task ZeigeSpalten(long boardId)
     {
-        _gewaehltesBoard = await ApiKlient.LadeBoard(boardId);
+        await MitErreichbarerWebApi(async () => _gewaehltesBoard = await ApiKlient.LadeBoard(boardId));
+    }
+
+    private async Task MitErreichbarerWebApi(Func<Task> aufruf)
+    {
+        try
+        {
+            await aufruf();
+            _fehlermeldung = null;
+        }
+        catch (HttpRequestException)
+        {
+            _fehlermeldung = WebApiNichtErreichbar;
+        }
     }
 
     private static string AlsText(DateOnly? termin)
