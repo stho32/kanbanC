@@ -1,4 +1,4 @@
-namespace KanbanC.BL.Models.Boards;
+namespace KanbanC.BL.Models;
 
 public sealed class Pruefbefunde
 {

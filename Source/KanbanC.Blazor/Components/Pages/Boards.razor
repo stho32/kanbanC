@@ -124,15 +124,7 @@
 
     private async Task MitErreichbarerWebApi(Func<Task> aufruf)
     {
-        try
-        {
-            await aufruf();
-            _fehlermeldung = null;
-        }
-        catch (HttpRequestException)
-        {
-            _fehlermeldung = WebApiAusfall.Meldung;
-        }
+        _fehlermeldung = await WebApiAufruf.MitAusfallmeldung(aufruf);
     }
 
     // Adaptermodell des Formular-Bindings: veränderlich, weil EditForm es so braucht; verlässt die Seite nie.

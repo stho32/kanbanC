@@ -20,6 +20,7 @@ builder.Services.AddHttpClient("KanbanC", client =>
     client.BaseAddress = new Uri(webApiBasisAdresse);
 });
 builder.Services.AddScoped<BoardApiKlient>();
+builder.Services.AddScoped<SpaltenApiKlient>();
 
 var app = builder.Build();
 

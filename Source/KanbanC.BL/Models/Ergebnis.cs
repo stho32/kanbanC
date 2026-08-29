@@ -1,4 +1,3 @@
-using KanbanC.BL.Models.Boards;
 
 namespace KanbanC.BL.Models;
 
