@@ -14,7 +14,7 @@ zuletzt: 2026-08-29
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | A0001 | Application | — | KanbanC | gelb | alle Dialogs gruen |  |  |  |  |  | Leitplanken: C#/.NET, zwei Projekte KanbanC.Blazor und KanbanC.WebApi, SQLite, Betrieb im LAN, Full-Trust ohne Authentifizierung, Optik an Kanbanflow orientiert. Jede Interaction gilt über beide Systemgrenzen: was die Oberfläche kann, kann die API |
 | D0001 | Dialog | A0001 | Boards führen | gelb | alle Interactions gruen |  |  |  |  |  | aus Vision, kein Requirement |
-| I0001 | Interaction | D0001 | Board anlegen | gelb | Ein neues Board entsteht mit Name und Art (Linie oder Projekt) und erscheint in der Board-Liste |  |  |  |  | R00001 |  |
+| I0001 | Interaction | D0001 | Board anlegen | gruen | Ein neues Board entsteht mit Name und Art (Linie oder Projekt) und erscheint in der Board-Liste |  |  |  |  | R00001 |  |
 | F0001 | Feature | I0001 | Board anlegen und abrufen | gruen | AK „Board anlegen" und „Standardspalten" über API und Oberfläche (Liste, Formular); US-1, US-2, US-3 |  |  |  |  | R00001 |  |
 | B0001 | Bubble | F0001 | Standardspalten erzeugen | gruen | Test gruen | — → StandardspaltenVorlage → 3 Spalten (mit Contracts-DTOs) | 2 | | | | Operation |
 | B0015 | Bubble | F0001 | Datenbankverbindung öffnen | gruen | Test gruen | Verbindungszeichenfolge → SqliteVerbindungsfabrik.Oeffne → offene IDbConnection, Datei entsteht | 2 | | | | Provider; aus B0002 herausgeschnitten (Deckel) |
@@ -30,9 +30,9 @@ zuletzt: 2026-08-29
 | B0010 | Bubble | F0002 | Anfrage prüfen | gruen | Test gruen | BoardAnlegenAnfrage → BoardAnlegenValidator → Pruefbefunde | 2 | | | | Operation |
 | B0011 | Bubble | F0002 | Zurückweisung über die API | gruen | Test gruen | Pruefbefunde → BoardService / BoardEndpunkte → 400 Zurueckweisung | 2 | | | | Integration |
 | B0012 | Bubble | F0002 | Zurückweisung in der Oberfläche | gruen | Test gruen | Zurueckweisung → Boards.razor → Meldung; E2E US-4, US-5 | 2 | | | | UI |
-| F0003 | Feature | I0001 | Datenbestand überlebt Neustart | gelb | AK „Datenhaltung"; US-6 |  |  |  | F0001 | R00001 |  |
+| F0003 | Feature | I0001 | Datenbestand überlebt Neustart | gruen | AK „Datenhaltung"; US-6 |  |  |  | F0001 | R00001 |  |
 | B0013 | Bubble | F0003 | Migration idempotent | gruen | Test gruen | zweiter Lauf auf bestehender Datei → Migrationslaeufer → Schema und Daten unverändert | 2 | | | | Integration |
-| B0014 | Bubble | F0003 | Neustart der WebApi | rot | Test gruen | zweite Instanz auf derselben Datei → Boards bleiben, nächste Nummer 3 | 2 | | | | Integration; US-6 |
+| B0014 | Bubble | F0003 | Neustart der WebApi | gruen | Test gruen | zweite Instanz auf derselben Datei → Boards bleiben, nächste Nummer 3 | 2 | | | | Integration; US-6 |
 | I0002 | Interaction | D0001 | Boards auflisten und öffnen | rot | Alle Boards sind mit Name und Art aufgelistet; das gewählte lässt sich öffnen | | | | I0001 | | |
 | I0003 | Interaction | D0001 | Spalten gestalten | rot | Spalten lassen sich anlegen, umbenennen, umsortieren und entfernen; eine Spalte ist als Abschlussspalte mit Anzeigegrenze N markierbar | | | | I0001 | | |
 | I0004 | Interaction | D0001 | Kartenzahl je Spalte anzeigen | rot | Je Board einschaltbar, dass die Zahl der enthaltenen Karten in der Spaltenkopfzeile steht; sie folgt Änderungen ohne Reload | | | | I0003, I0011 | | |
