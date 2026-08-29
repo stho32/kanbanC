@@ -1,5 +1,4 @@
 using KanbanC.BL.Models;
-using KanbanC.BL.Models.Boards;
 
 namespace KanbanC.BL.Tests.Models;
 

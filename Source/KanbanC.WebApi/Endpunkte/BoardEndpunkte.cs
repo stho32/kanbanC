@@ -1,5 +1,5 @@
 using KanbanC.BL.Integrations.Boards;
-using KanbanC.BL.Models.Boards;
+using KanbanC.BL.Models;
 using KanbanC.Contracts.Boards;
 
 namespace KanbanC.WebApi.Endpunkte;
