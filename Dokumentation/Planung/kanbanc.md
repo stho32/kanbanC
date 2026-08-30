@@ -3,7 +3,7 @@ application: KanbanC
 system: KanbanC
 vision: Anforderungen/R00000-vision.md
 sprache: de
-zuletzt: 2026-08-29
+zuletzt: 2026-08-30
 ---
 
 # WBS — KanbanC
@@ -72,6 +72,7 @@ zuletzt: 2026-08-29
 | I0005 | Interaction | D0001 | Board umbenennen und archivieren | rot | Ein Board lässt sich umbenennen und archivieren; das archivierte ist aus der Standardliste verschwunden, bleibt aber abrufbar | | | | I0001 | | |
 | I0038 | Interaction | D0001 | Board exportieren | rot | Ein einzelnes Board wird als eigenstaendige Datei herausgeschrieben; sie enthaelt Board, Spalten, Karten, Klassenzuordnungen und Zeiteintraege vollstaendig und ist ohne die Anwendung lesbar | | | | I0011, I0021, I0024 | | Ersetzt die Portabilitaet, die eine Datei je Board gebracht haette |
 | I0039 | Interaction | D0001 | Board importieren | rot | Eine exportierte Board-Datei wird eingelesen; das Board erscheint mit seinem Inhalt in der Liste, ohne bestehende Boards zu veraendern | | | | I0038 | | |
+| I0040 | Interaction | D0001 | Spaltenpflege in den Layout-Modus | rot | Die Arbeitsansicht eines Boards zeigt nur die Bahnen; ein Bedienelement der Kopfzeile schaltet in einen Layout-Modus, in dem Spalten anlegbar, änderbar, umsortierbar und entfernbar sind, und die Bezeichnung ist je Board eindeutig | | | | I0003 | R00004 | löst das Kriterium „zwei gleichnamige Spalten sind erlaubt" aus R00002 ab |
 | D0002 | Dialog | A0001 | Kontributoren führen | rot | alle Interactions gruen | | | | | | aus Vision, kein Requirement |
 | I0006 | Interaction | D0002 | Kontributor anlegen | rot | Ein Kontributor entsteht mit Name und Art (Mensch, Agent, abgebildet) und steht zur Auswahl bereit | | | | | | |
 | I0007 | Interaction | D0002 | Kontributoren bearbeiten | rot | Alle Kontributoren sind sichtbar; Name und Art lassen sich ändern | | | | I0006 | | |
