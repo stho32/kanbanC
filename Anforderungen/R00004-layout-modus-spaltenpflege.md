@@ -60,7 +60,7 @@ In geschätzt 98 % der Zeit, in der jemand auf ein Board schaut, will er Karten 
 - [x] Zwei gleichzeitige Anfragen mit derselben neuen Bezeichnung führen zu genau einer Spalte; die zweite erhält HTTP 400 mit `Zurueckweisung`, keinen Serverfehler.
 
 ### Eindeutigkeit in der Oberfläche
-- [ ] Der Konflikt erscheint im Layout-Modus als lesbare Meldung; die bestehende Spalte bleibt unverändert.
+- [x] Der Konflikt erscheint im Layout-Modus als lesbare Meldung; die bestehende Spalte bleibt unverändert.
 
 ### Datenhaltung
 - [x] Eine Bezeichnung wird ohne umschließende Leerzeichen gespeichert; der Abruf liefert sie getrimmt zurück.
