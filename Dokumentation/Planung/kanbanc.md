@@ -81,8 +81,8 @@ zuletzt: 2026-08-30
 | F0011 | Feature | I0040 | Eindeutige Spaltenbezeichnung | gelb | AK „Eindeutigkeit über die API", „Eindeutigkeit in der Oberfläche", „Datenhaltung"; US-5, US-6, US-7 | | | | F0010 | R00004 | |
 | B0047 | Bubble | F0011 | Bezeichnung normalisieren | gruen | Test gruen | Bezeichnung → Spaltenbezeichnung.Normalisiert / SindGleich → getrimmte Vergleichsform | 0,4 | | | | Operation |
 | B0048 | Bubble | F0011 | Namenskonflikt pruefen | gruen | Test gruen | Bezeichnung + vergebene Bezeichnungen → SpaltenValidator.Pruefe → Pruefbefunde | 0,4 | | | | Operation; eigene Bezeichnung ist kein Konflikt |
-| B0049 | Bubble | F0011 | Eindeutigen Index anlegen | gelb | Test gruen | Bestand mit Duplikaten → Migration 002 → Duplikate umbenannt, UX_Spalte_Board_Bezeichnung steht | 2 | | | | Provider; idempotent, COLLATE NOCASE |
-| B0050 | Bubble | F0011 | Konflikt ueber die API | rot | Test gruen | HTTP POST/PUT → SpaltenService + SpaltenRepository → 400 Zurueckweisung statt 500, getrimmt gespeichert | 2 | | | | Integration + Provider; ISpaltenRepository.LegeAn/Aendere liefern Ergebnis<Spalte>? |
+| B0049 | Bubble | F0011 | Eindeutigen Index anlegen | gruen | Test gruen | Bestand mit Duplikaten → Migration 002 → Duplikate umbenannt, UX_Spalte_Board_Bezeichnung steht | 2 | | | | Provider; idempotent, COLLATE NOCASE |
+| B0050 | Bubble | F0011 | Konflikt ueber die API | gelb | Test gruen | HTTP POST/PUT → SpaltenService + SpaltenRepository → 400 Zurueckweisung statt 500, getrimmt gespeichert | 2 | | | | Integration + Provider; ISpaltenRepository.LegeAn/Aendere liefern Ergebnis<Spalte>? |
 | B0051 | Bubble | F0011 | Konflikt in der Oberflaeche | rot | Test gruen | Zurueckweisung → Spaltenpflege.razor → lesbare Meldung, Seite bleibt bedienbar; E2E US-5, US-6, US-7 | 2 | | | | UI |
 | D0002 | Dialog | A0001 | Kontributoren führen | rot | alle Interactions gruen | | | | | | aus Vision, kein Requirement |
 | I0006 | Interaction | D0002 | Kontributor anlegen | rot | Ein Kontributor entsteht mit Name und Art (Mensch, Agent, abgebildet) und steht zur Auswahl bereit | | | | | | |

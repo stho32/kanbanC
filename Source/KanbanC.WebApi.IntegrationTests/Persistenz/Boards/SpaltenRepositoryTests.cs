@@ -3,6 +3,7 @@ using KanbanC.BL.Operations.Boards;
 using KanbanC.BL.Persistenz.Boards;
 using KanbanC.Contracts.Boards;
 using KanbanC.WebApi.IntegrationTests.Infrastructure;
+using Microsoft.Data.Sqlite;
 
 namespace KanbanC.WebApi.IntegrationTests.Persistenz.Boards;
 
@@ -38,18 +39,16 @@ public class SpaltenRepositoryTests
     }
 
     [Test]
-    public void Wenn_zwei_Spalten_dieselbe_Bezeichnung_tragen_dann_haben_sie_verschiedene_SpalteIds()
+    public void Wenn_dieselbe_Bezeichnung_ein_zweites_Mal_angelegt_wird_dann_weist_das_Schema_sie_ab()
     {
         using var datenbank = new TemporaereDatenbank().MitSchema();
         var boardId = LegeBoardAn(datenbank);
         var repository = new SpaltenRepository(datenbank.Verbindungsfabrik);
-        var anfrage = new SpalteAnlegenAnfrage("Prüfung", false, null);
+        repository.LegeAn(boardId, new SpalteAnlegenAnfrage("Prüfung", false, null));
 
-        var erste = repository.LegeAn(boardId, anfrage);
-        var zweite = repository.LegeAn(boardId, anfrage);
+        Assert.Throws<SqliteException>(() => repository.LegeAn(boardId, new SpalteAnlegenAnfrage("prüfung", false, null)));
 
-        Assert.That(erste!.SpalteId, Is.Not.EqualTo(zweite!.SpalteId));
-        Assert.That(GespeicherteSpaltenAnzahl(datenbank, boardId), Is.EqualTo(5));
+        Assert.That(GespeicherteSpaltenAnzahl(datenbank, boardId), Is.EqualTo(4));
     }
 
     [Test]

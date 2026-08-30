@@ -64,8 +64,8 @@ In geschätzt 98 % der Zeit, in der jemand auf ein Board schaut, will er Karten 
 
 ### Datenhaltung
 - [ ] Eine Bezeichnung wird ohne umschließende Leerzeichen gespeichert; der Abruf liefert sie getrimmt zurück.
-- [ ] Das Schema trägt einen Index, der die Bezeichnung je Board eindeutig macht, unabhängig von Groß-/Kleinschreibung.
-- [ ] Die Migration ist idempotent und läuft auf einem Bestand mit gleichnamigen Spalten durch, ohne Daten zu verlieren: vorhandene Duplikate werden deterministisch umbenannt, bevor der Index entsteht.
+- [x] Das Schema trägt einen Index, der die Bezeichnung je Board eindeutig macht, unabhängig von Groß-/Kleinschreibung.
+- [x] Die Migration ist idempotent und läuft auf einem Bestand mit gleichnamigen Spalten durch, ohne Daten zu verlieren: vorhandene Duplikate werden deterministisch umbenannt, bevor der Index entsteht.
 
 ## Betroffene Verzeichnisstruktur
 

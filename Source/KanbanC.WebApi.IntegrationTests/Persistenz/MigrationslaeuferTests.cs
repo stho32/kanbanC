@@ -42,6 +42,131 @@ public class MigrationslaeuferTests
         });
     }
 
+    [Test]
+    public void Wenn_die_Migration_gelaufen_ist_dann_traegt_das_Schema_den_eindeutigen_Index_auf_Board_und_Bezeichnung()
+    {
+        using var datenbank = new TemporaereDatenbank();
+
+        new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus();
+
+        Assert.That(Indexdefinition(datenbank, "UX_Spalte_Board_Bezeichnung"),
+            Is.EqualTo("CREATE UNIQUE INDEX UX_Spalte_Board_Bezeichnung ON Spalte (Board, Bezeichnung COLLATE NOCASE)"));
+    }
+
+    [Test]
+    public void Wenn_der_Bestand_gleichnamige_Spalten_traegt_dann_benennt_die_Migration_sie_in_SpalteId_Reihenfolge_um()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var erstesBoard = LegeBoardAn(datenbank);
+        var zweitesBoard = LegeBoardAn(datenbank);
+        LoescheEindeutigenIndex(datenbank);
+        FuegeSpalteEin(datenbank, erstesBoard, "erledigt", 4);
+        FuegeSpalteEin(datenbank, erstesBoard, "ERLEDIGT", 5);
+
+        new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Bezeichnungen(datenbank, erstesBoard),
+                Is.EqualTo(new[] { "Zu erledigen", "In Arbeit", "Erledigt", "erledigt (2)", "ERLEDIGT (3)" }));
+            Assert.That(Bezeichnungen(datenbank, zweitesBoard),
+                Is.EqualTo(new[] { "Zu erledigen", "In Arbeit", "Erledigt" }));
+        });
+    }
+
+    [Test]
+    public void Wenn_die_angehaengte_Zahl_selbst_schon_vergeben_ist_dann_macht_der_zweite_Durchgang_die_Bezeichnung_eindeutig()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        LoescheEindeutigenIndex(datenbank);
+        FuegeSpalteEin(datenbank, boardId, "Erledigt", 4);
+        FuegeSpalteEin(datenbank, boardId, "Erledigt (2)", 5);
+
+        new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus();
+
+        var bezeichnungen = Bezeichnungen(datenbank, boardId);
+        Assert.Multiple(() =>
+        {
+            Assert.That(bezeichnungen, Has.Length.EqualTo(5));
+            Assert.That(bezeichnungen.Select(bezeichnung => bezeichnung.ToLowerInvariant()).Distinct().Count(), Is.EqualTo(5));
+            Assert.That(bezeichnungen[3], Is.EqualTo("Erledigt (2)"));
+            Assert.That(bezeichnungen[4], Does.StartWith("Erledigt (2) (#"));
+        });
+    }
+
+    [Test]
+    public void Wenn_die_Migration_auf_einem_bereits_entwirrten_Bestand_erneut_laeuft_dann_bleiben_die_Bezeichnungen_stehen()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        LoescheEindeutigenIndex(datenbank);
+        FuegeSpalteEin(datenbank, boardId, "erledigt", 4);
+        new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus();
+        var nachDemErstenLauf = Bezeichnungen(datenbank, boardId);
+
+        new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus();
+
+        Assert.That(nachDemErstenLauf, Is.EqualTo(new[] { "Zu erledigen", "In Arbeit", "Erledigt", "erledigt (2)" }));
+        Assert.That(Bezeichnungen(datenbank, boardId), Is.EqualTo(nachDemErstenLauf));
+    }
+
+    [Test]
+    public void Wenn_eine_Bezeichnung_umschliessende_Leerzeichen_traegt_dann_steht_sie_nach_der_Migration_getrimmt_in_der_Datei()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        LoescheEindeutigenIndex(datenbank);
+        FuegeSpalteEin(datenbank, boardId, "  Abgenommen  ", 4);
+
+        new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus();
+
+        Assert.That(Bezeichnungen(datenbank, boardId)[3], Is.EqualTo("Abgenommen"));
+    }
+
+    private static long LegeBoardAn(TemporaereDatenbank datenbank)
+    {
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        var board = repository.LegeAn(new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+        return board.BoardId;
+    }
+
+    private static void LoescheEindeutigenIndex(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            DROP INDEX UX_Spalte_Board_Bezeichnung");
+    }
+
+    private static void FuegeSpalteEin(TemporaereDatenbank datenbank, long boardId, string bezeichnung, int position)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Spalte (Board, Bezeichnung, Position, IstAbschlussspalte, Anzeigegrenze)
+            VALUES (@Board, @Bezeichnung, @Position, 0, NULL)",
+            new { Board = boardId, Bezeichnung = bezeichnung, Position = position });
+    }
+
+    private static string[] Bezeichnungen(TemporaereDatenbank datenbank, long boardId)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.Query<string>(@"
+            SELECT Bezeichnung
+              FROM Spalte
+             WHERE Board = @Board
+             ORDER BY SpalteId", new { Board = boardId }).ToArray();
+    }
+
+    private static string? Indexdefinition(TemporaereDatenbank datenbank, string indexname)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.ExecuteScalar<string?>(@"
+            SELECT sql
+              FROM sqlite_master
+             WHERE type = 'index'
+               AND name = @Indexname", new { Indexname = indexname });
+    }
+
     private static List<string> Tabellennamen(TemporaereDatenbank datenbank)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
