@@ -33,22 +33,22 @@ In geschätzt 98 % der Zeit, in der jemand auf ein Board schaut, will er Karten 
 ## Akzeptanzkriterien
 
 ### Arbeitsansicht ohne Pflege
-- [ ] Das geöffnete Board zeigt Kopfdaten und Spaltenbahnen; Anlegeformular, Pflegeliste und die Bedienelemente je Spalte sind nicht sichtbar.
-- [ ] Die Bahnen zeigen weiterhin Bezeichnung und den Abschlussvermerk mit Anzeigegrenze.
+- [x] Das geöffnete Board zeigt Kopfdaten und Spaltenbahnen; Anlegeformular, Pflegeliste und die Bedienelemente je Spalte sind nicht sichtbar.
+- [x] Die Bahnen zeigen weiterhin Bezeichnung und den Abschlussvermerk mit Anzeigegrenze.
 
 ### Layout-Modus betreten und verlassen
-- [ ] Die Board-Kopfzeile trägt ein Bedienelement „Layout bearbeiten"; es ist auch dann vorhanden, wenn das Board keine Spalte hat.
-- [ ] Ein Klick darauf schaltet die Seite in den Layout-Modus: die Bahnen werden bearbeitbar, ein „Fertig" erscheint.
-- [ ] „Fertig" kehrt zur Arbeitsansicht zurück; zwischenzeitliche Änderungen sind dort sichtbar.
-- [ ] Ein Reload im Layout-Modus landet in der Arbeitsansicht — der Modus hat bewusst keine eigene Adresse.
+- [x] Die Board-Kopfzeile trägt ein Bedienelement „Layout bearbeiten"; es ist auch dann vorhanden, wenn das Board keine Spalte hat.
+- [x] Ein Klick darauf schaltet die Seite in den Layout-Modus: die Bahnen werden bearbeitbar, ein „Fertig" erscheint.
+- [x] „Fertig" kehrt zur Arbeitsansicht zurück; zwischenzeitliche Änderungen sind dort sichtbar.
+- [x] Ein Reload im Layout-Modus landet in der Arbeitsansicht — der Modus hat bewusst keine eigene Adresse.
 
 ### Spaltenpflege im Layout-Modus
-- [ ] Im Modus legt ein Formular eine weitere Spalte an; sie erscheint als letzte Bahn.
-- [ ] Je Bahn lassen sich Bezeichnung, Abschlussmarkierung und Anzeigegrenze ändern und speichern.
-- [ ] Je Bahn verschieben zwei Bedienelemente sie um eine Position nach vorn bzw. hinten; die Bahn wandert sichtbar mit: aus `[A, B, C]` wird nach einem Vorwärtsschritt von `B` die Anordnung `[B, A, C]`.
-- [ ] Je Bahn entfernt ein Bedienelement sie; die Bahn verschwindet.
-- [ ] Eine Zurückweisung der API erscheint als lesbare Meldung, ohne dass die Seite abstürzt — die Seite nimmt danach eine weitere Bedienung an und führt sie aus.
-- [ ] Ist die WebApi im Layout-Modus nicht erreichbar, erscheint eine lesbare Meldung statt einer Ausnahmeseite.
+- [x] Im Modus legt ein Formular eine weitere Spalte an; sie erscheint als letzte Bahn.
+- [x] Je Bahn lassen sich Bezeichnung, Abschlussmarkierung und Anzeigegrenze ändern und speichern.
+- [x] Je Bahn verschieben zwei Bedienelemente sie um eine Position nach vorn bzw. hinten; die Bahn wandert sichtbar mit: aus `[A, B, C]` wird nach einem Vorwärtsschritt von `B` die Anordnung `[B, A, C]`.
+- [x] Je Bahn entfernt ein Bedienelement sie; die Bahn verschwindet.
+- [x] Eine Zurückweisung der API erscheint als lesbare Meldung, ohne dass die Seite abstürzt — die Seite nimmt danach eine weitere Bedienung an und führt sie aus.
+- [x] Ist die WebApi im Layout-Modus nicht erreichbar, erscheint eine lesbare Meldung statt einer Ausnahmeseite.
 
 ### Eindeutigkeit über die API
 - [ ] `POST /api/boards/{boardId}/spalten` mit einer Bezeichnung, die es auf dem Board schon gibt, liefert HTTP 400 mit einem Befund, der den Konflikt benennt; es entsteht keine Spalte.

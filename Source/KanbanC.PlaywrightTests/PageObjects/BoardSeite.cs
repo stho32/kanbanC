@@ -31,6 +31,8 @@ public sealed class BoardSeite
 
     public ILocator Abschlussvermerke => _seite.Locator("#spaltenbahnen .spaltenbahn-vermerk");
 
+    public ILocator Bahnbearbeitungen => _seite.Locator("#spaltenbahnen .spaltenbahn-bearbeitung");
+
     public ILocator MeldungUnbekanntesBoard => _seite.Locator("#board-unbekannt");
 
     public ILocator Fehlermeldung => _seite.Locator("#fehlermeldung");
