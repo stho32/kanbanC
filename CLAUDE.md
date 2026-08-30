@@ -45,6 +45,19 @@ Vor jeder C#-Datei den Skill `csharp-stil` laden — nicht erst im Review. Beson
 
 Die IOSP-Ordner (`Models`, `Operations`, `Integrations`, `Interfaces`, `Extensions`) tragen die englischen Namen der Vorlage; die Domänenordner darunter sind deutsch.
 
+## Zieldesign der Oberfläche
+
+`Dokumentation/Wireframes/` — **das ist das Design, das erreicht werden soll**, nicht eine Ideensammlung. Acht Schirme, aus WBS-Knoten abgeleitet; `kanbanc-wireframes.html` im Browser öffnen zeigt sie alle. `Dokumentation/Wireframes/README.md` sagt, welcher Schirm zu welcher Interaction gehört und welche Varianten noch zur Wahl stehen.
+
+Verbindlich für jede Arbeit an der Oberfläche, ohne dass danach gefragt werden muss:
+
+- **Gestaltungswerte kommen aus dem Token-Sheet**, nie als Literal in eine Komponenten-CSS-Datei. Das Sheet ist `Dokumentation/Wireframes/styles.css`; mit `R00005` liegt es als `Source/KanbanC.Blazor/wwwroot/gestaltung.css` in der Anwendung.
+- **Vor einem neuen Schirm die Skizze ansehen.** Struktur, Bedienelemente und Beschriftungen folgen ihr; Abweichungen werden begründet, nicht stillschweigend gebaut.
+- **Kein CSS-Framework.** Bootstrap steckt noch aus der Blazor-Vorlage in der Anwendung und geht mit `R00005` heraus; nichts Neues wird darauf gebaut.
+- **Haltung „Kanbanflow-dicht".** Karten und Bahnen bekommen den Platz, Beiwerk tritt zurück.
+
+Die Übernahme ist [R00005](Anforderungen/R00005-oberflaeche-nach-wireframes.md) — solange sie offen ist, gilt das Zieldesign trotzdem: neue Oberfläche entsteht danach, statt die Vorlage weiterzuschreiben. Die Wireframes selbst sind Dokumentation und werden nicht nachgeführt, wenn der Code sie einholt; weicht der Code ab, ist das eine Entscheidung, die in eine Anforderung gehört.
+
 ## Ports
 
 | Dienst | Port |
