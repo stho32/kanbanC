@@ -87,6 +87,20 @@ public class GestaltungsfundamentTests
     }
 
     [Test]
+    public void Wenn_alle_Stylesheets_neben_dem_Token_Sheet_gelesen_werden_dann_traegt_keines_einen_Farbwert()
+    {
+        var stylesheets = Directory.GetFiles(Quelltextbaum.BlazorProjekt(), "*.css", SearchOption.AllDirectories)
+            .Where(pfad => !pfad.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            .Where(pfad => Path.GetFileName(pfad) != "gestaltung.css")
+            .ToList();
+
+        var befunde = stylesheets.SelectMany(FarbwerteIn).ToList();
+
+        Assert.That(stylesheets, Is.Not.Empty);
+        Assert.That(befunde, Is.Empty);
+    }
+
+    [Test]
     public void Wenn_alle_Razor_Dateien_gelesen_werden_dann_traegt_keine_mehr_eine_Bootstrap_Klasse()
     {
         var razorDateien = Directory.GetFiles(Quelltextbaum.BlazorProjekt(), "*.razor", SearchOption.AllDirectories);
@@ -95,6 +109,16 @@ public class GestaltungsfundamentTests
 
         Assert.That(razorDateien, Is.Not.Empty);
         Assert.That(befunde, Is.Empty);
+    }
+
+    // Farben gehoeren ins Token-Sheet, nicht in eine Komponenten-CSS-Datei: sonst gibt es
+    // wieder mehr als einen Ort, an dem die Gestaltung steht.
+    private static IReadOnlyList<string> FarbwerteIn(string dateipfad)
+    {
+        var inhalt = File.ReadAllText(dateipfad);
+        var name = Path.GetFileName(dateipfad);
+        var treffer = Regex.Matches(inhalt, "#[0-9a-fA-F]{3,8}\\b|\\brgba?\\(|\\bhsla?\\(|:\\s*(white|black|lightyellow|red|blue|green)\\b");
+        return treffer.Select(einTreffer => $"{name}: {einTreffer.Value}").ToList();
     }
 
     private static IReadOnlyList<string> BootstrapklassenIn(string dateipfad)
