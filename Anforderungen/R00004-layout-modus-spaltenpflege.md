@@ -51,19 +51,19 @@ In geschätzt 98 % der Zeit, in der jemand auf ein Board schaut, will er Karten 
 - [x] Ist die WebApi im Layout-Modus nicht erreichbar, erscheint eine lesbare Meldung statt einer Ausnahmeseite.
 
 ### Eindeutigkeit über die API
-- [ ] `POST /api/boards/{boardId}/spalten` mit einer Bezeichnung, die es auf dem Board schon gibt, liefert HTTP 400 mit einem Befund, der den Konflikt benennt; es entsteht keine Spalte.
-- [ ] Der Vergleich ignoriert Groß-/Kleinschreibung und umschließende Leerzeichen: `Erledigt`, `erledigt` und `Erledigt ` gelten als dieselbe Bezeichnung.
-- [ ] `PUT /api/boards/{boardId}/spalten/{spalteId}` auf eine von einer anderen Spalte belegte Bezeichnung liefert HTTP 400 und ändert nichts.
-- [ ] Eine Spalte lässt sich auf ihre eigene Bezeichnung speichern — das ist kein Konflikt; sonst wäre die Anzeigegrenze ohne Umbenennen nicht änderbar.
-- [ ] Dieselbe Bezeichnung auf zwei verschiedenen Boards ist zulässig.
-- [ ] Wird eine Spalte entfernt, lässt sich danach eine neue Spalte mit ihrer Bezeichnung anlegen.
-- [ ] Zwei gleichzeitige Anfragen mit derselben neuen Bezeichnung führen zu genau einer Spalte; die zweite erhält HTTP 400 mit `Zurueckweisung`, keinen Serverfehler.
+- [x] `POST /api/boards/{boardId}/spalten` mit einer Bezeichnung, die es auf dem Board schon gibt, liefert HTTP 400 mit einem Befund, der den Konflikt benennt; es entsteht keine Spalte.
+- [x] Der Vergleich ignoriert Groß-/Kleinschreibung und umschließende Leerzeichen: `Erledigt`, `erledigt` und `Erledigt ` gelten als dieselbe Bezeichnung.
+- [x] `PUT /api/boards/{boardId}/spalten/{spalteId}` auf eine von einer anderen Spalte belegte Bezeichnung liefert HTTP 400 und ändert nichts.
+- [x] Eine Spalte lässt sich auf ihre eigene Bezeichnung speichern — das ist kein Konflikt; sonst wäre die Anzeigegrenze ohne Umbenennen nicht änderbar.
+- [x] Dieselbe Bezeichnung auf zwei verschiedenen Boards ist zulässig.
+- [x] Wird eine Spalte entfernt, lässt sich danach eine neue Spalte mit ihrer Bezeichnung anlegen.
+- [x] Zwei gleichzeitige Anfragen mit derselben neuen Bezeichnung führen zu genau einer Spalte; die zweite erhält HTTP 400 mit `Zurueckweisung`, keinen Serverfehler.
 
 ### Eindeutigkeit in der Oberfläche
 - [ ] Der Konflikt erscheint im Layout-Modus als lesbare Meldung; die bestehende Spalte bleibt unverändert.
 
 ### Datenhaltung
-- [ ] Eine Bezeichnung wird ohne umschließende Leerzeichen gespeichert; der Abruf liefert sie getrimmt zurück.
+- [x] Eine Bezeichnung wird ohne umschließende Leerzeichen gespeichert; der Abruf liefert sie getrimmt zurück.
 - [x] Das Schema trägt einen Index, der die Bezeichnung je Board eindeutig macht, unabhängig von Groß-/Kleinschreibung.
 - [x] Die Migration ist idempotent und läuft auf einem Bestand mit gleichnamigen Spalten durch, ohne Daten zu verlieren: vorhandene Duplikate werden deterministisch umbenannt, bevor der Index entsteht.
 

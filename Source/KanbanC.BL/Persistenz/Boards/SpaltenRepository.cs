@@ -3,14 +3,19 @@ using Dapper;
 using KanbanC.BL.Interfaces.Boards;
 using KanbanC.BL.Interfaces.Persistenz;
 using KanbanC.BL.Models;
+using KanbanC.BL.Operations.Boards;
 using KanbanC.Contracts.Boards;
+using Microsoft.Data.Sqlite;
 
 namespace KanbanC.BL.Persistenz.Boards;
 
 public sealed class SpaltenRepository : ISpaltenRepository
 {
+    private const int UniqueConstraintFehlercode = 2067;
     private static readonly Pruefbefunde SpaltenbestandHatSichGeaendert =
         new(["Die Spalten des Boards haben sich zwischenzeitlich geändert; bitte die Reihenfolge erneut setzen."]);
+    private static readonly Pruefbefunde BezeichnungWurdeInzwischenVergeben =
+        new(["Die Bezeichnung ist inzwischen von einer anderen Spalte dieses Boards belegt; bitte eine andere wählen."]);
     private readonly IDatenbankVerbindungsfabrik _verbindungsfabrik;
 
     public SpaltenRepository(IDatenbankVerbindungsfabrik verbindungsfabrik)
@@ -18,7 +23,7 @@ public sealed class SpaltenRepository : ISpaltenRepository
         _verbindungsfabrik = verbindungsfabrik;
     }
 
-    public Spalte? LegeAn(long boardId, SpalteAnlegenAnfrage anfrage)
+    public Ergebnis<Spalte>? LegeAn(long boardId, SpalteAnlegenAnfrage anfrage)
     {
         using var verbindung = _verbindungsfabrik.Oeffne();
         using var transaktion = verbindung.BeginTransaction();
@@ -26,30 +31,51 @@ public sealed class SpaltenRepository : ISpaltenRepository
         var boardIstUnbekannt = !ExistiertBoard(verbindung, transaktion, boardId);
         if (boardIstUnbekannt)
         {
-            return null;
+            return null; // stil-check: C25 null heisst "Board unbekannt" (404); die Zurueckweisung heisst "Bezeichnung belegt" (400)
         }
 
+        var bezeichnung = Spaltenbezeichnung.Normalisiert(anfrage.Bezeichnung);
         var position = NaechstePosition(verbindung, transaktion, boardId);
-        var spalteId = FuegeSpalteEin(verbindung, transaktion, boardId, anfrage, position);
-        transaktion.Commit();
-        return new Spalte(spalteId, anfrage.Bezeichnung, position, anfrage.IstAbschlussspalte, anfrage.Anzeigegrenze);
+        try
+        {
+            var spalteId = FuegeSpalteEin(verbindung, transaktion, boardId, bezeichnung, anfrage, position);
+            transaktion.Commit();
+            return Ergebnis<Spalte>.Erfolg(new Spalte(spalteId, bezeichnung, position, anfrage.IstAbschlussspalte, anfrage.Anzeigegrenze));
+        }
+        catch (SqliteException fehler) when (IstBezeichnungskonflikt(fehler))
+        {
+            return Ergebnis<Spalte>.Zurueckgewiesen(BezeichnungWurdeInzwischenVergeben);
+        }
     }
 
-    public Spalte? Aendere(long boardId, long spalteId, SpalteAendernAnfrage anfrage)
+    public Ergebnis<Spalte>? Aendere(long boardId, long spalteId, SpalteAendernAnfrage anfrage)
     {
         using var verbindung = _verbindungsfabrik.Oeffne();
         using var transaktion = verbindung.BeginTransaction();
 
-        var geaenderteZeilen = SchreibeAenderung(verbindung, transaktion, boardId, spalteId, anfrage);
-        var spalteGehoertNichtZumBoard = geaenderteZeilen == 0;
-        if (spalteGehoertNichtZumBoard)
+        var bezeichnung = Spaltenbezeichnung.Normalisiert(anfrage.Bezeichnung);
+        try
         {
-            return null;
-        }
+            var geaenderteZeilen = SchreibeAenderung(verbindung, transaktion, boardId, spalteId, bezeichnung, anfrage);
+            var spalteGehoertNichtZumBoard = geaenderteZeilen == 0;
+            if (spalteGehoertNichtZumBoard)
+            {
+                return null; // stil-check: C25 null heisst "Spalte unbekannt" (404); die Zurueckweisung heisst "Bezeichnung belegt" (400)
+            }
 
-        var position = LiesPosition(verbindung, transaktion, spalteId);
-        transaktion.Commit();
-        return new Spalte(spalteId, anfrage.Bezeichnung, position, anfrage.IstAbschlussspalte, anfrage.Anzeigegrenze);
+            var position = LiesPosition(verbindung, transaktion, spalteId);
+            transaktion.Commit();
+            return Ergebnis<Spalte>.Erfolg(new Spalte(spalteId, bezeichnung, position, anfrage.IstAbschlussspalte, anfrage.Anzeigegrenze));
+        }
+        catch (SqliteException fehler) when (IstBezeichnungskonflikt(fehler))
+        {
+            return Ergebnis<Spalte>.Zurueckgewiesen(BezeichnungWurdeInzwischenVergeben);
+        }
+    }
+
+    private static bool IstBezeichnungskonflikt(SqliteException fehler)
+    {
+        return fehler.SqliteExtendedErrorCode == UniqueConstraintFehlercode;
     }
 
     public IReadOnlyList<Spalte>? LadeAlle(long boardId)
@@ -154,12 +180,12 @@ public sealed class SpaltenRepository : ISpaltenRepository
              WHERE Board = @BoardId", new { BoardId = boardId }, transaktion);
     }
 
-    private static long FuegeSpalteEin(IDbConnection verbindung, IDbTransaction transaktion, long boardId, SpalteAnlegenAnfrage anfrage, int position)
+    private static long FuegeSpalteEin(IDbConnection verbindung, IDbTransaction transaktion, long boardId, string bezeichnung, SpalteAnlegenAnfrage anfrage, int position)
     {
         var parameter = new
         {
             Board = boardId,
-            anfrage.Bezeichnung,
+            Bezeichnung = bezeichnung,
             Position = position,
             anfrage.IstAbschlussspalte,
             anfrage.Anzeigegrenze,
@@ -170,13 +196,13 @@ public sealed class SpaltenRepository : ISpaltenRepository
             SELECT last_insert_rowid();", parameter, transaktion);
     }
 
-    private static int SchreibeAenderung(IDbConnection verbindung, IDbTransaction transaktion, long boardId, long spalteId, SpalteAendernAnfrage anfrage)
+    private static int SchreibeAenderung(IDbConnection verbindung, IDbTransaction transaktion, long boardId, long spalteId, string bezeichnung, SpalteAendernAnfrage anfrage)
     {
         var parameter = new
         {
             SpalteId = spalteId,
             Board = boardId,
-            anfrage.Bezeichnung,
+            Bezeichnung = bezeichnung,
             anfrage.IstAbschlussspalte,
             anfrage.Anzeigegrenze,
         };

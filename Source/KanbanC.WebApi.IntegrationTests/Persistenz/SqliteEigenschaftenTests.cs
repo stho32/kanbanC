@@ -11,6 +11,7 @@ namespace KanbanC.WebApi.IntegrationTests.Persistenz;
 public class SqliteEigenschaftenTests
 {
     private const int ConstraintFehlercode = 19;
+    private const int UniqueConstraintFehlercode = 2067;
 
     [Test]
     public void Wenn_ein_eindeutiger_Index_COLLATE_NOCASE_traegt_dann_weist_er_die_abweichende_Schreibweise_ab()
@@ -25,6 +26,7 @@ public class SqliteEigenschaftenTests
         var fehler = Assert.Throws<SqliteException>(() => FuegeEin(verbindung, 1, "ERLEDIGT"));
 
         Assert.That(fehler!.SqliteErrorCode, Is.EqualTo(ConstraintFehlercode));
+        Assert.That(fehler.SqliteExtendedErrorCode, Is.EqualTo(UniqueConstraintFehlercode));
         Assert.That(Bezeichnungen(verbindung), Is.EqualTo(new[] { "Erledigt" }));
     }
 

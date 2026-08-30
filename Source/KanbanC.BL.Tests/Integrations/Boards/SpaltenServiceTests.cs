@@ -71,7 +71,7 @@ public class SpaltenServiceTests
         var angelegt = repository.LegeAn(1, new SpalteAnlegenAnfrage("In Arbeit", false, null));
         var service = new SpaltenService(repository);
 
-        var ergebnis = service.AendereSpalte(1, angelegt!.SpalteId, new SpalteAendernAnfrage("In Umsetzung", false, null));
+        var ergebnis = service.AendereSpalte(1, angelegt!.Wert.SpalteId, new SpalteAendernAnfrage("In Umsetzung", false, null));
 
         Assert.That(ergebnis!.IstErfolg, Is.True);
         Assert.That(ergebnis.Wert.Position, Is.EqualTo(1));
@@ -85,7 +85,7 @@ public class SpaltenServiceTests
         var angelegt = repository.LegeAn(1, new SpalteAnlegenAnfrage("In Arbeit", false, null));
         var service = new SpaltenService(repository);
 
-        var ergebnis = service.AendereSpalte(1, angelegt!.SpalteId, new SpalteAendernAnfrage("", true, null));
+        var ergebnis = service.AendereSpalte(1, angelegt!.Wert.SpalteId, new SpalteAendernAnfrage("", true, null));
 
         Assert.That(ergebnis!.IstErfolg, Is.False);
         Assert.Multiple(() =>
@@ -117,7 +117,7 @@ public class SpaltenServiceTests
         var zweite = repository.LegeAn(1, new SpalteAnlegenAnfrage("In Arbeit", false, null));
         var service = new SpaltenService(repository);
 
-        var ergebnis = service.SetzeReihenfolge(1, [zweite!.SpalteId, erste!.SpalteId]);
+        var ergebnis = service.SetzeReihenfolge(1, [zweite!.Wert.SpalteId, erste!.Wert.SpalteId]);
 
         Assert.That(ergebnis!.IstErfolg, Is.True);
         Assert.That(ergebnis.Wert.Select(s => s.Bezeichnung), Is.EqualTo(new[] { "In Arbeit", "Zu erledigen" }));
@@ -132,7 +132,7 @@ public class SpaltenServiceTests
         repository.LegeAn(1, new SpalteAnlegenAnfrage("In Arbeit", false, null));
         var service = new SpaltenService(repository);
 
-        var ergebnis = service.SetzeReihenfolge(1, [erste!.SpalteId]);
+        var ergebnis = service.SetzeReihenfolge(1, [erste!.Wert.SpalteId]);
 
         Assert.That(ergebnis!.IstErfolg, Is.False);
         Assert.Multiple(() =>
@@ -162,7 +162,7 @@ public class SpaltenServiceTests
         repository.LegeAn(1, new SpalteAnlegenAnfrage("In Arbeit", false, null));
         var service = new SpaltenService(repository);
 
-        var wurdeEntfernt = service.EntferneSpalte(1, erste!.SpalteId);
+        var wurdeEntfernt = service.EntferneSpalte(1, erste!.Wert.SpalteId);
 
         Assert.That(wurdeEntfernt, Is.True);
         Assert.That(repository.Spalten(1).Select(s => s.Bezeichnung), Is.EqualTo(new[] { "In Arbeit" }));
@@ -263,12 +263,12 @@ public class SpaltenServiceTests
             return null;
         }
 
-        public Spalte? LegeAn(long boardId, SpalteAnlegenAnfrage anfrage)
+        public Ergebnis<Spalte>? LegeAn(long boardId, SpalteAnlegenAnfrage anfrage)
         {
             throw new NotSupportedException();
         }
 
-        public Spalte? Aendere(long boardId, long spalteId, SpalteAendernAnfrage anfrage)
+        public Ergebnis<Spalte>? Aendere(long boardId, long spalteId, SpalteAendernAnfrage anfrage)
         {
             throw new NotSupportedException();
         }

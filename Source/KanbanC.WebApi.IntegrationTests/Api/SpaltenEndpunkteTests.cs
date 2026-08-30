@@ -54,6 +54,92 @@ public class SpaltenEndpunkteTests
     }
 
     [Test]
+    public async Task Wenn_die_Bezeichnung_nur_in_Schreibweise_und_Leerzeichen_abweicht_dann_antwortet_die_API_mit_400()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var boardId = await LegeBoardAn(webApi);
+
+        var antwort = await webApi.Klient.PostAsJsonAsync($"{BoardsRoute}/{boardId}/spalten",
+            new SpalteAnlegenAnfrage("  ERLEDIGT ", false, null));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var board = await LadeBoard(webApi, boardId);
+        Assert.That(board.Spalten, Has.Count.EqualTo(3));
+    }
+
+    [Test]
+    public async Task Wenn_dieselbe_Bezeichnung_auf_einem_zweiten_Board_angelegt_wird_dann_antwortet_die_API_mit_201()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var erstesBoard = await LegeBoardAn(webApi);
+        var zweitesBoard = await LegeBoardAn(webApi);
+        await LegeSpalteAn(webApi, erstesBoard, new SpalteAnlegenAnfrage("Abgenommen", false, null));
+
+        var spalte = await LegeSpalteAn(webApi, zweitesBoard, new SpalteAnlegenAnfrage("Abgenommen", false, null));
+
+        Assert.That(spalte.Position, Is.EqualTo(4));
+        var board = await LadeBoard(webApi, zweitesBoard);
+        Assert.That(board.Spalten.Select(s => s.Bezeichnung), Does.Contain("Abgenommen"));
+    }
+
+    [Test]
+    public async Task Wenn_eine_Spalte_entfernt_wurde_dann_laesst_sich_ihre_Bezeichnung_danach_wieder_anlegen()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var boardId = await LegeBoardAn(webApi);
+        var erledigt = (await LadeBoard(webApi, boardId)).Spalten[2];
+        var loeschantwort = await webApi.Klient.DeleteAsync($"{BoardsRoute}/{boardId}/spalten/{erledigt.SpalteId}");
+        Assert.That(loeschantwort.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+
+        var neue = await LegeSpalteAn(webApi, boardId, new SpalteAnlegenAnfrage("Erledigt", true, 20));
+
+        Assert.That(neue.SpalteId, Is.Not.EqualTo(erledigt.SpalteId));
+        var board = await LadeBoard(webApi, boardId);
+        Assert.That(board.Spalten.Select(s => s.Bezeichnung), Is.EqualTo(new[] { "Zu erledigen", "In Arbeit", "Erledigt" }));
+    }
+
+    [Test]
+    public async Task Wenn_eine_Bezeichnung_mit_Leerzeichen_gesendet_wird_dann_liefert_der_Boardabruf_sie_getrimmt_zurueck()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var boardId = await LegeBoardAn(webApi);
+
+        var spalte = await LegeSpalteAn(webApi, boardId, new SpalteAnlegenAnfrage("  Abgenommen  ", false, null));
+
+        Assert.That(spalte.Bezeichnung, Is.EqualTo("Abgenommen"));
+        var board = await LadeBoard(webApi, boardId);
+        Assert.That(board.Spalten[3].Bezeichnung, Is.EqualTo("Abgenommen"));
+    }
+
+    [Test]
+    public async Task Wenn_zwei_gleichzeitige_Anfragen_dieselbe_Bezeichnung_anlegen_dann_entsteht_genau_eine_Spalte()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var boardId = await LegeBoardAn(webApi);
+        var anfrage = new SpalteAnlegenAnfrage("Abgenommen", false, null);
+
+        var antworten = await Task.WhenAll(
+            webApi.Klient.PostAsJsonAsync($"{BoardsRoute}/{boardId}/spalten", anfrage),
+            webApi.Klient.PostAsJsonAsync($"{BoardsRoute}/{boardId}/spalten", anfrage));
+
+        var abgelehnte = antworten.Single(antwort => antwort.StatusCode == HttpStatusCode.BadRequest);
+        var zurueckweisung = await abgelehnte.Content.ReadFromJsonAsync<Zurueckweisung>();
+        Assert.Multiple(() =>
+        {
+            Assert.That(antworten.Count(antwort => antwort.StatusCode == HttpStatusCode.Created), Is.EqualTo(1));
+            Assert.That(zurueckweisung, Is.Not.Null);
+            Assert.That(zurueckweisung!.Befunde, Is.Not.Empty);
+        });
+        var board = await LadeBoard(webApi, boardId);
+        Assert.That(board.Spalten.Count(spalte => spalte.Bezeichnung == "Abgenommen"), Is.EqualTo(1));
+    }
+
+    [Test]
     public async Task Wenn_die_BoardId_nicht_vergeben_ist_dann_antwortet_POST_mit_404_und_es_entsteht_keine_Spalte()
     {
         using var datenbank = new TemporaereDatenbank();
@@ -146,6 +232,44 @@ public class SpaltenEndpunkteTests
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
         var unveraendert = await LadeBoard(webApi, erstesBoard);
         Assert.That(unveraendert.Spalten[0].Bezeichnung, Is.EqualTo("Zu erledigen"));
+    }
+
+    [Test]
+    public async Task Wenn_eine_Spalte_auf_die_Bezeichnung_einer_anderen_gespeichert_wird_dann_antwortet_die_API_mit_400_und_aendert_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var boardId = await LegeBoardAn(webApi);
+        var inArbeit = (await LadeBoard(webApi, boardId)).Spalten[1];
+
+        var antwort = await webApi.Klient.PutAsJsonAsync($"{BoardsRoute}/{boardId}/spalten/{inArbeit.SpalteId}",
+            new SpalteAendernAnfrage("erledigt", false, null));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var zurueckweisung = await antwort.Content.ReadFromJsonAsync<Zurueckweisung>();
+        Assert.That(zurueckweisung!.Befunde, Has.Some.Contains("schon vergeben"));
+        var board = await LadeBoard(webApi, boardId);
+        Assert.That(board.Spalten.Select(s => s.Bezeichnung), Is.EqualTo(new[] { "Zu erledigen", "In Arbeit", "Erledigt" }));
+    }
+
+    [Test]
+    public async Task Wenn_eine_Spalte_auf_ihre_eigene_Bezeichnung_gespeichert_wird_dann_antwortet_die_API_mit_200()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var boardId = await LegeBoardAn(webApi);
+        var erledigt = (await LadeBoard(webApi, boardId)).Spalten[2];
+
+        var antwort = await webApi.Klient.PutAsJsonAsync($"{BoardsRoute}/{boardId}/spalten/{erledigt.SpalteId}",
+            new SpalteAendernAnfrage("Erledigt", true, 5));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var board = await LadeBoard(webApi, boardId);
+        Assert.Multiple(() =>
+        {
+            Assert.That(board.Spalten[2].Bezeichnung, Is.EqualTo("Erledigt"));
+            Assert.That(board.Spalten[2].Anzeigegrenze, Is.EqualTo(5));
+        });
     }
 
     [Test]

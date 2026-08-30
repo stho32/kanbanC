@@ -45,7 +45,7 @@ public sealed class TestSpaltenRepository : ISpaltenRepository
         return _spaltenJeBoard[boardId];
     }
 
-    public Spalte? LegeAn(long boardId, SpalteAnlegenAnfrage anfrage)
+    public Ergebnis<Spalte>? LegeAn(long boardId, SpalteAnlegenAnfrage anfrage)
     {
         WurdeAngelegt = true;
         if (!_spaltenJeBoard.TryGetValue(boardId, out var spalten))
@@ -56,7 +56,7 @@ public sealed class TestSpaltenRepository : ISpaltenRepository
         var spalte = new Spalte(_naechsteSpalteId, anfrage.Bezeichnung, spalten.Count + 1, anfrage.IstAbschlussspalte, anfrage.Anzeigegrenze);
         _naechsteSpalteId = _naechsteSpalteId + 1;
         spalten.Add(spalte);
-        return spalte;
+        return Ergebnis<Spalte>.Erfolg(spalte);
     }
 
     public bool Entferne(long boardId, long spalteId)
@@ -117,7 +117,7 @@ public sealed class TestSpaltenRepository : ISpaltenRepository
         return spalten.Single(spalte => spalte.SpalteId == spalteId) with { Position = stelle + 1 };
     }
 
-    public Spalte? Aendere(long boardId, long spalteId, SpalteAendernAnfrage anfrage)
+    public Ergebnis<Spalte>? Aendere(long boardId, long spalteId, SpalteAendernAnfrage anfrage)
     {
         WurdeGeaendert = true;
         if (!_spaltenJeBoard.TryGetValue(boardId, out var spalten))
@@ -139,6 +139,6 @@ public sealed class TestSpaltenRepository : ISpaltenRepository
             Anzeigegrenze = anfrage.Anzeigegrenze,
         };
         spalten[stelle] = geaendert;
-        return geaendert;
+        return Ergebnis<Spalte>.Erfolg(geaendert);
     }
 }

@@ -30,13 +30,7 @@ public sealed class SpaltenService
             return Ergebnis<Spalte>.Zurueckgewiesen(befunde);
         }
 
-        var spalte = _repository.LegeAn(boardId, anfrage);
-        if (spalte is null)
-        {
-            return null;
-        }
-
-        return Ergebnis<Spalte>.Erfolg(spalte);
+        return _repository.LegeAn(boardId, anfrage);
     }
 
     public Ergebnis<IReadOnlyList<Spalte>>? SetzeReihenfolge(long boardId, IReadOnlyList<long> gewuenschteReihenfolge)
@@ -74,13 +68,7 @@ public sealed class SpaltenService
             return Ergebnis<Spalte>.Zurueckgewiesen(befunde);
         }
 
-        var spalte = _repository.Aendere(boardId, spalteId, anfrage);
-        if (spalte is null)
-        {
-            return null;
-        }
-
-        return Ergebnis<Spalte>.Erfolg(spalte);
+        return _repository.Aendere(boardId, spalteId, anfrage);
     }
 
     public bool EntferneSpalte(long boardId, long spalteId)

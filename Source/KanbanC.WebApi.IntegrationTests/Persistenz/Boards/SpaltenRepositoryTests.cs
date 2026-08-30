@@ -3,7 +3,6 @@ using KanbanC.BL.Operations.Boards;
 using KanbanC.BL.Persistenz.Boards;
 using KanbanC.Contracts.Boards;
 using KanbanC.WebApi.IntegrationTests.Infrastructure;
-using Microsoft.Data.Sqlite;
 
 namespace KanbanC.WebApi.IntegrationTests.Persistenz.Boards;
 
@@ -19,7 +18,7 @@ public class SpaltenRepositoryTests
         var spalte = repository.LegeAn(boardId, new SpalteAnlegenAnfrage("Wartet auf Zulieferung", false, null));
 
         Assert.That(spalte, Is.Not.Null);
-        Assert.That(spalte!.Position, Is.EqualTo(4));
+        Assert.That(spalte!.Wert.Position, Is.EqualTo(4));
         Assert.That(GespeicherteBezeichnungenNachPosition(datenbank, boardId),
             Is.EqualTo(new[] { "Zu erledigen", "In Arbeit", "Erledigt", "Wartet auf Zulieferung" }));
     }
@@ -34,21 +33,65 @@ public class SpaltenRepositoryTests
 
         var spalte = repository.LegeAn(boardId, new SpalteAnlegenAnfrage("Eingang", false, null));
 
-        Assert.That(spalte!.Position, Is.EqualTo(1));
+        Assert.That(spalte!.Wert.Position, Is.EqualTo(1));
         Assert.That(GespeicherteBezeichnungenNachPosition(datenbank, boardId), Is.EqualTo(new[] { "Eingang" }));
     }
 
     [Test]
-    public void Wenn_dieselbe_Bezeichnung_ein_zweites_Mal_angelegt_wird_dann_weist_das_Schema_sie_ab()
+    public void Wenn_dieselbe_Bezeichnung_ein_zweites_Mal_angelegt_wird_dann_liefert_LegeAn_eine_Zurueckweisung_statt_einer_Ausnahme()
     {
         using var datenbank = new TemporaereDatenbank().MitSchema();
         var boardId = LegeBoardAn(datenbank);
         var repository = new SpaltenRepository(datenbank.Verbindungsfabrik);
         repository.LegeAn(boardId, new SpalteAnlegenAnfrage("Prüfung", false, null));
 
-        Assert.Throws<SqliteException>(() => repository.LegeAn(boardId, new SpalteAnlegenAnfrage("prüfung", false, null)));
+        var ergebnis = repository.LegeAn(boardId, new SpalteAnlegenAnfrage("prüfung", false, null));
 
-        Assert.That(GespeicherteSpaltenAnzahl(datenbank, boardId), Is.EqualTo(4));
+        Assert.That(ergebnis, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis!.IstErfolg, Is.False);
+            Assert.That(ergebnis.Befunde[0], Does.Contain("belegt"));
+            Assert.That(GespeicherteSpaltenAnzahl(datenbank, boardId), Is.EqualTo(4));
+        });
+    }
+
+    [Test]
+    public void Wenn_eine_Spalte_auf_eine_belegte_Bezeichnung_geaendert_wird_dann_liefert_Aendere_eine_Zurueckweisung_und_die_Datei_bleibt()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var repository = new SpaltenRepository(datenbank.Verbindungsfabrik);
+        var spalteIdVonInArbeit = SpalteIdAnPosition(datenbank, boardId, 2);
+
+        var ergebnis = repository.Aendere(boardId, spalteIdVonInArbeit, new SpalteAendernAnfrage("ERLEDIGT", false, null));
+
+        Assert.That(ergebnis, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis!.IstErfolg, Is.False);
+            Assert.That(GespeicherteBezeichnungenNachPosition(datenbank, boardId),
+                Is.EqualTo(new[] { "Zu erledigen", "In Arbeit", "Erledigt" }));
+        });
+    }
+
+    [Test]
+    public void Wenn_eine_Bezeichnung_umschliessende_Leerzeichen_traegt_dann_steht_sie_getrimmt_in_der_Datei()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var repository = new SpaltenRepository(datenbank.Verbindungsfabrik);
+
+        var angelegt = repository.LegeAn(boardId, new SpalteAnlegenAnfrage("  Wartet auf Zulieferung  ", false, null));
+        var geaendert = repository.Aendere(boardId, SpalteIdAnPosition(datenbank, boardId, 2), new SpalteAendernAnfrage("  In Umsetzung  ", false, null));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(angelegt!.Wert.Bezeichnung, Is.EqualTo("Wartet auf Zulieferung"));
+            Assert.That(geaendert!.Wert.Bezeichnung, Is.EqualTo("In Umsetzung"));
+            Assert.That(GespeicherteBezeichnungenNachPosition(datenbank, boardId),
+                Is.EqualTo(new[] { "Zu erledigen", "In Umsetzung", "Erledigt", "Wartet auf Zulieferung" }));
+        });
     }
 
     [Test]
@@ -74,7 +117,7 @@ public class SpaltenRepositoryTests
 
         var spalte = repository.Aendere(boardId, spalteIdVonInArbeit, new SpalteAendernAnfrage("In Umsetzung", false, null));
 
-        Assert.That(spalte!.Position, Is.EqualTo(2));
+        Assert.That(spalte!.Wert.Position, Is.EqualTo(2));
         Assert.That(GespeicherteBezeichnungenNachPosition(datenbank, boardId),
             Is.EqualTo(new[] { "Zu erledigen", "In Umsetzung", "Erledigt" }));
     }
@@ -89,7 +132,7 @@ public class SpaltenRepositoryTests
 
         var spalte = repository.Aendere(boardId, spalteIdVonZuErledigen, new SpalteAendernAnfrage("Abgenommen", true, 10));
 
-        Assert.That(spalte!.IstAbschlussspalte, Is.True);
+        Assert.That(spalte!.Wert.IstAbschlussspalte, Is.True);
         Assert.That(GespeicherteMarkierung(datenbank, spalteIdVonZuErledigen), Is.EqualTo((1L, 10L)));
     }
 
