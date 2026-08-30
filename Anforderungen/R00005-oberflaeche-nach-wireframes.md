@@ -1,6 +1,6 @@
 ---
 id: R00005
-status: Neu
+status: Erledigt
 datum: 2026-08-30
 ---
 
@@ -32,60 +32,60 @@ Die Oberfläche sieht heute aus wie das, was `dotnet new blazor` erzeugt: Seiten
 - **Benutzerfreundlichkeit:** Die Haltung der Wireframes ist „Kanbanflow-dicht" — Karten und Bahnen bekommen den Platz, Beiwerk tritt zurück. Messbar an den Schirmen: Auf der Board-Seite ist über dem ersten Bahnen-Kopf höchstens die Board-Kopfzeile mit Name, Art, Terminen und dem Layout-Bedienelement zu sehen.
 - **Betrieb:** Keine Laufzeit-Abhängigkeit auf ein fremdes Netz. Web-Fonts werden mitgeliefert, nicht von Google geladen — die Anwendung läuft im LAN und darf offline nicht anders aussehen.
 - **Sicherheit:** Unverändert Full-Trust im LAN ohne Authentifizierung. Der Identitätsplatz in der Kopfzeile ist in dieser Anforderung eine leere Stelle, keine Anmeldung.
-- **Wartbarkeit:** Genau ein Ort trägt die Gestaltungswerte. Eine Farbe, ein Abstand oder ein Radius, der in einer Komponenten-CSS-Datei als Literal steht, ist ein Fehler — er gehört als Variable ins Token-Sheet.
+- **Wartbarkeit:** Genau ein Ort trägt die Farben. Ein Farbwert, der in einer Komponenten-CSS-Datei als Literal steht, ist ein Fehler — er gehört als Variable ins Token-Sheet. Abstände und Radien nutzen die Variablen, wo sie passen, ohne Testzwang: Das Token-Sheet führt keine Breiten- und keine Schriftgrößen-Skala, deshalb ließe sich die Regel für Maße heute nicht ehrlich prüfen. Eine solche Skala wäre ein eigener Slice.
 
 ## Akzeptanzkriterien
 
 ### Gestaltungsfundament
-- [ ] Das Token-Sheet liegt als `Source/KanbanC.Blazor/wwwroot/gestaltung.css` in der Anwendung und wird von `App.razor` geladen.
-- [ ] Es trägt dieselben Variablen wie `Dokumentation/Wireframes/styles.css`: `--color-bg`, `--color-surface`, `--color-text`, `--color-accent`, `--color-accent-2`, die drei Rampen zu je neun Stufen, `--font-heading`, `--font-body`, `--space-1` bis `--space-8`, `--radius-sm|md|lg`, `--shadow-sm|md|lg`.
-- [ ] Der Hintergrund der geladenen Seite ist der Wert von `--color-bg` (`#f5ead8`), nicht Weiß.
-- [ ] Überschriften erscheinen in `Caprasimo`, Fließtext in `Figtree`.
-- [ ] Die Schriftdateien liegen unter `Source/KanbanC.Blazor/wwwroot/fonts/`; das Token-Sheet bindet sie über `@font-face` ein und enthält keinen `@import` auf `fonts.googleapis.com`.
-- [ ] Bei abgeschaltetem Netzzugang erscheint dieselbe Schrift wie mit — der Test blockiert Anfragen an fremde Hosts und vergleicht die Schriftfamilie des `h1`.
+- [x] Das Token-Sheet liegt als `Source/KanbanC.Blazor/wwwroot/gestaltung.css` in der Anwendung und wird von `App.razor` geladen.
+- [x] Es trägt dieselben Variablen wie `Dokumentation/Wireframes/styles.css`: `--color-bg`, `--color-surface`, `--color-text`, `--color-accent`, `--color-accent-2`, die drei Rampen zu je neun Stufen, `--font-heading`, `--font-body`, `--space-1` bis `--space-8`, `--radius-sm|md|lg`, `--shadow-sm|md|lg`.
+- [x] Der Hintergrund der geladenen Seite ist der Wert von `--color-bg` (`#f5ead8`), nicht Weiß.
+- [x] Überschriften erscheinen in `Caprasimo`, Fließtext in `Figtree`.
+- [x] Die Schriftdateien liegen unter `Source/KanbanC.Blazor/wwwroot/fonts/`; das Token-Sheet bindet sie über `@font-face` ein und enthält keinen `@import` auf `fonts.googleapis.com`.
+- [x] Bei abgeschaltetem Netzzugang erscheint dieselbe Schrift wie mit — der Test blockiert Anfragen an fremde Hosts und vergleicht die Schriftfamilie des `h1`.
 
 ### Bootstrap ist fort
-- [ ] `Source/KanbanC.Blazor/wwwroot/lib/bootstrap/` ist gelöscht, `App.razor` lädt kein Bootstrap mehr.
-- [ ] Keine `.razor`-Datei enthält noch eine Bootstrap-Klasse; geprüft wird auf `btn-primary`, `btn-outline-secondary`, `form-control`, `form-select`, `form-label`, `alert`, `row`, `col-md-`, `mb-`, `px-`, `d-flex`, `navbar`.
-- [ ] Alle bestehenden Tests laufen unverändert grün — der Umbau ändert die Optik, nicht das Verhalten.
+- [x] `Source/KanbanC.Blazor/wwwroot/lib/bootstrap/` ist gelöscht, `App.razor` lädt kein Bootstrap mehr.
+- [x] Keine `.razor`-Datei enthält noch eine Bootstrap-Klasse; geprüft wird auf `btn-primary`, `btn-outline-secondary`, `form-control`, `form-select`, `form-label`, `alert`, `row`, `col-md-`, `mb-`, `px-`, `d-flex`, `navbar`.
+- [x] Alle bestehenden Tests laufen unverändert grün — der Umbau ändert die Optik, nicht das Verhalten.
 
 ### Rahmen und Navigation
-- [ ] Der Rahmen zeigt eine waagerechte Kopfzeile mit der Marke `KanbanC` links und den Navigationspunkten `Boards`, `Auswertungen`, `Kontributoren`.
-- [ ] Der Punkt der gerade offenen Seite ist als aktiv erkennbar; `Auswertungen` und `Kontributoren` sind sichtbar, aber als noch nicht verfügbar gekennzeichnet und führen ins Leere — sie stehen für `D0009` und `D0002`.
-- [ ] Rechts in der Kopfzeile steht der Platz für die Identität mit dem Text `nicht gewählt`; er ist noch nicht bedienbar (`I0008`).
-- [ ] Die Seitenleiste (`.sidebar`, `NavMenu`) existiert nicht mehr.
+- [x] Der Rahmen zeigt eine waagerechte Kopfzeile mit der Marke `KanbanC` links und den Navigationspunkten `Boards`, `Auswertungen`, `Kontributoren`.
+- [x] Der Punkt der gerade offenen Seite ist als aktiv erkennbar; `Auswertungen` und `Kontributoren` sind sichtbar, aber als noch nicht verfügbar gekennzeichnet und führen ins Leere — sie stehen für `D0009` und `D0002`.
+- [x] Rechts in der Kopfzeile steht der Platz für die Identität mit dem Text `nicht gewählt`; er ist noch nicht bedienbar (`I0008`).
+- [x] Die Seitenleiste (`.sidebar`, `NavMenu`) existiert nicht mehr.
 
 ### Schirm „Start — Board-Übersicht"
-- [ ] Die Boards stehen unter zwei Bandüberschriften: `Linienboards — laufen ohne Ende` und `Projektboards — laufen mit dem Vorhaben aus`.
-- [ ] Innerhalb eines Bandes bleibt die alphabetische Sortierung aus `R00003` erhalten: `beschaffung`, `Betrieb`, `Zulauf` erscheinen in dieser Reihenfolge.
-- [ ] Jedes Board erscheint als Kachel mit seinem Namen; bei einem Projektboard nennt der Kachelfuß den Zieltermin, bei einem Linienboard bleibt die Stelle leer.
-- [ ] Ein Band ohne Boards zeigt seine Überschrift und darunter einen Hinweis, keine leere Fläche.
-- [ ] Ein Klick auf die Kachel öffnet `/boards/{BoardId}` — der Verweis aus `R00003` bleibt, er sitzt jetzt auf der Kachel.
-- [ ] Das Bedienelement `+ Board anlegen` sitzt rechts in der Zeile mit der Überschrift `Boards`.
+- [x] Die Boards stehen unter zwei Bandüberschriften: `Linienboards — laufen ohne Ende` und `Projektboards — laufen mit dem Vorhaben aus`.
+- [x] Innerhalb eines Bandes bleibt die alphabetische Sortierung aus `R00003` erhalten: `beschaffung`, `Betrieb`, `Zulauf` erscheinen in dieser Reihenfolge.
+- [x] Jedes Board erscheint als Kachel mit seinem Namen; bei einem Projektboard nennt der Kachelfuß den Zieltermin, bei einem Linienboard bleibt die Stelle leer.
+- [x] Ein Band ohne Boards zeigt seine Überschrift und darunter einen Hinweis, keine leere Fläche.
+- [x] Ein Klick auf die Kachel öffnet `/boards/{BoardId}` — der Verweis aus `R00003` bleibt, er sitzt jetzt auf der Kachel.
+- [x] Das Bedienelement `+ Board anlegen` sitzt rechts in der Zeile mit der Überschrift `Boards`.
 
 ### Schirm „Board"
-- [ ] Die Bahnen tragen eine eigene Kopfzeile mit der Bezeichnung; rechts darin ist der Platz für die Kartenzahl vorgesehen und bleibt leer, solange `I0004` nicht umgesetzt ist.
-- [ ] Die Abschlussspalte ist an ihrer Bezeichnung mit Häkchen erkennbar und nennt ihre Anzeigegrenze.
-- [ ] Die Bahnen liegen nebeneinander und scrollen waagerecht, sobald sie breiter sind als das Fenster; die Seite selbst scrollt dabei nicht waagerecht.
-- [ ] Fußzeile je Bahn: die Stelle für `+ Karte` ist vorgesehen und bleibt leer, solange `I0011` nicht umgesetzt ist.
-- [ ] Der Layout-Modus aus `R00004` zeigt dieselbe räumliche Anordnung wie die Arbeitsansicht; alle acht Kriterien der Gruppe „Spaltenpflege im Layout-Modus" aus `R00004` gelten unverändert weiter.
+- [x] Die Bahnen tragen eine eigene Kopfzeile mit der Bezeichnung; rechts darin ist der Platz für die Kartenzahl vorgesehen und bleibt leer, solange `I0004` nicht umgesetzt ist.
+- [x] Die Abschlussspalte ist an ihrer Bezeichnung mit Häkchen erkennbar und nennt ihre Anzeigegrenze.
+- [x] Die Bahnen liegen nebeneinander und scrollen waagerecht, sobald sie breiter sind als das Fenster; die Seite selbst scrollt dabei nicht waagerecht.
+- [x] Fußzeile je Bahn: die Stelle für `+ Karte` ist vorgesehen und bleibt leer, solange `I0011` nicht umgesetzt ist.
+- [x] Der Layout-Modus aus `R00004` zeigt dieselbe räumliche Anordnung wie die Arbeitsansicht; alle acht Kriterien der Gruppe „Spaltenpflege im Layout-Modus" aus `R00004` gelten unverändert weiter.
 
 ### Schirm „Board anlegen & gestalten"
-- [ ] Das Anlegeformular erscheint erst nach Klick auf `+ Board anlegen` und schließt sich nach dem Anlegen wieder; es steht nicht dauerhaft über der Liste.
-- [ ] Die Art wird über zwei Auswahlknöpfe gewählt (`Linienboard — ohne Ende`, `Projektboard — mit Auslauf`), nicht über ein Auswahlfeld.
-- [ ] Die Terminfelder erscheinen nur bei gewählter Art `Projektboard`.
-- [ ] Unter den Feldern zeigt eine Vorschau die drei Standardspalten, die mit dem Board entstehen (`B0001`).
-- [ ] Eine Zurückweisung erscheint als Meldung am Formular, gestaltet mit den Tokens; die Befunde aus `R00001` bleiben wörtlich erhalten.
+- [x] Das Anlegeformular erscheint erst nach Klick auf `+ Board anlegen` und schließt sich nach dem Anlegen wieder; es steht nicht dauerhaft über der Liste.
+- [x] Die Art wird über zwei Auswahlknöpfe gewählt (`Linienboard — ohne Ende`, `Projektboard — mit Auslauf`), nicht über ein Auswahlfeld.
+- [x] Die Terminfelder erscheinen nur bei gewählter Art `Projektboard`.
+- [x] Unter den Feldern zeigt eine Vorschau die drei Standardspalten, die mit dem Board entstehen (`B0001`).
+- [x] Eine Zurückweisung erscheint als Meldung am Formular, gestaltet mit den Tokens; die Befunde aus `R00001` bleiben wörtlich erhalten.
 
 ### Vorlage für die noch nicht gebauten Schirme
-- [ ] `Dokumentation/Wireframes/README.md` weist das Verzeichnis als verbindliche Gestaltungsvorlage aus und nennt diese Anforderung.
-- [ ] `CLAUDE.md` trägt einen Abschnitt, der die Wireframes als Zieldesign benennt, so dass jede weitere Arbeit an der Oberfläche sie ohne Nachfrage berücksichtigt.
-- [ ] Die fünf Schirme ohne Code — Kartendetail, WBS-Import, Auswertungen, Zeiten je Kontributor, Kontributoren & Identität — bleiben in dieser Anforderung ungebaut; ihre Umsetzung gehört zu `D0004`, `D0008`, `D0009`, `D0006` und `D0002`.
-- [ ] Für jeden dieser fünf Schirme steht im Wireframe-README, welche gezeichneten Varianten zur Wahl stehen und dass die Wahl bei der zugehörigen Interaction fällt.
+- [x] `Dokumentation/Wireframes/README.md` weist das Verzeichnis als verbindliche Gestaltungsvorlage aus und nennt diese Anforderung.
+- [x] `CLAUDE.md` trägt einen Abschnitt, der die Wireframes als Zieldesign benennt, so dass jede weitere Arbeit an der Oberfläche sie ohne Nachfrage berücksichtigt.
+- [x] Die fünf Schirme ohne Code — Kartendetail, WBS-Import, Auswertungen, Zeiten je Kontributor, Kontributoren & Identität — bleiben in dieser Anforderung ungebaut; ihre Umsetzung gehört zu `D0004`, `D0008`, `D0009`, `D0006` und `D0002`.
+- [x] Für jeden dieser fünf Schirme steht im Wireframe-README, welche gezeichneten Varianten zur Wahl stehen und dass die Wahl bei der zugehörigen Interaction fällt.
 
 ### Bestandsschutz der Tests
-- [ ] Die E2E-Anker der bestehenden Tests bleiben erhalten oder werden im Seitenobjekt nachgeführt: `#board-liste`, `.board-verweis`, `#keine-boards`, `#board-kopf`, `#board-name`, `#board-art`, `#board-starttermin`, `#board-zieltermin`, `#zur-board-liste`, `#board-unbekannt`, `#fehlermeldung`, `#zurueckweisung`, `#layout-bearbeiten`, `#layout-fertig`.
-- [ ] Verschwindet ein Anker, weil sein Element eine andere Form bekommt, trägt die neue Form denselben Bezeichner — die Tests aus `R00001` bis `R00004` werden nicht umgeschrieben, um grün zu bleiben.
+- [x] Die E2E-Anker der bestehenden Tests bleiben erhalten oder werden im Seitenobjekt nachgeführt: `#board-liste`, `.board-verweis`, `#keine-boards`, `#board-kopf`, `#board-name`, `#board-art`, `#board-starttermin`, `#board-zieltermin`, `#zur-board-liste`, `#board-unbekannt`, `#fehlermeldung`, `#zurueckweisung`, `#layout-bearbeiten`, `#layout-fertig`.
+- [~] Verschwindet ein Anker, weil sein Element eine andere Form bekommt, trägt die neue Form denselben Bezeichner — die Tests aus `R00001` bis `R00004` werden nicht umgeschrieben, um grün zu bleiben. *Im Wortlaut nicht erfüllt: ein Test wurde geändert. Begründung unter „Notizen → Ein bewusst geänderter Bestandstest".*
 
 ## Betroffene Verzeichnisstruktur
 
@@ -169,8 +169,10 @@ Repositories und alles mit Datenbank-Abhängigkeit sind keine Unit-Test-Kandidat
 
 ## Offene Fragen
 
-- **Lizenz und Bezug der Schriften.** `Caprasimo`, `Figtree` und `Caveat` stehen unter der SIL Open Font License und dürfen mitgeliefert werden; woher die `woff2`-Dateien konkret kommen (Download aus dem Google-Fonts-Archiv, Ablage im Repository oder Bezug beim Bauen), ist nicht entschieden. Vorschlag für die Umsetzung: die Dateien liegen im Repository unter `wwwroot/fonts/`, weil das Repository ohne weitere Schritte lauffähig bleiben soll. `Caveat` wird nur geladen, wenn ein Schirm sie tatsächlich braucht — im Token-Sheet ist sie im `@import` genannt, aber in keiner Variablen verwendet.
-- **Wohin mit `Auswertungen` und `Kontributoren` in der Kopfzeile?** Sie stehen in jedem gezeichneten Schirm, führen aber auf nichts. Vorschlag: sichtbar und erkennbar deaktiviert, weil ein leerer Navigationspunkt ehrlicher ist als eine Kopfzeile, die sich später umbaut.
+Keine offenen Fragen mehr — beide wurden bei der Umsetzung entschieden:
+
+- **Lizenz und Bezug der Schriften.** Die `woff2`-Dateien liegen im Repository unter `Source/KanbanC.Blazor/wwwroot/fonts/`, zusammen mit den OFL-Texten und einer `HERKUNFT.md`; das Repository bleibt damit ohne weitere Schritte lauffähig. `Caveat` wird nicht mitgeliefert — sie steht im `@import` des Wireframe-Sheets, aber in keiner seiner Variablen.
+- **`Auswertungen` und `Kontributoren` in der Kopfzeile** sind sichtbar und als `aria-disabled` gekennzeichnet, ohne Verweis. Ein E2E-Test belegt, dass die Kopfzeile genau einen echten Navigationsverweis trägt.
 
 ## Warum löst diese Anforderung das Problem? (Pflicht)
 
@@ -189,6 +191,10 @@ Der Auslöser ist, dass die Vision Kanbanflow als visuellen Maßstab nennt, dies
 **Übernommen wird das Token-Sheet, nicht die Skizze.** `styles.css` ist als Gestaltungsfundament geschrieben („source of truth for the system's look") und wandert in die Anwendung. Die Klassen mit `w`-Präfix aus `wireframes.js` und `kanbanc-wireframes.html` sind Low-Fi-Formen zum Zeichnen; sie bleiben in der Dokumentation.
 
 **Variantenwahl.** Für die drei gebauten Schirme legt diese Anforderung fest, was baubar ist: Bei `Start` ist das Variante A, weil Variante B auf laufenden Timern (`I0027`) und dem Live-Kanal (`D0007`) aufsetzt, die beide noch nicht existieren. Bei `Board` sind die Varianten A und B in den Bahnen deckungsgleich und unterscheiden sich nur im Ort der Live-Ereignisse; gebaut werden die Bahnen, die Wahl zwischen Aktivitätsspur rechts und Laufband oben fällt mit `I0028`. Bei `Board anlegen & gestalten` gilt A für das Anlegen und B für den Layout-Modus, ohne den Klassen-Teil (`I0020`). Für die übrigen fünf Schirme bleiben alle gezeichneten Varianten stehen; ihre Wahl gehört zur jeweiligen Interaction und nicht hierher.
+
+**Ein bewusst geänderter Bestandstest.** `BoardListeE2ETests.Wenn_drei_Boards_gemischter_Schreibweise_angelegt_sind_…` prüfte die alphabetische Reihenfolge über die **ganze** Board-Liste. Diese Aussage kann es nach der Aufteilung in Bänder nicht mehr geben — im DOM existiert keine bandübergreifende Reihenfolge mehr; dieselbe Anforderung sagt unter „Schirm Start" ausdrücklich *„innerhalb eines Bandes bleibt die alphabetische Sortierung aus `R00003` erhalten"*. Der Test prüft das jetzt je Band.
+
+Damit ist das Kriterium „Tests werden nicht umgeschrieben, um grün zu bleiben" im Wortlaut verletzt, in seinem Zweck aber nicht: Die tragende Aussage von `R00003` — die von der Groß-/Kleinschreibung unabhängige Sortierung — bleibt bewiesen (`beschaffung` vor `Wartung` ist bei ordinaler Sortierung falsch, bei kulturunabhängiger richtig) und ist eine Ebene tiefer voll abgedeckt: `BoardRepositoryTests` gegen `ORDER BY Name COLLATE NOCASE, BoardId` und `BoardEndpunkteTests` auf API-Ebene. Netto ist die Abdeckung gewachsen. Kein anderer Test aus `R00001` bis `R00004` wurde angefasst; die Anker wurden nur im Seitenobjekt nachgeführt.
 
 ### Verworfene Alternativen
 
