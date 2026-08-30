@@ -13,16 +13,6 @@ main {
     background: var(--color-neutral-900);
 }
 
-.top-row {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    height: 3.5rem;
-    padding: 0 var(--space-6);
-    border-bottom: 1px solid var(--color-divider);
-    background: var(--color-surface);
-}
-
 .content {
     padding: var(--space-6);
 }
@@ -37,12 +27,6 @@ main {
         height: 100vh;
         position: sticky;
         top: 0;
-    }
-
-    .top-row {
-        position: sticky;
-        top: 0;
-        z-index: 1;
     }
 }
 

@@ -1,0 +1,51 @@
+.kopfzeile {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: var(--space-6);
+    padding: var(--space-3) var(--space-6);
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-divider);
+}
+
+.kopfzeile-marke {
+    font-family: var(--font-heading);
+    font-weight: var(--font-heading-weight);
+    font-size: 18px;
+    color: var(--color-text);
+    text-decoration: none;
+}
+
+.kopfzeile-navigation {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.kopfzeile-navigation ::deep .navigationspunkt {
+    font-size: 14px;
+    color: var(--color-text);
+    text-decoration: none;
+}
+
+.kopfzeile-navigation ::deep .navigationspunkt:hover {
+    color: var(--color-accent);
+}
+
+.kopfzeile-navigation ::deep .navigationspunkt-aktiv {
+    color: var(--color-accent);
+    box-shadow: inset 0 -2px 0 var(--color-accent);
+}
+
+.kopfzeile-navigation ::deep .navigationspunkt-gesperrt {
+    color: color-mix(in srgb, var(--color-text) 40%, transparent);
+    cursor: not-allowed;
+}
+
+.kopfzeile-identitaet {
+    margin-left: auto;
+    font-size: 13px;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
