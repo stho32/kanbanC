@@ -90,10 +90,10 @@ zuletzt: 2026-08-30
 | B0053 | Bubble | F0012 | Schriften mitliefern | gruen | Test gruen | @import auf Google Fonts → wwwroot/fonts/ + @font-face → Caprasimo und Figtree ohne fremden Host | 2-4 |  |  |  | unklar: Bezug und Ablage der woff2-Dateien |
 | B0054 | Bubble | F0012 | Bootstrap ausbauen | gruen | Test gruen | 100 Bootstrap-Klassen in 6 Razor-Dateien → Klassen des Token-Sheets → kein bootstrap im Ladeplan, Tests unveraendert gruen | 2-4 |  |  |  | Umbau; unklar: Umfang je Datei. Kein Playwright-Locator haengt an einer Bootstrap-Klasse |
 | B0055 | Bubble | F0012 | E2E Fundament | gruen | Test gruen | geladene Seite → Playwright → Hintergrundfarbe, Schriftfamilie, keine Anfrage an fremde Hosts, kein Bootstrap-Stylesheet | 2 |  |  |  | E2E; US-1, US-2 |
-| F0013 | Feature | I0041 | Rahmen und Navigation | gelb | AK „Rahmen und Navigation"; US-3 |  |  |  | F0012 | R00005 |  |
-| B0056 | Bubble | F0013 | Kopfzeile | gelb | Test gruen | MainLayout → Komponente Kopfzeile → Marke, Navigationspunkte Boards/Auswertungen/Kontributoren, Identitaetsplatz | 2 |  |  |  | UI; Auswertungen und Kontributoren erkennbar deaktiviert |
-| B0057 | Bubble | F0013 | Seitenleiste abbauen | rot | Test gruen | .sidebar + NavMenu.razor → entfallen, MainLayout.razor.css → Kopfzeile traegt die Navigation | 0,4 |  |  |  | Umbau; Aufwand belegt |
-| B0058 | Bubble | F0013 | E2E Rahmen | rot | Test gruen | beliebige Seite → Playwright → Marke, aktiver Navigationspunkt, keine Seitenleiste | 0,4 |  |  |  | E2E; US-3; Aufwand belegt |
+| F0013 | Feature | I0041 | Rahmen und Navigation | gruen | AK „Rahmen und Navigation"; US-3 |  |  |  | F0012 | R00005 |  |
+| B0056 | Bubble | F0013 | Kopfzeile | gruen | Test gruen | MainLayout → Komponente Kopfzeile → Marke, Navigationspunkte Boards/Auswertungen/Kontributoren, Identitaetsplatz | 2 |  |  |  | UI; Auswertungen und Kontributoren erkennbar deaktiviert |
+| B0057 | Bubble | F0013 | Seitenleiste abbauen | gruen | Test gruen | .sidebar + NavMenu.razor → entfallen, MainLayout.razor.css → Kopfzeile traegt die Navigation | 0,4 |  |  |  | Umbau; Aufwand belegt |
+| B0058 | Bubble | F0013 | E2E Rahmen | gruen | Test gruen | beliebige Seite → Playwright → Marke, aktiver Navigationspunkt, keine Seitenleiste | 0,4 |  |  |  | E2E; US-3; Aufwand belegt |
 | F0014 | Feature | I0041 | Board-Uebersicht in Baendern | rot | AK „Schirm Start — Board-Uebersicht" und „Schirm Board anlegen & gestalten"; US-4, US-5 |  |  |  | F0012 | R00005 |  |
 | B0059 | Bubble | F0014 | Boards nach Art aufteilen | rot | Test gruen | BoardUebersichten → Boardbaender.Aus → Linienboards und Projektboards, Reihenfolge unveraendert | 0,4 |  |  |  | Operation; Aufwand belegt |
 | B0060 | Bubble | F0014 | Baender und Kacheln | rot | Test gruen | Boardbaender → Boardband + Boardkachel → zwei Baender mit Ueberschrift, Kachel je Board mit Verweis, Hinweis im leeren Band | 2 |  |  |  | UI; Kachelfuss nennt den Zieltermin nur beim Projektboard |
