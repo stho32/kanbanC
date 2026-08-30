@@ -30,3 +30,6 @@ appsettings.*.local.json
 *.db
 *.db-shm
 *.db-wal
+
+## Playwright-MCP-Artefakte (Snapshots, Konsolenlogs)
+.playwright-mcp/
