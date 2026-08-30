@@ -38,6 +38,23 @@ public class SpaltenRepositoryTests
     }
 
     [Test]
+    public void Wenn_zwei_Spalten_nacheinander_angelegt_werden_dann_tragen_sie_verschiedene_SpalteIds()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var repository = new SpaltenRepository(datenbank.Verbindungsfabrik);
+
+        var erste = repository.LegeAn(boardId, new SpalteAnlegenAnfrage("Wartet auf Zulieferung", false, null));
+        var zweite = repository.LegeAn(boardId, new SpalteAnlegenAnfrage("Abgenommen", false, null));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(erste!.Wert.SpalteId, Is.Not.EqualTo(zweite!.Wert.SpalteId));
+            Assert.That(GespeicherteSpaltenAnzahl(datenbank, boardId), Is.EqualTo(5));
+        });
+    }
+
+    [Test]
     public void Wenn_dieselbe_Bezeichnung_ein_zweites_Mal_angelegt_wird_dann_liefert_LegeAn_eine_Zurueckweisung_statt_einer_Ausnahme()
     {
         using var datenbank = new TemporaereDatenbank().MitSchema();

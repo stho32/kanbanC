@@ -74,6 +74,19 @@ public class SpaltenbezeichnungE2ETests : PageTest
         await Expect(seite.Spaltenbezeichnungen.Nth(1)).ToHaveTextAsync("In Umsetzung");
     }
 
+    [Test]
+    [Category("US-7")]
+    public async Task Wenn_eine_Bezeichnung_zurueckgewiesen_wird_dann_bleibt_die_Eingabe_zum_Korrigieren_stehen()
+    {
+        var seite = await BoardImLayoutModus();
+        var bahn = seite.SpaltenbahnAnStelle(1);
+
+        await seite.BearbeiteSpalte(bahn, "ERLEDIGT", false, "");
+
+        await Expect(seite.SpaltenZurueckweisung).ToBeVisibleAsync();
+        await Expect(bahn.Locator(".spalte-bezeichnung")).ToHaveValueAsync("ERLEDIGT");
+    }
+
     private async Task<BoardSeite> BoardImLayoutModus()
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();

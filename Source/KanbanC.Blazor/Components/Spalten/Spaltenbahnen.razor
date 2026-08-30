@@ -36,6 +36,7 @@
 
 @code {
     private Dictionary<long, SpaltenFormular> _formulare = [];
+    private IReadOnlyList<Spalte> _gezeigteSpalten = [];
 
     [Parameter]
     [EditorRequired]
@@ -58,6 +59,15 @@
 
     protected override void OnParametersSet()
     {
+        // Ein Elternrender allein ist kein Grund, getippte Eingaben zu verwerfen: nach einer
+        // Zurückweisung soll die abgelehnte Eingabe zum Korrigieren stehenbleiben.
+        var spaltenSindUnveraendert = Spalten.SequenceEqual(_gezeigteSpalten);
+        if (spaltenSindUnveraendert)
+        {
+            return;
+        }
+
+        _gezeigteSpalten = Spalten;
         _formulare = Spalten.ToDictionary(spalte => spalte.SpalteId, SpaltenFormular.Fuer);
     }
 
