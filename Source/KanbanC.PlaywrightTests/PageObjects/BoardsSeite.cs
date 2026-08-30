@@ -39,10 +39,30 @@ public sealed class BoardsSeite
         await _seite.GotoAsync($"{_basisAdresse}/boards");
     }
 
+    public ILocator Anlegeformular => _seite.Locator("#board-formular");
+
+    public ILocator Terminfelder => _seite.Locator("#terminfelder");
+
+    public ILocator Spaltenvorschau => _seite.Locator("#spaltenvorschau .vorschau-spalte");
+
+    public async Task OeffneAnlegeformular()
+    {
+        var formularStehtSchonOffen = await Anlegeformular.IsVisibleAsync();
+        if (formularStehtSchonOffen)
+        {
+            return;
+        }
+
+        await _seite.Locator("#board-anlegen-oeffnen").ClickAsync();
+        await Assertions.Expect(Anlegeformular).ToBeVisibleAsync();
+    }
+
+    // Das Formular kommt seit R00005 als Patch: erst holen, dann fuellen.
     public async Task FuelleFormular(string name, string art, string? starttermin, string? zieltermin)
     {
+        await OeffneAnlegeformular();
         await _seite.FillAsync("#name", name);
-        await _seite.SelectOptionAsync("#art", art);
+        await WaehleArt(art);
         var startterminIstGesetzt = starttermin is not null;
         if (startterminIstGesetzt)
         {
@@ -56,9 +76,30 @@ public sealed class BoardsSeite
         }
     }
 
+    public async Task WaehleArt(string art)
+    {
+        await Artwahl(art).ClickAsync();
+    }
+
+    public ILocator Artwahl(string art)
+    {
+        var istProjektboard = art == "Projekt";
+        if (istProjektboard)
+        {
+            return _seite.Locator("#art-projekt");
+        }
+
+        return _seite.Locator("#art-linie");
+    }
+
     public async Task SendeFormularAb()
     {
-        await _seite.GetByRole(AriaRole.Button, new() { Name = "Board anlegen" }).ClickAsync();
+        await _seite.Locator("#board-anlegen").ClickAsync();
+    }
+
+    public async Task BrichAnlegenAb()
+    {
+        await _seite.Locator("#board-abbrechen").ClickAsync();
     }
 
     public ILocator Boardzeile(long boardId)

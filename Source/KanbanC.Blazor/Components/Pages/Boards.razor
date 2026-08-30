@@ -6,53 +6,92 @@
 
 <PageTitle>Boards</PageTitle>
 
-<h1>Boards</h1>
+<div class="seitenkopf">
+    <h1>Boards</h1>
+    <span class="seitenkopf-rechts">
+        <button type="button" class="btn btn-haupt" id="board-anlegen-oeffnen" @onclick="OeffneAnlegeformular">+ Board anlegen</button>
+    </span>
+</div>
 
-<section class="board-abschnitt">
-    <h2>Neues Board</h2>
-    <EditForm Model="_formular" OnSubmit="LegeBoardAn" FormName="board-anlegen">
-        <div class="board-formularzeile">
+@if (_fehlermeldung is not null)
+{
+    <div class="meldung" role="alert" id="fehlermeldung">@_fehlermeldung</div>
+}
+
+@if (_formularIstOffen)
+{
+    <section class="anlegeformular card elev-md" id="board-formular">
+        <div class="seitenkopf">
+            <h2>Board anlegen</h2>
+            <span class="seitenkopf-rechts">
+                <button type="button" class="btn btn-schlicht" id="board-anlegen-schliessen" aria-label="Formular schließen" @onclick="SchliesseAnlegeformular">✕</button>
+            </span>
+        </div>
+
+        <EditForm Model="_formular" OnSubmit="LegeBoardAn" FormName="board-anlegen">
             <div class="field">
                 <label for="name">Name</label>
                 <InputText id="name" class="input" @bind-Value="_formular.Name" />
             </div>
-            <div class="field">
-                <label for="art">Art</label>
-                <InputSelect id="art" class="input" @bind-Value="_formular.Art">
-                    <option value="@BoardArt.Linie">Linie</option>
-                    <option value="@BoardArt.Projekt">Projekt</option>
-                </InputSelect>
-            </div>
-            <div class="field">
-                <label for="starttermin">Starttermin</label>
-                <InputDate id="starttermin" class="input" @bind-Value="_formular.Starttermin" />
-            </div>
-            <div class="field">
-                <label for="zieltermin">Zieltermin</label>
-                <InputDate id="zieltermin" class="input" @bind-Value="_formular.Zieltermin" />
-            </div>
-            <button type="submit" class="btn btn-haupt">Board anlegen</button>
-        </div>
-    </EditForm>
 
-    @if (_fehlermeldung is not null)
-    {
-        <div class="meldung" role="alert" id="fehlermeldung">@_fehlermeldung</div>
-    }
+            <InputRadioGroup @bind-Value="_formular.Art" Name="art">
+                <fieldset class="artwahl" id="artwahl">
+                    <legend>Art</legend>
+                    <label class="radio" id="art-linie">
+                        <InputRadio Value="BoardArt.Linie" />
+                        <span class="dot"></span>
+                        Linienboard — ohne Ende
+                    </label>
+                    <label class="radio" id="art-projekt">
+                        <InputRadio Value="BoardArt.Projekt" />
+                        <span class="dot"></span>
+                        Projektboard — mit Auslauf
+                    </label>
+                </fieldset>
+            </InputRadioGroup>
 
-    @if (_zurueckweisung is not null)
-    {
-        <div class="meldung meldung-abweisung" role="alert" id="zurueckweisung">
-            <p>Das Board wurde nicht angelegt:</p>
-            <ul>
-                @foreach (var befund in _zurueckweisung.Befunde)
+            @if (_formular.Art == BoardArt.Projekt)
+            {
+                <div class="terminfelder" id="terminfelder">
+                    <div class="field">
+                        <label for="starttermin">Starttermin</label>
+                        <InputDate id="starttermin" class="input" @bind-Value="_formular.Starttermin" />
+                    </div>
+                    <div class="field">
+                        <label for="zieltermin">Zieltermin</label>
+                        <InputDate id="zieltermin" class="input" @bind-Value="_formular.Zieltermin" />
+                    </div>
+                </div>
+            }
+
+            <p class="vorschau-anrede text-muted">Diese Spalten entstehen mit</p>
+            <div class="vorschau" id="spaltenvorschau">
+                @foreach (var bezeichnung in Standardspalten)
                 {
-                    <li>@befund</li>
+                    <span class="vorschau-spalte tag tag-neutral">@bezeichnung</span>
                 }
-            </ul>
-        </div>
-    }
-</section>
+            </div>
+
+            <div class="formular-knoepfe">
+                <button type="submit" class="btn btn-haupt" id="board-anlegen">Anlegen</button>
+                <button type="button" class="btn btn-neben" id="board-abbrechen" @onclick="SchliesseAnlegeformular">Abbrechen</button>
+            </div>
+        </EditForm>
+
+        @if (_zurueckweisung is not null)
+        {
+            <div class="meldung meldung-abweisung" role="alert" id="zurueckweisung">
+                <p>Das Board wurde nicht angelegt:</p>
+                <ul>
+                    @foreach (var befund in _zurueckweisung.Befunde)
+                    {
+                        <li>@befund</li>
+                    }
+                </ul>
+            </div>
+        }
+    </section>
+}
 
 @if (_boards is null)
 {
@@ -76,14 +115,32 @@ else
 }
 
 @code {
+    // Die Standardspalten entstehen in der Fachlogik (B0001). Die Oberflaeche hat keine
+    // Projektreferenz auf KanbanC.BL und nennt sie deshalb hier noch einmal — die Vorschau
+    // sagt vorher an, was der Endpunkt anlegen wird.
+    private static readonly string[] Standardspalten = ["Zu erledigen", "In Arbeit", "Erledigt"];
+
     private readonly BoardFormular _formular = new();
     private IReadOnlyList<BoardUebersicht>? _boards;
     private Zurueckweisung? _zurueckweisung;
     private string? _fehlermeldung;
+    private bool _formularIstOffen;
 
     protected override async Task OnInitializedAsync()
     {
         await MitErreichbarerWebApi(async () => _boards = await ApiKlient.LadeAlleBoards());
+    }
+
+    private void OeffneAnlegeformular()
+    {
+        _formularIstOffen = true;
+    }
+
+    private void SchliesseAnlegeformular()
+    {
+        _formularIstOffen = false;
+        _zurueckweisung = null;
+        _formular.Leere();
     }
 
     private async Task LegeBoardAn()
@@ -99,6 +156,7 @@ else
 
             _zurueckweisung = null;
             _formular.Leere();
+            _formularIstOffen = false;
             _boards = await ApiKlient.LadeAlleBoards();
         });
     }
