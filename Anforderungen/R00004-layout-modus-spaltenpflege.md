@@ -1,6 +1,6 @@
 ---
 id: R00004
-status: In Arbeit
+status: Erledigt
 datum: 2026-08-30
 ---
 
