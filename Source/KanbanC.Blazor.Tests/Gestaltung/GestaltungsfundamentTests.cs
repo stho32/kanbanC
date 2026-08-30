@@ -3,8 +3,9 @@ using KanbanC.Blazor.Tests.TestHelpers;
 
 namespace KanbanC.Blazor.Tests.Gestaltung;
 
-// Diese Pruefungen lesen den Quelltextbaum, weil ihr Gegenstand die Ablage selbst ist:
+// Diese Prüfungen lesen den Quelltextbaum, weil ihr Gegenstand die Ablage selbst ist:
 // welche Datei existiert, welches Stylesheet geladen wird, welche Klasse noch im Markup steht.
+// stil-check: C03 Dateisystem ist hier der Prüfgegenstand, nicht eine Laufzeitabhängigkeit
 [TestFixture]
 public class GestaltungsfundamentTests
 {
@@ -16,12 +17,18 @@ public class GestaltungsfundamentTests
 
     private static readonly string[] VerbotenePraefixe = ["col-md-", "mb-", "px-"];
 
+    private static readonly string[] ErwarteteSchriftdateien =
+    [
+        "caprasimo-latin.woff2", "caprasimo-latin-ext.woff2",
+        "figtree-latin.woff2", "figtree-latin-ext.woff2",
+    ];
+
     [Test]
     public void Wenn_das_Token_Sheet_gesucht_wird_dann_liegt_es_als_wwwroot_gestaltung_css_in_der_Anwendung()
     {
         var pfad = Quelltextbaum.BlazorDatei("wwwroot", "gestaltung.css");
 
-        var istVorhanden = File.Exists(pfad);
+        var istVorhanden = File.Exists(pfad); // stil-check: C03 die Ablage ist der Prüfgegenstand
 
         Assert.That(istVorhanden, Is.True, $"{pfad} fehlt.");
     }
@@ -40,7 +47,7 @@ public class GestaltungsfundamentTests
     {
         var pfad = Quelltextbaum.BlazorDatei("wwwroot", "lib", "bootstrap");
 
-        var istVorhanden = Directory.Exists(pfad);
+        var istVorhanden = Directory.Exists(pfad); // stil-check: C03 die Ablage ist der Prüfgegenstand
 
         Assert.That(istVorhanden, Is.False, $"{pfad} existiert noch.");
     }
@@ -51,8 +58,9 @@ public class GestaltungsfundamentTests
         var wireframeSheet = File.ReadAllText(Path.Combine(Quelltextbaum.Wurzel(), "Dokumentation", "Wireframes", "styles.css"));
         var tokenSheet = File.ReadAllText(Quelltextbaum.BlazorDatei("wwwroot", "gestaltung.css"));
         var erwarteteVariablen = Variablennamen(wireframeSheet);
+        var vorhandeneVariablen = Variablennamen(tokenSheet);
 
-        var fehlendeVariablen = erwarteteVariablen.Where(name => !tokenSheet.Contains(name + ":", StringComparison.Ordinal)).ToList();
+        var fehlendeVariablen = erwarteteVariablen.Except(vorhandeneVariablen, StringComparer.Ordinal).ToList();
 
         Assert.That(erwarteteVariablen, Has.Count.GreaterThan(40), "Das Wireframe-Sheet wurde nicht gelesen.");
         Assert.That(fehlendeVariablen, Is.Empty);
@@ -73,15 +81,7 @@ public class GestaltungsfundamentTests
     [Test]
     public void Wenn_die_Schriftdateien_gesucht_werden_dann_liegen_sie_unter_wwwroot_fonts()
     {
-        string[] erwarteteDateien =
-        [
-            "caprasimo-latin.woff2", "caprasimo-latin-ext.woff2",
-            "figtree-latin.woff2", "figtree-latin-ext.woff2",
-        ];
-
-        var fehlendeDateien = erwarteteDateien
-            .Where(datei => !File.Exists(Quelltextbaum.BlazorDatei("wwwroot", "fonts", datei)))
-            .ToList();
+        var fehlendeDateien = ErwarteteSchriftdateien.Where(FehltImSchriftverzeichnis).ToList();
 
         Assert.That(fehlendeDateien, Is.Empty);
     }
@@ -89,10 +89,7 @@ public class GestaltungsfundamentTests
     [Test]
     public void Wenn_alle_Stylesheets_neben_dem_Token_Sheet_gelesen_werden_dann_traegt_keines_einen_Farbwert()
     {
-        var stylesheets = Directory.GetFiles(Quelltextbaum.BlazorProjekt(), "*.css", SearchOption.AllDirectories)
-            .Where(pfad => !pfad.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
-            .Where(pfad => Path.GetFileName(pfad) != "gestaltung.css")
-            .ToList();
+        var stylesheets = StylesheetsDerAnwendung();
 
         var befunde = stylesheets.SelectMany(FarbwerteIn).ToList();
 
@@ -111,7 +108,28 @@ public class GestaltungsfundamentTests
         Assert.That(befunde, Is.Empty);
     }
 
-    // Farben gehoeren ins Token-Sheet, nicht in eine Komponenten-CSS-Datei: sonst gibt es
+    private static bool FehltImSchriftverzeichnis(string dateiname)
+    {
+        // stil-check: C03 die Ablage ist der Prüfgegenstand
+        return !File.Exists(Quelltextbaum.BlazorDatei("wwwroot", "fonts", dateiname));
+    }
+
+    // Das Token-Sheet ist der eine erlaubte Ort für Farben; die Bauartefakte unter obj/ sind
+    // Kopien und kein Quelltext.
+    private static IReadOnlyList<string> StylesheetsDerAnwendung()
+    {
+        var alleStylesheets = Directory.GetFiles(Quelltextbaum.BlazorProjekt(), "*.css", SearchOption.AllDirectories);
+        var quelltextStylesheets = alleStylesheets.Where(IstQuelltext);
+        return quelltextStylesheets.Where(pfad => Path.GetFileName(pfad) != "gestaltung.css").ToList();
+    }
+
+    private static bool IstQuelltext(string pfad)
+    {
+        var bauverzeichnis = $"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}";
+        return !pfad.Contains(bauverzeichnis, StringComparison.Ordinal);
+    }
+
+    // Farben gehören ins Token-Sheet, nicht in eine Komponenten-CSS-Datei: sonst gibt es
     // wieder mehr als einen Ort, an dem die Gestaltung steht.
     private static IReadOnlyList<string> FarbwerteIn(string dateipfad)
     {
@@ -124,9 +142,9 @@ public class GestaltungsfundamentTests
     private static IReadOnlyList<string> BootstrapklassenIn(string dateipfad)
     {
         var inhalt = File.ReadAllText(dateipfad);
-        var klassen = Klassennamen(inhalt);
         var name = Path.GetFileName(dateipfad);
-        return klassen.Where(IstBootstrapklasse).Select(klasse => $"{name}: {klasse}").ToList();
+        var bootstrapklassen = Klassennamen(inhalt).Where(IstBootstrapklasse);
+        return bootstrapklassen.Select(klasse => $"{name}: {klasse}").ToList();
     }
 
     private static bool IstBootstrapklasse(string klasse)
@@ -143,19 +161,21 @@ public class GestaltungsfundamentTests
     private static IReadOnlyList<string> Klassennamen(string markup)
     {
         var treffer = Regex.Matches(markup, "class=\"([^\"]*)\"");
-        return treffer
-            .SelectMany(einTreffer => einTreffer.Groups[1].Value.Split(' ', StringSplitOptions.RemoveEmptyEntries))
-            .Where(klasse => !klasse.StartsWith('@'))
-            .Distinct(StringComparer.Ordinal)
-            .ToList();
+        var alleKlassen = treffer.SelectMany(einTreffer => Klassenliste(einTreffer.Groups[1].Value));
+        return alleKlassen.Distinct(StringComparer.Ordinal).ToList();
+    }
+
+    // Razor-Ausdrücke im class-Attribut sind keine Klassennamen.
+    private static IEnumerable<string> Klassenliste(string klassenattribut)
+    {
+        var klassen = klassenattribut.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return klassen.Where(klasse => !klasse.StartsWith('@'));
     }
 
     private static IReadOnlyList<string> Variablennamen(string stylesheet)
     {
         var treffer = Regex.Matches(stylesheet, "(--[a-z0-9-]+)\\s*:");
-        return treffer
-            .Select(einTreffer => einTreffer.Groups[1].Value)
-            .Distinct(StringComparer.Ordinal)
-            .ToList();
+        var namen = treffer.Select(einTreffer => einTreffer.Groups[1].Value);
+        return namen.Distinct(StringComparer.Ordinal).ToList();
     }
 }

@@ -1,6 +1,7 @@
 namespace KanbanC.Blazor.Tests.TestHelpers;
 
-// Testinfrastruktur: die Gestaltungspruefungen lesen Dateien der Anwendung, nicht ihren Laufzeitzustand.
+// Testinfrastruktur: die Gestaltungsprüfungen lesen Dateien der Anwendung, nicht ihren Laufzeitzustand.
+// stil-check: C03 Dateisystem ist hier der Prüfgegenstand, nicht eine Laufzeitabhängigkeit
 internal static class Quelltextbaum
 {
     private const string Loesungsdatei = "KanbanC.sln";
@@ -10,7 +11,7 @@ internal static class Quelltextbaum
         var verzeichnis = new DirectoryInfo(AppContext.BaseDirectory);
         while (verzeichnis is not null)
         {
-            var istWurzel = File.Exists(Path.Combine(verzeichnis.FullName, Loesungsdatei));
+            var istWurzel = File.Exists(Path.Combine(verzeichnis.FullName, Loesungsdatei)); // stil-check: C03 die Ablage ist der Prüfgegenstand
             if (istWurzel)
             {
                 return verzeichnis.FullName;

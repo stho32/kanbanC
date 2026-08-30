@@ -7,6 +7,9 @@ namespace KanbanC.PlaywrightTests.Tests;
 [Category("US-6")]
 public class BahnenE2ETests : PageTest
 {
+    // Das Haeckchen, an dem die Abschlussspalte in der Bahn erkennbar ist.
+    private const string Haeckchen = "\u2713";
+
     [Test]
     public async Task Wenn_ein_Board_geoeffnet_wird_dann_traegt_jede_Bahn_eine_Kopfzeile_mit_ihrer_Bezeichnung()
     {
@@ -22,7 +25,7 @@ public class BahnenE2ETests : PageTest
         var seite = await BoardMitStandardspalten();
 
         await Expect(seite.Abschlusshaken).ToHaveCountAsync(1);
-        await Expect(seite.Abschlusshaken).ToHaveTextAsync(["✓"]);
+        await Expect(seite.Abschlusshaken).ToHaveTextAsync([Haeckchen]);
         await Expect(seite.Abschlussvermerke).ToHaveTextAsync(["Abschlussspalte, Anzeigegrenze 20"]);
         await Expect(seite.SpaltenbahnAnStelle(2)).ToContainTextAsync("Erledigt");
     }

@@ -19,6 +19,8 @@ public sealed class Boardbaender
         return new Boardbaender(linienboards, projektboards);
     }
 
+    // stil-check: C09 IReadOnlyList wie überall im Vertrag der Boards und Spalten — eine eigene
+    // Collection-Klasse bräuchte nur diese eine Stelle und würde die Sprache aufspalten
     public IReadOnlyList<BoardUebersicht> Linienboards { get; }
 
     public IReadOnlyList<BoardUebersicht> Projektboards { get; }
