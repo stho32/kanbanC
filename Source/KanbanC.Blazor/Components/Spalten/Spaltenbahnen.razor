@@ -10,9 +10,12 @@
                     <span class="spaltenbahn-bezeichnung">@spalte.Bezeichnung</span>
                     @if (spalte.IstAbschlussspalte)
                     {
+                        <span class="spaltenbahn-haken" aria-hidden="true">✓</span>
                         <span class="spaltenbahn-vermerk">Abschlussspalte, Anzeigegrenze @spalte.Anzeigegrenze</span>
                     }
                 </span>
+                @* Die Kartenzahl bleibt leer, bis I0004 sie fuellt. *@
+                <span class="spaltenbahn-kartenzahl" aria-hidden="true"></span>
                 @if (IstBearbeitbar)
                 {
                     <span class="spaltenbahn-position">Position @spalte.Position</span>
@@ -30,6 +33,10 @@
                 }
             </header>
             <div class="spaltenbahn-flaeche"></div>
+            @* Die Stelle fuer "+ Karte" bleibt leer, bis I0011 sie fuellt. *@
+            <footer class="spaltenbahn-fuss">
+                <span class="spaltenbahn-kartenstelle"></span>
+            </footer>
         </section>
     }
 </div>

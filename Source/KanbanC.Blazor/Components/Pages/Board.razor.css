@@ -1,0 +1,28 @@
+.board-kopf {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.board-kopf-zurueck {
+    flex-basis: 100%;
+    font-size: 12px;
+    color: var(--color-accent);
+    text-decoration: none;
+}
+
+.board-kopf-name {
+    margin: 0;
+    font-size: 28px;
+}
+
+.board-kopf-termine {
+    font-size: 12px;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.board-kopf-bedienung {
+    margin-left: auto;
+}

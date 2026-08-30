@@ -99,8 +99,8 @@ zuletzt: 2026-08-30
 | B0060 | Bubble | F0014 | Baender und Kacheln | gruen | Test gruen | Boardbaender → Boardband + Boardkachel → zwei Baender mit Ueberschrift, Kachel je Board mit Verweis, Hinweis im leeren Band | 2 |  |  |  | UI; Kachelfuss nennt den Zieltermin nur beim Projektboard |
 | B0061 | Bubble | F0014 | Anlegen als Patch | gruen | Test gruen | Klick auf „+ Board anlegen" + gewaehlte BoardArt → Boards.razor → Formular sichtbar, Terminfelder nur bei Projekt, Vorschau der Standardspalten | 2 |  |  |  | UI; Befunde aus R00001 bleiben woertlich |
 | B0062 | Bubble | F0014 | E2E Uebersicht und Anlegen | gruen | Test gruen | drei Boards beider Arten → Playwright → US-4, US-5 | 2 |  |  |  | E2E |
-| F0015 | Feature | I0041 | Bahnen nach Skizze | rot | AK „Schirm Board"; US-6 |  |  |  | F0012 | R00005 |  |
-| B0063 | Bubble | F0015 | Bahnenform | rot | Test gruen | Spalten → Spaltenbahnen.razor(.css) → Kopf mit Bezeichnung und leerer Zahlenstelle, Fuss mit leerer Kartenstelle, Abschlussvermerk mit Anzeigegrenze | 2 |  |  |  | UI; die leeren Stellen gehoeren I0004 und I0011 |
+| F0015 | Feature | I0041 | Bahnen nach Skizze | gelb | AK „Schirm Board"; US-6 |  |  |  | F0012 | R00005 |  |
+| B0063 | Bubble | F0015 | Bahnenform | gelb | Test gruen | Spalten → Spaltenbahnen.razor(.css) → Kopf mit Bezeichnung und leerer Zahlenstelle, Fuss mit leerer Kartenstelle, Abschlussvermerk mit Anzeigegrenze | 2 |  |  |  | UI; die leeren Stellen gehoeren I0004 und I0011 |
 | B0064 | Bubble | F0015 | Waagerechtes Scrollen | rot | Test gruen | mehr Bahnen als Fensterbreite → Bahnen-Layout → Bahnen scrollen waagerecht, die Seite nicht | 0,4 |  |  |  | UI; Aufwand belegt |
 | B0065 | Bubble | F0015 | E2E Bahnen | rot | Test gruen | Board mit Abschlussspalte → Playwright → US-6; die R00004-Suite bleibt gruen | 2 |  |  |  | E2E |
 | F0016 | Feature | I0041 | Zieldesign verankert | gruen | AK „Vorlage fuer die noch nicht gebauten Schirme"; US-7 |  |  |  |  | R00005 |  |

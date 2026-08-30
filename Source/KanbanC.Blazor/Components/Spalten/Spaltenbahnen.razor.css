@@ -1,56 +1,92 @@
 .spaltenbahnen {
     display: flex;
     align-items: flex-start;
-    gap: 1rem;
+    gap: var(--space-3);
     overflow-x: auto;
-    padding-bottom: 1rem;
+    padding-bottom: var(--space-3);
 }
 
 .spaltenbahn {
     display: flex;
     flex: 0 0 16rem;
     flex-direction: column;
-    background-color: #f1f3f5;
-    border: 1px solid #dee2e6;
-    border-radius: 0.375rem;
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
 }
 
 .spaltenbahn-kopf {
     display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-    padding: 0.6rem 0.75rem;
-    border-bottom: 1px solid #dee2e6;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--color-divider);
+}
+
+.spaltenbahn-anzeige {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-1);
 }
 
 .spaltenbahn-bezeichnung {
-    font-weight: 600;
+    font-family: var(--font-heading);
+    font-weight: var(--font-heading-weight);
+    font-size: 15px;
+}
+
+.spaltenbahn-haken {
+    color: var(--color-accent-2-600);
 }
 
 .spaltenbahn-vermerk {
-    color: #6c757d;
-    font-size: 0.8rem;
+    flex-basis: 100%;
+    font-size: 11px;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+/* Platz fuer die Kartenzahl (I0004) — bis dahin leer, aber schon reserviert. */
+.spaltenbahn-kartenzahl {
+    margin-left: auto;
+    min-width: var(--space-4);
+    font-size: 12px;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
 }
 
 .spaltenbahn-flaeche {
-    min-height: 12rem;
-    padding: 0.75rem;
+    min-height: 10rem;
+    padding: var(--space-3);
+}
+
+/* Platz fuer "+ Karte" (I0011) — bis dahin leer, aber schon reserviert. */
+.spaltenbahn-fuss {
+    padding: var(--space-2) var(--space-3);
+    border-top: 1px solid var(--color-divider);
+}
+
+.spaltenbahn-kartenstelle {
+    display: block;
+    min-height: var(--space-4);
 }
 
 .spaltenbahn-position {
-    color: #6c757d;
-    font-size: 0.8rem;
+    flex-basis: 100%;
+    font-size: 11px;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
 }
 
 .spaltenbahn-bearbeitung {
+    flex-basis: 100%;
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
-    margin-top: 0.5rem;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
 }
 
 .spaltenbahn-knoepfe {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.25rem;
+    gap: var(--space-1);
 }

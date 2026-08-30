@@ -25,23 +25,24 @@ else if (_board is null)
 }
 else
 {
-    <p><a href="/boards" id="zur-board-liste">Zurück zur Board-Liste</a></p>
-
-    <header id="board-kopf">
-        <h1 id="board-name">@_board.Name</h1>
-        <p>
-            Art <span id="board-art">@_board.Art</span>,
-            Starttermin <span id="board-starttermin">@Terminformatierer.AlsText(_board.Starttermin)</span>,
-            Zieltermin <span id="board-zieltermin">@Terminformatierer.AlsText(_board.Zieltermin)</span>
-        </p>
-        @if (_layoutModusIstAktiv)
-        {
-            <button type="button" class="btn btn-haupt" id="layout-fertig" @onclick="VerlasseLayoutModus">Fertig</button>
-        }
-        else
-        {
-            <button type="button" class="btn btn-neben" id="layout-bearbeiten" @onclick="BetreteLayoutModus">Layout bearbeiten</button>
-        }
+    <header id="board-kopf" class="board-kopf">
+        <a href="/boards" id="zur-board-liste" class="board-kopf-zurueck">← Boards</a>
+        <h1 id="board-name" class="board-kopf-name">@_board.Name</h1>
+        <span class="tag tag-accent" id="board-art">@_board.Art</span>
+        <span class="board-kopf-termine">
+            Start <span id="board-starttermin">@Terminformatierer.AlsText(_board.Starttermin)</span>
+            · Ziel <span id="board-zieltermin">@Terminformatierer.AlsText(_board.Zieltermin)</span>
+        </span>
+        <span class="board-kopf-bedienung">
+            @if (_layoutModusIstAktiv)
+            {
+                <button type="button" class="btn btn-haupt" id="layout-fertig" @onclick="VerlasseLayoutModus">Fertig</button>
+            }
+            else
+            {
+                <button type="button" class="btn btn-neben" id="layout-bearbeiten" @onclick="BetreteLayoutModus">Layout bearbeiten</button>
+            }
+        </span>
     </header>
 
     @if (_layoutModusIstAktiv)
