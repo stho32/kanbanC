@@ -22,7 +22,7 @@ public class SpalteEntfernenE2ETests : PageTest
         await Expect(seite.SpaltenpflegezeileAnStelle(1)).ToContainTextAsync("Position 2");
         await Expect(seite.Spaltenbahnen).ToHaveCountAsync(2);
 
-        await seite.Oeffne(1);
+        await seite.OeffneImLayoutModus(1);
         await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(2);
     }
 
@@ -48,7 +48,7 @@ public class SpalteEntfernenE2ETests : PageTest
         await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(1);
         await Expect(seite.SpaltenpflegezeileAnStelle(0)).ToContainTextAsync("Position 1");
 
-        await seite.Oeffne(1);
+        await seite.OeffneImLayoutModus(1);
         await Expect(seite.Spaltenpflegeanzeigen.Nth(0)).ToHaveTextAsync("Eingang");
     }
 
@@ -57,7 +57,7 @@ public class SpalteEntfernenE2ETests : PageTest
     {
         var seite = await BoardMitStandardspalten();
         var zweiteSeite = new BoardSeite(await Context.NewPageAsync(), Testumgebung.Aktuelle.BlazorAdresse);
-        await zweiteSeite.Oeffne(1);
+        await zweiteSeite.OeffneImLayoutModus(1);
         await Expect(zweiteSeite.Spaltenpflegeanzeigen).ToHaveCountAsync(3);
 
         await seite.EntferneSpalte(seite.SpaltenpflegezeileAnStelle(1));
@@ -74,7 +74,7 @@ public class SpalteEntfernenE2ETests : PageTest
     {
         var seite = await BoardMitStandardspalten();
         var zweiteSeite = new BoardSeite(await Context.NewPageAsync(), Testumgebung.Aktuelle.BlazorAdresse);
-        await zweiteSeite.Oeffne(1);
+        await zweiteSeite.OeffneImLayoutModus(1);
         await seite.EntferneSpalte(seite.SpaltenpflegezeileAnStelle(1));
         await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(2);
         await zweiteSeite.EntferneSpalte(zweiteSeite.SpaltenpflegezeileAnStelle(1));
@@ -97,7 +97,7 @@ public class SpalteEntfernenE2ETests : PageTest
         await liste.SendeFormularAb();
         await Expect(liste.Boardzeile(1)).ToBeVisibleAsync();
         var seite = new BoardSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
-        await seite.Oeffne(1);
+        await seite.OeffneImLayoutModus(1);
         return seite;
     }
 }

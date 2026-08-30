@@ -34,11 +34,22 @@ else
             Starttermin <span id="board-starttermin">@Terminformatierer.AlsText(_board.Starttermin)</span>,
             Zieltermin <span id="board-zieltermin">@Terminformatierer.AlsText(_board.Zieltermin)</span>
         </p>
+        @if (_layoutModusIstAktiv)
+        {
+            <button type="button" class="btn btn-primary" id="layout-fertig" @onclick="VerlasseLayoutModus">Fertig</button>
+        }
+        else
+        {
+            <button type="button" class="btn btn-outline-secondary" id="layout-bearbeiten" @onclick="BetreteLayoutModus">Layout bearbeiten</button>
+        }
     </header>
 
     <Spaltenbahnen Spalten="_board.Spalten" />
 
-    <Spaltenpflege BoardId="BoardId" Spalten="_board.Spalten" SpaltenHabenSichGeaendert="LadeBoard" />
+    @if (_layoutModusIstAktiv)
+    {
+        <Spaltenpflege BoardId="BoardId" Spalten="_board.Spalten" SpaltenHabenSichGeaendert="LadeBoard" />
+    }
 }
 
 @code {
@@ -46,6 +57,10 @@ else
     private KanbanC.Contracts.Boards.Board? _board;
     private bool _ladenIstAbgeschlossen;
     private bool _webApiIstNichtErreichbar;
+
+    // Der Layout-Modus ist bewusst Zustand der Komponente und nicht der Adresse: ein Reload
+    // soll in der Arbeitsansicht landen (R00004).
+    private bool _layoutModusIstAktiv;
 
     [Parameter]
     public long BoardId { get; set; }
@@ -64,6 +79,16 @@ else
         }
 
         _ladenIstAbgeschlossen = true;
+    }
+
+    private void BetreteLayoutModus()
+    {
+        _layoutModusIstAktiv = true;
+    }
+
+    private void VerlasseLayoutModus()
+    {
+        _layoutModusIstAktiv = false;
     }
 
     private async Task LadeBoard()

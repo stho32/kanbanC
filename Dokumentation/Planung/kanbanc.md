@@ -76,7 +76,7 @@ zuletzt: 2026-08-30
 | F0010 | Feature | I0040 | Spaltenpflege im Layout-Modus | gelb | AK „Arbeitsansicht ohne Pflege", „Layout-Modus betreten und verlassen", „Spaltenpflege im Layout-Modus"; US-1, US-2, US-3, US-4 | | | | | R00004 | |
 | B0043 | Bubble | F0010 | Bahnen als eigene Komponente | gruen | Test gruen | Spalten → Spaltenbahnen.razor (lesend) → Bahnen wie bisher | 2 | | | | UI; zieht die Schleife aus Board.razor heraus, Verhalten unveraendert |
 | B0044 | Bubble | F0010 | Layout-Modus schalten | gelb | Test gruen | Klick „Layout bearbeiten" / „Fertig" → Board.razor → Modus an/aus, Reload landet in der Arbeitsansicht | 2 | | | | UI |
-| B0045 | Bubble | F0010 | Bahnen bearbeitbar machen | rot | Test gruen | IstBearbeitbar → Spaltenbahnen.razor + Spaltenpflege.razor → Bedienelemente je Bahn, Liste #spalten-liste entfaellt | 2 | | | | UI; die Bedienelemente wandern aus der Pflegeliste in die Bahnen |
+| B0045 | Bubble | F0010 | Bahnen bearbeitbar machen | gelb | Test gruen | IstBearbeitbar → Spaltenbahnen.razor + Spaltenpflege.razor → Bedienelemente je Bahn, Liste #spalten-liste entfaellt | 2 | | | | UI; die Bedienelemente wandern aus der Pflegeliste in die Bahnen |
 | B0046 | Bubble | F0010 | E2E Layout-Modus | rot | Test gruen | beide Prozesse auf freien Ports → Playwright → US-1, US-2, US-3, US-4 | 2-4 | | | | unklar: Umbau des Seitenobjekts BoardSeite |
 | F0011 | Feature | I0040 | Eindeutige Spaltenbezeichnung | rot | AK „Eindeutigkeit über die API", „Eindeutigkeit in der Oberfläche", „Datenhaltung"; US-5, US-6, US-7 | | | | F0010 | R00004 | |
 | B0047 | Bubble | F0011 | Bezeichnung normalisieren | rot | Test gruen | Bezeichnung → Spaltenbezeichnung.Normalisiert / SindGleich → getrimmte Vergleichsform | 0,4 | | | | Operation |

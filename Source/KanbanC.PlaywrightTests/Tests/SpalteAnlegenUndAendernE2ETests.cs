@@ -21,7 +21,7 @@ public class SpalteAnlegenUndAendernE2ETests : PageTest
         await Expect(seite.SpaltenpflegezeileAnStelle(3)).ToContainTextAsync("Position 4");
         await Expect(seite.Spaltenbezeichnungen.Nth(3)).ToHaveTextAsync("Wartet auf Zulieferung");
 
-        await seite.Oeffne(1);
+        await seite.OeffneImLayoutModus(1);
         await Expect(seite.Spaltenpflegeanzeigen.Nth(3)).ToHaveTextAsync("Wartet auf Zulieferung");
     }
 
@@ -38,7 +38,7 @@ public class SpalteAnlegenUndAendernE2ETests : PageTest
         await Expect(seite.SpaltenpflegezeileAnStelle(1)).ToContainTextAsync("Position 2");
         await Expect(seite.Spaltenpflegeanzeigen.Nth(0)).ToHaveTextAsync("Zu erledigen");
 
-        await seite.Oeffne(1);
+        await seite.OeffneImLayoutModus(1);
         await Expect(seite.Spaltenpflegeanzeigen.Nth(1)).ToHaveTextAsync("In Umsetzung");
     }
 
@@ -57,7 +57,7 @@ public class SpalteAnlegenUndAendernE2ETests : PageTest
         await Expect(seite.Spaltenpflegeanzeigen.Nth(2)).ToContainTextAsync("Abschlussspalte, Anzeigegrenze 20");
         await Expect(seite.Abschlussvermerke).ToHaveCountAsync(2);
 
-        await seite.Oeffne(1);
+        await seite.OeffneImLayoutModus(1);
         await Expect(seite.Spaltenpflegeanzeigen.Nth(3)).ToContainTextAsync("Anzeigegrenze 10");
         await Expect(seite.Spaltenpflegeanzeigen.Nth(2)).ToContainTextAsync("Anzeigegrenze 20");
     }
@@ -77,7 +77,7 @@ public class SpalteAnlegenUndAendernE2ETests : PageTest
         await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(3);
         await Expect(seite.Ausnahmeanzeige).ToBeHiddenAsync();
 
-        await seite.Oeffne(1);
+        await seite.OeffneImLayoutModus(1);
         await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(3);
     }
 
@@ -125,7 +125,7 @@ public class SpalteAnlegenUndAendernE2ETests : PageTest
         await Expect(seite.SpaltenZurueckweisung).ToContainTextAsync("Die Bezeichnung darf nicht leer sein.");
         await Expect(seite.Spaltenpflegeanzeigen.Nth(1)).ToHaveTextAsync("In Arbeit");
 
-        await seite.Oeffne(1);
+        await seite.OeffneImLayoutModus(1);
         await Expect(seite.Spaltenpflegeanzeigen.Nth(1)).ToHaveTextAsync("In Arbeit");
     }
 
@@ -138,7 +138,7 @@ public class SpalteAnlegenUndAendernE2ETests : PageTest
         await liste.SendeFormularAb();
         await Expect(liste.Boardzeile(1)).ToBeVisibleAsync();
         var seite = new BoardSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
-        await seite.Oeffne(1);
+        await seite.OeffneImLayoutModus(1);
         return seite;
     }
 }

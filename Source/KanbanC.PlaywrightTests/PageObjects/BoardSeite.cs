@@ -63,6 +63,30 @@ public sealed class BoardSeite
         await _seite.ReloadAsync();
     }
 
+    public ILocator LayoutBearbeiten => _seite.Locator("#layout-bearbeiten");
+
+    public ILocator LayoutFertig => _seite.Locator("#layout-fertig");
+
+    public ILocator Anlegeformular => _seite.Locator("#neue-spalte");
+
+    public async Task OeffneImLayoutModus(long boardId)
+    {
+        await Oeffne(boardId);
+        await BetreteLayoutModus();
+    }
+
+    public async Task BetreteLayoutModus()
+    {
+        await LayoutBearbeiten.ClickAsync();
+        await Assertions.Expect(Anlegeformular).ToBeVisibleAsync();
+    }
+
+    public async Task VerlasseLayoutModus()
+    {
+        await LayoutFertig.ClickAsync();
+        await Assertions.Expect(Anlegeformular).ToBeHiddenAsync();
+    }
+
     public ILocator Spaltenpflegeanzeigen => _seite.Locator("#spalten-liste li .spalte-anzeige");
 
     public ILocator Spaltenpflegezeilen => _seite.Locator("#spalten-liste li");

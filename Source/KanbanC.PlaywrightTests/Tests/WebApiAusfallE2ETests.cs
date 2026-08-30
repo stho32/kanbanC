@@ -52,7 +52,7 @@ public class WebApiAusfallE2ETests : PageTest
         await liste.SendeFormularAb();
         await Expect(liste.Boardzeile(1)).ToBeVisibleAsync();
         var seite = new BoardSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
-        await seite.Oeffne(1);
+        await seite.OeffneImLayoutModus(1);
         await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(3);
 
         Testumgebung.Aktuelle.HalteWebApiAn();
@@ -75,7 +75,7 @@ public class WebApiAusfallE2ETests : PageTest
         await liste.SendeFormularAb();
         await Expect(liste.Boardzeile(1)).ToBeVisibleAsync();
         var seite = new BoardSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
-        await seite.Oeffne(1);
+        await seite.OeffneImLayoutModus(1);
         Testumgebung.Aktuelle.HalteWebApiAn();
         await seite.FuelleNeueSpalte("Wartet auf Zulieferung", false, null);
         await seite.LegeSpalteAn();

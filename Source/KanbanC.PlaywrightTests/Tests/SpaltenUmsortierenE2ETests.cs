@@ -25,7 +25,7 @@ public class SpaltenUmsortierenE2ETests : PageTest
         await Expect(seite.SpaltenpflegezeileAnStelle(2)).ToContainTextAsync("Position 3");
         await Expect(seite.Spaltenbezeichnungen.Nth(0)).ToHaveTextAsync("Erledigt");
 
-        await seite.Oeffne(1);
+        await seite.OeffneImLayoutModus(1);
         await Expect(seite.Spaltenpflegeanzeigen.Nth(0)).ToContainTextAsync("Erledigt");
         await Expect(seite.Spaltenpflegeanzeigen.Nth(2)).ToHaveTextAsync("In Arbeit");
     }
@@ -49,7 +49,7 @@ public class SpaltenUmsortierenE2ETests : PageTest
     {
         var seite = await BoardMitStandardspalten();
         var zweiteSeite = new BoardSeite(await Context.NewPageAsync(), Testumgebung.Aktuelle.BlazorAdresse);
-        await zweiteSeite.Oeffne(1);
+        await zweiteSeite.OeffneImLayoutModus(1);
         await Expect(zweiteSeite.Spaltenpflegeanzeigen).ToHaveCountAsync(3);
 
         await seite.EntferneSpalte(seite.SpaltenpflegezeileAnStelle(1));
@@ -57,7 +57,7 @@ public class SpaltenUmsortierenE2ETests : PageTest
         await zweiteSeite.SchiebeSpalteHoch(zweiteSeite.SpaltenpflegezeileAnStelle(2));
 
         await Expect(zweiteSeite.SpaltenZurueckweisung).ToBeVisibleAsync();
-        await seite.Oeffne(1);
+        await seite.OeffneImLayoutModus(1);
         await Expect(seite.Spaltenpflegeanzeigen.Nth(0)).ToHaveTextAsync("Zu erledigen");
         await Expect(seite.Spaltenpflegeanzeigen.Nth(1)).ToContainTextAsync("Erledigt");
         await Expect(seite.SpaltenpflegezeileAnStelle(1)).ToContainTextAsync("Position 2");
@@ -72,7 +72,7 @@ public class SpaltenUmsortierenE2ETests : PageTest
         await liste.SendeFormularAb();
         await Expect(liste.Boardzeile(1)).ToBeVisibleAsync();
         var seite = new BoardSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
-        await seite.Oeffne(1);
+        await seite.OeffneImLayoutModus(1);
         return seite;
     }
 }
