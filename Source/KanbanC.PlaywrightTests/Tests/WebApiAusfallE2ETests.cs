@@ -66,6 +66,30 @@ public class WebApiAusfallE2ETests : PageTest
     }
 
     [Test]
+    public async Task Wenn_die_WebApi_nach_einem_Ausfall_in_der_Spaltenpflege_zurueckkehrt_dann_nimmt_die_Seite_die_Bedienung_an()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        var liste = new BoardsSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await liste.Oeffne();
+        await liste.FuelleFormular("Entwicklung", "Linie", null, null);
+        await liste.SendeFormularAb();
+        await Expect(liste.Boardzeile(1)).ToBeVisibleAsync();
+        var seite = new BoardSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await seite.Oeffne(1);
+        Testumgebung.Aktuelle.HalteWebApiAn();
+        await seite.FuelleNeueSpalte("Wartet auf Zulieferung", false, null);
+        await seite.LegeSpalteAn();
+        await Expect(seite.SpaltenFehlermeldung).ToBeVisibleAsync();
+
+        await Testumgebung.Aktuelle.StarteWebApiNeu();
+        await seite.LegeSpalteAn();
+
+        await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(4);
+        await Expect(seite.Spaltenpflegeanzeigen.Nth(3)).ToHaveTextAsync("Wartet auf Zulieferung");
+        await Expect(seite.SpaltenFehlermeldung).ToBeHiddenAsync();
+    }
+
+    [Test]
     public async Task Wenn_die_WebApi_nach_einem_Ausfall_zurueckkehrt_dann_verschwindet_die_Meldung_und_die_Liste_erscheint()
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();

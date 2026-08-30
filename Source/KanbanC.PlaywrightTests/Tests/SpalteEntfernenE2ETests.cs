@@ -69,6 +69,25 @@ public class SpalteEntfernenE2ETests : PageTest
         await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(2);
     }
 
+    [Test]
+    public async Task Wenn_nach_einer_zurueckgewiesenen_Entfernung_eine_Spalte_angelegt_wird_dann_nimmt_die_zweite_Sicht_sie_an()
+    {
+        var seite = await BoardMitStandardspalten();
+        var zweiteSeite = new BoardSeite(await Context.NewPageAsync(), Testumgebung.Aktuelle.BlazorAdresse);
+        await zweiteSeite.Oeffne(1);
+        await seite.EntferneSpalte(seite.SpaltenpflegezeileAnStelle(1));
+        await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(2);
+        await zweiteSeite.EntferneSpalte(zweiteSeite.SpaltenpflegezeileAnStelle(1));
+        await Expect(zweiteSeite.SpaltenZurueckweisung).ToBeVisibleAsync();
+
+        await zweiteSeite.FuelleNeueSpalte("Wartet auf Zulieferung", false, null);
+        await zweiteSeite.LegeSpalteAn();
+
+        await Expect(zweiteSeite.Spaltenpflegeanzeigen).ToHaveCountAsync(3);
+        await Expect(zweiteSeite.Spaltenpflegeanzeigen.Nth(2)).ToHaveTextAsync("Wartet auf Zulieferung");
+        await Expect(zweiteSeite.SpaltenZurueckweisung).ToBeHiddenAsync();
+    }
+
     private async Task<BoardSeite> BoardMitStandardspalten()
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();

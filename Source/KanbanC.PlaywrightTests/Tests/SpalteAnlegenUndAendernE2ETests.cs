@@ -82,6 +82,23 @@ public class SpalteAnlegenUndAendernE2ETests : PageTest
     }
 
     [Test]
+    [Category("US-7")]
+    public async Task Wenn_nach_einer_zurueckgewiesenen_Bezeichnung_eine_gueltige_Spalte_angelegt_wird_dann_nimmt_die_Seite_sie_an()
+    {
+        var seite = await BoardMitStandardspalten();
+        await seite.FuelleNeueSpalte("", false, null);
+        await seite.LegeSpalteAn();
+        await Expect(seite.SpaltenZurueckweisung).ToBeVisibleAsync();
+
+        await seite.FuelleNeueSpalte("Wartet auf Zulieferung", false, null);
+        await seite.LegeSpalteAn();
+
+        await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(4);
+        await Expect(seite.Spaltenpflegeanzeigen.Nth(3)).ToHaveTextAsync("Wartet auf Zulieferung");
+        await Expect(seite.SpaltenZurueckweisung).ToBeHiddenAsync();
+    }
+
+    [Test]
     [Category("US-8")]
     public async Task Wenn_eine_Markierung_ohne_Anzeigegrenze_gesetzt_wird_dann_erscheint_eine_Meldung_und_die_Spalte_bleibt_unmarkiert()
     {
