@@ -183,6 +183,58 @@ public class SpaltenServiceTests
     }
 
     [Test]
+    public void Wenn_eine_Bezeichnung_des_Boards_erneut_angelegt_wird_dann_erreicht_die_Anfrage_das_Repository_nicht()
+    {
+        var repository = TestSpaltenRepository.MitSpalten(1, "Erledigt");
+        var service = new SpaltenService(repository);
+
+        var ergebnis = service.LegeSpalteAn(1, new SpalteAnlegenAnfrage(" erledigt ", false, null));
+
+        Assert.That(ergebnis!.IstErfolg, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde[0], Does.Contain("schon vergeben"));
+            Assert.That(repository.WurdeAngelegt, Is.False);
+            Assert.That(repository.Spalten(1), Has.Count.EqualTo(1));
+        });
+    }
+
+    [Test]
+    public void Wenn_eine_Spalte_auf_ihre_eigene_Bezeichnung_gespeichert_wird_dann_ist_das_kein_Konflikt()
+    {
+        var repository = TestSpaltenRepository.MitSpalten(1, "Erledigt");
+        var erledigt = repository.Spalten(1)[0];
+        var service = new SpaltenService(repository);
+
+        var ergebnis = service.AendereSpalte(1, erledigt.SpalteId, new SpalteAendernAnfrage("Erledigt", true, 20));
+
+        Assert.That(ergebnis!.IstErfolg, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(repository.Spalten(1)[0].IstAbschlussspalte, Is.True);
+            Assert.That(repository.Spalten(1)[0].Anzeigegrenze, Is.EqualTo(20));
+        });
+    }
+
+    [Test]
+    public void Wenn_eine_Spalte_auf_die_Bezeichnung_einer_anderen_gespeichert_wird_dann_bleibt_sie_unveraendert()
+    {
+        var repository = TestSpaltenRepository.MitSpalten(1, "Erledigt", "In Arbeit");
+        var inArbeit = repository.Spalten(1)[1];
+        var service = new SpaltenService(repository);
+
+        var ergebnis = service.AendereSpalte(1, inArbeit.SpalteId, new SpalteAendernAnfrage("ERLEDIGT", false, null));
+
+        Assert.That(ergebnis!.IstErfolg, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde[0], Does.Contain("schon vergeben"));
+            Assert.That(repository.WurdeGeaendert, Is.False);
+            Assert.That(repository.Spalten(1)[1].Bezeichnung, Is.EqualTo("In Arbeit"));
+        });
+    }
+
+    [Test]
     public void Wenn_das_Board_zwischen_Pruefung_und_Schreiben_verschwindet_dann_liefert_SetzeReihenfolge_null()
     {
         var repository = new VerschwindendesSpaltenRepository();

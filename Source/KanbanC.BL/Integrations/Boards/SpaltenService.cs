@@ -16,7 +16,14 @@ public sealed class SpaltenService
 
     public Ergebnis<Spalte>? LegeSpalteAn(long boardId, SpalteAnlegenAnfrage anfrage)
     {
-        var befunde = SpaltenValidator.Pruefe(anfrage.Bezeichnung, anfrage.IstAbschlussspalte, anfrage.Anzeigegrenze);
+        var vorhandeneSpalten = _repository.LadeAlle(boardId);
+        if (vorhandeneSpalten is null)
+        {
+            return null;
+        }
+
+        var vergebeneBezeichnungen = AlleBezeichnungen(vorhandeneSpalten);
+        var befunde = SpaltenValidator.Pruefe(anfrage.Bezeichnung, anfrage.IstAbschlussspalte, anfrage.Anzeigegrenze, vergebeneBezeichnungen);
         var anfrageIstUngueltig = !befunde.IstOhneBefund;
         if (anfrageIstUngueltig)
         {
@@ -53,7 +60,14 @@ public sealed class SpaltenService
 
     public Ergebnis<Spalte>? AendereSpalte(long boardId, long spalteId, SpalteAendernAnfrage anfrage)
     {
-        var befunde = SpaltenValidator.Pruefe(anfrage.Bezeichnung, anfrage.IstAbschlussspalte, anfrage.Anzeigegrenze);
+        var vorhandeneSpalten = _repository.LadeAlle(boardId);
+        if (vorhandeneSpalten is null)
+        {
+            return null;
+        }
+
+        var vergebeneBezeichnungen = BezeichnungenDerAnderenSpalten(vorhandeneSpalten, spalteId);
+        var befunde = SpaltenValidator.Pruefe(anfrage.Bezeichnung, anfrage.IstAbschlussspalte, anfrage.Anzeigegrenze, vergebeneBezeichnungen);
         var anfrageIstUngueltig = !befunde.IstOhneBefund;
         if (anfrageIstUngueltig)
         {
@@ -72,5 +86,16 @@ public sealed class SpaltenService
     public bool EntferneSpalte(long boardId, long spalteId)
     {
         return _repository.Entferne(boardId, spalteId);
+    }
+
+    private static IReadOnlyList<string> AlleBezeichnungen(IReadOnlyList<Spalte> spalten)
+    {
+        return spalten.Select(spalte => spalte.Bezeichnung).ToList();
+    }
+
+    private static IReadOnlyList<string> BezeichnungenDerAnderenSpalten(IReadOnlyList<Spalte> spalten, long spalteId)
+    {
+        var andereSpalten = spalten.Where(spalte => spalte.SpalteId != spalteId).ToList();
+        return AlleBezeichnungen(andereSpalten);
     }
 }

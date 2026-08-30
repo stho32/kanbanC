@@ -35,18 +35,22 @@ public class SpaltenEndpunkteTests
     }
 
     [Test]
-    public async Task Wenn_zwei_Spalten_derselben_Bezeichnung_angelegt_werden_dann_tragen_sie_verschiedene_SpalteIds()
+    public async Task Wenn_eine_Bezeichnung_des_Boards_ein_zweites_Mal_angelegt_wird_dann_antwortet_die_API_mit_400_und_es_entsteht_keine_Spalte()
     {
         using var datenbank = new TemporaereDatenbank();
         using var webApi = new TestWebApi(datenbank.Dateipfad);
         var boardId = await LegeBoardAn(webApi);
+        await LegeSpalteAn(webApi, boardId, new SpalteAnlegenAnfrage("Prüfung", false, null));
 
-        var erste = await LegeSpalteAn(webApi, boardId, new SpalteAnlegenAnfrage("Prüfung", false, null));
-        var zweite = await LegeSpalteAn(webApi, boardId, new SpalteAnlegenAnfrage("Prüfung", false, null));
+        var antwort = await webApi.Klient.PostAsJsonAsync($"{BoardsRoute}/{boardId}/spalten",
+            new SpalteAnlegenAnfrage("Prüfung", false, null));
 
-        Assert.That(erste.SpalteId, Is.Not.EqualTo(zweite.SpalteId));
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var zurueckweisung = await antwort.Content.ReadFromJsonAsync<Zurueckweisung>();
+        Assert.That(zurueckweisung, Is.Not.Null);
+        Assert.That(zurueckweisung.Befunde, Has.Some.Contains("schon vergeben"));
         var board = await LadeBoard(webApi, boardId);
-        Assert.That(board.Spalten, Has.Count.EqualTo(5));
+        Assert.That(board.Spalten, Has.Count.EqualTo(4));
     }
 
     [Test]

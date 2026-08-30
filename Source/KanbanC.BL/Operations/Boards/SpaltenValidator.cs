@@ -4,15 +4,15 @@ namespace KanbanC.BL.Operations.Boards;
 
 public static class SpaltenValidator
 {
-    public static Pruefbefunde Pruefe(string bezeichnung, bool istAbschlussspalte, int? anzeigegrenze)
+    public static Pruefbefunde Pruefe(string bezeichnung, bool istAbschlussspalte, int? anzeigegrenze, IReadOnlyList<string> vergebeneBezeichnungen)
     {
         var meldungen = new List<string>();
-        meldungen.AddRange(PruefeBezeichnung(bezeichnung));
+        meldungen.AddRange(PruefeBezeichnung(bezeichnung, vergebeneBezeichnungen));
         meldungen.AddRange(PruefeMarkierung(istAbschlussspalte, anzeigegrenze));
         return new Pruefbefunde(meldungen);
     }
 
-    private static IReadOnlyList<string> PruefeBezeichnung(string bezeichnung)
+    private static IReadOnlyList<string> PruefeBezeichnung(string bezeichnung, IReadOnlyList<string> vergebeneBezeichnungen)
     {
         var meldungen = new List<string>();
 
@@ -20,6 +20,13 @@ public static class SpaltenValidator
         if (bezeichnungIstLeer)
         {
             meldungen.Add("Die Bezeichnung darf nicht leer sein.");
+            return meldungen;
+        }
+
+        var bezeichnungIstVergeben = vergebeneBezeichnungen.Any(vergeben => Spaltenbezeichnung.SindGleich(vergeben, bezeichnung));
+        if (bezeichnungIstVergeben)
+        {
+            meldungen.Add($"Die Bezeichnung „{Spaltenbezeichnung.Normalisiert(bezeichnung)}“ ist auf diesem Board schon vergeben.");
         }
 
         return meldungen;

@@ -26,6 +26,20 @@ public sealed class TestSpaltenRepository : ISpaltenRepository
         return repository;
     }
 
+    // Seedet den Ausgangsbestand, ohne die Aufruf-Merker zu setzen: der Arrange eines Tests
+    // darf nicht wie ein Zugriff der zu pruefenden Einheit aussehen.
+    public static TestSpaltenRepository MitSpalten(long boardId, params string[] bezeichnungen)
+    {
+        var repository = MitBoardOhneSpalten(boardId);
+        foreach (var bezeichnung in bezeichnungen)
+        {
+            repository.LegeAn(boardId, new SpalteAnlegenAnfrage(bezeichnung, false, null));
+        }
+
+        repository.WurdeAngelegt = false;
+        return repository;
+    }
+
     public IReadOnlyList<Spalte> Spalten(long boardId)
     {
         return _spaltenJeBoard[boardId];
