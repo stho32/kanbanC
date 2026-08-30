@@ -33,6 +33,14 @@ public sealed class BoardSeite
 
     public ILocator Bahnbearbeitungen => _seite.Locator("#spaltenbahnen .spaltenbahn-bearbeitung");
 
+    public ILocator Bahnenkoepfe => _seite.Locator("#spaltenbahnen .spaltenbahn-kopf");
+
+    public ILocator Abschlusshaken => _seite.Locator("#spaltenbahnen .spaltenbahn-haken");
+
+    public ILocator Kartenzahlstellen => _seite.Locator("#spaltenbahnen .spaltenbahn-kartenzahl");
+
+    public ILocator Kartenstellen => _seite.Locator("#spaltenbahnen .spaltenbahn-kartenstelle");
+
     public ILocator MeldungUnbekanntesBoard => _seite.Locator("#board-unbekannt");
 
     public ILocator Fehlermeldung => _seite.Locator("#fehlermeldung");
