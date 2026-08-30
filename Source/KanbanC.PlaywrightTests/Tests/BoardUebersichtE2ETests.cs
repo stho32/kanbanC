@@ -151,6 +151,23 @@ public class BoardUebersichtE2ETests : PageTest
         await Expect(seite.HinweisKeineBoards).ToBeVisibleAsync();
     }
 
+    [Test]
+    public async Task Wenn_das_Anlegen_abgebrochen_wird_dann_schliesst_das_Formular_ohne_ein_Board_anzulegen()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        var seite = new BoardsSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await seite.Oeffne();
+
+        await seite.FuelleFormular("Verworfenes Board", "Linie", null, null);
+        await seite.BrichAnlegenAb();
+
+        await Expect(seite.Anlegeformular).ToHaveCountAsync(0);
+        await Expect(seite.HinweisKeineBoards).ToBeVisibleAsync();
+
+        await seite.OeffneAnlegeformular();
+        await Expect(Page.Locator("#name")).ToHaveValueAsync("");
+    }
+
     private async Task<BoardsSeite> UebersichtMitDreiBoards()
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();

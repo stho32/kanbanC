@@ -7,9 +7,9 @@
    Bootstrap fort ist. */
 
 /* Die Schriften liegen im Repository unter wwwroot/fonts/ und werden nicht von Google geladen:
-   die Anwendung laeuft im LAN und darf ohne Netzzugang nicht anders aussehen. Beide stehen unter
+   die Anwendung läuft im LAN und darf ohne Netzzugang nicht anders aussehen. Beide stehen unter
    der SIL Open Font License. Caprasimo ist ein statischer Schnitt, Figtree eine variable Schrift
-   ueber die Achse wght 300-900. */
+   über die Achse wght 300-900. */
 @font-face {
   font-family: 'Caprasimo';
   font-style: normal;

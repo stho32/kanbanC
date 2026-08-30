@@ -47,7 +47,7 @@
     color: color-mix(in srgb, var(--color-text) 55%, transparent);
 }
 
-/* Platz fuer die Kartenzahl (I0004) — bis dahin leer, aber schon reserviert. */
+/* Platz für die Kartenzahl (I0004) — bis dahin leer, aber schon reserviert. */
 .spaltenbahn-kartenzahl {
     margin-left: auto;
     min-width: var(--space-4);
@@ -61,7 +61,7 @@
     padding: var(--space-3);
 }
 
-/* Platz fuer "+ Karte" (I0011) — bis dahin leer, aber schon reserviert. */
+/* Platz für "+ Karte" (I0011) — bis dahin leer, aber schon reserviert. */
 .spaltenbahn-fuss {
     padding: var(--space-2) var(--space-3);
     border-top: 1px solid var(--color-divider);

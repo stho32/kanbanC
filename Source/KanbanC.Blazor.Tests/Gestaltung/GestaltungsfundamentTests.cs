@@ -12,7 +12,7 @@ public class GestaltungsfundamentTests
     private static readonly string[] VerboteneKlassen =
     [
         "btn-primary", "btn-outline-secondary", "form-control", "form-select",
-        "form-label", "alert", "row", "d-flex", "navbar",
+        "form-label", "alert", "row", "d-flex", "navbar", "text-danger",
     ];
 
     private static readonly string[] VerbotenePraefixe = ["col-md-", "mb-", "px-"];

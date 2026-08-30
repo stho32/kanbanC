@@ -57,7 +57,7 @@ public sealed class BoardsSeite
         await Assertions.Expect(Anlegeformular).ToBeVisibleAsync();
     }
 
-    // Das Formular kommt seit R00005 als Patch: erst holen, dann fuellen.
+    // Das Formular kommt seit R00005 als Patch: erst holen, dann füllen.
     public async Task FuelleFormular(string name, string art, string? starttermin, string? zieltermin)
     {
         await OeffneAnlegeformular();
@@ -81,7 +81,7 @@ public sealed class BoardsSeite
         await Artwahl(art).ClickAsync();
     }
 
-    public ILocator Artwahl(string art)
+    private ILocator Artwahl(string art)
     {
         var istProjektboard = art == "Projekt";
         if (istProjektboard)

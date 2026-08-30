@@ -7,7 +7,7 @@ namespace KanbanC.PlaywrightTests.Tests;
 [Category("US-6")]
 public class BahnenE2ETests : PageTest
 {
-    // Das Haeckchen, an dem die Abschlussspalte in der Bahn erkennbar ist.
+    // Das Häkchen, an dem die Abschlussspalte in der Bahn erkennbar ist.
     private const string Haeckchen = "\u2713";
 
     [Test]
@@ -86,9 +86,12 @@ public class BahnenE2ETests : PageTest
         await seite.BetreteLayoutModus();
 
         var stellenImLayoutModus = await LinkeKantenDerBahnen();
+        // Is.Ordered.Ascending besteht auch auf lauter gleichen Werten — ein senkrechter Stapel
+        // bliebe damit gruen. Geprueft wird deshalb, dass die Bahnen ueberhaupt verschiedene
+        // Stellen haben und im Layout-Modus dieselben behalten.
+        Assert.That(stellenInDerArbeitsansicht, Is.Unique, "Die Bahnen stehen schon in der Arbeitsansicht uebereinander; der Test misst nichts.");
         Assert.That(stellenImLayoutModus, Has.Count.EqualTo(stellenInDerArbeitsansicht.Count));
-        Assert.That(stellenImLayoutModus, Is.Ordered.Ascending, "Die Bahnen stehen im Layout-Modus nicht mehr nebeneinander.");
-        Assert.That(stellenInDerArbeitsansicht, Is.Ordered.Ascending);
+        Assert.That(stellenImLayoutModus, Is.EqualTo(stellenInDerArbeitsansicht).Within(1.0), "Die Bahnen stehen im Layout-Modus nicht mehr an denselben Stellen.");
     }
 
     private async Task<IReadOnlyList<double>> LinkeKantenDerBahnen()

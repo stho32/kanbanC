@@ -35,7 +35,7 @@
     }
 
     // Der Fuss nennt den Zieltermin nur beim Projektboard; beim Linienboard bleibt die Stelle leer,
-    // weil ein Linienboard ohne Ende laeuft.
+    // weil ein Linienboard ohne Ende läuft.
     private static string FusszeileVon(BoardUebersicht board)
     {
         var boardLaeuftAufEinenZielterminZu = board.Art == BoardArt.Projekt && board.Zieltermin is not null;
