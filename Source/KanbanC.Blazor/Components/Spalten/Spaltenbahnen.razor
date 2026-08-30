@@ -1,0 +1,23 @@
+@using KanbanC.Contracts.Boards
+
+<div class="spaltenbahnen" id="spaltenbahnen">
+    @foreach (var spalte in Spalten)
+    {
+        <section class="spaltenbahn">
+            <header class="spaltenbahn-kopf">
+                <span class="spaltenbahn-bezeichnung">@spalte.Bezeichnung</span>
+                @if (spalte.IstAbschlussspalte)
+                {
+                    <span class="spaltenbahn-vermerk">Abschlussspalte, Anzeigegrenze @spalte.Anzeigegrenze</span>
+                }
+            </header>
+            <div class="spaltenbahn-flaeche"></div>
+        </section>
+    }
+</div>
+
+@code {
+    [Parameter]
+    [EditorRequired]
+    public IReadOnlyList<Spalte> Spalten { get; set; } = [];
+}

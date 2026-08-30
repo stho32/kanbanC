@@ -36,21 +36,7 @@ else
         </p>
     </header>
 
-    <div class="spaltenbahnen" id="spaltenbahnen">
-        @foreach (var spalte in _board.Spalten)
-        {
-            <section class="spaltenbahn">
-                <header class="spaltenbahn-kopf">
-                    <span class="spaltenbahn-bezeichnung">@spalte.Bezeichnung</span>
-                    @if (spalte.IstAbschlussspalte)
-                    {
-                        <span class="spaltenbahn-vermerk">Abschlussspalte, Anzeigegrenze @spalte.Anzeigegrenze</span>
-                    }
-                </header>
-                <div class="spaltenbahn-flaeche"></div>
-            </section>
-        }
-    </div>
+    <Spaltenbahnen Spalten="_board.Spalten" />
 
     <Spaltenpflege BoardId="BoardId" Spalten="_board.Spalten" SpaltenHabenSichGeaendert="LadeBoard" />
 }
