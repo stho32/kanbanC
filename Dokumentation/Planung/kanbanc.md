@@ -88,7 +88,7 @@ zuletzt: 2026-08-30
 | F0012 | Feature | I0041 | Gestaltungsfundament | gelb | AK „Gestaltungsfundament" und „Bootstrap ist fort"; US-1, US-2 |  |  |  |  | R00005 |  |
 | B0052 | Bubble | F0012 | Token-Sheet einziehen | gelb | Test gruen | styles.css → wwwroot/gestaltung.css + App.razor → Variablen stehen, Hintergrund #f5ead8 | 0,4 |  |  |  | UI; Aufwand belegt |
 | B0053 | Bubble | F0012 | Schriften mitliefern | gelb | Test gruen | @import auf Google Fonts → wwwroot/fonts/ + @font-face → Caprasimo und Figtree ohne fremden Host | 2-4 |  |  |  | unklar: Bezug und Ablage der woff2-Dateien |
-| B0054 | Bubble | F0012 | Bootstrap ausbauen | rot | Test gruen | 100 Bootstrap-Klassen in 6 Razor-Dateien → Klassen des Token-Sheets → kein bootstrap im Ladeplan, Tests unveraendert gruen | 2-4 |  |  |  | Umbau; unklar: Umfang je Datei. Kein Playwright-Locator haengt an einer Bootstrap-Klasse |
+| B0054 | Bubble | F0012 | Bootstrap ausbauen | gelb | Test gruen | 100 Bootstrap-Klassen in 6 Razor-Dateien → Klassen des Token-Sheets → kein bootstrap im Ladeplan, Tests unveraendert gruen | 2-4 |  |  |  | Umbau; unklar: Umfang je Datei. Kein Playwright-Locator haengt an einer Bootstrap-Klasse |
 | B0055 | Bubble | F0012 | E2E Fundament | rot | Test gruen | geladene Seite → Playwright → Hintergrundfarbe, Schriftfamilie, keine Anfrage an fremde Hosts, kein Bootstrap-Stylesheet | 2 |  |  |  | E2E; US-1, US-2 |
 | F0013 | Feature | I0041 | Rahmen und Navigation | rot | AK „Rahmen und Navigation"; US-3 |  |  |  | F0012 | R00005 |  |
 | B0056 | Bubble | F0013 | Kopfzeile | rot | Test gruen | MainLayout → Komponente Kopfzeile → Marke, Navigationspunkte Boards/Auswertungen/Kontributoren, Identitaetsplatz | 2 |  |  |  | UI; Auswertungen und Kontributoren erkennbar deaktiviert |

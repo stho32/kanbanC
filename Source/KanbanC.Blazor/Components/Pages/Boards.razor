@@ -8,45 +8,43 @@
 
 <h1>Boards</h1>
 
-<section class="mb-5">
+<section class="board-abschnitt">
     <h2>Neues Board</h2>
     <EditForm Model="_formular" OnSubmit="LegeBoardAn" FormName="board-anlegen">
-        <div class="row g-3">
-            <div class="col-md-4">
-                <label for="name" class="form-label">Name</label>
-                <InputText id="name" class="form-control" @bind-Value="_formular.Name" />
+        <div class="board-formularzeile">
+            <div class="field">
+                <label for="name">Name</label>
+                <InputText id="name" class="input" @bind-Value="_formular.Name" />
             </div>
-            <div class="col-md-2">
-                <label for="art" class="form-label">Art</label>
-                <InputSelect id="art" class="form-select" @bind-Value="_formular.Art">
+            <div class="field">
+                <label for="art">Art</label>
+                <InputSelect id="art" class="input" @bind-Value="_formular.Art">
                     <option value="@BoardArt.Linie">Linie</option>
                     <option value="@BoardArt.Projekt">Projekt</option>
                 </InputSelect>
             </div>
-            <div class="col-md-2">
-                <label for="starttermin" class="form-label">Starttermin</label>
-                <InputDate id="starttermin" class="form-control" @bind-Value="_formular.Starttermin" />
+            <div class="field">
+                <label for="starttermin">Starttermin</label>
+                <InputDate id="starttermin" class="input" @bind-Value="_formular.Starttermin" />
             </div>
-            <div class="col-md-2">
-                <label for="zieltermin" class="form-label">Zieltermin</label>
-                <InputDate id="zieltermin" class="form-control" @bind-Value="_formular.Zieltermin" />
+            <div class="field">
+                <label for="zieltermin">Zieltermin</label>
+                <InputDate id="zieltermin" class="input" @bind-Value="_formular.Zieltermin" />
             </div>
-            <div class="col-md-2 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary">Board anlegen</button>
-            </div>
+            <button type="submit" class="btn btn-haupt">Board anlegen</button>
         </div>
     </EditForm>
 
     @if (_fehlermeldung is not null)
     {
-        <div class="alert alert-warning mt-3" role="alert" id="fehlermeldung">@_fehlermeldung</div>
+        <div class="meldung" role="alert" id="fehlermeldung">@_fehlermeldung</div>
     }
 
     @if (_zurueckweisung is not null)
     {
-        <div class="alert alert-danger mt-3" role="alert" id="zurueckweisung">
-            <p class="mb-1">Das Board wurde nicht angelegt:</p>
-            <ul class="mb-0">
+        <div class="meldung meldung-abweisung" role="alert" id="zurueckweisung">
+            <p>Das Board wurde nicht angelegt:</p>
+            <ul>
                 @foreach (var befund in _zurueckweisung.Befunde)
                 {
                     <li>@befund</li>
@@ -56,7 +54,7 @@
     }
 </section>
 
-<section class="mb-5">
+<section class="board-abschnitt">
     <h2>Alle Boards</h2>
     @if (_boards is null)
     {

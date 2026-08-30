@@ -16,14 +16,14 @@
 
 @if (_fehlermeldung is not null)
 {
-    <div class="alert alert-warning" role="alert" id="spalten-fehlermeldung">@_fehlermeldung</div>
+    <div class="meldung" role="alert" id="spalten-fehlermeldung">@_fehlermeldung</div>
 }
 
 @if (_zurueckweisung is not null)
 {
-    <div class="alert alert-danger" role="alert" id="spalten-zurueckweisung">
-        <p class="mb-1">Die Spaltenänderung wurde abgelehnt:</p>
-        <ul class="mb-0">
+    <div class="meldung meldung-abweisung" role="alert" id="spalten-zurueckweisung">
+        <p>Die Spaltenänderung wurde abgelehnt:</p>
+        <ul>
             @foreach (var befund in _zurueckweisung.Befunde)
             {
                 <li>@befund</li>
@@ -32,24 +32,20 @@
     </div>
 }
 
-<div class="row g-2 align-items-end mb-3" id="neue-spalte">
-    <div class="col-md-4">
-        <label for="neue-spalte-bezeichnung" class="form-label">Bezeichnung</label>
-        <input id="neue-spalte-bezeichnung" class="form-control" @bind="_neueSpalte.Bezeichnung" />
+<div class="spaltenpflege-neu" id="neue-spalte">
+    <div class="field">
+        <label for="neue-spalte-bezeichnung">Bezeichnung</label>
+        <input id="neue-spalte-bezeichnung" class="input" @bind="_neueSpalte.Bezeichnung" />
     </div>
-    <div class="col-md-3">
-        <div class="form-check">
-            <input id="neue-spalte-abschluss" class="form-check-input" type="checkbox" @bind="_neueSpalte.IstAbschlussspalte" />
-            <label for="neue-spalte-abschluss" class="form-check-label">Abschlussspalte</label>
-        </div>
+    <label class="kontrollfeld" for="neue-spalte-abschluss">
+        <input id="neue-spalte-abschluss" type="checkbox" @bind="_neueSpalte.IstAbschlussspalte" />
+        Abschlussspalte
+    </label>
+    <div class="field">
+        <label for="neue-spalte-grenze">Anzeigegrenze</label>
+        <input id="neue-spalte-grenze" class="input" type="number" @bind="_neueSpalte.Anzeigegrenze" />
     </div>
-    <div class="col-md-2">
-        <label for="neue-spalte-grenze" class="form-label">Anzeigegrenze</label>
-        <input id="neue-spalte-grenze" class="form-control" type="number" @bind="_neueSpalte.Anzeigegrenze" />
-    </div>
-    <div class="col-md-3">
-        <button type="button" class="btn btn-primary" @onclick="LegeSpalteAn">Spalte anlegen</button>
-    </div>
+    <button type="button" class="btn btn-haupt" @onclick="LegeSpalteAn">Spalte anlegen</button>
 </div>
 
 @code {

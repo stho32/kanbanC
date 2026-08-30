@@ -1,0 +1,11 @@
+.spaltenpflege-neu {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+}
+
+.spaltenpflege-neu .field {
+    flex: 0 1 16rem;
+}

@@ -1,0 +1,60 @@
+/* Formen, die mehr als eine Komponente teilt. Jeder Wert kommt aus einer Variablen
+   von gestaltung.css — hier steht kein Literal. */
+
+.seitenkopf {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.seitenkopf > h1,
+.seitenkopf > h2 {
+    margin: 0;
+}
+
+.seitenkopf-rechts {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.meldung {
+    margin: var(--space-3) 0;
+    padding: var(--space-3);
+    border-left: 3px solid var(--color-accent);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+}
+
+.meldung > p {
+    margin: 0 0 var(--space-1);
+}
+
+.meldung > p:last-child {
+    margin-bottom: 0;
+}
+
+.meldung ul {
+    margin: 0;
+    padding-left: var(--space-4);
+}
+
+.meldung-abweisung {
+    border-left-color: var(--color-accent-700);
+}
+
+.kontrollfeld {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 14px;
+    cursor: pointer;
+}
+
+input[type="checkbox"] {
+    accent-color: var(--color-accent);
+    width: 16px;
+    height: 16px;
+}

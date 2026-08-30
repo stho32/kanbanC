@@ -17,14 +17,14 @@
                 {
                     <span class="spaltenbahn-position">Position @spalte.Position</span>
                     <div class="spaltenbahn-bearbeitung">
-                        <input class="form-control form-control-sm spalte-bezeichnung" aria-label="Bezeichnung" @bind="formular.Bezeichnung" />
-                        <input class="form-check-input spalte-abschluss" type="checkbox" aria-label="Abschlussspalte" @bind="formular.IstAbschlussspalte" />
-                        <input class="form-control form-control-sm spalte-grenze" type="number" aria-label="Anzeigegrenze" @bind="formular.Anzeigegrenze" />
+                        <input class="input spalte-bezeichnung" aria-label="Bezeichnung" @bind="formular.Bezeichnung" />
+                        <input class="spalte-abschluss" type="checkbox" aria-label="Abschlussspalte" @bind="formular.IstAbschlussspalte" />
+                        <input class="input spalte-grenze" type="number" aria-label="Anzeigegrenze" @bind="formular.Anzeigegrenze" />
                         <div class="spaltenbahn-knoepfe">
-                            <button type="button" class="btn btn-sm btn-outline-primary spalte-speichern" @onclick="() => SpeichereBahn(spalte.SpalteId)">Speichern</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary spalte-hoch" @onclick="() => SpalteWeiterVorn.InvokeAsync(spalte.SpalteId)">Hoch</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary spalte-runter" @onclick="() => SpalteWeiterHinten.InvokeAsync(spalte.SpalteId)">Runter</button>
-                            <button type="button" class="btn btn-sm btn-outline-danger spalte-entfernen" @onclick="() => SpalteEntfernt.InvokeAsync(spalte.SpalteId)">Entfernen</button>
+                            <button type="button" class="btn btn-neben spalte-speichern" @onclick="() => SpeichereBahn(spalte.SpalteId)">Speichern</button>
+                            <button type="button" class="btn btn-neben spalte-hoch" @onclick="() => SpalteWeiterVorn.InvokeAsync(spalte.SpalteId)">Hoch</button>
+                            <button type="button" class="btn btn-neben spalte-runter" @onclick="() => SpalteWeiterHinten.InvokeAsync(spalte.SpalteId)">Runter</button>
+                            <button type="button" class="btn btn-neben spalte-entfernen" @onclick="() => SpalteEntfernt.InvokeAsync(spalte.SpalteId)">Entfernen</button>
                         </div>
                     </div>
                 }

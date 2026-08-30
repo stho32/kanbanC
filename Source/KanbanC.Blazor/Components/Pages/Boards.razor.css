@@ -1,0 +1,14 @@
+.board-abschnitt {
+    margin-bottom: var(--space-8);
+}
+
+.board-formularzeile {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-3);
+}
+
+.board-formularzeile .field {
+    flex: 0 1 14rem;
+}

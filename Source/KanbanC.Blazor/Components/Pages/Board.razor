@@ -7,8 +7,8 @@
 
 @if (_webApiIstNichtErreichbar)
 {
-    <div class="alert alert-warning" role="alert" id="fehlermeldung">
-        <p class="mb-1">@WebApiAusfall.Meldung</p>
+    <div class="meldung" role="alert" id="fehlermeldung">
+        <p>@WebApiAusfall.Meldung</p>
         <a href="/boards" id="zur-board-liste">Zurück zur Board-Liste</a>
     </div>
 }
@@ -18,8 +18,8 @@ else if (!_ladenIstAbgeschlossen)
 }
 else if (_board is null)
 {
-    <div class="alert alert-warning" role="alert" id="board-unbekannt">
-        <p class="mb-1">Ein Board mit der Nummer @BoardId gibt es nicht.</p>
+    <div class="meldung" role="alert" id="board-unbekannt">
+        <p>Ein Board mit der Nummer @BoardId gibt es nicht.</p>
         <a href="/boards" id="zur-board-liste">Zurück zur Board-Liste</a>
     </div>
 }
@@ -36,11 +36,11 @@ else
         </p>
         @if (_layoutModusIstAktiv)
         {
-            <button type="button" class="btn btn-primary" id="layout-fertig" @onclick="VerlasseLayoutModus">Fertig</button>
+            <button type="button" class="btn btn-haupt" id="layout-fertig" @onclick="VerlasseLayoutModus">Fertig</button>
         }
         else
         {
-            <button type="button" class="btn btn-outline-secondary" id="layout-bearbeiten" @onclick="BetreteLayoutModus">Layout bearbeiten</button>
+            <button type="button" class="btn btn-neben" id="layout-bearbeiten" @onclick="BetreteLayoutModus">Layout bearbeiten</button>
         }
     </header>
 
