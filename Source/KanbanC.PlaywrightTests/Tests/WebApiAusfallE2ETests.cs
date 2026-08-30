@@ -53,7 +53,7 @@ public class WebApiAusfallE2ETests : PageTest
         await Expect(liste.Boardzeile(1)).ToBeVisibleAsync();
         var seite = new BoardSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
         await seite.OeffneImLayoutModus(1);
-        await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(3);
+        await Expect(seite.Spaltenbahnanzeigen).ToHaveCountAsync(3);
 
         Testumgebung.Aktuelle.HalteWebApiAn();
         await seite.FuelleNeueSpalte("Wartet auf Zulieferung", false, null);
@@ -61,7 +61,7 @@ public class WebApiAusfallE2ETests : PageTest
 
         await Expect(seite.SpaltenFehlermeldung).ToBeVisibleAsync();
         await Expect(seite.SpaltenFehlermeldung).ToContainTextAsync(Ausfallmeldung);
-        await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(3);
+        await Expect(seite.Spaltenbahnanzeigen).ToHaveCountAsync(3);
         await Expect(seite.Ausnahmeanzeige).ToBeHiddenAsync();
     }
 
@@ -84,8 +84,8 @@ public class WebApiAusfallE2ETests : PageTest
         await Testumgebung.Aktuelle.StarteWebApiNeu();
         await seite.LegeSpalteAn();
 
-        await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(4);
-        await Expect(seite.Spaltenpflegeanzeigen.Nth(3)).ToHaveTextAsync("Wartet auf Zulieferung");
+        await Expect(seite.Spaltenbahnanzeigen).ToHaveCountAsync(4);
+        await Expect(seite.Spaltenbahnanzeigen.Nth(3)).ToHaveTextAsync("Wartet auf Zulieferung");
         await Expect(seite.SpaltenFehlermeldung).ToBeHiddenAsync();
     }
 

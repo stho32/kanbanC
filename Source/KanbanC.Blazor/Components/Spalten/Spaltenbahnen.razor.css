@@ -36,3 +36,21 @@
     min-height: 12rem;
     padding: 0.75rem;
 }
+
+.spaltenbahn-position {
+    color: #6c757d;
+    font-size: 0.8rem;
+}
+
+.spaltenbahn-bearbeitung {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-top: 0.5rem;
+}
+
+.spaltenbahn-knoepfe {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}

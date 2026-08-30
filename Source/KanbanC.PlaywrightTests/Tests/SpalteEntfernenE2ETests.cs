@@ -11,19 +11,19 @@ public class SpalteEntfernenE2ETests : PageTest
     public async Task Wenn_die_mittlere_Spalte_entfernt_wird_dann_bleiben_zwei_mit_den_Positionen_1_und_2()
     {
         var seite = await BoardMitStandardspalten();
-        await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(3);
+        await Expect(seite.Spaltenbahnanzeigen).ToHaveCountAsync(3);
 
-        await seite.EntferneSpalte(seite.SpaltenpflegezeileAnStelle(1));
+        await seite.EntferneSpalte(seite.SpaltenbahnAnStelle(1));
 
-        await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(2);
-        await Expect(seite.Spaltenpflegeanzeigen.Nth(0)).ToHaveTextAsync("Zu erledigen");
-        await Expect(seite.Spaltenpflegeanzeigen.Nth(1)).ToContainTextAsync("Erledigt");
-        await Expect(seite.SpaltenpflegezeileAnStelle(0)).ToContainTextAsync("Position 1");
-        await Expect(seite.SpaltenpflegezeileAnStelle(1)).ToContainTextAsync("Position 2");
+        await Expect(seite.Spaltenbahnanzeigen).ToHaveCountAsync(2);
+        await Expect(seite.Spaltenbahnanzeigen.Nth(0)).ToHaveTextAsync("Zu erledigen");
+        await Expect(seite.Spaltenbahnanzeigen.Nth(1)).ToContainTextAsync("Erledigt");
+        await Expect(seite.SpaltenbahnAnStelle(0)).ToContainTextAsync("Position 1");
+        await Expect(seite.SpaltenbahnAnStelle(1)).ToContainTextAsync("Position 2");
         await Expect(seite.Spaltenbahnen).ToHaveCountAsync(2);
 
         await seite.OeffneImLayoutModus(1);
-        await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(2);
+        await Expect(seite.Spaltenbahnanzeigen).ToHaveCountAsync(2);
     }
 
     [Test]
@@ -32,24 +32,24 @@ public class SpalteEntfernenE2ETests : PageTest
     {
         var seite = await BoardMitStandardspalten();
 
-        await seite.EntferneSpalte(seite.SpaltenpflegezeileAnStelle(0));
-        await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(2);
-        await seite.EntferneSpalte(seite.SpaltenpflegezeileAnStelle(0));
-        await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(1);
-        await seite.EntferneSpalte(seite.SpaltenpflegezeileAnStelle(0));
+        await seite.EntferneSpalte(seite.SpaltenbahnAnStelle(0));
+        await Expect(seite.Spaltenbahnanzeigen).ToHaveCountAsync(2);
+        await seite.EntferneSpalte(seite.SpaltenbahnAnStelle(0));
+        await Expect(seite.Spaltenbahnanzeigen).ToHaveCountAsync(1);
+        await seite.EntferneSpalte(seite.SpaltenbahnAnStelle(0));
 
         await Expect(seite.HinweisKeineSpalten).ToBeVisibleAsync();
-        await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(0);
+        await Expect(seite.Spaltenbahnanzeigen).ToHaveCountAsync(0);
         await Expect(seite.Name).ToHaveTextAsync("Entwicklung");
 
         await seite.FuelleNeueSpalte("Eingang", false, null);
         await seite.LegeSpalteAn();
 
-        await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(1);
-        await Expect(seite.SpaltenpflegezeileAnStelle(0)).ToContainTextAsync("Position 1");
+        await Expect(seite.Spaltenbahnanzeigen).ToHaveCountAsync(1);
+        await Expect(seite.SpaltenbahnAnStelle(0)).ToContainTextAsync("Position 1");
 
         await seite.OeffneImLayoutModus(1);
-        await Expect(seite.Spaltenpflegeanzeigen.Nth(0)).ToHaveTextAsync("Eingang");
+        await Expect(seite.Spaltenbahnanzeigen.Nth(0)).ToHaveTextAsync("Eingang");
     }
 
     [Test]
@@ -58,15 +58,15 @@ public class SpalteEntfernenE2ETests : PageTest
         var seite = await BoardMitStandardspalten();
         var zweiteSeite = new BoardSeite(await Context.NewPageAsync(), Testumgebung.Aktuelle.BlazorAdresse);
         await zweiteSeite.OeffneImLayoutModus(1);
-        await Expect(zweiteSeite.Spaltenpflegeanzeigen).ToHaveCountAsync(3);
+        await Expect(zweiteSeite.Spaltenbahnanzeigen).ToHaveCountAsync(3);
 
-        await seite.EntferneSpalte(seite.SpaltenpflegezeileAnStelle(1));
-        await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(2);
-        await zweiteSeite.EntferneSpalte(zweiteSeite.SpaltenpflegezeileAnStelle(1));
+        await seite.EntferneSpalte(seite.SpaltenbahnAnStelle(1));
+        await Expect(seite.Spaltenbahnanzeigen).ToHaveCountAsync(2);
+        await zweiteSeite.EntferneSpalte(zweiteSeite.SpaltenbahnAnStelle(1));
 
         await Expect(zweiteSeite.SpaltenZurueckweisung).ToBeVisibleAsync();
         await Expect(zweiteSeite.Ausnahmeanzeige).ToBeHiddenAsync();
-        await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(2);
+        await Expect(seite.Spaltenbahnanzeigen).ToHaveCountAsync(2);
     }
 
     [Test]
@@ -75,16 +75,16 @@ public class SpalteEntfernenE2ETests : PageTest
         var seite = await BoardMitStandardspalten();
         var zweiteSeite = new BoardSeite(await Context.NewPageAsync(), Testumgebung.Aktuelle.BlazorAdresse);
         await zweiteSeite.OeffneImLayoutModus(1);
-        await seite.EntferneSpalte(seite.SpaltenpflegezeileAnStelle(1));
-        await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(2);
-        await zweiteSeite.EntferneSpalte(zweiteSeite.SpaltenpflegezeileAnStelle(1));
+        await seite.EntferneSpalte(seite.SpaltenbahnAnStelle(1));
+        await Expect(seite.Spaltenbahnanzeigen).ToHaveCountAsync(2);
+        await zweiteSeite.EntferneSpalte(zweiteSeite.SpaltenbahnAnStelle(1));
         await Expect(zweiteSeite.SpaltenZurueckweisung).ToBeVisibleAsync();
 
         await zweiteSeite.FuelleNeueSpalte("Wartet auf Zulieferung", false, null);
         await zweiteSeite.LegeSpalteAn();
 
-        await Expect(zweiteSeite.Spaltenpflegeanzeigen).ToHaveCountAsync(3);
-        await Expect(zweiteSeite.Spaltenpflegeanzeigen.Nth(2)).ToHaveTextAsync("Wartet auf Zulieferung");
+        await Expect(zweiteSeite.Spaltenbahnanzeigen).ToHaveCountAsync(3);
+        await Expect(zweiteSeite.Spaltenbahnanzeigen.Nth(2)).ToHaveTextAsync("Wartet auf Zulieferung");
         await Expect(zweiteSeite.SpaltenZurueckweisung).ToBeHiddenAsync();
     }
 

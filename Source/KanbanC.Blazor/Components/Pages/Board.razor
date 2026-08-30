@@ -44,11 +44,13 @@ else
         }
     </header>
 
-    <Spaltenbahnen Spalten="_board.Spalten" />
-
     @if (_layoutModusIstAktiv)
     {
         <Spaltenpflege BoardId="BoardId" Spalten="_board.Spalten" SpaltenHabenSichGeaendert="LadeBoard" />
+    }
+    else
+    {
+        <Spaltenbahnen Spalten="_board.Spalten" />
     }
 }
 

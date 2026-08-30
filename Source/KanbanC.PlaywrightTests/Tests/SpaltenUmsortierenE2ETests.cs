@@ -11,23 +11,23 @@ public class SpaltenUmsortierenE2ETests : PageTest
     public async Task Wenn_Erledigt_zweimal_nach_vorn_geschoben_wird_dann_steht_es_vorn_und_die_Positionen_sind_1_bis_3()
     {
         var seite = await BoardMitStandardspalten();
-        await Expect(seite.Spaltenpflegeanzeigen.Nth(2)).ToContainTextAsync("Erledigt");
+        await Expect(seite.Spaltenbahnanzeigen.Nth(2)).ToContainTextAsync("Erledigt");
 
-        await seite.SchiebeSpalteHoch(seite.SpaltenpflegezeileAnStelle(2));
-        await Expect(seite.Spaltenpflegeanzeigen.Nth(1)).ToContainTextAsync("Erledigt");
-        await seite.SchiebeSpalteHoch(seite.SpaltenpflegezeileAnStelle(1));
+        await seite.SchiebeSpalteHoch(seite.SpaltenbahnAnStelle(2));
+        await Expect(seite.Spaltenbahnanzeigen.Nth(1)).ToContainTextAsync("Erledigt");
+        await seite.SchiebeSpalteHoch(seite.SpaltenbahnAnStelle(1));
 
-        await Expect(seite.Spaltenpflegeanzeigen.Nth(0)).ToContainTextAsync("Erledigt");
-        await Expect(seite.Spaltenpflegeanzeigen.Nth(1)).ToHaveTextAsync("Zu erledigen");
-        await Expect(seite.Spaltenpflegeanzeigen.Nth(2)).ToHaveTextAsync("In Arbeit");
-        await Expect(seite.SpaltenpflegezeileAnStelle(0)).ToContainTextAsync("Position 1");
-        await Expect(seite.SpaltenpflegezeileAnStelle(1)).ToContainTextAsync("Position 2");
-        await Expect(seite.SpaltenpflegezeileAnStelle(2)).ToContainTextAsync("Position 3");
+        await Expect(seite.Spaltenbahnanzeigen.Nth(0)).ToContainTextAsync("Erledigt");
+        await Expect(seite.Spaltenbahnanzeigen.Nth(1)).ToHaveTextAsync("Zu erledigen");
+        await Expect(seite.Spaltenbahnanzeigen.Nth(2)).ToHaveTextAsync("In Arbeit");
+        await Expect(seite.SpaltenbahnAnStelle(0)).ToContainTextAsync("Position 1");
+        await Expect(seite.SpaltenbahnAnStelle(1)).ToContainTextAsync("Position 2");
+        await Expect(seite.SpaltenbahnAnStelle(2)).ToContainTextAsync("Position 3");
         await Expect(seite.Spaltenbezeichnungen.Nth(0)).ToHaveTextAsync("Erledigt");
 
         await seite.OeffneImLayoutModus(1);
-        await Expect(seite.Spaltenpflegeanzeigen.Nth(0)).ToContainTextAsync("Erledigt");
-        await Expect(seite.Spaltenpflegeanzeigen.Nth(2)).ToHaveTextAsync("In Arbeit");
+        await Expect(seite.Spaltenbahnanzeigen.Nth(0)).ToContainTextAsync("Erledigt");
+        await Expect(seite.Spaltenbahnanzeigen.Nth(2)).ToHaveTextAsync("In Arbeit");
     }
 
     [Test]
@@ -35,13 +35,13 @@ public class SpaltenUmsortierenE2ETests : PageTest
     public async Task Wenn_die_erste_Spalte_nach_unten_geschoben_wird_dann_steht_sie_an_zweiter_Stelle()
     {
         var seite = await BoardMitStandardspalten();
-        await Expect(seite.Spaltenpflegeanzeigen.Nth(0)).ToHaveTextAsync("Zu erledigen");
+        await Expect(seite.Spaltenbahnanzeigen.Nth(0)).ToHaveTextAsync("Zu erledigen");
 
-        await seite.SchiebeSpalteRunter(seite.SpaltenpflegezeileAnStelle(0));
+        await seite.SchiebeSpalteRunter(seite.SpaltenbahnAnStelle(0));
 
-        await Expect(seite.Spaltenpflegeanzeigen.Nth(0)).ToHaveTextAsync("In Arbeit");
-        await Expect(seite.Spaltenpflegeanzeigen.Nth(1)).ToHaveTextAsync("Zu erledigen");
-        await Expect(seite.SpaltenpflegezeileAnStelle(1)).ToContainTextAsync("Position 2");
+        await Expect(seite.Spaltenbahnanzeigen.Nth(0)).ToHaveTextAsync("In Arbeit");
+        await Expect(seite.Spaltenbahnanzeigen.Nth(1)).ToHaveTextAsync("Zu erledigen");
+        await Expect(seite.SpaltenbahnAnStelle(1)).ToContainTextAsync("Position 2");
     }
 
     [Test]
@@ -50,17 +50,17 @@ public class SpaltenUmsortierenE2ETests : PageTest
         var seite = await BoardMitStandardspalten();
         var zweiteSeite = new BoardSeite(await Context.NewPageAsync(), Testumgebung.Aktuelle.BlazorAdresse);
         await zweiteSeite.OeffneImLayoutModus(1);
-        await Expect(zweiteSeite.Spaltenpflegeanzeigen).ToHaveCountAsync(3);
+        await Expect(zweiteSeite.Spaltenbahnanzeigen).ToHaveCountAsync(3);
 
-        await seite.EntferneSpalte(seite.SpaltenpflegezeileAnStelle(1));
-        await Expect(seite.Spaltenpflegeanzeigen).ToHaveCountAsync(2);
-        await zweiteSeite.SchiebeSpalteHoch(zweiteSeite.SpaltenpflegezeileAnStelle(2));
+        await seite.EntferneSpalte(seite.SpaltenbahnAnStelle(1));
+        await Expect(seite.Spaltenbahnanzeigen).ToHaveCountAsync(2);
+        await zweiteSeite.SchiebeSpalteHoch(zweiteSeite.SpaltenbahnAnStelle(2));
 
         await Expect(zweiteSeite.SpaltenZurueckweisung).ToBeVisibleAsync();
         await seite.OeffneImLayoutModus(1);
-        await Expect(seite.Spaltenpflegeanzeigen.Nth(0)).ToHaveTextAsync("Zu erledigen");
-        await Expect(seite.Spaltenpflegeanzeigen.Nth(1)).ToContainTextAsync("Erledigt");
-        await Expect(seite.SpaltenpflegezeileAnStelle(1)).ToContainTextAsync("Position 2");
+        await Expect(seite.Spaltenbahnanzeigen.Nth(0)).ToHaveTextAsync("Zu erledigen");
+        await Expect(seite.Spaltenbahnanzeigen.Nth(1)).ToContainTextAsync("Erledigt");
+        await Expect(seite.SpaltenbahnAnStelle(1)).ToContainTextAsync("Position 2");
     }
 
     private async Task<BoardSeite> BoardMitStandardspalten()

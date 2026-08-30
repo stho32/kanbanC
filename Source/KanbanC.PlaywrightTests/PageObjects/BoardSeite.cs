@@ -25,6 +25,8 @@ public sealed class BoardSeite
 
     public ILocator Spaltenbahnen => _seite.Locator("#spaltenbahnen .spaltenbahn");
 
+    public ILocator Spaltenbahnanzeigen => _seite.Locator("#spaltenbahnen .spaltenbahn-anzeige");
+
     public ILocator Spaltenbezeichnungen => _seite.Locator("#spaltenbahnen .spaltenbahn-bezeichnung");
 
     public ILocator Abschlussvermerke => _seite.Locator("#spaltenbahnen .spaltenbahn-vermerk");
@@ -87,24 +89,20 @@ public sealed class BoardSeite
         await Assertions.Expect(Anlegeformular).ToBeHiddenAsync();
     }
 
-    public ILocator Spaltenpflegeanzeigen => _seite.Locator("#spalten-liste li .spalte-anzeige");
-
-    public ILocator Spaltenpflegezeilen => _seite.Locator("#spalten-liste li");
-
     public ILocator SpaltenZurueckweisung => _seite.Locator("#spalten-zurueckweisung");
 
     public ILocator SpaltenFehlermeldung => _seite.Locator("#spalten-fehlermeldung");
 
     public ILocator HinweisKeineSpalten => _seite.Locator("#keine-spalten");
 
-    public ILocator Spaltenpflegezeile(long spalteId)
+    public ILocator Spaltenbahn(long spalteId)
     {
-        return _seite.Locator($"#spalten-liste li[data-spalte-id='{spalteId}']");
+        return _seite.Locator($"#spaltenbahnen .spaltenbahn[data-spalte-id='{spalteId}']");
     }
 
-    public ILocator SpaltenpflegezeileAnStelle(int stelle)
+    public ILocator SpaltenbahnAnStelle(int stelle)
     {
-        return Spaltenpflegezeilen.Nth(stelle);
+        return Spaltenbahnen.Nth(stelle);
     }
 
     public async Task FuelleNeueSpalte(string bezeichnung, bool istAbschlussspalte, string? anzeigegrenze)
@@ -123,26 +121,26 @@ public sealed class BoardSeite
         await _seite.GetByRole(AriaRole.Button, new() { Name = "Spalte anlegen" }).ClickAsync();
     }
 
-    public async Task BearbeiteSpalte(ILocator zeile, string bezeichnung, bool istAbschlussspalte, string anzeigegrenze)
+    public async Task BearbeiteSpalte(ILocator bahn, string bezeichnung, bool istAbschlussspalte, string anzeigegrenze)
     {
-        await zeile.Locator(".spalte-bezeichnung").FillAsync(bezeichnung);
-        await zeile.Locator(".spalte-abschluss").SetCheckedAsync(istAbschlussspalte);
-        await zeile.Locator(".spalte-grenze").FillAsync(anzeigegrenze);
-        await zeile.Locator(".spalte-speichern").ClickAsync();
+        await bahn.Locator(".spalte-bezeichnung").FillAsync(bezeichnung);
+        await bahn.Locator(".spalte-abschluss").SetCheckedAsync(istAbschlussspalte);
+        await bahn.Locator(".spalte-grenze").FillAsync(anzeigegrenze);
+        await bahn.Locator(".spalte-speichern").ClickAsync();
     }
 
-    public async Task SchiebeSpalteHoch(ILocator zeile)
+    public async Task SchiebeSpalteHoch(ILocator bahn)
     {
-        await zeile.Locator(".spalte-hoch").ClickAsync();
+        await bahn.Locator(".spalte-hoch").ClickAsync();
     }
 
-    public async Task SchiebeSpalteRunter(ILocator zeile)
+    public async Task SchiebeSpalteRunter(ILocator bahn)
     {
-        await zeile.Locator(".spalte-runter").ClickAsync();
+        await bahn.Locator(".spalte-runter").ClickAsync();
     }
 
-    public async Task EntferneSpalte(ILocator zeile)
+    public async Task EntferneSpalte(ILocator bahn)
     {
-        await zeile.Locator(".spalte-entfernen").ClickAsync();
+        await bahn.Locator(".spalte-entfernen").ClickAsync();
     }
 }

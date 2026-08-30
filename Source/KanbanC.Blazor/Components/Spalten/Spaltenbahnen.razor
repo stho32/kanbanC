@@ -3,12 +3,30 @@
 <div class="spaltenbahnen" id="spaltenbahnen">
     @foreach (var spalte in Spalten)
     {
-        <section class="spaltenbahn">
+        var formular = _formulare[spalte.SpalteId];
+        <section class="spaltenbahn" data-spalte-id="@spalte.SpalteId">
             <header class="spaltenbahn-kopf">
-                <span class="spaltenbahn-bezeichnung">@spalte.Bezeichnung</span>
-                @if (spalte.IstAbschlussspalte)
+                <span class="spaltenbahn-anzeige">
+                    <span class="spaltenbahn-bezeichnung">@spalte.Bezeichnung</span>
+                    @if (spalte.IstAbschlussspalte)
+                    {
+                        <span class="spaltenbahn-vermerk">Abschlussspalte, Anzeigegrenze @spalte.Anzeigegrenze</span>
+                    }
+                </span>
+                @if (IstBearbeitbar)
                 {
-                    <span class="spaltenbahn-vermerk">Abschlussspalte, Anzeigegrenze @spalte.Anzeigegrenze</span>
+                    <span class="spaltenbahn-position">Position @spalte.Position</span>
+                    <div class="spaltenbahn-bearbeitung">
+                        <input class="form-control form-control-sm spalte-bezeichnung" aria-label="Bezeichnung" @bind="formular.Bezeichnung" />
+                        <input class="form-check-input spalte-abschluss" type="checkbox" aria-label="Abschlussspalte" @bind="formular.IstAbschlussspalte" />
+                        <input class="form-control form-control-sm spalte-grenze" type="number" aria-label="Anzeigegrenze" @bind="formular.Anzeigegrenze" />
+                        <div class="spaltenbahn-knoepfe">
+                            <button type="button" class="btn btn-sm btn-outline-primary spalte-speichern" @onclick="() => SpeichereBahn(spalte.SpalteId)">Speichern</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary spalte-hoch" @onclick="() => SpalteWeiterVorn.InvokeAsync(spalte.SpalteId)">Hoch</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary spalte-runter" @onclick="() => SpalteWeiterHinten.InvokeAsync(spalte.SpalteId)">Runter</button>
+                            <button type="button" class="btn btn-sm btn-outline-danger spalte-entfernen" @onclick="() => SpalteEntfernt.InvokeAsync(spalte.SpalteId)">Entfernen</button>
+                        </div>
+                    </div>
                 }
             </header>
             <div class="spaltenbahn-flaeche"></div>
@@ -17,7 +35,34 @@
 </div>
 
 @code {
+    private Dictionary<long, SpaltenFormular> _formulare = [];
+
     [Parameter]
     [EditorRequired]
     public IReadOnlyList<Spalte> Spalten { get; set; } = [];
+
+    [Parameter]
+    public bool IstBearbeitbar { get; set; }
+
+    [Parameter]
+    public EventCallback<SpalteGespeichert> SpalteGeaendert { get; set; }
+
+    [Parameter]
+    public EventCallback<long> SpalteWeiterVorn { get; set; }
+
+    [Parameter]
+    public EventCallback<long> SpalteWeiterHinten { get; set; }
+
+    [Parameter]
+    public EventCallback<long> SpalteEntfernt { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _formulare = Spalten.ToDictionary(spalte => spalte.SpalteId, SpaltenFormular.Fuer);
+    }
+
+    private async Task SpeichereBahn(long spalteId)
+    {
+        await SpalteGeaendert.InvokeAsync(_formulare[spalteId].AlsGespeichert(spalteId));
+    }
 }

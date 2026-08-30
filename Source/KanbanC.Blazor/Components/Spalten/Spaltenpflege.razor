@@ -2,7 +2,35 @@
 @using KanbanC.Contracts.Boards
 @inject SpaltenApiKlient SpaltenKlient
 
-<h3>Spalten</h3>
+<Spaltenbahnen Spalten="Spalten"
+               IstBearbeitbar="true"
+               SpalteGeaendert="SpeichereSpalte"
+               SpalteWeiterVorn="SchiebeHoch"
+               SpalteWeiterHinten="SchiebeRunter"
+               SpalteEntfernt="EntferneSpalte" />
+
+@if (Spalten.Count == 0)
+{
+    <p id="keine-spalten">Dieses Board hat keine Spalte.</p>
+}
+
+@if (_fehlermeldung is not null)
+{
+    <div class="alert alert-warning" role="alert" id="spalten-fehlermeldung">@_fehlermeldung</div>
+}
+
+@if (_zurueckweisung is not null)
+{
+    <div class="alert alert-danger" role="alert" id="spalten-zurueckweisung">
+        <p class="mb-1">Die Spaltenänderung wurde abgelehnt:</p>
+        <ul class="mb-0">
+            @foreach (var befund in _zurueckweisung.Befunde)
+            {
+                <li>@befund</li>
+            }
+        </ul>
+    </div>
+}
 
 <div class="row g-2 align-items-end mb-3" id="neue-spalte">
     <div class="col-md-4">
@@ -24,55 +52,8 @@
     </div>
 </div>
 
-@if (_fehlermeldung is not null)
-{
-    <div class="alert alert-warning" role="alert" id="spalten-fehlermeldung">@_fehlermeldung</div>
-}
-
-@if (_zurueckweisung is not null)
-{
-    <div class="alert alert-danger" role="alert" id="spalten-zurueckweisung">
-        <p class="mb-1">Die Spaltenänderung wurde abgelehnt:</p>
-        <ul class="mb-0">
-            @foreach (var befund in _zurueckweisung.Befunde)
-            {
-                <li>@befund</li>
-            }
-        </ul>
-    </div>
-}
-
-@if (Spalten.Count == 0)
-{
-    <p id="keine-spalten">Dieses Board hat keine Spalte.</p>
-}
-
-<ol id="spalten-liste">
-    @foreach (var spalte in Spalten)
-    {
-        var formular = _formulare[spalte.SpalteId];
-        <li data-spalte-id="@spalte.SpalteId">
-            <span class="spalte-anzeige">@spalte.Bezeichnung @if (spalte.IstAbschlussspalte)
-                {
-                    <span class="text-secondary">(Abschlussspalte, Anzeigegrenze @spalte.Anzeigegrenze)</span>
-                }</span>
-            <span class="spalte-position">Position @spalte.Position</span>
-            <span class="spalte-bearbeitung">
-                <input class="spalte-bezeichnung" aria-label="Bezeichnung" @bind="formular.Bezeichnung" />
-                <input class="spalte-abschluss" type="checkbox" aria-label="Abschlussspalte" @bind="formular.IstAbschlussspalte" />
-                <input class="spalte-grenze" type="number" aria-label="Anzeigegrenze" @bind="formular.Anzeigegrenze" />
-                <button type="button" class="btn btn-sm btn-outline-primary spalte-speichern" @onclick="() => SpeichereSpalte(spalte.SpalteId)">Speichern</button>
-                <button type="button" class="btn btn-sm btn-outline-secondary spalte-hoch" @onclick="() => SchiebeHoch(spalte.SpalteId)">Hoch</button>
-                <button type="button" class="btn btn-sm btn-outline-secondary spalte-runter" @onclick="() => SchiebeRunter(spalte.SpalteId)">Runter</button>
-                <button type="button" class="btn btn-sm btn-outline-danger spalte-entfernen" @onclick="() => EntferneSpalte(spalte.SpalteId)">Entfernen</button>
-            </span>
-        </li>
-    }
-</ol>
-
 @code {
     private readonly SpaltenFormular _neueSpalte = new();
-    private Dictionary<long, SpaltenFormular> _formulare = [];
     private Zurueckweisung? _zurueckweisung;
     private string? _fehlermeldung;
 
@@ -87,11 +68,6 @@
     [Parameter]
     [EditorRequired]
     public EventCallback SpaltenHabenSichGeaendert { get; set; }
-
-    protected override void OnParametersSet()
-    {
-        _formulare = Spalten.ToDictionary(spalte => spalte.SpalteId, SpaltenFormular.Fuer);
-    }
 
     private async Task LegeSpalteAn()
     {
@@ -111,14 +87,15 @@
         await UebernimmAenderung();
     }
 
-    private async Task SpeichereSpalte(long spalteId)
+    private async Task SpeichereSpalte(SpalteGespeichert gespeichert)
     {
-        await MitErreichbarerWebApi(() => SchreibeSpalte(spalteId));
+        await MitErreichbarerWebApi(() => SchreibeSpalte(gespeichert));
     }
 
-    private async Task SchreibeSpalte(long spalteId)
+    private async Task SchreibeSpalte(SpalteGespeichert gespeichert)
     {
-        var ergebnis = await SpaltenKlient.AendereSpalte(BoardId, spalteId, _formulare[spalteId].AlsAendernAnfrage());
+        var anfrage = new SpalteAendernAnfrage(gespeichert.Bezeichnung, gespeichert.IstAbschlussspalte, gespeichert.Anzeigegrenze);
+        var ergebnis = await SpaltenKlient.AendereSpalte(BoardId, gespeichert.SpalteId, anfrage);
         if (ergebnis.WurdeZurueckgewiesen)
         {
             _zurueckweisung = ergebnis.Zurueckweisung;
@@ -181,42 +158,5 @@
     {
         _zurueckweisung = null;
         await SpaltenHabenSichGeaendert.InvokeAsync();
-    }
-
-    // Adaptermodell des Formular-Bindings: veränderlich, weil das Binding es so braucht; verlässt die Komponente nie.
-    private sealed class SpaltenFormular
-    {
-        public static SpaltenFormular Fuer(Spalte spalte)
-        {
-            return new SpaltenFormular
-            {
-                Bezeichnung = spalte.Bezeichnung,
-                IstAbschlussspalte = spalte.IstAbschlussspalte,
-                Anzeigegrenze = spalte.Anzeigegrenze,
-            };
-        }
-
-        public string Bezeichnung { get; set; } = "";
-
-        public bool IstAbschlussspalte { get; set; }
-
-        public int? Anzeigegrenze { get; set; }
-
-        public SpalteAnlegenAnfrage AlsAnlegenAnfrage()
-        {
-            return new SpalteAnlegenAnfrage(Bezeichnung, IstAbschlussspalte, Anzeigegrenze);
-        }
-
-        public SpalteAendernAnfrage AlsAendernAnfrage()
-        {
-            return new SpalteAendernAnfrage(Bezeichnung, IstAbschlussspalte, Anzeigegrenze);
-        }
-
-        public void Leere()
-        {
-            Bezeichnung = "";
-            IstAbschlussspalte = false;
-            Anzeigegrenze = null;
-        }
     }
 }
