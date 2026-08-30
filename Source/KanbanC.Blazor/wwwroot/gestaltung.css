@@ -1,10 +1,6 @@
 /* Gestaltungsfundament von KanbanC — übernommen aus Dokumentation/Wireframes/styles.css (R00005).
    Der eine Ort der Gestaltungswerte: Farben, Schriften, Abstände, Radien und Schatten stehen hier
-   als Variablen; keine Komponenten-CSS-Datei trägt einen eigenen Literalwert.
-   Eine bewusste Abweichung vom Wireframe-Sheet: die Modifikatoren der Knöpfe heißen
-   btn-haupt/btn-neben/btn-schlicht/btn-symbol/btn-breit, weil btn-primary und
-   btn-outline-secondary genau die Bootstrap-Namen sind, an denen R00005 prüft, dass
-   Bootstrap fort ist. */
+   als Variablen; keine Komponenten-CSS-Datei trägt einen eigenen Literalwert. */
 
 /* Die Schriften liegen im Repository unter wwwroot/fonts/ und werden nicht von Google geladen:
    die Anwendung läuft im LAN und darf ohne Netzzugang nicht anders aussehen. Beide stehen unter

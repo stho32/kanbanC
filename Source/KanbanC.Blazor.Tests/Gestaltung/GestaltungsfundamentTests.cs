@@ -67,6 +67,20 @@ public class GestaltungsfundamentTests
     }
 
     [Test]
+    public void Wenn_das_Token_Sheet_gelesen_wird_dann_traegt_es_dieselben_Klassen_wie_das_Wireframe_Sheet()
+    {
+        var wireframeSheet = File.ReadAllText(Path.Combine(Quelltextbaum.Wurzel(), "Dokumentation", "Wireframes", "styles.css"));
+        var tokenSheet = File.ReadAllText(Quelltextbaum.BlazorDatei("wwwroot", "gestaltung.css"));
+        var erwarteteKlassen = Stylesheetklassen(wireframeSheet);
+        var vorhandeneKlassen = Stylesheetklassen(tokenSheet);
+
+        var fehlendeKlassen = erwarteteKlassen.Except(vorhandeneKlassen, StringComparer.Ordinal).ToList();
+
+        Assert.That(erwarteteKlassen, Has.Count.GreaterThan(20), "Das Wireframe-Sheet wurde nicht gelesen.");
+        Assert.That(fehlendeKlassen, Is.Empty, "Wer die Skizze liest und diese Klasse schreibt, bekommt eine ungestaltete Stelle.");
+    }
+
+    [Test]
     public void Wenn_das_Token_Sheet_gelesen_wird_dann_bindet_es_die_Schriften_ueber_font_face_statt_ueber_Google_ein()
     {
         var tokenSheet = File.ReadAllText(Quelltextbaum.BlazorDatei("wwwroot", "gestaltung.css"));
@@ -175,6 +189,15 @@ public class GestaltungsfundamentTests
     private static IReadOnlyList<string> Variablennamen(string stylesheet)
     {
         var treffer = Regex.Matches(stylesheet, "(--[a-z0-9-]+)\\s*:");
+        var namen = treffer.Select(einTreffer => einTreffer.Groups[1].Value);
+        return namen.Distinct(StringComparer.Ordinal).ToList();
+    }
+
+    // Liest die Klassen, die ein Stylesheet definiert — Gegenstueck zu Klassennamen, das
+    // die Klassen liest, die ein Markup verwendet.
+    private static IReadOnlyList<string> Stylesheetklassen(string stylesheet)
+    {
+        var treffer = Regex.Matches(stylesheet, "\\.([a-z][a-z0-9-]*)\\s*[,{:]");
         var namen = treffer.Select(einTreffer => einTreffer.Groups[1].Value);
         return namen.Distinct(StringComparer.Ordinal).ToList();
     }
