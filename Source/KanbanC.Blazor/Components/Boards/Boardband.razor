@@ -1,0 +1,32 @@
+@using KanbanC.Contracts.Boards
+
+<section class="boardband" id="@Kennung">
+    <h2 class="boardband-ueberschrift">@Ueberschrift</h2>
+    @if (Boards.Count == 0)
+    {
+        <p class="boardband-leer text-muted">Noch kein Board dieser Art.</p>
+    }
+    else
+    {
+        <div class="boardband-kacheln">
+            @foreach (var board in Boards)
+            {
+                <Boardkachel Board="board" />
+            }
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter]
+    [EditorRequired]
+    public string Kennung { get; set; } = "";
+
+    [Parameter]
+    [EditorRequired]
+    public string Ueberschrift { get; set; } = "";
+
+    [Parameter]
+    [EditorRequired]
+    public IReadOnlyList<BoardUebersicht> Boards { get; set; } = [];
+}

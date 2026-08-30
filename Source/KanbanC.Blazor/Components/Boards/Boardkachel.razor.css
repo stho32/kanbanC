@@ -1,0 +1,31 @@
+.board-kachel {
+    position: relative;
+    gap: var(--space-1);
+}
+
+.board-kachel:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.board-kachel-name {
+    margin: 0;
+}
+
+.board-verweis {
+    color: var(--color-text);
+    text-decoration: none;
+}
+
+/* Die ganze Kachel ist der Weg ins Board; der Verweis selbst traegt nur den Namen,
+   damit er auch als Text genau das Board benennt. */
+.board-verweis::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+}
+
+.board-kachel-fuss {
+    margin: 0;
+    min-height: 1.2em;
+}

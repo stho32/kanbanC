@@ -8,7 +8,7 @@ public class BoardListeE2ETests : PageTest
 {
     [Test]
     [Category("US-4")]
-    public async Task Wenn_drei_Boards_gemischter_Schreibweise_angelegt_sind_dann_stehen_sie_alphabetisch_in_der_Liste()
+    public async Task Wenn_drei_Boards_gemischter_Schreibweise_angelegt_sind_dann_stehen_sie_alphabetisch_in_ihrem_Band()
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
         var seite = new BoardsSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
@@ -26,9 +26,13 @@ public class BoardListeE2ETests : PageTest
         await seite.Oeffne();
 
         await Expect(seite.Boardzeilen).ToHaveCountAsync(3);
-        await Expect(seite.Boardzeilen.Nth(0)).ToContainTextAsync("beschaffung");
-        await Expect(seite.Boardzeilen.Nth(1)).ToContainTextAsync("KanbanC");
-        await Expect(seite.Boardzeilen.Nth(2)).ToContainTextAsync("Wartung");
+        var linienboards = seite.KachelnImBand(seite.BandLinienboards);
+        await Expect(linienboards).ToHaveCountAsync(2);
+        await Expect(linienboards.Nth(0)).ToContainTextAsync("beschaffung");
+        await Expect(linienboards.Nth(1)).ToContainTextAsync("Wartung");
+        var projektboards = seite.KachelnImBand(seite.BandProjektboards);
+        await Expect(projektboards).ToHaveCountAsync(1);
+        await Expect(projektboards.Nth(0)).ToContainTextAsync("KanbanC");
     }
 
     [Test]

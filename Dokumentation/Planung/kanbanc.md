@@ -96,7 +96,7 @@ zuletzt: 2026-08-30
 | B0058 | Bubble | F0013 | E2E Rahmen | gruen | Test gruen | beliebige Seite → Playwright → Marke, aktiver Navigationspunkt, keine Seitenleiste | 0,4 |  |  |  | E2E; US-3; Aufwand belegt |
 | F0014 | Feature | I0041 | Board-Uebersicht in Baendern | gelb | AK „Schirm Start — Board-Uebersicht" und „Schirm Board anlegen & gestalten"; US-4, US-5 |  |  |  | F0012 | R00005 |  |
 | B0059 | Bubble | F0014 | Boards nach Art aufteilen | gruen | Test gruen | BoardUebersichten → Boardbaender.Aus → Linienboards und Projektboards, Reihenfolge unveraendert | 0,4 |  |  |  | Operation; Aufwand belegt |
-| B0060 | Bubble | F0014 | Baender und Kacheln | rot | Test gruen | Boardbaender → Boardband + Boardkachel → zwei Baender mit Ueberschrift, Kachel je Board mit Verweis, Hinweis im leeren Band | 2 |  |  |  | UI; Kachelfuss nennt den Zieltermin nur beim Projektboard |
+| B0060 | Bubble | F0014 | Baender und Kacheln | gelb | Test gruen | Boardbaender → Boardband + Boardkachel → zwei Baender mit Ueberschrift, Kachel je Board mit Verweis, Hinweis im leeren Band | 2 |  |  |  | UI; Kachelfuss nennt den Zieltermin nur beim Projektboard |
 | B0061 | Bubble | F0014 | Anlegen als Patch | rot | Test gruen | Klick auf „+ Board anlegen" + gewaehlte BoardArt → Boards.razor → Formular sichtbar, Terminfelder nur bei Projekt, Vorschau der Standardspalten | 2 |  |  |  | UI; Befunde aus R00001 bleiben woertlich |
 | B0062 | Bubble | F0014 | E2E Uebersicht und Anlegen | rot | Test gruen | drei Boards beider Arten → Playwright → US-4, US-5 | 2 |  |  |  | E2E |
 | F0015 | Feature | I0041 | Bahnen nach Skizze | rot | AK „Schirm Board"; US-6 |  |  |  | F0012 | R00005 |  |

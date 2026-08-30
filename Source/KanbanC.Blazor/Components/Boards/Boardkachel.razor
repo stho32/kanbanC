@@ -1,0 +1,49 @@
+@using KanbanC.Blazor.Services
+@using KanbanC.Contracts.Boards
+
+<article class="board-kachel card elev-sm" data-board-id="@Board.BoardId">
+    <span class="card-kicker board-kachel-art">@_artbezeichnung</span>
+    <h3 class="card-title board-kachel-name">
+        <a class="board-verweis" href="@($"/boards/{Board.BoardId}")">@Board.Name</a>
+    </h3>
+    <p class="card-meta board-kachel-fuss">@_fusszeile</p>
+</article>
+
+@code {
+    private string _artbezeichnung = "";
+    private string _fusszeile = "";
+
+    [Parameter]
+    [EditorRequired]
+    public BoardUebersicht Board { get; set; } = default!;
+
+    protected override void OnParametersSet()
+    {
+        _artbezeichnung = ArtbezeichnungVon(Board.Art);
+        _fusszeile = FusszeileVon(Board);
+    }
+
+    private static string ArtbezeichnungVon(BoardArt art)
+    {
+        var istProjektboard = art == BoardArt.Projekt;
+        if (istProjektboard)
+        {
+            return "Projektboard";
+        }
+
+        return "Linienboard";
+    }
+
+    // Der Fuss nennt den Zieltermin nur beim Projektboard; beim Linienboard bleibt die Stelle leer,
+    // weil ein Linienboard ohne Ende laeuft.
+    private static string FusszeileVon(BoardUebersicht board)
+    {
+        var boardLaeuftAufEinenZielterminZu = board.Art == BoardArt.Projekt && board.Zieltermin is not null;
+        if (boardLaeuftAufEinenZielterminZu)
+        {
+            return $"bis {Terminformatierer.AlsText(board.Zieltermin)}";
+        }
+
+        return "";
+    }
+}

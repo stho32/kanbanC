@@ -54,43 +54,26 @@
     }
 </section>
 
-<section class="board-abschnitt">
-    <h2>Alle Boards</h2>
-    @if (_boards is null)
-    {
-        <p>Boards werden geladen …</p>
-    }
-    else if (_boards.Count == 0)
-    {
-        <p id="keine-boards">Noch kein Board vorhanden.</p>
-    }
-    else
-    {
-        <table class="table" id="board-liste">
-            <thead>
-                <tr>
-                    <th>Nr.</th>
-                    <th>Name</th>
-                    <th>Art</th>
-                    <th>Starttermin</th>
-                    <th>Zieltermin</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var board in _boards)
-                {
-                    <tr data-board-id="@board.BoardId">
-                        <td>@board.BoardId</td>
-                        <td><NavLink class="board-verweis" href="@($"/boards/{board.BoardId}")">@board.Name</NavLink></td>
-                        <td>@board.Art</td>
-                        <td>@Terminformatierer.AlsText(board.Starttermin)</td>
-                        <td>@Terminformatierer.AlsText(board.Zieltermin)</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    }
-</section>
+@if (_boards is null)
+{
+    <p>Boards werden geladen …</p>
+}
+else if (_boards.Count == 0)
+{
+    <p id="keine-boards">Noch kein Board vorhanden.</p>
+}
+else
+{
+    var baender = Boardbaender.Aus(_boards);
+    <div id="board-liste">
+        <Boardband Kennung="band-linienboards"
+                   Ueberschrift="Linienboards — laufen ohne Ende"
+                   Boards="baender.Linienboards" />
+        <Boardband Kennung="band-projektboards"
+                   Ueberschrift="Projektboards — laufen mit dem Vorhaben aus"
+                   Boards="baender.Projektboards" />
+    </div>
+}
 
 @code {
     private readonly BoardFormular _formular = new();

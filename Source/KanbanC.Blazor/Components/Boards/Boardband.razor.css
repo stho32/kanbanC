@@ -1,0 +1,14 @@
+.boardband {
+    margin-bottom: var(--space-6);
+}
+
+.boardband-ueberschrift {
+    font-size: 20px;
+    margin-bottom: var(--space-3);
+}
+
+.boardband-kacheln {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    gap: var(--space-3);
+}

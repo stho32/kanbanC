@@ -19,7 +19,14 @@ public sealed class BoardsSeite
 
     public ILocator Fehlermeldung => _seite.Locator("#fehlermeldung");
 
-    public ILocator Boardzeilen => _seite.Locator("#board-liste tbody tr");
+    public ILocator Boardkacheln => _seite.Locator("#board-liste .board-kachel");
+
+    // Der alte Name aus R00001 bis R00004: aus der Zeile der Tabelle ist die Kachel geworden.
+    public ILocator Boardzeilen => Boardkacheln;
+
+    public ILocator BandLinienboards => _seite.Locator("#band-linienboards");
+
+    public ILocator BandProjektboards => _seite.Locator("#band-projektboards");
 
     public async Task Oeffne()
     {
@@ -56,7 +63,17 @@ public sealed class BoardsSeite
 
     public ILocator Boardzeile(long boardId)
     {
-        return _seite.Locator($"#board-liste tbody tr[data-board-id='{boardId}']");
+        return _seite.Locator($"#board-liste .board-kachel[data-board-id='{boardId}']");
+    }
+
+    public ILocator KachelnImBand(ILocator band)
+    {
+        return band.Locator(".board-kachel");
+    }
+
+    public ILocator HinweisLeeresBand(ILocator band)
+    {
+        return band.Locator(".boardband-leer");
     }
 
     public ILocator Boardverweis(long boardId)
