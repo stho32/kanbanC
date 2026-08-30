@@ -117,6 +117,11 @@ public sealed class BoardsSeite
         return band.Locator(".boardband-leer");
     }
 
+    public ILocator Kachelfuss(long boardId)
+    {
+        return Boardzeile(boardId).Locator(".board-kachel-fuss");
+    }
+
     public ILocator Boardverweis(long boardId)
     {
         return Boardzeile(boardId).Locator(".board-verweis");
