@@ -120,6 +120,8 @@ zuletzt: 2026-08-30
 | B0071 | Bubble | I0010 | Kartenform in der Bahn | rot | Test gruen | Spalte.Karten → Karte.razor in Spaltenbahnen.razor → Karte je Bahn mit Titel, Reihenfolge wie geliefert | 2 | | | | UI; füllt .spaltenbahn-flaeche; nur der Titel — Klassennummer, Avatar und Zeiten gehören D0004/D0005/D0006 |
 | B0072 | Bubble | I0010 | Leere Bahn | rot | Test gruen | Spalte ohne Karten → Spaltenbahnen.razor → Hinweis statt leerer Fläche | 0,4 | | | | UI; Aufwand belegt (B0064) |
 | B0073 | Bubble | I0010 | E2E Karten am Board | rot | Test gruen | Board mit Karten in zwei Spalten → Playwright → US-1, US-2 | 2-4 | | | | E2E; das Arrange braucht das Anlegen aus F0017; unklar: Umfang des Nachziehens von BahnenE2ETests aus R00005 |
+| B0083 | Bubble | I0010 | Spalte mit Karten zurueckweisen | rot | Test gruen | DELETE auf eine Spalte mit Karten → SpaltenService + SpaltenRepository → 400 Zurueckweisung mit Kartenzahl, Spalte und Karten unveraendert | 0,4 |  |  |  | Integration + Provider; loest das R00002-Kriterium "auch die letzte Spalte ist entfernbar" fuer belegte Spalten ab, leere Spalte bleibt entfernbar |
+| B0084 | Bubble | I0010 | Zurueckweisung im Layout-Modus | rot | Test gruen | Zurueckweisung → Spaltenpflege.razor → lesbare Meldung, Bahn bleibt stehen; E2E Spalte mit Karten | 0,4 |  |  |  | UI; Aufwand belegt |
 | I0011 | Interaction | D0003 | Karte anlegen | rot | Eine neue Karte entsteht in einer Spalte, über die Oberfläche wie über die API | | | | I0010 | R00006 | |
 | F0017 | Feature | I0011 | Karte anlegen | rot | AK „Karte anlegen über die API" und „Karte anlegen in der Oberfläche"; US-3, US-4 | | | | I0010 | R00006 | |
 | B0074 | Bubble | F0017 | Karte speichern | rot | Test gruen | spalteId + KarteAnlegenAnfrage → KartenRepository.LegeAn → Karte mit KarteId, Position = höchste + 1 | 0,4 | | | | Provider, eine Transaktion; Aufwand belegt (B0028) |
@@ -129,7 +131,7 @@ zuletzt: 2026-08-30
 | B0078 | Bubble | F0017 | Anlegen im Bahnenfuß | rot | Test gruen | Klick „+ Karte" → Kartenanlage.razor im Bahnenfuß → Karte entsteht, Board lädt neu | 2-4 | | | | UI; füllt .spaltenbahn-kartenstelle aus R00005; unklar: Zustand, wenn mehrere Bahnen zugleich offen sind |
 | B0079 | Bubble | F0017 | E2E Karte anlegen | rot | Test gruen | beide Prozesse auf freien Ports → Playwright → US-3, US-4 | 2 | | | | E2E |
 | F0018 | Feature | I0011 | Ungültige Kartenanlage zurückweisen | rot | AK „Zurückweisung ungültiger Kartenanlage"; US-5 | | | | F0017 | R00006 | |
-| B0080 | Bubble | F0018 | Kartenanfrage prüfen | rot | Test gruen | KarteAnlegenAnfrage → KartenValidator.Pruefe → Pruefbefunde | 0,4 | | | | Operation; Aufwand belegt (B0027) |
+| B0080 | Bubble | F0018 | Kartenanfrage prüfen | rot | Test gruen | KarteAnlegenAnfrage → KartenValidator.Pruefe → Pruefbefunde | 0,4 | | | | Operation; Aufwand belegt (B0027); Befunde: leerer Titel und mehr als 1000 Zeichen nach dem Trimmen |
 | B0081 | Bubble | F0018 | Zurückweisung über die API | rot | Test gruen | Pruefbefunde → KartenService + KartenEndpunkte → 400 Zurueckweisung, 404 bei fremder Spalte | 0,4 | | | | Integration; Aufwand belegt (B0029) |
 | B0082 | Bubble | F0018 | Zurückweisung in der Oberfläche | rot | Test gruen | Zurueckweisung → Kartenanlage.razor → lesbare Meldung, Bahn bleibt bedienbar; E2E US-5 | 2 | | | | UI |
 | I0012 | Interaction | D0003 | Karte verschieben | rot | Eine Karte wechselt Spalte und Position; die neue Lage bleibt nach Reload erhalten | | | | I0011 | | |

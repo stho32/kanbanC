@@ -77,9 +77,16 @@ Der zweite Nutzen ist die Zusage der Vision, eingelöst am ersten Gegenstand, de
 
 ### Zurückweisung ungültiger Kartenanlage
 - [ ] Ein leerer oder nur aus Leerzeichen bestehender Titel wird mit HTTP 400 zurückgewiesen; es entsteht keine Karte, und der Bestand der Spalte bleibt unverändert.
+- [ ] Ein Titel von mehr als 1000 Zeichen wird mit HTTP 400 zurückgewiesen; es entsteht keine Karte. Gezählt wird nach dem Trimmen: 1000 Zeichen werden angenommen, 1001 zurückgewiesen.
 - [ ] Jede Zurückweisung liefert den Rumpf `Zurueckweisung` mit mindestens einem lesbaren Befund.
 - [ ] Die Zurückweisung erscheint in der Oberfläche als lesbare Meldung an der betroffenen Bahn, ohne dass die Seite abstürzt; die Seite nimmt danach eine weitere Bedienung an und führt sie aus.
 - [ ] Ist die WebApi beim Anlegen nicht erreichbar, erscheint eine lesbare Meldung statt einer Ausnahmeseite.
+
+### Spalte entfernen, an der Karten hängen
+- [ ] `DELETE /api/boards/{boardId}/spalten/{spalteId}` auf eine Spalte, die mindestens eine Karte enthält, liefert HTTP 400 mit einem `Zurueckweisung`-Rumpf, der die Zahl der enthaltenen Karten nennt; Spalte und Karten bleiben unverändert.
+- [ ] Eine leere Spalte lässt sich weiterhin ohne Vorbedingung entfernen (HTTP 204) — auch die letzte des Boards.
+- [ ] Nachdem die letzte Karte einer Spalte entfernt wurde, lässt sich die Spalte wieder entfernen.
+- [ ] Die Zurückweisung erscheint im Layout-Modus als lesbare Meldung; die Bahn bleibt stehen und die Seite nimmt danach eine weitere Bedienung an.
 
 ### Bestandsschutz der Tests
 - [ ] Alle bestehenden Tests laufen grün. Der Stand vor dieser Anforderung ist 280 (BL 64, Blazor 50, Integration 92, E2E 74).
@@ -206,9 +213,7 @@ Repositories und alles mit Datenbank-Abhängigkeit sind **keine** Unit-Test-Kand
 
 ## Offene Fragen
 
-- **Was geschieht mit den Karten, wenn ihre Spalte entfernt wird?** `DELETE /api/boards/{boardId}/spalten/{spalteId}` aus `R00002` löscht heute eine Spalte ohne Rückfrage; ab dieser Anforderung können daran Karten hängen. *Vorschlag:* Eine Spalte, die Karten enthält, wird mit HTTP 400 und einem lesbaren Befund zurückgewiesen — Datenverlust ohne Rückfrage ist der schlechtere Ausgang, und der Ausweg über das Archiv (`I0014`) existiert noch nicht. Das wäre eine Änderung an einem Kriterium aus `R00002` („eine als Abschlussspalte markierte Spalte lässt sich ohne Vorbedingung entfernen") und gehört deshalb entschieden, bevor gebaut wird. Wird stattdessen das Mitlöschen gewählt, muss es ausdrücklich als Kriterium hier stehen, nicht als Nebenwirkung des Fremdschlüssels.
-- **Soll der Kartentitel eine Längengrenze haben?** Das Artboard zeichnet den Randfall eines zu langen Titels als Darstellungsfrage (die Karte wächst). *Vorschlag:* keine Grenze in dieser Anforderung — die Darstellung trägt den langen Titel, und eine Grenze ohne fachlichen Grund wäre eine willkürliche Zahl im Validator. Sollte eine gewünscht sein, gehört sie als Kriterium in die Gruppe „Zurückweisung".
-- **Trägt `GET /api/boards/{boardId}` künftig alle Karten, auch wenn es Tausende sind?** In dieser Anforderung ja — es gibt keine Grenze. Die erste Interaction, die das begrenzt, ist `I0013` (Abschlussspalte, 20 neueste). *Vorschlag:* offen lassen und mit `I0013` entscheiden; eine Grenze jetzt einzuziehen, ohne dass sie jemand braucht, wäre tote Flexibilität.
+Keine offenen Fragen mehr — alle drei wurden vor der Umsetzung entschieden; siehe „Notizen".
 
 ## Warum löst diese Anforderung das Problem? (Pflicht)
 
@@ -227,6 +232,12 @@ Dass `I0010` und `I0011` zusammen geschnitten sind, ist Teil der Lösung und nic
 **Was das Artboard zeigt und was hier gebaut wird.** `D0003.dc.html` zeichnet fünf Interactions in einem Schirm. Gebaut werden hier zwei: die gefüllte Bahn (`I0010`) und die offene Anlage im Bahnenfuß samt Zurückweisung (`I0011`). Die gezogene Karte mit Ablagestelle (`I0012`), die Gruppierung nach Erledigungsdatum mit „Ältere nachladen" (`I0013`) und das Kartenmenü mit „Archivieren" (`I0014`) stehen im selben Bild und bleiben unangetastet.
 
 **Die Karte ist hier absichtlich arm.** Auf der gezeichneten Karte stehen Klassennummer, Avatar, Subtask-Zähler, Etikett und zwei Zeitangaben. Keines dieser Felder entsteht hier — die Lesehilfe des Artboards ordnet sie `D0004`, `D0005`, `D0006` und `D0002` zu. Eine Spalte im Schema anzulegen, die erst in drei Anforderungen jemand füllt, wäre eine Zusage, die kein Test deckt.
+
+**Ablösung eines Kriteriums aus `R00002`.** `R00002` fordert unter „Spalte entfernen": *„Auch die letzte verbliebene Spalte lässt sich entfernen; das Board bleibt bestehen und liefert eine leere Spaltenliste."* Ohne Vorbedingung gilt das mit dieser Anforderung nicht mehr: Eine Spalte, an der Karten hängen, wird zurückgewiesen. Für die **leere** Spalte bleibt das Kriterium unverändert gültig, auch für die letzte des Boards. Der zugehörige Test aus `R00002` wird um den Kartenfall ergänzt, nicht ersetzt. Da Anforderungsdateien nach ihrer Erstellung nicht mehr geändert werden, hält diese Anforderung die Ablösung fest — dasselbe Verfahren, mit dem `R00004` ein Kriterium aus `R00002` abgelöst hat.
+
+Der Grund für die Zurückweisung statt des Mitlöschens: Datenverlust ohne Rückfrage ist der schlechtere Ausgang, und der Ausweg über das Archiv (`I0014`) existiert noch nicht. Sobald er existiert, kann die Regel neu verhandelt werden — dann mit einem Weg, der nichts vernichtet.
+
+**Keine Grenze für die Zahl gelieferter Karten.** `GET /api/boards/{boardId}` liefert alle Karten aller Spalten, ohne Limit. Die erste Interaction, die begrenzt, ist `I0013` (Abschlussspalte, die N neuesten); dort entsteht die Regel mit einem echten Bedarf. Eine Grenze jetzt einzuziehen, die niemand braucht und die keine Oberfläche bedienen kann, wäre tote Flexibilität (C17).
 
 ### Verworfene Alternativen
 
