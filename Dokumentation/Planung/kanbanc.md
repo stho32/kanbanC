@@ -125,7 +125,7 @@ zuletzt: 2026-08-31
 | I0011 | Interaction | D0003 | Karte anlegen | gelb | Eine neue Karte entsteht in einer Spalte, über die Oberfläche wie über die API | | | | I0010 | R00006 | |
 | F0017 | Feature | I0011 | Karte anlegen | gelb | AK „Karte anlegen über die API" und „Karte anlegen in der Oberfläche"; US-3, US-4 | | | | I0010 | R00006 | |
 | B0074 | Bubble | F0017 | Karte speichern | gruen | Test gruen | spalteId + KarteAnlegenAnfrage → KartenRepository.LegeAn → Karte mit KarteId, Position = höchste + 1 | 0,4 | | | | Provider, eine Transaktion; Aufwand belegt (B0028) |
-| B0075 | Bubble | F0017 | Kartenanlage verdrahten | gelb | Test gruen | boardId + spalteId + Anfrage → KartenService.LegeKarteAn → Ergebnis<Karte>? | 0,4 | | | | Integration, Test-Repository; null heisst unbekannt (404); Aufwand belegt (B0029) |
+| B0075 | Bubble | F0017 | Kartenanlage verdrahten | gruen | Test gruen | boardId + spalteId + Anfrage → KartenService.LegeKarteAn → Ergebnis<Karte>? | 0,4 | | | | Integration, Test-Repository; null heisst unbekannt (404); Aufwand belegt (B0029) |
 | B0076 | Bubble | F0017 | Karten-Endpunkte | gelb | Test gruen | HTTP POST /api/boards/{boardId}/spalten/{spalteId}/karten → KartenEndpunkte → 201 / 400 / 404 | 2 | | | | Integration; kein Messwert für Endpunkt-Bubbles |
 | B0077 | Bubble | F0017 | API-Klient der Karten | gelb | Test gruen | KarteAnlegenAnfrage → KartenApiKlient.LegeKarteAn → ApiErgebnis<Karte> | 2 | | | | Integration; Fehlerpfade in KanbanC.Blazor.Tests |
 | B0078 | Bubble | F0017 | Anlegen im Bahnenfuß | gelb | Test gruen | Klick „+ Karte" → Kartenanlage.razor im Bahnenfuß → Karte entsteht, Board lädt neu | 2-4 | | | | UI; füllt .spaltenbahn-kartenstelle aus R00005; unklar: Zustand, wenn mehrere Bahnen zugleich offen sind |
