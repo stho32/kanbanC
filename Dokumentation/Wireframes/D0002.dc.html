@@ -1,0 +1,400 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@300..900&display=swap">
+  <style>
+    /* Werte exakt aus Source/KanbanC.Blazor/wwwroot/gestaltung.css und oberflaeche.css
+       uebernommen, nichts gerundet. Die Kopfzeile stammt aus
+       Components/Layout/Kopfzeile.razor(.css) — dort steht der Identitaetsplatz
+       „nicht gewählt" bereits gebaut, an dem Variante C andockt.
+       Aufbau der Liste nach Dokumentation/Wireframes/wireframes.js, S.kontributoren,
+       Variante A; die zwei Identitaetswahlen nach Variante B und C desselben Satzes. */
+    :root {
+      --color-bg: #f5ead8;
+      --color-surface: #ebddc5;
+      --color-text: #201e1d;
+      --color-accent: #c67139;
+      --color-accent-2: #7a8a5e;
+      --color-divider: color-mix(in srgb, #201e1d 16%, transparent);
+
+      --color-neutral-100: #f9f4ed;
+      --color-neutral-300: #dcd3c4;
+      --color-neutral-800: #474238;
+
+      --color-accent-100: #fff2eb;
+      --color-accent-200: #ffe1d0;
+      --color-accent-700: #8c491a;
+      --color-accent-800: #643312;
+
+      --color-accent-2-100: #f0fae1;
+      --color-accent-2-200: #e1eecc;
+      --color-accent-2-800: #3d472b;
+
+      --font-heading: "Caprasimo", system-ui, sans-serif;
+      --font-heading-weight: 400;
+      --font-body: "Figtree", system-ui, sans-serif;
+
+      --space-1: 4.4px;
+      --space-2: 8.8px;
+      --space-3: 13.2px;
+      --space-4: 17.6px;
+      --space-6: 26.4px;
+
+      --radius-md: 16px;
+      --radius-lg: 28px;
+
+      --shadow-sm: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent);
+      --shadow-md: 0 3px 10px color-mix(in srgb, #2e2b25 16%, transparent);
+      --shadow-lg: 0 12px 32px color-mix(in srgb, #2e2b25 22%, transparent);
+
+      --leise: color-mix(in srgb, #201e1d 55%, transparent);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-family: var(--font-body);
+      font-size: 15px;
+      line-height: 1.55;
+      font-weight: 400;
+    }
+    h1, h2, h3, h4 {
+      font-family: var(--font-heading);
+      font-weight: var(--font-heading-weight);
+      line-height: 1.12;
+      letter-spacing: -0.015em;
+      margin: 0;
+    }
+    a { color: var(--color-accent); text-underline-offset: 3px; text-decoration: none; }
+    a:hover { color: #8c491a; }
+    svg { display: block; }
+  </style>
+</helmet>
+
+<div style="position: relative; width: 1440px; height: 1560px; background: #f5ead8; overflow: hidden; display: flex; flex-direction: column">
+
+  <!-- ══ Kopfzeile — Layout/Kopfzeile.razor ══════════════════════════════════ -->
+  <header style="display: flex; align-items: center; gap: 26.4px; padding: 13.2px 26.4px; background: #ebddc5; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent); flex: 0 0 auto">
+    <span style="font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 18px; color: #201e1d">KanbanC</span>
+    <nav style="display: flex; align-items: center; gap: 17.6px">
+      <span style="font-size: 14px; color: #201e1d">Boards</span>
+      <span style="font-size: 14px; color: color-mix(in srgb, #201e1d 40%, transparent)">Auswertungen</span>
+      <span style="font-size: 14px; color: #c67139; box-shadow: inset 0 -2px 0 #c67139">Kontributoren</span>
+    </nav>
+    <span style="margin-left: auto; font-size: 13px; color: color-mix(in srgb, #201e1d 55%, transparent)">nicht gewählt</span>
+  </header>
+
+  <!-- ══ Inhalt ══════════════════════════════════════════════════════════════ -->
+  <main style="flex: 1; min-height: 0; padding: 26.4px; display: flex; flex-direction: column">
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         ZUSTAND 1 — Kontributoren führen · Variante A des älteren Satzes
+         Sichtbar: I0006 anlegen · I0007 bearbeiten · I0009 stilllegen
+         ══════════════════════════════════════════════════════════════════ -->
+    <p style="margin: 0 0 8.8px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 1 · Hauptzustand des Dialogs · /kontributoren</p>
+
+    <!-- ── Seitenkopf — oberflaeche.css .seitenkopf ─────────────────────── -->
+    <header style="display: flex; align-items: center; gap: 13.2px; margin-bottom: 17.6px; flex: 0 0 auto">
+      <h1 style="font-size: 28px">Kontributoren</h1>
+      <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">Full-Trust · keine Anmeldung</span>
+      <span style="margin-left: auto; display: flex; align-items: center; gap: 8.8px; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">4 wählbar · 1 stillgelegt</span>
+    </header>
+
+    <!-- ── Liste — gestaltung.css .table ────────────────────────────────── -->
+    <table style="width: 100%; border-collapse: collapse; font-size: 14px; table-layout: fixed">
+      <thead>
+        <tr>
+          <th style="text-align: left; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 60%, transparent); padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent); width: 300px">Name</th>
+          <th style="text-align: left; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 60%, transparent); padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent); width: 150px">Art</th>
+          <th style="text-align: left; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 60%, transparent); padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent); width: 90px">offen</th>
+          <th style="text-align: left; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 60%, transparent); padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent); width: 110px">Zeit</th>
+          <th style="text-align: left; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 60%, transparent); padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">letzte Handlung</th>
+          <th style="text-align: right; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 60%, transparent); padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent); width: 130px">Pflege</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <!-- Mensch — Olive -->
+        <tr>
+          <td style="padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent)">
+            <span style="display: inline-flex; align-items: center; gap: 8.8px">
+              <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #e1eecc; color: #3d472b">ST</span>Stefan
+            </span>
+          </td>
+          <td style="padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent)"><span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f0fae1; color: #3d472b">Mensch</span></td>
+          <td style="padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent)">6</td>
+          <td style="padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent)">16:10</td>
+          <td style="padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent); font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">vor 24 Min · Oberfläche</td>
+          <td style="padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent)">
+            <span style="display: flex; align-items: center; justify-content: flex-end; gap: 4.4px">
+              <span style="width: 36px; height: 36px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; color: #c67139" title="bearbeiten"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10-10-4-4L4 16z"/><path d="m14 6 4 4"/></svg></span>
+              <span style="width: 36px; height: 36px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; color: color-mix(in srgb, #201e1d 55%, transparent)" title="stilllegen"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 5v14M15 5v14"/></svg></span>
+            </span>
+          </td>
+        </tr>
+
+        <!-- Agent — Terrakotta -->
+        <tr>
+          <td style="padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent)">
+            <span style="display: inline-flex; align-items: center; gap: 8.8px">
+              <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #ffe1d0; color: #643312">KI</span>Claude-Agent
+            </span>
+          </td>
+          <td style="padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent)"><span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #fff2eb; color: #643312">Agent</span></td>
+          <td style="padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent)">3</td>
+          <td style="padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent)">18:24</td>
+          <td style="padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent); font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">vor 6 Min · API</td>
+          <td style="padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent)">
+            <span style="display: flex; align-items: center; justify-content: flex-end; gap: 4.4px">
+              <span style="width: 36px; height: 36px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; color: #c67139" title="bearbeiten"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10-10-4-4L4 16z"/><path d="m14 6 4 4"/></svg></span>
+              <span style="width: 36px; height: 36px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; color: color-mix(in srgb, #201e1d 55%, transparent)" title="stilllegen"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 5v14M15 5v14"/></svg></span>
+            </span>
+          </td>
+        </tr>
+
+        <!-- Agent in Bearbeitung — I0007, Zeile klappt auf ─────────────── -->
+        <tr>
+          <td colspan="6" style="padding: 0; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent)">
+            <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8.8px; padding: 13.2px 8.8px; background: #ebddc5; border-radius: 16px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+              <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #ffe1d0; color: #643312">CX</span>
+              <span style="display: inline-flex; align-items: center; min-height: 36px; width: 300px; padding: 6px 14px; font-size: 14px; background: #f5ead8; border: 1px solid #c67139; border-radius: 999px">Codex-Agent</span>
+              <span style="display: inline-flex; overflow: hidden; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px">
+                <span style="display: inline-flex; align-items: center; padding: 7px 12px; font-size: 13px; color: #201e1d">Mensch</span>
+                <span style="display: inline-flex; align-items: center; padding: 7px 12px; font-size: 13px; background: #c67139; color: #f5ead8; border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">Agent</span>
+                <span style="display: inline-flex; align-items: center; padding: 7px 12px; font-size: 13px; color: #201e1d; border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">abgebildet</span>
+              </span>
+              <span style="font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">1 offen · 5:32 · vor 41 Min · API</span>
+              <span style="margin-left: auto; display: flex; align-items: center; gap: 8.8px">
+                <span style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #f5ead8; background: #c67139; padding: 8.8px 15.84px; border-radius: 999px">sichern</span>
+                <span style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #c67139; padding-inline: 4.4px">verwerfen</span>
+              </span>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Mensch — zweiter, damit die Identitätswahl überhaupt eine Wahl ist -->
+        <tr>
+          <td style="padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent)">
+            <span style="display: inline-flex; align-items: center; gap: 8.8px">
+              <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #e1eecc; color: #3d472b">NB</span>Nina Barth
+            </span>
+          </td>
+          <td style="padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent)"><span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f0fae1; color: #3d472b">Mensch</span></td>
+          <td style="padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent)">4</td>
+          <td style="padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent)">7:45</td>
+          <td style="padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent); font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">vor 2 Std · Oberfläche</td>
+          <td style="padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent)">
+            <span style="display: flex; align-items: center; justify-content: flex-end; gap: 4.4px">
+              <span style="width: 36px; height: 36px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; color: #c67139" title="bearbeiten"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10-10-4-4L4 16z"/><path d="m14 6 4 4"/></svg></span>
+              <span style="width: 36px; height: 36px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; color: color-mix(in srgb, #201e1d 55%, transparent)" title="stilllegen"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 5v14M15 5v14"/></svg></span>
+            </span>
+          </td>
+        </tr>
+
+        <!-- Abgebildet — Neutral, kein Akteur -->
+        <tr>
+          <td style="padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent)">
+            <span style="display: inline-flex; align-items: center; gap: 8.8px">
+              <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #f9f4ed; color: #474238; border: 1px dashed #dcd3c4">ML</span>Maria Lenz
+            </span>
+          </td>
+          <td style="padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent)"><span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">abgebildet</span></td>
+          <td style="padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent)">2</td>
+          <td style="padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent)">0:00</td>
+          <td style="padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent); font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">— öffnet die Anwendung nie</td>
+          <td style="padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent)">
+            <span style="display: flex; align-items: center; justify-content: flex-end; gap: 4.4px">
+              <span style="width: 36px; height: 36px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; color: #c67139" title="bearbeiten"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10-10-4-4L4 16z"/><path d="m14 6 4 4"/></svg></span>
+              <span style="width: 36px; height: 36px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; color: color-mix(in srgb, #201e1d 55%, transparent)" title="stilllegen"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 5v14M15 5v14"/></svg></span>
+            </span>
+          </td>
+        </tr>
+
+        <!-- Gruppenzeile — Stillgelegte rutschen nach unten, I0009 ───────── -->
+        <tr>
+          <td colspan="6" style="padding: 17.6px 8.8px 4.4px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; color: color-mix(in srgb, #201e1d 55%, transparent)">stillgelegt · 1 — aus der Auswahl verschwunden, an alten Karten und Zeiten weiter sichtbar</td>
+        </tr>
+        <tr style="opacity: 0.45">
+          <td style="padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent)">
+            <span style="display: inline-flex; align-items: center; gap: 8.8px">
+              <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #e1eecc; color: #3d472b">JR</span><span style="text-decoration: line-through; text-decoration-color: color-mix(in srgb, #201e1d 40%, transparent)">Jan R.</span>
+            </span>
+          </td>
+          <td style="padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent)"><span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f0fae1; color: #3d472b">Mensch</span></td>
+          <td style="padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent)">0</td>
+          <td style="padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent)">2:10</td>
+          <td style="padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent); font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">stillgelegt seit 12.08.2026</td>
+          <td style="padding: 8.8px; border-bottom: 1px solid color-mix(in srgb, #201e1d 8%, transparent)">
+            <span style="display: flex; align-items: center; justify-content: flex-end; gap: 4.4px; min-height: 36px">
+              <span style="display: inline-flex; align-items: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #c67139; padding-inline: 4.4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>zurückholen</span>
+            </span>
+          </td>
+        </tr>
+
+        <!-- Anlegen als Zeile am Ende — I0006, kein eigener Schirm ──────── -->
+        <tr>
+          <td colspan="6" style="padding: 17.6px 8.8px 0">
+            <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8.8px">
+              <span style="display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; color: #c67139; border: 1px dashed #c67139"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+              <span style="display: inline-flex; align-items: center; min-height: 36px; width: 300px; padding: 6px 14px; font-size: 14px; color: color-mix(in srgb, #201e1d 55%, transparent); background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px">Name</span>
+              <span style="display: inline-flex; overflow: hidden; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px">
+                <span style="display: inline-flex; align-items: center; padding: 7px 12px; font-size: 13px; background: #c67139; color: #f5ead8">Mensch</span>
+                <span style="display: inline-flex; align-items: center; padding: 7px 12px; font-size: 13px; color: #201e1d; border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">Agent</span>
+                <span style="display: inline-flex; align-items: center; padding: 7px 12px; font-size: 13px; color: #201e1d; border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">abgebildet</span>
+              </span>
+              <span style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #f5ead8; background: #c67139; padding: 8.8px 15.84px; border-radius: 999px">anlegen</span>
+              <span style="font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">Anlegen ist eine Zeile, kein eigener Schirm</span>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- ── Rand: zurückgewiesene Anlage — oberflaeche.css .meldung-abweisung ── -->
+    <div style="margin: 13.2px 0 0; padding: 13.2px; border-left: 3px solid #8c491a; border-radius: 16px; background: #ebddc5">
+      <p style="margin: 0 0 4.4px; font-size: 14px">Ohne Namen entsteht kein Kontributor.</p>
+      <p style="margin: 0; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">Rand von I0006 · derselbe Wortlaut über die API als Zurückweisung, nicht als Serverfehler (Muster aus B0050)</p>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         ZUSTÄNDE 2 und 3 — Identitätswahl, zwei Alternativen nebeneinander
+         I0008 · die Wahl zwischen ihnen ist offen (Frage 4 im Index)
+         ══════════════════════════════════════════════════════════════════ -->
+    <hr style="height: 1px; border: 0; margin: 26.4px 0 17.6px; background: color-mix(in srgb, #201e1d 16%, transparent)">
+
+    <header style="display: flex; align-items: baseline; flex-wrap: wrap; gap: 13.2px; margin-bottom: 13.2px; flex: 0 0 auto">
+      <p style="margin: 0; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139; flex-basis: 100%">Zustände 2 und 3 · I0008 Identität wählen · Alternativen, nicht Abfolge</p>
+      <h3 style="font-size: 25px">Wo wird die Identität gewählt?</h3>
+      <p style="margin: 0; font-size: 13px; line-height: 1.45; flex: 1; min-width: 0; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Beide erfüllen das Fertig-Kriterium „beim Öffnen wählt man, wer man ist; die Wahl überlebt einen Reload" (localStorage). Sie unterscheiden sich darin, <span style="color: #201e1d">ob vor dem Board ein eigener Schirm steht</span> — und beantworten damit zugleich die Einstiegsfrage aus dem Screen-Flow. <span style="color: #201e1d">Nicht entschieden.</span></p>
+    </header>
+
+    <div style="display: flex; align-items: stretch; gap: 26.4px; flex: 0 0 auto">
+
+      <!-- ═══ Variante B · ganzflächiger Vorschirm ═══════════════════════ -->
+      <section style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+        <header style="display: flex; align-items: baseline; gap: 8.8px">
+          <span style="display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 999px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 12px; background: #ffe1d0; color: #643312">B</span>
+          <h4 style="font-size: 20px">Ganzflächiger Vorschirm</h4>
+          <span style="margin-left: auto; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">1440 × 900 · vor dem Board · einmalig je Browser</span>
+        </header>
+
+        <div style="flex: 1; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 28px; background: #f5ead8; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 13.2px; padding: 26.4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+          <span style="font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 18px; color: #201e1d">KanbanC</span>
+          <h2 style="font-size: 32px; text-align: center">Wer bist du?</h2>
+          <p style="margin: 0; max-width: 420px; text-align: center; font-size: 13px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Full-Trust im LAN — die Wahl merkt sich dieser Browser und lässt sich jederzeit ändern.</p>
+
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13.2px; width: 100%; max-width: 480px">
+            <span style="display: flex; flex-direction: column; align-items: center; gap: 8.8px; padding: 17.6px 8.8px; border-radius: 28px; background: #ebddc5; box-shadow: 0 3px 10px color-mix(in srgb, #2e2b25 16%, transparent)">
+              <span style="width: 48px; height: 48px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 17px; letter-spacing: 0.02em; background: #e1eecc; color: #3d472b">ST</span>
+              <b style="font-size: 14px; font-weight: 600">Stefan</b>
+            </span>
+            <span style="display: flex; flex-direction: column; align-items: center; gap: 8.8px; padding: 17.6px 8.8px; border-radius: 28px; background: #ebddc5; box-shadow: 0 3px 10px color-mix(in srgb, #2e2b25 16%, transparent)">
+              <span style="width: 48px; height: 48px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 17px; letter-spacing: 0.02em; background: #e1eecc; color: #3d472b">NB</span>
+              <b style="font-size: 14px; font-weight: 600">Nina Barth</b>
+            </span>
+            <span style="display: flex; flex-direction: column; align-items: center; gap: 8.8px; padding: 17.6px 8.8px; border-radius: 28px; border: 1px dashed color-mix(in srgb, #201e1d 40%, transparent)">
+              <span style="width: 48px; height: 48px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; color: #c67139"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+              <b style="font-size: 14px; font-weight: 600; color: #c67139">anlegen</b>
+            </span>
+          </div>
+
+          <p style="margin: 0; max-width: 470px; text-align: center; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Agenten wählen sich nicht — sie arbeiten über die API und erscheinen trotzdem am Board. Maria Lenz (abgebildet) und Jan R. (stillgelegt) stehen nicht zur Wahl.</p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 4.4px; padding: 13.2px; border-radius: 16px; background: #ebddc5">
+          <p style="margin: 0; font-size: 12px; line-height: 1.45; text-wrap: pretty"><span style="color: #201e1d">Motiv</span> — die Vision wörtlich: „Wer die Oberfläche öffnet, wählt aus, wer er ist." Niemand arbeitet je versehentlich anonym oder unter fremdem Namen; die Zuordnung von Karten und Zeiten ist ab dem ersten Klick eindeutig.</p>
+          <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty"><span style="color: #8c491a">Preis</span> — ein Schirm vor dem Board, den man auch nur ansehen will; teilen sich mehrere Menschen einen Rechner, ist die einmalige Wahl die falsche und das Umschalten unbequem. D0001 wäre dann nicht mehr der Einstieg.</p>
+        </div>
+      </section>
+
+      <!-- ═══ Variante C · Popover an der Kopfzeile ══════════════════════ -->
+      <section style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+        <header style="display: flex; align-items: baseline; gap: 8.8px">
+          <span style="display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 999px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 12px; background: #e1eecc; color: #3d472b">C</span>
+          <h4 style="font-size: 20px">Popover an der Kopfzeile</h4>
+          <span style="margin-left: auto; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">kein Vorschirm · umschalten, wo man steht</span>
+        </header>
+
+        <div style="position: relative; flex: 1; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 28px; background: #f5ead8; overflow: hidden; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+
+          <!-- Kopfzeile im Kleinen — der Identitätsplatz ist gebaut -->
+          <div style="display: flex; align-items: center; gap: 17.6px; padding: 8.8px 13.2px; background: #ebddc5; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+            <span style="font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px">KanbanC</span>
+            <span style="font-size: 12px; color: #c67139; box-shadow: inset 0 -2px 0 #c67139">Boards</span>
+            <span style="font-size: 12px; color: color-mix(in srgb, #201e1d 40%, transparent)">Auswertungen</span>
+            <span style="font-size: 12px; color: color-mix(in srgb, #201e1d 40%, transparent)">Kontributoren</span>
+            <span style="margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px solid #c67139; color: #c67139">nicht gewählt<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+          </div>
+
+          <!-- Board dahinter, ausgeblasst -->
+          <div style="filter: saturate(0.6) contrast(0.85) brightness(1.1) opacity(0.94); display: flex; gap: 8.8px; padding: 13.2px; height: 100%">
+            <span style="flex: 1; border-radius: 16px; background: #ebddc5; padding: 8.8px; display: flex; flex-direction: column; gap: 6px">
+              <span style="font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 11px">Rückstand</span>
+              <span style="height: 35.2px; border-radius: 16px; background: #f5ead8"></span>
+              <span style="height: 35.2px; border-radius: 16px; background: #f5ead8"></span>
+            </span>
+            <span style="flex: 1; border-radius: 16px; background: #ebddc5; padding: 8.8px; display: flex; flex-direction: column; gap: 6px">
+              <span style="font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 11px">Bereit</span>
+              <span style="height: 35.2px; border-radius: 16px; background: #f5ead8"></span>
+            </span>
+            <span style="flex: 1; border-radius: 16px; background: #ebddc5; padding: 8.8px; display: flex; flex-direction: column; gap: 6px">
+              <span style="font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 11px">In Arbeit</span>
+              <span style="height: 35.2px; border-radius: 16px; background: #f5ead8"></span>
+              <span style="height: 35.2px; border-radius: 16px; background: #f5ead8"></span>
+            </span>
+          </div>
+
+          <!-- Das Popover selbst -->
+          <div style="position: absolute; right: 13.2px; top: 44px; width: 268px; display: flex; flex-direction: column; gap: 4.4px; padding: 13.2px; border-radius: 28px; background: #ebddc5; box-shadow: 0 12px 32px color-mix(in srgb, #2e2b25 22%, transparent)">
+            <p style="margin: 0; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Ich bin …</p>
+
+            <span style="display: flex; align-items: center; gap: 8.8px; padding: 4.4px 8.8px; border-radius: 999px; background: #f5ead8; font-size: 13px">
+              <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: #e1eecc; color: #3d472b">ST</span>Stefan
+              <span style="margin-left: auto; display: inline-flex; color: #c67139"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg></span>
+            </span>
+            <span style="display: flex; align-items: center; gap: 8.8px; padding: 4.4px 8.8px; border-radius: 999px; font-size: 13px">
+              <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: #e1eecc; color: #3d472b">NB</span>Nina Barth
+            </span>
+
+            <hr style="height: 1px; border: 0; margin: 0; background: color-mix(in srgb, #201e1d 16%, transparent)">
+
+            <span style="display: flex; align-items: center; gap: 8.8px; padding: 4.4px 8.8px; font-size: 13px; opacity: 0.45">
+              <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: #ffe1d0; color: #643312">KI</span>Claude-Agent
+              <span style="margin-left: auto; font-size: 11px">nur API</span>
+            </span>
+            <span style="display: flex; align-items: center; gap: 8.8px; padding: 4.4px 8.8px; font-size: 13px; opacity: 0.45">
+              <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: #f9f4ed; color: #474238; border: 1px dashed #dcd3c4">ML</span>Maria Lenz
+              <span style="margin-left: auto; font-size: 11px">abgebildet</span>
+            </span>
+
+            <hr style="height: 1px; border: 0; margin: 0; background: color-mix(in srgb, #201e1d 16%, transparent)">
+            <span style="display: inline-flex; align-items: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 13px; color: #c67139; padding-inline: 4.4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Kontributor anlegen</span>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 4.4px; padding: 13.2px; border-radius: 16px; background: #ebddc5">
+          <p style="margin: 0; font-size: 12px; line-height: 1.45; text-wrap: pretty"><span style="color: #201e1d">Motiv</span> — der Platz steht schon: <span style="color: #201e1d">Kopfzeile.razor</span> trägt <span style="color: #201e1d">„nicht gewählt"</span>. Das Board kommt sofort, D0001 bleibt der Einstieg, und Umschalten mitten in der Arbeit ist ein Klick — realistisch für einen Rechner und mehrere Menschen.</p>
+          <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty"><span style="color: #8c491a">Preis</span> — weniger deutlich: man arbeitet leichter versehentlich als jemand anderes oder als „nicht gewählt". Braucht ein Gegenmittel — der Timer (I0023) erzwingt die Wahl, bevor er läuft.</p>
+        </div>
+      </section>
+    </div>
+
+    <!-- ── Lesehilfe: was hier gezeichnet ist und wem es gehört ───────────── -->
+    <footer style="margin-top: auto; flex: 0 0 auto; display: flex; flex-direction: column; gap: 4.4px; padding-top: 8.8px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent); font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent)">
+      <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">D0002 zeigt hier:</span> <span style="color: #8c491a">I0006</span> Anlegen als Zeile am Ende, Art über Mensch / Agent / abgebildet, samt Zurückweisung ohne Namen · <span style="color: #8c491a">I0007</span> Pflege je Zeile, die aufgeklappte Bearbeitung an „Codex-Agent" · <span style="color: #8c491a">I0008</span> zwei Alternativen — <span style="color: #201e1d">B</span> ganzflächiger Vorschirm, <span style="color: #201e1d">C</span> Popover an der Kopfzeile; nebeneinander, weil die Wahl offen ist · <span style="color: #8c491a">I0009</span> Stilllegen je Zeile, Stillgelegte unten mit „zurückholen".</p>
+      <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Drei Arten, drei Farben</span> — Mensch Olive (<span style="color: #201e1d">accent-2</span>), Agent Terrakotta (<span style="color: #201e1d">accent</span>), abgebildet Neutral mit gestricheltem Rand: kein Akteur, deshalb keine Akzentfarbe und in beiden Wahlvarianten nicht wählbar. <span style="color: #201e1d">Nina Barth</span> ist gegenüber dem älteren Satz hinzugefügt — mit nur einem wählbaren Menschen zeigte die Identitätswahl keine Wahl. Die übrigen Namen und Zahlen stammen aus <span style="color: #201e1d">wireframes.js</span>, <span style="color: #201e1d">S.kontributoren</span>.</p>
+      <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Offen und nicht hier entschieden:</span> B oder C (Frage 4 des Index — sie entscheidet zugleich, ob D0001 der Einstieg bleibt) · ob die Spalten „offen", „Zeit" und „letzte Handlung" schon zu D0002 gehören oder erst mit D0006 (I0026) und D0007 kommen — gezeichnet ist die Zielform.</p>
+    </footer>
+
+  </main>
+</div>
+</x-dc>
+</body>
+</html>

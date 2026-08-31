@@ -28,6 +28,12 @@ Web-Fonts (Caprasimo, Figtree, Caveat) von Google Fonts.
 | Zeiten je Kontributor | 2 | I0023–I0027 |
 | Kontributoren & Identitaet | 3 | I0006–I0009 |
 
+> **Zuordnung zu den Dialogs der WBS.** Diese acht Schirme sind quer zu den neun
+> Dialogs geschnitten — der Schirm ist nicht der Dialog. Welcher Schirm welchen
+> Dialog speist, welche Variante gesetzt ist und welche Interactions von keinem
+> Schirm gedeckt sind, steht verbindlich in [`_wireframes.md`](_wireframes.md),
+> Abschnitt „Zuordnung Schirm → Dialog". Diese Datei wird dafuer nicht umgebaut.
+
 ## Bewusst nicht gezeichnet
 
 WIP-Limits je Spalte, Swimlanes und wiederkehrende Karten — in
