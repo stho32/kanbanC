@@ -89,8 +89,8 @@ public class SpalteEntfernenE2ETests : PageTest
         await Expect(zweiteSeite.SpaltenZurueckweisung).ToBeHiddenAsync();
     }
 
-    // Ergaenzt aus R00006: fuer die leere Spalte gilt das R00002-Kriterium unveraendert weiter,
-    // fuer die belegte gilt ab hier die Zurueckweisung.
+    // Ergänzt aus R00006: für die leere Spalte gilt das R00002-Kriterium unverändert weiter,
+    // für die belegte gilt ab hier die Zurückweisung.
     [Test]
     public async Task Wenn_eine_Spalte_mit_Karten_entfernt_wird_dann_erscheint_eine_lesbare_Meldung_und_die_Bahn_bleibt_stehen()
     {

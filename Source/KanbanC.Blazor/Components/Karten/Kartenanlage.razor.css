@@ -23,8 +23,8 @@
     background: var(--color-bg);
 }
 
-/* Die Bahn ist schmal, und in aller Regel steht genau ein Befund da: die Aufzaehlung
-   traegt deshalb keine Punkte, stapelt aber weiterhin, wenn es mehrere werden. */
+/* Die Bahn ist schmal, und in aller Regel steht genau ein Befund da: die Aufzählung
+   trägt deshalb keine Punkte, stapelt aber weiterhin, wenn es mehrere werden. */
 .kartenanlage-zurueckweisung ul {
     padding-left: 0;
     list-style: none;

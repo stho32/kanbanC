@@ -171,6 +171,22 @@ public class SpaltenServiceTests
     }
 
     [Test]
+    public void Wenn_die_Spalte_Karten_traegt_dann_reicht_EntferneSpalte_die_Zurueckweisung_durch()
+    {
+        var repository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen", "In Arbeit");
+        var belegte = repository.Spalten(1)[0];
+        repository.MitKarten(1, belegte.SpalteId, 2);
+        var service = new SpaltenService(repository);
+
+        var ergebnis = service.EntferneSpalte(1, belegte.SpalteId);
+
+        Assert.That(ergebnis, Is.Not.Null);
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Assert.That(ergebnis.Befunde.BefundAnzahl, Is.GreaterThan(0));
+        Assert.That(repository.Spalten(1), Has.Count.EqualTo(2), "Der Dienst hat die Zurueckweisung verschluckt und die Spalte entfernt.");
+    }
+
+    [Test]
     public void Wenn_die_SpalteId_unbekannt_ist_dann_meldet_EntferneSpalte_null_und_der_Bestand_bleibt()
     {
         var repository = TestSpaltenRepository.MitBoardOhneSpalten(1);

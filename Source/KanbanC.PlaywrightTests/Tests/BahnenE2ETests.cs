@@ -30,8 +30,8 @@ public class BahnenE2ETests : PageTest
         await Expect(seite.SpaltenbahnAnStelle(2)).ToContainTextAsync("Erledigt");
     }
 
-    // Nachgezogen aus R00005: die Kartenzahlstelle bleibt leer, bis I0004 sie fuellt; die
-    // Kartenstelle im Bahnenfuss traegt seit R00006 das Bedienelement zum Anlegen.
+    // Nachgezogen aus R00005: die Kartenzahlstelle bleibt leer, bis I0004 sie füllt; die
+    // Kartenstelle im Bahnenfuß trägt seit R00006 das Bedienelement zum Anlegen.
     [Test]
     public async Task Wenn_ein_Board_geoeffnet_wird_dann_bleibt_die_Kartenzahlstelle_leer_und_im_Bahnenfuss_steht_das_Anlegen()
     {

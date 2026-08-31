@@ -583,8 +583,8 @@ public class SpaltenEndpunkteTests
         var zurueckgewiesen = await webApi.Klient.DeleteAsync($"{BoardsRoute}/{boardId}/spalten/{zuErledigen}");
         Assert.That(zurueckgewiesen.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
 
-        // Karten zu entfernen ist Sache einer spaeteren Interaction; hier raeumt das Arrange
-        // den Bestand per SQL ab, damit der geprueft Vorgang das Entfernen der Spalte bleibt.
+        // Karten zu entfernen ist Sache einer späteren Interaction; hier räumt das Arrange
+        // den Bestand per SQL ab, damit der geprüfte Vorgang das Entfernen der Spalte bleibt.
         LeereSpalte(datenbank, zuErledigen);
         var antwort = await webApi.Klient.DeleteAsync($"{BoardsRoute}/{boardId}/spalten/{zuErledigen}");
 

@@ -1,6 +1,7 @@
 using KanbanC.BL.Interfaces.Boards;
 using KanbanC.BL.Models;
 using KanbanC.Contracts.Boards;
+using KanbanC.Contracts.Karten;
 
 namespace KanbanC.BL.Tests.TestHelpers;
 
@@ -38,6 +39,22 @@ public sealed class TestSpaltenRepository : ISpaltenRepository
 
         repository.WurdeAngelegt = false;
         return repository;
+    }
+
+    // Legt Karten in eine bereits geseedete Spalte, ohne die Aufruf-Merker zu setzen.
+    // Ohne diesen Weg bliebe der Zurückweisungszweig von Entferne unerreichbar.
+    public TestSpaltenRepository MitKarten(long boardId, long spalteId, int anzahl)
+    {
+        var spalten = _spaltenJeBoard[boardId];
+        var stelle = spalten.FindIndex(spalte => spalte.SpalteId == spalteId);
+        var karten = new List<Karte>();
+        for (var nummer = 1; nummer <= anzahl; nummer++)
+        {
+            karten.Add(new Karte(nummer, $"Karte {nummer}", nummer));
+        }
+
+        spalten[stelle] = spalten[stelle] with { Karten = karten };
+        return this;
     }
 
     public IReadOnlyList<Spalte> Spalten(long boardId)

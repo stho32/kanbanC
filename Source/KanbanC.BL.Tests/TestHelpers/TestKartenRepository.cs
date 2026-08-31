@@ -22,7 +22,7 @@ public sealed class TestKartenRepository : IKartenRepository
         return new TestKartenRepository(spalteIstInzwischenVerschwunden: false);
     }
 
-    // Bildet das Rennen zwischen Pruefung und Schreiben ab: der Service hat die Spalte gesehen,
+    // Bildet das Rennen zwischen Prüfung und Schreiben ab: der Service hat die Spalte gesehen,
     // beim Schreiben gibt es sie nicht mehr.
     public static TestKartenRepository MitVerschwundenerSpalte()
     {
