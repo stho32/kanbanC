@@ -59,23 +59,31 @@ public sealed class TestSpaltenRepository : ISpaltenRepository
         return Ergebnis<Spalte>.Erfolg(spalte);
     }
 
-    public bool Entferne(long boardId, long spalteId)
+    public Ergebnis<Spalte>? Entferne(long boardId, long spalteId)
     {
         WurdeEntfernt = true;
         if (!_spaltenJeBoard.TryGetValue(boardId, out var spalten))
         {
-            return false;
+            return null;
         }
 
-        var entfernteAnzahl = spalten.RemoveAll(spalte => spalte.SpalteId == spalteId);
-        var spalteGehoertNichtZumBoard = entfernteAnzahl == 0;
+        var stelle = spalten.FindIndex(spalte => spalte.SpalteId == spalteId);
+        var spalteGehoertNichtZumBoard = stelle < 0;
         if (spalteGehoertNichtZumBoard)
         {
-            return false;
+            return null;
         }
 
+        var zuEntfernendeSpalte = spalten[stelle];
+        var spalteTraegtNochKarten = zuEntfernendeSpalte.Karten.Count > 0;
+        if (spalteTraegtNochKarten)
+        {
+            return Ergebnis<Spalte>.Zurueckgewiesen(new Pruefbefunde(["Die Spalte enthält noch Karten und lässt sich deshalb nicht entfernen."]));
+        }
+
+        spalten.RemoveAt(stelle);
         _spaltenJeBoard[boardId] = MitLueckenlosenPositionen(spalten);
-        return true;
+        return Ergebnis<Spalte>.Erfolg(zuEntfernendeSpalte);
     }
 
     private static List<Spalte> MitLueckenlosenPositionen(List<Spalte> spalten)

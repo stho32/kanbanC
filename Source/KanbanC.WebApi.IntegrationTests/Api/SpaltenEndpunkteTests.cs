@@ -1,7 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text;
+using Dapper;
 using KanbanC.Contracts.Boards;
+using KanbanC.Contracts.Karten;
 using KanbanC.WebApi.IntegrationTests.Infrastructure;
 
 namespace KanbanC.WebApi.IntegrationTests.Api;
@@ -528,6 +530,70 @@ public class SpaltenEndpunkteTests
     }
 
     [Test]
+    public async Task Wenn_die_Spalte_Karten_enthaelt_dann_antwortet_DELETE_mit_400_und_die_Spalte_bleibt_mit_ihren_Karten_stehen()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var boardId = await LegeBoardAn(webApi);
+        var board = await LadeBoard(webApi, boardId);
+        var zuErledigen = board.Spalten[0].SpalteId;
+        await LegeKarteAn(webApi, boardId, zuErledigen, "Migration schreiben");
+        await LegeKarteAn(webApi, boardId, zuErledigen, "Endpunkt bauen");
+
+        var antwort = await webApi.Klient.DeleteAsync($"{BoardsRoute}/{boardId}/spalten/{zuErledigen}");
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var zurueckweisung = await antwort.Content.ReadFromJsonAsync<Zurueckweisung>();
+        Assert.That(zurueckweisung, Is.Not.Null);
+        Assert.That(zurueckweisung.Befunde, Has.Some.Contains("2 Karten"));
+        var unveraendert = await LadeBoard(webApi, boardId);
+        Assert.Multiple(() =>
+        {
+            Assert.That(unveraendert.Spalten.Select(s => s.Bezeichnung), Is.EqualTo(new[] { "Zu erledigen", "In Arbeit", "Erledigt" }));
+            Assert.That(unveraendert.Spalten[0].Karten.Select(karte => karte.Titel),
+                Is.EqualTo(new[] { "Migration schreiben", "Endpunkt bauen" }));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_eine_Nachbarspalte_Karten_traegt_dann_bleibt_die_leere_Spalte_ohne_Vorbedingung_entfernbar()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var boardId = await LegeBoardAn(webApi);
+        var board = await LadeBoard(webApi, boardId);
+        await LegeKarteAn(webApi, boardId, board.Spalten[0].SpalteId, "Migration schreiben");
+
+        var antwort = await webApi.Klient.DeleteAsync($"{BoardsRoute}/{boardId}/spalten/{board.Spalten[1].SpalteId}");
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+        var verbleibend = await LadeBoard(webApi, boardId);
+        Assert.That(verbleibend.Spalten.Select(s => s.Bezeichnung), Is.EqualTo(new[] { "Zu erledigen", "Erledigt" }));
+    }
+
+    [Test]
+    public async Task Wenn_die_letzte_Karte_der_Spalte_verschwunden_ist_dann_laesst_sich_die_Spalte_wieder_entfernen()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var boardId = await LegeBoardAn(webApi);
+        var board = await LadeBoard(webApi, boardId);
+        var zuErledigen = board.Spalten[0].SpalteId;
+        await LegeKarteAn(webApi, boardId, zuErledigen, "Migration schreiben");
+        var zurueckgewiesen = await webApi.Klient.DeleteAsync($"{BoardsRoute}/{boardId}/spalten/{zuErledigen}");
+        Assert.That(zurueckgewiesen.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+
+        // Karten zu entfernen ist Sache einer spaeteren Interaction; hier raeumt das Arrange
+        // den Bestand per SQL ab, damit der geprueft Vorgang das Entfernen der Spalte bleibt.
+        LeereSpalte(datenbank, zuErledigen);
+        var antwort = await webApi.Klient.DeleteAsync($"{BoardsRoute}/{boardId}/spalten/{zuErledigen}");
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+        var verbleibend = await LadeBoard(webApi, boardId);
+        Assert.That(verbleibend.Spalten.Select(s => s.Bezeichnung), Is.EqualTo(new[] { "In Arbeit", "Erledigt" }));
+    }
+
+    [Test]
     public async Task Wenn_die_SpalteId_beim_Entfernen_unbekannt_ist_dann_antwortet_die_API_mit_404()
     {
         using var datenbank = new TemporaereDatenbank();
@@ -596,6 +662,22 @@ public class SpaltenEndpunkteTests
         var unveraendert = await LadeBoard(webApi, boardId);
         Assert.That(unveraendert.Spalten.Select(s => s.Bezeichnung),
             Is.EqualTo(new[] { "Zu erledigen", "In Arbeit", "Erledigt" }));
+    }
+
+    private static async Task LegeKarteAn(TestWebApi webApi, long boardId, long spalteId, string titel)
+    {
+        var antwort = await webApi.Klient.PostAsJsonAsync(
+            $"{BoardsRoute}/{boardId}/spalten/{spalteId}/karten", new KarteAnlegenAnfrage(titel));
+        antwort.EnsureSuccessStatusCode();
+    }
+
+    private static void LeereSpalte(TemporaereDatenbank datenbank, long spalteId)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            DELETE
+              FROM Karte
+             WHERE Spalte = @SpalteId", new { SpalteId = spalteId });
     }
 
     private static async Task<long> LegeBoardAn(TestWebApi webApi)

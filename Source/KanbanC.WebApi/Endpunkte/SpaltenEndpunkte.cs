@@ -79,11 +79,16 @@ public static class SpaltenEndpunkte
 
     private static IResult EntferneSpalte(long boardId, long spalteId, SpaltenService spaltenService)
     {
-        var wurdeEntfernt = spaltenService.EntferneSpalte(boardId, spalteId);
-        var spalteIstUnbekannt = !wurdeEntfernt;
-        if (spalteIstUnbekannt)
+        var ergebnis = spaltenService.EntferneSpalte(boardId, spalteId);
+        if (ergebnis is null)
         {
             return Results.NotFound();
+        }
+
+        var entfernenWurdeZurueckgewiesen = !ergebnis.IstErfolg;
+        if (entfernenWurdeZurueckgewiesen)
+        {
+            return Results.BadRequest(Zurueckweisungen.Aus(ergebnis.Befunde));
         }
 
         return Results.NoContent();

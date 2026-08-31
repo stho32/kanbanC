@@ -120,26 +120,52 @@ public sealed class SpaltenRepository : ISpaltenRepository
         return Ergebnis<IReadOnlyList<Spalte>>.Erfolg(spalten);
     }
 
-    public bool Entferne(long boardId, long spalteId)
+    public Ergebnis<Spalte>? Entferne(long boardId, long spalteId)
     {
         using var verbindung = _verbindungsfabrik.Oeffne();
         using var transaktion = verbindung.BeginTransaction();
 
-        var geloeschteZeilen = LoescheSpalte(verbindung, transaktion, boardId, spalteId);
-        var spalteGehoertNichtZumBoard = geloeschteZeilen == 0;
+        var karten = Kartenleser.LiesKartenEinerSpalte(verbindung, transaktion, spalteId);
+        var zuEntfernendeSpalte = Spaltenleser.LiesSpalteDesBoards(verbindung, transaktion, boardId, spalteId, karten);
+        var spalteGehoertNichtZumBoard = zuEntfernendeSpalte is null;
         if (spalteGehoertNichtZumBoard)
         {
-            return false;
+            return null; // stil-check: C25 null heisst "Spalte unbekannt oder fremd" (404); die Zurueckweisung heisst "Spalte traegt Karten" (400)
         }
 
+        var spalteTraegtNochKarten = karten.Count > 0;
+        if (spalteTraegtNochKarten)
+        {
+            return Ergebnis<Spalte>.Zurueckgewiesen(SpalteTraegtNochKarten(zuEntfernendeSpalte!));
+        }
+
+        LoescheSpalte(verbindung, transaktion, boardId, spalteId);
         VerdichtePositionen(verbindung, transaktion, boardId);
         transaktion.Commit();
-        return true;
+        return Ergebnis<Spalte>.Erfolg(zuEntfernendeSpalte!);
     }
 
-    private static int LoescheSpalte(IDbConnection verbindung, IDbTransaction transaktion, long boardId, long spalteId)
+    private static Pruefbefunde SpalteTraegtNochKarten(Spalte spalte)
     {
-        return verbindung.Execute(@"
+        var kartenwort = Kartenwort(spalte.Karten.Count);
+        return new Pruefbefunde(
+            [$"Die Spalte „{spalte.Bezeichnung}“ enthält noch {spalte.Karten.Count} {kartenwort} und lässt sich deshalb nicht entfernen."]);
+    }
+
+    private static string Kartenwort(int kartenanzahl)
+    {
+        var spalteTraegtGenauEineKarte = kartenanzahl == 1;
+        if (spalteTraegtGenauEineKarte)
+        {
+            return "Karte";
+        }
+
+        return "Karten";
+    }
+
+    private static void LoescheSpalte(IDbConnection verbindung, IDbTransaction transaktion, long boardId, long spalteId)
+    {
+        verbindung.Execute(@"
             DELETE
               FROM Spalte
              WHERE SpalteId = @SpalteId

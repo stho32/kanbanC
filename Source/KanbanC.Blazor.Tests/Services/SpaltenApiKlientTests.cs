@@ -151,6 +151,19 @@ public class SpaltenApiKlientTests
     }
 
     [Test]
+    public async Task Wenn_die_WebApi_das_Entfernen_wegen_enthaltener_Karten_zurueckweist_dann_reicht_der_Klient_ihre_Befunde_durch()
+    {
+        const string rumpf = """{"befunde":["Die Spalte \u201EZu erledigen\u201C enth\u00E4lt noch 3 Karten und l\u00E4sst sich deshalb nicht entfernen."]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.BadRequest, rumpf, "application/json");
+        var klient = new SpaltenApiKlient(fabrik);
+
+        var zurueckweisung = await klient.EntferneSpalte(1, 2);
+
+        Assert.That(zurueckweisung, Is.Not.Null);
+        Assert.That(zurueckweisung.Befunde[0], Does.Contain("enthält noch 3 Karten"));
+    }
+
+    [Test]
     public void Wenn_die_WebApi_beim_Entfernen_einen_Serverfehler_meldet_dann_bleibt_der_Fehler_sichtbar()
     {
         using var fabrik = TestKlientFabrik.MitAntwortOhneRumpf(HttpStatusCode.InternalServerError);

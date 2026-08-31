@@ -41,6 +41,12 @@ public sealed class SpaltenApiKlient
     {
         using var klient = _klientFabrik.CreateClient(KlientName);
         using var antwort = await klient.DeleteAsync($"{SpaltenRoute(boardId)}/{spalteId}");
+        var entfernenWurdeZurueckgewiesen = antwort.StatusCode == HttpStatusCode.BadRequest;
+        if (entfernenWurdeZurueckgewiesen)
+        {
+            return await Zurueckweisungsleser.Lies(antwort);
+        }
+
         var spalteIstUnbekannt = antwort.StatusCode == HttpStatusCode.NotFound;
         if (spalteIstUnbekannt)
         {

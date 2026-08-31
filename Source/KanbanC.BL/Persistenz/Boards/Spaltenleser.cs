@@ -33,6 +33,26 @@ internal static class Spaltenleser
         return spalteIds.ToList();
     }
 
+    public static Spalte? LiesSpalteDesBoards(
+        IDbConnection verbindung,
+        IDbTransaction? transaktion,
+        long boardId,
+        long spalteId,
+        IReadOnlyList<Karte> karten)
+    {
+        var zeile = verbindung.QuerySingleOrDefault<Spaltenzeile>(@"
+            SELECT SpalteId, Bezeichnung, Position, IstAbschlussspalte, Anzeigegrenze
+              FROM Spalte
+             WHERE SpalteId = @SpalteId
+               AND Board = @Board", new { SpalteId = spalteId, Board = boardId }, transaktion);
+        if (zeile is null)
+        {
+            return null;
+        }
+
+        return AlsSpalte(zeile, karten);
+    }
+
     private static IReadOnlyList<Karte> KartenDerSpalte(IReadOnlyDictionary<long, IReadOnlyList<Karte>> kartenJeSpalte, long spalteId)
     {
         var spalteTraegtKarten = kartenJeSpalte.TryGetValue(spalteId, out var karten);

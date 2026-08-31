@@ -13,5 +13,5 @@ public interface ISpaltenRepository
 
     Ergebnis<IReadOnlyList<Spalte>>? SetzeReihenfolge(long boardId, IReadOnlyList<long> reihenfolge);
 
-    bool Entferne(long boardId, long spalteId);
+    Ergebnis<Spalte>? Entferne(long boardId, long spalteId);
 }

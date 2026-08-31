@@ -71,7 +71,7 @@ public sealed class SpaltenService
         return _repository.Aendere(boardId, spalteId, anfrage);
     }
 
-    public bool EntferneSpalte(long boardId, long spalteId)
+    public Ergebnis<Spalte>? EntferneSpalte(long boardId, long spalteId)
     {
         return _repository.Entferne(boardId, spalteId);
     }

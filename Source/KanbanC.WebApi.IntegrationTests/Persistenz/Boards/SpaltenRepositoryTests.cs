@@ -1,7 +1,9 @@
 using Dapper;
 using KanbanC.BL.Operations.Boards;
 using KanbanC.BL.Persistenz.Boards;
+using KanbanC.BL.Persistenz.Karten;
 using KanbanC.Contracts.Boards;
+using KanbanC.Contracts.Karten;
 using KanbanC.WebApi.IntegrationTests.Infrastructure;
 
 namespace KanbanC.WebApi.IntegrationTests.Persistenz.Boards;
@@ -300,9 +302,10 @@ public class SpaltenRepositoryTests
         var repository = new SpaltenRepository(datenbank.Verbindungsfabrik);
         var inArbeit = SpalteIdAnPosition(datenbank, boardId, 2);
 
-        var wurdeEntfernt = repository.Entferne(boardId, inArbeit);
+        var ergebnis = repository.Entferne(boardId, inArbeit);
 
-        Assert.That(wurdeEntfernt, Is.True);
+        Assert.That(ergebnis, Is.Not.Null);
+        Assert.That(ergebnis.IstErfolg, Is.True);
         Assert.That(GespeicherteBezeichnungenNachPosition(datenbank, boardId),
             Is.EqualTo(new[] { "Zu erledigen", "Erledigt" }));
         Assert.That(repository.LadeAlle(boardId)!.Select(s => s.Position), Is.EqualTo(new[] { 1, 2 }));
@@ -332,9 +335,10 @@ public class SpaltenRepositoryTests
         var repository = new SpaltenRepository(datenbank.Verbindungsfabrik);
         var erledigt = SpalteIdAnPosition(datenbank, boardId, 3);
 
-        var wurdeEntfernt = repository.Entferne(boardId, erledigt);
+        var ergebnis = repository.Entferne(boardId, erledigt);
 
-        Assert.That(wurdeEntfernt, Is.True);
+        Assert.That(ergebnis, Is.Not.Null);
+        Assert.That(ergebnis.IstErfolg, Is.True);
         Assert.That(GespeicherteBezeichnungenNachPosition(datenbank, boardId),
             Is.EqualTo(new[] { "Zu erledigen", "In Arbeit" }));
     }
@@ -348,24 +352,81 @@ public class SpaltenRepositoryTests
         var repository = new SpaltenRepository(datenbank.Verbindungsfabrik);
         var fremdeSpalteId = SpalteIdAnPosition(datenbank, erstesBoard, 1);
 
-        var wurdeEntfernt = repository.Entferne(zweitesBoard, fremdeSpalteId);
+        var ergebnis = repository.Entferne(zweitesBoard, fremdeSpalteId);
 
-        Assert.That(wurdeEntfernt, Is.False);
+        Assert.That(ergebnis, Is.Null);
         Assert.That(GespeicherteSpaltenAnzahl(datenbank, erstesBoard), Is.EqualTo(3));
         Assert.That(GespeicherteSpaltenAnzahl(datenbank, zweitesBoard), Is.EqualTo(3));
     }
 
     [Test]
-    public void Wenn_die_SpalteId_unbekannt_ist_dann_liefert_Entferne_false()
+    public void Wenn_die_SpalteId_unbekannt_ist_dann_liefert_Entferne_null()
     {
         using var datenbank = new TemporaereDatenbank().MitSchema();
         var boardId = LegeBoardAn(datenbank);
         var repository = new SpaltenRepository(datenbank.Verbindungsfabrik);
 
-        var wurdeEntfernt = repository.Entferne(boardId, 999);
+        var ergebnis = repository.Entferne(boardId, 999);
 
-        Assert.That(wurdeEntfernt, Is.False);
+        Assert.That(ergebnis, Is.Null);
         Assert.That(GespeicherteSpaltenAnzahl(datenbank, boardId), Is.EqualTo(3));
+    }
+
+    [Test]
+    public void Wenn_die_Spalte_Karten_traegt_dann_weist_Entferne_sie_zurueck_und_Spalte_wie_Karten_bleiben_stehen()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var repository = new SpaltenRepository(datenbank.Verbindungsfabrik);
+        var kartenRepository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var zuErledigen = SpalteIdAnPosition(datenbank, boardId, 1);
+        kartenRepository.LegeAn(boardId, zuErledigen, new KarteAnlegenAnfrage("Migration schreiben"));
+        kartenRepository.LegeAn(boardId, zuErledigen, new KarteAnlegenAnfrage("Endpunkt bauen"));
+
+        var ergebnis = repository.Entferne(boardId, zuErledigen);
+
+        Assert.That(ergebnis, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.IstErfolg, Is.False);
+            Assert.That(ergebnis.Befunde[0], Does.Contain("2 Karten"));
+            Assert.That(ergebnis.Befunde[0], Does.Contain("Zu erledigen"));
+        });
+        Assert.That(GespeicherteBezeichnungenNachPosition(datenbank, boardId),
+            Is.EqualTo(new[] { "Zu erledigen", "In Arbeit", "Erledigt" }));
+        Assert.That(repository.LadeAlle(boardId)![0].Karten, Has.Count.EqualTo(2));
+    }
+
+    [Test]
+    public void Wenn_die_Spalte_genau_eine_Karte_traegt_dann_nennt_die_Zurueckweisung_sie_in_der_Einzahl()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var repository = new SpaltenRepository(datenbank.Verbindungsfabrik);
+        var zuErledigen = SpalteIdAnPosition(datenbank, boardId, 1);
+        new KartenRepository(datenbank.Verbindungsfabrik).LegeAn(boardId, zuErledigen, new KarteAnlegenAnfrage("Migration schreiben"));
+
+        var ergebnis = repository.Entferne(boardId, zuErledigen);
+
+        Assert.That(ergebnis, Is.Not.Null);
+        Assert.That(ergebnis.Befunde[0], Does.Contain("1 Karte "));
+    }
+
+    [Test]
+    public void Wenn_die_Karten_einer_Nachbarspalte_liegen_dann_bleibt_die_leere_Spalte_entfernbar()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var repository = new SpaltenRepository(datenbank.Verbindungsfabrik);
+        var zuErledigen = SpalteIdAnPosition(datenbank, boardId, 1);
+        var inArbeit = SpalteIdAnPosition(datenbank, boardId, 2);
+        new KartenRepository(datenbank.Verbindungsfabrik).LegeAn(boardId, zuErledigen, new KarteAnlegenAnfrage("Migration schreiben"));
+
+        var ergebnis = repository.Entferne(boardId, inArbeit);
+
+        Assert.That(ergebnis, Is.Not.Null);
+        Assert.That(ergebnis.IstErfolg, Is.True);
+        Assert.That(GespeicherteBezeichnungenNachPosition(datenbank, boardId), Is.EqualTo(new[] { "Zu erledigen", "Erledigt" }));
     }
 
     private static long LegeBoardAn(TemporaereDatenbank datenbank)
