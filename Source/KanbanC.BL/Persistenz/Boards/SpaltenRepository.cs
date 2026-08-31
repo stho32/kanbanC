@@ -130,7 +130,7 @@ public sealed class SpaltenRepository : ISpaltenRepository
         var spalteGehoertNichtZumBoard = zuEntfernendeSpalte is null;
         if (spalteGehoertNichtZumBoard)
         {
-            return null; // stil-check: C25 null heisst "Spalte unbekannt oder fremd" (404); die Zurueckweisung heisst "Spalte traegt Karten" (400)
+            return null; // stil-check: C25 null heisst "Spalte unbekannt oder fremd" (404); die Zurückweisung heißt "Spalte trägt Karten" (400)
         }
 
         var spalteTraegtNochKarten = karten.Count > 0;

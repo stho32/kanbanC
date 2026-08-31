@@ -1,6 +1,6 @@
 ---
 id: R00006
-status: In Arbeit
+status: Erledigt
 datum: 2026-08-30
 ---
 
@@ -40,58 +40,58 @@ Der zweite Nutzen ist die Zusage der Vision, eingelöst am ersten Gegenstand, de
 ## Akzeptanzkriterien
 
 ### Kartenmodell und Datenhaltung
-- [ ] Das Schema trägt eine Tabelle `Karte` mit `KarteId` als Primärschlüssel, `Spalte` als Fremdschlüssel auf `Spalte (SpalteId)`, `Titel` und `Position`.
-- [ ] Die Migration ist idempotent: Ein zweiter Lauf auf einer Datei, die die Tabelle bereits trägt, ändert weder Schema noch Daten.
-- [ ] Ein Titel wird ohne umschließende Leerzeichen gespeichert; der Abruf liefert ihn getrimmt zurück.
-- [ ] Karten überleben einen Neustart der WebApi: Nach dem Neustart auf derselben Datei liefert das Board dieselben Karten in derselben Reihenfolge.
+- [x] Das Schema trägt eine Tabelle `Karte` mit `KarteId` als Primärschlüssel, `Spalte` als Fremdschlüssel auf `Spalte (SpalteId)`, `Titel` und `Position`.
+- [x] Die Migration ist idempotent: Ein zweiter Lauf auf einer Datei, die die Tabelle bereits trägt, ändert weder Schema noch Daten.
+- [x] Ein Titel wird ohne umschließende Leerzeichen gespeichert; der Abruf liefert ihn getrimmt zurück.
+- [x] Karten überleben einen Neustart der WebApi: Nach dem Neustart auf derselben Datei liefert das Board dieselben Karten in derselben Reihenfolge.
 
 ### Karten am Board über die API
-- [ ] `GET /api/boards/{boardId}` liefert je Spalte ihre Karten; jede Karte trägt `KarteId` und `Titel`.
-- [ ] Die Karten einer Spalte stehen in aufsteigender Position: Karten mit den Positionen 1, 2, 3 erscheinen in genau dieser Folge, unabhängig von ihrer `KarteId`.
-- [ ] Eine Spalte ohne Karten liefert eine leere Kartenliste, nicht `null`.
-- [ ] Eine Karte erscheint ausschließlich bei ihrer eigenen Spalte; die Karten einer Spalte tauchen in keiner anderen Spalte desselben Boards auf.
-- [ ] `GET` auf eine nicht vergebene `boardId` liefert unverändert HTTP 404.
+- [x] `GET /api/boards/{boardId}` liefert je Spalte ihre Karten; jede Karte trägt `KarteId` und `Titel`.
+- [x] Die Karten einer Spalte stehen in aufsteigender Position: Karten mit den Positionen 1, 2, 3 erscheinen in genau dieser Folge, unabhängig von ihrer `KarteId`.
+- [x] Eine Spalte ohne Karten liefert eine leere Kartenliste, nicht `null`.
+- [x] Eine Karte erscheint ausschließlich bei ihrer eigenen Spalte; die Karten einer Spalte tauchen in keiner anderen Spalte desselben Boards auf.
+- [x] `GET` auf eine nicht vergebene `boardId` liefert unverändert HTTP 404.
 
 ### Karten in der Oberfläche
-- [ ] Das geöffnete Board zeigt in jeder Bahn die Karten dieser Spalte, jede mit ihrem Titel.
-- [ ] Die Karten stehen in der Bahn in derselben Reihenfolge, in der die API sie liefert.
-- [ ] Eine Bahn ohne Karten zeigt einen Hinweis darauf, dass sie leer ist, statt einer unbeschrifteten Fläche.
-- [ ] Ein Reload der Seite zeigt dieselben Karten in derselben Reihenfolge.
-- [ ] Die Bahnen zeigen die Karten in beiden Zuständen der Seite — Arbeitsansicht und Layout-Modus aus `R00004` — und die acht Kriterien der Gruppe „Spaltenpflege im Layout-Modus" aus `R00004` gelten unverändert weiter.
+- [x] Das geöffnete Board zeigt in jeder Bahn die Karten dieser Spalte, jede mit ihrem Titel.
+- [x] Die Karten stehen in der Bahn in derselben Reihenfolge, in der die API sie liefert.
+- [x] Eine Bahn ohne Karten zeigt einen Hinweis darauf, dass sie leer ist, statt einer unbeschrifteten Fläche.
+- [x] Ein Reload der Seite zeigt dieselben Karten in derselben Reihenfolge.
+- [x] Die Bahnen zeigen die Karten in beiden Zuständen der Seite — Arbeitsansicht und Layout-Modus aus `R00004` — und die acht Kriterien der Gruppe „Spaltenpflege im Layout-Modus" aus `R00004` gelten unverändert weiter.
 
 ### Karte anlegen über die API
-- [ ] `POST /api/boards/{boardId}/spalten/{spalteId}/karten` mit einem Titel legt eine Karte an und liefert sie mit vergebener `KarteId` zurück (HTTP 201) samt `Location` auf die angelegte Karte.
-- [ ] Die neue Karte steht als letzte ihrer Spalte: Bei drei vorhandenen Karten erhält sie Position 4.
-- [ ] Die neue Karte erscheint danach in `GET /api/boards/{boardId}` an dieser Stelle.
-- [ ] Eine Karte lässt sich auch in einer Spalte anlegen, die keine Karte hat — sie erhält Position 1.
-- [ ] Zwei Karten mit demselben Titel sind zulässig, auch innerhalb einer Spalte, und erhalten verschiedene `KarteId`.
-- [ ] `POST` auf eine nicht vergebene `spalteId` oder auf eine Spalte, die zu einem anderen Board gehört, liefert HTTP 404; es entsteht keine Karte.
-- [ ] `POST` auf eine nicht vergebene `boardId` liefert HTTP 404.
+- [x] `POST /api/boards/{boardId}/spalten/{spalteId}/karten` mit einem Titel legt eine Karte an und liefert sie mit vergebener `KarteId` zurück (HTTP 201) samt `Location` auf die angelegte Karte.
+- [x] Die neue Karte steht als letzte ihrer Spalte: Bei drei vorhandenen Karten erhält sie Position 4.
+- [x] Die neue Karte erscheint danach in `GET /api/boards/{boardId}` an dieser Stelle.
+- [x] Eine Karte lässt sich auch in einer Spalte anlegen, die keine Karte hat — sie erhält Position 1.
+- [x] Zwei Karten mit demselben Titel sind zulässig, auch innerhalb einer Spalte, und erhalten verschiedene `KarteId`.
+- [x] `POST` auf eine nicht vergebene `spalteId` oder auf eine Spalte, die zu einem anderen Board gehört, liefert HTTP 404; es entsteht keine Karte.
+- [x] `POST` auf eine nicht vergebene `boardId` liefert HTTP 404.
 
 ### Karte anlegen in der Oberfläche
-- [ ] Im Fuß jeder Bahn steht ein Bedienelement, das die Anlage einer Karte in genau dieser Spalte beginnt.
-- [ ] Nach dem Anlegen erscheint die Karte in derselben Bahn als letzte, ohne dass die Seite neu geladen werden muss.
-- [ ] Das Anlegen lässt sich abbrechen, ohne dass eine Karte entsteht.
-- [ ] Wird die Anlage in einer Bahn begonnen und danach in einer zweiten, entsteht die Karte in der Spalte, deren Fuß bedient wurde — je Bahn eine eigene Anlage.
-- [ ] Die Oberfläche erreicht die Karten ausschließlich über HTTP-Aufrufe der WebApi; `KanbanC.Blazor` hat weiterhin keine Projektreferenz auf `KanbanC.BL`.
+- [x] Im Fuß jeder Bahn steht ein Bedienelement, das die Anlage einer Karte in genau dieser Spalte beginnt.
+- [x] Nach dem Anlegen erscheint die Karte in derselben Bahn als letzte, ohne dass die Seite neu geladen werden muss.
+- [x] Das Anlegen lässt sich abbrechen, ohne dass eine Karte entsteht.
+- [x] Wird die Anlage in einer Bahn begonnen und danach in einer zweiten, entsteht die Karte in der Spalte, deren Fuß bedient wurde — je Bahn eine eigene Anlage.
+- [x] Die Oberfläche erreicht die Karten ausschließlich über HTTP-Aufrufe der WebApi; `KanbanC.Blazor` hat weiterhin keine Projektreferenz auf `KanbanC.BL`.
 
 ### Zurückweisung ungültiger Kartenanlage
-- [ ] Ein leerer oder nur aus Leerzeichen bestehender Titel wird mit HTTP 400 zurückgewiesen; es entsteht keine Karte, und der Bestand der Spalte bleibt unverändert.
-- [ ] Ein Titel von mehr als 1000 Zeichen wird mit HTTP 400 zurückgewiesen; es entsteht keine Karte. Gezählt wird nach dem Trimmen: 1000 Zeichen werden angenommen, 1001 zurückgewiesen.
-- [ ] Jede Zurückweisung liefert den Rumpf `Zurueckweisung` mit mindestens einem lesbaren Befund.
-- [ ] Die Zurückweisung erscheint in der Oberfläche als lesbare Meldung an der betroffenen Bahn, ohne dass die Seite abstürzt; die Seite nimmt danach eine weitere Bedienung an und führt sie aus.
-- [ ] Ist die WebApi beim Anlegen nicht erreichbar, erscheint eine lesbare Meldung statt einer Ausnahmeseite.
+- [x] Ein leerer oder nur aus Leerzeichen bestehender Titel wird mit HTTP 400 zurückgewiesen; es entsteht keine Karte, und der Bestand der Spalte bleibt unverändert.
+- [x] Ein Titel von mehr als 1000 Zeichen wird mit HTTP 400 zurückgewiesen; es entsteht keine Karte. Gezählt wird nach dem Trimmen: 1000 Zeichen werden angenommen, 1001 zurückgewiesen.
+- [x] Jede Zurückweisung liefert den Rumpf `Zurueckweisung` mit mindestens einem lesbaren Befund.
+- [x] Die Zurückweisung erscheint in der Oberfläche als lesbare Meldung an der betroffenen Bahn, ohne dass die Seite abstürzt; die Seite nimmt danach eine weitere Bedienung an und führt sie aus.
+- [x] Ist die WebApi beim Anlegen nicht erreichbar, erscheint eine lesbare Meldung statt einer Ausnahmeseite.
 
 ### Spalte entfernen, an der Karten hängen
-- [ ] `DELETE /api/boards/{boardId}/spalten/{spalteId}` auf eine Spalte, die mindestens eine Karte enthält, liefert HTTP 400 mit einem `Zurueckweisung`-Rumpf, der die Zahl der enthaltenen Karten nennt; Spalte und Karten bleiben unverändert.
-- [ ] Eine leere Spalte lässt sich weiterhin ohne Vorbedingung entfernen (HTTP 204) — auch die letzte des Boards.
-- [ ] Nachdem die letzte Karte einer Spalte entfernt wurde, lässt sich die Spalte wieder entfernen.
-- [ ] Die Zurückweisung erscheint im Layout-Modus als lesbare Meldung; die Bahn bleibt stehen und die Seite nimmt danach eine weitere Bedienung an.
+- [x] `DELETE /api/boards/{boardId}/spalten/{spalteId}` auf eine Spalte, die mindestens eine Karte enthält, liefert HTTP 400 mit einem `Zurueckweisung`-Rumpf, der die Zahl der enthaltenen Karten nennt; Spalte und Karten bleiben unverändert.
+- [x] Eine leere Spalte lässt sich weiterhin ohne Vorbedingung entfernen (HTTP 204) — auch die letzte des Boards.
+- [x] Nachdem die letzte Karte einer Spalte entfernt wurde, lässt sich die Spalte wieder entfernen.
+- [x] Die Zurückweisung erscheint im Layout-Modus als lesbare Meldung; die Bahn bleibt stehen und die Seite nimmt danach eine weitere Bedienung an.
 
 ### Bestandsschutz der Tests
-- [ ] Alle bestehenden Tests laufen grün. Der Stand vor dieser Anforderung ist 280 (BL 64, Blazor 50, Integration 92, E2E 74).
-- [ ] Der Test `BahnenE2ETests.Wenn_ein_Board_geoeffnet_wird_dann_stehen_die_Stellen_fuer_Kartenzahl_und_neue_Karte_leer_bereit` aus `R00005` wird nachgezogen, nicht gelöscht: Seine Aussage über die Kartenzahlstelle (`I0004`, weiterhin leer) bleibt bestehen; seine Aussage über die leere Kartenstelle wird durch das Bedienelement zum Anlegen ersetzt.
-- [ ] Kein anderer Test aus `R00001` bis `R00005` wird umgeschrieben, um grün zu bleiben.
+- [x] Alle bestehenden Tests laufen grün. Der Stand vor dieser Anforderung ist 280 (BL 64, Blazor 50, Integration 92, E2E 74).
+- [x] Der Test `BahnenE2ETests.Wenn_ein_Board_geoeffnet_wird_dann_stehen_die_Stellen_fuer_Kartenzahl_und_neue_Karte_leer_bereit` aus `R00005` wird nachgezogen, nicht gelöscht: Seine Aussage über die Kartenzahlstelle (`I0004`, weiterhin leer) bleibt bestehen; seine Aussage über die leere Kartenstelle wird durch das Bedienelement zum Anlegen ersetzt.
+- [x] Kein anderer Test aus `R00001` bis `R00005` wird umgeschrieben, um grün zu bleiben.
 
 ## Betroffene Verzeichnisstruktur
 

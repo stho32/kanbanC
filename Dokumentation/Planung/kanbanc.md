@@ -111,8 +111,8 @@ zuletzt: 2026-08-31
 | I0007 | Interaction | D0002 | Kontributoren bearbeiten | rot | Alle Kontributoren sind sichtbar; Name und Art lassen sich ändern | | | | I0006 | | |
 | I0008 | Interaction | D0002 | Identität wählen | rot | Beim Öffnen der Oberfläche wählt man, wer man ist; die Wahl überlebt einen Reload | | | | I0006 | | localStorage |
 | I0009 | Interaction | D0002 | Kontributor stilllegen | rot | Ein stillgelegter Kontributor verschwindet aus der Auswahl, bleibt aber an alten Karten und Zeiten sichtbar | | | | I0006 | | |
-| D0003 | Dialog | A0001 | Board bedienen | rot | alle Interactions gruen | | | | | | aus Vision, kein Requirement |
-| I0010 | Interaction | D0003 | Board ansehen | gelb | Das Board zeigt seine Spalten mit den enthaltenen Karten in ihrer Reihenfolge | | | | I0003 | R00006 | Walking Skeleton; kein Feature noetig — ein prüfbarer Aspekt |
+| D0003 | Dialog | A0001 | Board bedienen | gelb | alle Interactions gruen | | | | | | aus Vision, kein Requirement |
+| I0010 | Interaction | D0003 | Board ansehen | gruen | Das Board zeigt seine Spalten mit den enthaltenen Karten in ihrer Reihenfolge | | | | I0003 | R00006 | Walking Skeleton; kein Feature noetig — ein prüfbarer Aspekt |
 | B0067 | Bubble | I0010 | Kartentabelle anlegen | gruen | Test gruen | bestehende Datei → Migration 003-karten.sql → Tabelle Karte mit IX_Karte_Spalte | 0,4 | | | | Provider; idempotent, kein Journal — jedes Skript läuft bei jedem Start; Aufwand belegt (B0002) |
 | B0068 | Bubble | I0010 | Karten einer Spalte lesen | gruen | Test gruen | boardId → Kartenleser.LiesKartenNachPosition → Karten je SpalteId nach Position | 0,4 | | | | Provider; das Contracts-DTO Karte entsteht hier; Aufwand belegt (B0028) |
 | B0069 | Bubble | I0010 | Karten reisen mit dem Board | gruen | Test gruen | boardId → BoardRepository.Lade + Spaltenleser → Board mit Spalten, jede mit ihren Karten | 0,4 | | | | Provider; Spalte trägt die Karten, kein zweiter Abruf; Aufwand belegt (B0016) |
@@ -122,15 +122,15 @@ zuletzt: 2026-08-31
 | B0073 | Bubble | I0010 | E2E Karten am Board | gruen | Test gruen | Board mit Karten in zwei Spalten → Playwright → US-1, US-2 | 2-4 | | | | E2E; das Arrange braucht das Anlegen aus F0017; unklar: Umfang des Nachziehens von BahnenE2ETests aus R00005 |
 | B0083 | Bubble | I0010 | Spalte mit Karten zurueckweisen | gruen | Test gruen | DELETE auf eine Spalte mit Karten → SpaltenService + SpaltenRepository → 400 Zurueckweisung mit Kartenzahl, Spalte und Karten unveraendert | 0,4 |  |  |  | Integration + Provider; loest das R00002-Kriterium "auch die letzte Spalte ist entfernbar" fuer belegte Spalten ab, leere Spalte bleibt entfernbar |
 | B0084 | Bubble | I0010 | Zurueckweisung im Layout-Modus | gruen | Test gruen | Zurueckweisung → Spaltenpflege.razor → lesbare Meldung, Bahn bleibt stehen; E2E Spalte mit Karten | 0,4 |  |  |  | UI; Aufwand belegt |
-| I0011 | Interaction | D0003 | Karte anlegen | gelb | Eine neue Karte entsteht in einer Spalte, über die Oberfläche wie über die API | | | | I0010 | R00006 | |
-| F0017 | Feature | I0011 | Karte anlegen | gelb | AK „Karte anlegen über die API" und „Karte anlegen in der Oberfläche"; US-3, US-4 | | | | I0010 | R00006 | |
+| I0011 | Interaction | D0003 | Karte anlegen | gruen | Eine neue Karte entsteht in einer Spalte, über die Oberfläche wie über die API | | | | I0010 | R00006 | |
+| F0017 | Feature | I0011 | Karte anlegen | gruen | AK „Karte anlegen über die API" und „Karte anlegen in der Oberfläche"; US-3, US-4 | | | | I0010 | R00006 | |
 | B0074 | Bubble | F0017 | Karte speichern | gruen | Test gruen | spalteId + KarteAnlegenAnfrage → KartenRepository.LegeAn → Karte mit KarteId, Position = höchste + 1 | 0,4 | | | | Provider, eine Transaktion; Aufwand belegt (B0028) |
 | B0075 | Bubble | F0017 | Kartenanlage verdrahten | gruen | Test gruen | boardId + spalteId + Anfrage → KartenService.LegeKarteAn → Ergebnis<Karte>? | 0,4 | | | | Integration, Test-Repository; null heisst unbekannt (404); Aufwand belegt (B0029) |
 | B0076 | Bubble | F0017 | Karten-Endpunkte | gruen | Test gruen | HTTP POST /api/boards/{boardId}/spalten/{spalteId}/karten → KartenEndpunkte → 201 / 400 / 404 | 2 | | | | Integration; kein Messwert für Endpunkt-Bubbles |
 | B0077 | Bubble | F0017 | API-Klient der Karten | gruen | Test gruen | KarteAnlegenAnfrage → KartenApiKlient.LegeKarteAn → ApiErgebnis<Karte> | 2 | | | | Integration; Fehlerpfade in KanbanC.Blazor.Tests |
 | B0078 | Bubble | F0017 | Anlegen im Bahnenfuß | gruen | Test gruen | Klick „+ Karte" → Kartenanlage.razor im Bahnenfuß → Karte entsteht, Board lädt neu | 2-4 | | | | UI; füllt .spaltenbahn-kartenstelle aus R00005; unklar: Zustand, wenn mehrere Bahnen zugleich offen sind |
 | B0079 | Bubble | F0017 | E2E Karte anlegen | gruen | Test gruen | beide Prozesse auf freien Ports → Playwright → US-3, US-4 | 2 | | | | E2E |
-| F0018 | Feature | I0011 | Ungültige Kartenanlage zurückweisen | gelb | AK „Zurückweisung ungültiger Kartenanlage"; US-5 | | | | F0017 | R00006 | |
+| F0018 | Feature | I0011 | Ungültige Kartenanlage zurückweisen | gruen | AK „Zurückweisung ungültiger Kartenanlage"; US-5 | | | | F0017 | R00006 | |
 | B0080 | Bubble | F0018 | Kartenanfrage prüfen | gruen | Test gruen | KarteAnlegenAnfrage → KartenValidator.Pruefe → Pruefbefunde | 0,4 | | | | Operation; Aufwand belegt (B0027); Befunde: leerer Titel und mehr als 1000 Zeichen nach dem Trimmen |
 | B0081 | Bubble | F0018 | Zurückweisung über die API | gruen | Test gruen | Pruefbefunde → KartenService + KartenEndpunkte → 400 Zurueckweisung, 404 bei fremder Spalte | 0,4 | | | | Integration; Aufwand belegt (B0029) |
 | B0082 | Bubble | F0018 | Zurückweisung in der Oberfläche | gruen | Test gruen | Zurueckweisung → Kartenanlage.razor → lesbare Meldung, Bahn bleibt bedienbar; E2E US-5 | 2 | | | | UI |
