@@ -58,9 +58,9 @@ public class SpaltenordnungTests
     {
         return
         [
-            new Spalte(1, "Zu erledigen", 1, false, null),
-            new Spalte(2, "In Arbeit", 2, false, null),
-            new Spalte(3, "Erledigt", 3, true, 20),
+            new Spalte(1, "Zu erledigen", 1, false, null, []),
+            new Spalte(2, "In Arbeit", 2, false, null, []),
+            new Spalte(3, "Erledigt", 3, true, 20, []),
         ];
     }
 }

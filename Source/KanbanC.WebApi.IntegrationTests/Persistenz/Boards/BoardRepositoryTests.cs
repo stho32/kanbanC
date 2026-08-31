@@ -174,6 +174,83 @@ public class BoardRepositoryTests
         Assert.That(geladen, Is.Null);
     }
 
+    [Test]
+    public void Wenn_eine_Spalte_Karten_traegt_dann_liefert_Lade_sie_in_aufsteigender_Position()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        var board = repository.LegeAn(new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+        var rueckstand = board.Spalten[0].SpalteId;
+        FuegeKarteEin(datenbank, rueckstand, "Bahn fuellen", 3);
+        FuegeKarteEin(datenbank, rueckstand, "Migration schreiben", 1);
+        FuegeKarteEin(datenbank, rueckstand, "Endpunkt bauen", 2);
+
+        var geladen = repository.Lade(board.BoardId);
+
+        Assert.That(geladen, Is.Not.Null);
+        Assert.That(geladen.Spalten[0].Karten.Select(karte => karte.Titel),
+            Is.EqualTo(new[] { "Migration schreiben", "Endpunkt bauen", "Bahn fuellen" }));
+    }
+
+    [Test]
+    public void Wenn_zwei_Spalten_Karten_tragen_dann_haengt_jede_Karte_nur_an_ihrer_eigenen_Spalte()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        var board = repository.LegeAn(new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+        FuegeKarteEin(datenbank, board.Spalten[0].SpalteId, "Migration schreiben", 1);
+        FuegeKarteEin(datenbank, board.Spalten[1].SpalteId, "Kartenform zeichnen", 1);
+
+        var geladen = repository.Lade(board.BoardId);
+
+        Assert.That(geladen, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(geladen.Spalten[0].Karten.Select(karte => karte.Titel), Is.EqualTo(new[] { "Migration schreiben" }));
+            Assert.That(geladen.Spalten[1].Karten.Select(karte => karte.Titel), Is.EqualTo(new[] { "Kartenform zeichnen" }));
+            Assert.That(geladen.Spalten[2].Karten, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void Wenn_eine_Spalte_keine_Karte_traegt_dann_liefert_Lade_eine_leere_Kartenliste_statt_null()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        var board = repository.LegeAn(new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+
+        var geladen = repository.Lade(board.BoardId);
+
+        Assert.That(geladen, Is.Not.Null);
+        Assert.That(geladen.Spalten.Select(spalte => spalte.Karten), Has.All.Empty);
+    }
+
+    [Test]
+    public void Wenn_die_Karten_eines_fremden_Boards_daneben_liegen_dann_bleiben_sie_beim_Laden_aussen_vor()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        var erstes = repository.LegeAn(new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+        var zweites = repository.LegeAn(new BoardAnlegenAnfrage("Vertrieb", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+        FuegeKarteEin(datenbank, erstes.Spalten[0].SpalteId, "Migration schreiben", 1);
+        FuegeKarteEin(datenbank, zweites.Spalten[0].SpalteId, "Angebot schreiben", 1);
+
+        var geladen = repository.Lade(zweites.BoardId);
+
+        Assert.That(geladen, Is.Not.Null);
+        Assert.That(geladen.Spalten.SelectMany(spalte => spalte.Karten).Select(karte => karte.Titel),
+            Is.EqualTo(new[] { "Angebot schreiben" }));
+    }
+
+    private static void FuegeKarteEin(TemporaereDatenbank datenbank, long spalteId, string titel, int position)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Karte (Spalte, Titel, Position)
+            VALUES (@Spalte, @Titel, @Position)",
+            new { Spalte = spalteId, Titel = titel, Position = position });
+    }
+
     private static List<string> GespeicherteSpaltenbezeichnungen(TemporaereDatenbank datenbank, long boardId)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();

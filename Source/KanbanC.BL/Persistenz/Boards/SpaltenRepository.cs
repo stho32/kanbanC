@@ -4,7 +4,9 @@ using KanbanC.BL.Interfaces.Boards;
 using KanbanC.BL.Interfaces.Persistenz;
 using KanbanC.BL.Models;
 using KanbanC.BL.Operations.Boards;
+using KanbanC.BL.Persistenz.Karten;
 using KanbanC.Contracts.Boards;
+using KanbanC.Contracts.Karten;
 using Microsoft.Data.Sqlite;
 
 namespace KanbanC.BL.Persistenz.Boards;
@@ -16,6 +18,7 @@ public sealed class SpaltenRepository : ISpaltenRepository
         new(["Die Spalten des Boards haben sich zwischenzeitlich geändert; bitte die Reihenfolge erneut setzen."]);
     private static readonly Pruefbefunde BezeichnungWurdeInzwischenVergeben =
         new(["Die Bezeichnung ist inzwischen von einer anderen Spalte dieses Boards belegt; bitte eine andere wählen."]);
+    private static readonly IReadOnlyList<Karte> OhneKarten = [];
     private readonly IDatenbankVerbindungsfabrik _verbindungsfabrik;
 
     public SpaltenRepository(IDatenbankVerbindungsfabrik verbindungsfabrik)
@@ -40,7 +43,7 @@ public sealed class SpaltenRepository : ISpaltenRepository
         {
             var spalteId = FuegeSpalteEin(verbindung, transaktion, boardId, bezeichnung, anfrage, position);
             transaktion.Commit();
-            return Ergebnis<Spalte>.Erfolg(new Spalte(spalteId, bezeichnung, position, anfrage.IstAbschlussspalte, anfrage.Anzeigegrenze));
+            return Ergebnis<Spalte>.Erfolg(new Spalte(spalteId, bezeichnung, position, anfrage.IstAbschlussspalte, anfrage.Anzeigegrenze, OhneKarten));
         }
         catch (SqliteException fehler) when (IstBezeichnungskonflikt(fehler))
         {
@@ -64,8 +67,9 @@ public sealed class SpaltenRepository : ISpaltenRepository
             }
 
             var position = LiesPosition(verbindung, transaktion, spalteId);
+            var karten = Kartenleser.LiesKartenEinerSpalte(verbindung, transaktion, spalteId);
             transaktion.Commit();
-            return Ergebnis<Spalte>.Erfolg(new Spalte(spalteId, bezeichnung, position, anfrage.IstAbschlussspalte, anfrage.Anzeigegrenze));
+            return Ergebnis<Spalte>.Erfolg(new Spalte(spalteId, bezeichnung, position, anfrage.IstAbschlussspalte, anfrage.Anzeigegrenze, karten));
         }
         catch (SqliteException fehler) when (IstBezeichnungskonflikt(fehler))
         {
@@ -88,7 +92,8 @@ public sealed class SpaltenRepository : ISpaltenRepository
             return null; // stil-check: C25 null heisst "Board unbekannt" (404); die leere Liste heisst "Board ohne Spalten"
         }
 
-        return Spaltenleser.LiesSpaltenNachPosition(verbindung, null, boardId);
+        var kartenJeSpalte = Kartenleser.LiesKartenNachPosition(verbindung, null, boardId);
+        return Spaltenleser.LiesSpaltenNachPosition(verbindung, null, boardId, kartenJeSpalte);
     }
 
     public Ergebnis<IReadOnlyList<Spalte>>? SetzeReihenfolge(long boardId, IReadOnlyList<long> reihenfolge)
@@ -103,7 +108,8 @@ public sealed class SpaltenRepository : ISpaltenRepository
         }
 
         var getroffeneZeilen = SchreibePositionen(verbindung, transaktion, boardId, reihenfolge);
-        var spalten = Spaltenleser.LiesSpaltenNachPosition(verbindung, transaktion, boardId);
+        var kartenJeSpalte = Kartenleser.LiesKartenNachPosition(verbindung, transaktion, boardId);
+        var spalten = Spaltenleser.LiesSpaltenNachPosition(verbindung, transaktion, boardId, kartenJeSpalte);
         var reihenfolgeDecktDenBestandNichtMehr = getroffeneZeilen != reihenfolge.Count || spalten.Count != reihenfolge.Count;
         if (reihenfolgeDecktDenBestandNichtMehr)
         {
@@ -142,8 +148,7 @@ public sealed class SpaltenRepository : ISpaltenRepository
 
     private static void VerdichtePositionen(IDbConnection verbindung, IDbTransaction transaktion, long boardId)
     {
-        var verbleibendeSpalten = Spaltenleser.LiesSpaltenNachPosition(verbindung, transaktion, boardId);
-        var lueckenloseReihenfolge = verbleibendeSpalten.Select(spalte => spalte.SpalteId).ToList();
+        var lueckenloseReihenfolge = Spaltenleser.LiesSpalteIdsNachPosition(verbindung, transaktion, boardId);
         SchreibePositionen(verbindung, transaktion, boardId, lueckenloseReihenfolge);
     }
 

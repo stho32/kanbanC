@@ -4,13 +4,16 @@ using Dapper;
 using KanbanC.BL.Interfaces.Boards;
 using KanbanC.BL.Interfaces.Persistenz;
 using KanbanC.BL.Models.Boards;
+using KanbanC.BL.Persistenz.Karten;
 using KanbanC.Contracts.Boards;
+using KanbanC.Contracts.Karten;
 
 namespace KanbanC.BL.Persistenz.Boards;
 
 public sealed class BoardRepository : IBoardRepository
 {
     private const string IsoDatumsformat = "yyyy-MM-dd";
+    private static readonly IReadOnlyList<Karte> OhneKarten = [];
     private readonly IDatenbankVerbindungsfabrik _verbindungsfabrik;
 
     public BoardRepository(IDatenbankVerbindungsfabrik verbindungsfabrik)
@@ -28,7 +31,7 @@ public sealed class BoardRepository : IBoardRepository
         foreach (var vorlage in standardspalten)
         {
             var spalteId = FuegeSpalteEin(verbindung, transaktion, boardId, vorlage);
-            spalten.Add(new Spalte(spalteId, vorlage.Bezeichnung, vorlage.Position, vorlage.IstAbschlussspalte, vorlage.Anzeigegrenze));
+            spalten.Add(new Spalte(spalteId, vorlage.Bezeichnung, vorlage.Position, vorlage.IstAbschlussspalte, vorlage.Anzeigegrenze, OhneKarten));
         }
 
         transaktion.Commit();
@@ -57,7 +60,8 @@ public sealed class BoardRepository : IBoardRepository
             return null;
         }
 
-        var spalten = Spaltenleser.LiesSpaltenNachPosition(verbindung, null, boardId);
+        var kartenJeSpalte = Kartenleser.LiesKartenNachPosition(verbindung, null, boardId);
+        var spalten = Spaltenleser.LiesSpaltenNachPosition(verbindung, null, boardId, kartenJeSpalte);
         return AlsBoard(boardZeile, spalten);
     }
 

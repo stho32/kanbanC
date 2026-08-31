@@ -254,7 +254,7 @@ public class SpaltenServiceTests
 
         public IReadOnlyList<Spalte>? LadeAlle(long boardId)
         {
-            return [new Spalte(1, "Zu erledigen", 1, false, null), new Spalte(2, "In Arbeit", 2, false, null)];
+            return [new Spalte(1, "Zu erledigen", 1, false, null, []), new Spalte(2, "In Arbeit", 2, false, null, [])];
         }
 
         public Ergebnis<IReadOnlyList<Spalte>>? SetzeReihenfolge(long boardId, IReadOnlyList<long> reihenfolge)

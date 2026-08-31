@@ -53,7 +53,7 @@ public sealed class TestSpaltenRepository : ISpaltenRepository
             return null;
         }
 
-        var spalte = new Spalte(_naechsteSpalteId, anfrage.Bezeichnung, spalten.Count + 1, anfrage.IstAbschlussspalte, anfrage.Anzeigegrenze);
+        var spalte = new Spalte(_naechsteSpalteId, anfrage.Bezeichnung, spalten.Count + 1, anfrage.IstAbschlussspalte, anfrage.Anzeigegrenze, []);
         _naechsteSpalteId = _naechsteSpalteId + 1;
         spalten.Add(spalte);
         return Ergebnis<Spalte>.Erfolg(spalte);
