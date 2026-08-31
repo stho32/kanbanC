@@ -131,7 +131,7 @@ zuletzt: 2026-08-31
 | B0078 | Bubble | F0017 | Anlegen im Bahnenfuß | gelb | Test gruen | Klick „+ Karte" → Kartenanlage.razor im Bahnenfuß → Karte entsteht, Board lädt neu | 2-4 | | | | UI; füllt .spaltenbahn-kartenstelle aus R00005; unklar: Zustand, wenn mehrere Bahnen zugleich offen sind |
 | B0079 | Bubble | F0017 | E2E Karte anlegen | gelb | Test gruen | beide Prozesse auf freien Ports → Playwright → US-3, US-4 | 2 | | | | E2E |
 | F0018 | Feature | I0011 | Ungültige Kartenanlage zurückweisen | gelb | AK „Zurückweisung ungültiger Kartenanlage"; US-5 | | | | F0017 | R00006 | |
-| B0080 | Bubble | F0018 | Kartenanfrage prüfen | gelb | Test gruen | KarteAnlegenAnfrage → KartenValidator.Pruefe → Pruefbefunde | 0,4 | | | | Operation; Aufwand belegt (B0027); Befunde: leerer Titel und mehr als 1000 Zeichen nach dem Trimmen |
+| B0080 | Bubble | F0018 | Kartenanfrage prüfen | gruen | Test gruen | KarteAnlegenAnfrage → KartenValidator.Pruefe → Pruefbefunde | 0,4 | | | | Operation; Aufwand belegt (B0027); Befunde: leerer Titel und mehr als 1000 Zeichen nach dem Trimmen |
 | B0081 | Bubble | F0018 | Zurückweisung über die API | gelb | Test gruen | Pruefbefunde → KartenService + KartenEndpunkte → 400 Zurueckweisung, 404 bei fremder Spalte | 0,4 | | | | Integration; Aufwand belegt (B0029) |
 | B0082 | Bubble | F0018 | Zurückweisung in der Oberfläche | gelb | Test gruen | Zurueckweisung → Kartenanlage.razor → lesbare Meldung, Bahn bleibt bedienbar; E2E US-5 | 2 | | | | UI |
 | I0012 | Interaction | D0003 | Karte verschieben | rot | Eine Karte wechselt Spalte und Position; die neue Lage bleibt nach Reload erhalten | | | | I0011 | | |
