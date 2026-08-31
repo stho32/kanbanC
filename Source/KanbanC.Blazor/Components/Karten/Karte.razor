@@ -1,0 +1,10 @@
+<article class="karte" data-karte-id="@Kartendaten.KarteId">
+    <p class="karte-titel">@Kartendaten.Titel</p>
+</article>
+
+@code {
+    // Vollqualifiziert, weil der Komponentenname Karte den gleichnamigen Vertragstyp verdeckt.
+    [Parameter]
+    [EditorRequired]
+    public KanbanC.Contracts.Karten.Karte Kartendaten { get; set; } = null!;
+}

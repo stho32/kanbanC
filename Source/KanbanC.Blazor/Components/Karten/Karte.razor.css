@@ -1,0 +1,17 @@
+.karte {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    background: var(--color-bg);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+}
+
+.karte-titel {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.35;
+    text-wrap: pretty;
+    overflow-wrap: anywhere;
+}

@@ -28,6 +28,10 @@ public sealed class Dienstprozess : IDisposable
         start.ArgumentList.Add("--urls");
         start.ArgumentList.Add(adresse);
         start.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
+        // Ein Testlauf startet die WebApi je Test neu. Der Dateiwaechter der Konfiguration
+        // braucht dafuer keine inotify-Instanz: der Lauf schoepft sonst das Kontingent des
+        // Systems aus und die Dienste sterben beim Start.
+        start.Environment["DOTNET_USE_POLLING_FILE_WATCHER"] = "1";
         foreach (var (schluessel, wert) in umgebung)
         {
             start.Environment[schluessel] = wert;

@@ -4,7 +4,7 @@
     @foreach (var spalte in Spalten)
     {
         var formular = _formulare[spalte.SpalteId];
-        <section class="spaltenbahn" data-spalte-id="@spalte.SpalteId">
+        <section class="spaltenbahn" data-spalte-id="@spalte.SpalteId" @key="spalte.SpalteId">
             <header class="spaltenbahn-kopf">
                 <span class="spaltenbahn-anzeige">
                     <span class="spaltenbahn-bezeichnung">@spalte.Bezeichnung</span>
@@ -32,10 +32,23 @@
                     </div>
                 }
             </header>
-            <div class="spaltenbahn-flaeche"></div>
-            @* Die Stelle für "+ Karte" bleibt leer, bis I0011 sie füllt. *@
+            <div class="spaltenbahn-flaeche">
+                @if (spalte.Karten.Count == 0)
+                {
+                    <p class="spaltenbahn-leer">Noch keine Karte.<br />Unten eine anlegen.</p>
+                }
+                else
+                {
+                    @foreach (var kartendaten in spalte.Karten)
+                    {
+                        <Karte @key="kartendaten.KarteId" Kartendaten="kartendaten" />
+                    }
+                }
+            </div>
             <footer class="spaltenbahn-fuss">
-                <span class="spaltenbahn-kartenstelle"></span>
+                <div class="spaltenbahn-kartenstelle">
+                    <Kartenanlage BoardId="BoardId" SpalteId="spalte.SpalteId" KarteWurdeAngelegt="KarteWurdeAngelegt" />
+                </div>
             </footer>
         </section>
     }
@@ -47,7 +60,14 @@
 
     [Parameter]
     [EditorRequired]
+    public long BoardId { get; set; }
+
+    [Parameter]
+    [EditorRequired]
     public IReadOnlyList<Spalte> Spalten { get; set; } = [];
+
+    [Parameter]
+    public EventCallback KarteWurdeAngelegt { get; set; }
 
     [Parameter]
     public bool IstBearbeitbar { get; set; }

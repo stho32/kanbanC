@@ -1,0 +1,92 @@
+@using KanbanC.Blazor.Services
+@using KanbanC.Contracts.Boards
+@using KanbanC.Contracts.Karten
+@inject KartenApiKlient KartenKlient
+
+<div class="kartenanlage">
+    @if (_anlageIstOffen)
+    {
+        @if (_zurueckweisung is not null)
+        {
+            <div class="meldung meldung-abweisung kartenanlage-zurueckweisung" role="alert">
+                <ul>
+                    @foreach (var befund in _zurueckweisung.Befunde)
+                    {
+                        <li>@befund</li>
+                    }
+                </ul>
+            </div>
+        }
+        @if (_fehlermeldung is not null)
+        {
+            <div class="meldung kartenanlage-fehlermeldung" role="alert">@_fehlermeldung</div>
+        }
+        <input class="input kartenanlage-titel" aria-label="Titel der Karte" placeholder="Titel der Karte" @bind="_titel" />
+        <div class="kartenanlage-knoepfe">
+            <button type="button" class="btn btn-haupt kartenanlage-anlegen" @onclick="LegeKarteAn">Anlegen</button>
+            <button type="button" class="btn btn-neben kartenanlage-abbrechen" @onclick="BrichAb">Abbrechen</button>
+        </div>
+    }
+    else
+    {
+        <button type="button" class="btn btn-schlicht kartenanlage-oeffnen" aria-label="Karte anlegen" @onclick="OeffneAnlage">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+            Karte
+        </button>
+    }
+</div>
+
+@code {
+    private bool _anlageIstOffen;
+    private string _titel = "";
+    private Zurueckweisung? _zurueckweisung;
+    private string? _fehlermeldung;
+
+    [Parameter]
+    [EditorRequired]
+    public long BoardId { get; set; }
+
+    [Parameter]
+    [EditorRequired]
+    public long SpalteId { get; set; }
+
+    [Parameter]
+    public EventCallback KarteWurdeAngelegt { get; set; }
+
+    private void OeffneAnlage()
+    {
+        _anlageIstOffen = true;
+    }
+
+    private void BrichAb()
+    {
+        SchliesseAnlage();
+    }
+
+    private async Task LegeKarteAn()
+    {
+        _fehlermeldung = await WebApiAufruf.MitAusfallmeldung(SchreibeKarte);
+    }
+
+    private async Task SchreibeKarte()
+    {
+        var ergebnis = await KartenKlient.LegeKarteAn(BoardId, SpalteId, new KarteAnlegenAnfrage(_titel));
+        if (ergebnis.WurdeZurueckgewiesen)
+        {
+            // Die abgelehnte Eingabe bleibt zum Korrigieren stehen.
+            _zurueckweisung = ergebnis.Zurueckweisung;
+            return;
+        }
+
+        SchliesseAnlage();
+        await KarteWurdeAngelegt.InvokeAsync();
+    }
+
+    private void SchliesseAnlage()
+    {
+        _anlageIstOffen = false;
+        _titel = "";
+        _zurueckweisung = null;
+        _fehlermeldung = null;
+    }
+}

@@ -2,8 +2,10 @@
 @using KanbanC.Contracts.Boards
 @inject SpaltenApiKlient SpaltenKlient
 
-<Spaltenbahnen Spalten="Spalten"
+<Spaltenbahnen BoardId="BoardId"
+               Spalten="Spalten"
                IstBearbeitbar="true"
+               KarteWurdeAngelegt="UebernimmAenderung"
                SpalteGeaendert="SpeichereSpalte"
                SpalteWeiterVorn="SchiebeHoch"
                SpalteWeiterHinten="SchiebeRunter"

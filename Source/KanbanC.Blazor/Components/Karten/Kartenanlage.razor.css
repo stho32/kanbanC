@@ -1,0 +1,28 @@
+.kartenanlage {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.kartenanlage-titel {
+    width: 100%;
+}
+
+.kartenanlage-knoepfe {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.kartenanlage-zurueckweisung,
+.kartenanlage-fehlermeldung {
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+    font-size: 11px;
+    line-height: 1.35;
+    background: var(--color-bg);
+}
+
+.kartenanlage-zurueckweisung ul {
+    padding-left: var(--space-3);
+}

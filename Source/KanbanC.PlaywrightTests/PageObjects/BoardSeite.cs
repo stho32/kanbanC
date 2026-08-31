@@ -41,6 +41,14 @@ public sealed class BoardSeite
 
     public ILocator Kartenstellen => _seite.Locator("#spaltenbahnen .spaltenbahn-kartenstelle");
 
+    public ILocator Karten => _seite.Locator("#spaltenbahnen .karte");
+
+    public ILocator Kartentitel => _seite.Locator("#spaltenbahnen .karte-titel");
+
+    public ILocator LeerhinweiseDerBahnen => _seite.Locator("#spaltenbahnen .spaltenbahn-leer");
+
+    public ILocator KarteAnlegenKnoepfe => _seite.Locator("#spaltenbahnen .kartenanlage-oeffnen");
+
     public ILocator MeldungUnbekanntesBoard => _seite.Locator("#board-unbekannt");
 
     public ILocator Fehlermeldung => _seite.Locator("#fehlermeldung");
@@ -152,5 +160,47 @@ public sealed class BoardSeite
     public async Task EntferneSpalte(ILocator bahn)
     {
         await bahn.Locator(".spalte-entfernen").ClickAsync();
+    }
+
+    public ILocator KartentitelDerBahn(ILocator bahn)
+    {
+        return bahn.Locator(".karte-titel");
+    }
+
+    public ILocator LeerhinweisDerBahn(ILocator bahn)
+    {
+        return bahn.Locator(".spaltenbahn-leer");
+    }
+
+    public ILocator KartenanlageTitelfeld(ILocator bahn)
+    {
+        return bahn.Locator(".kartenanlage-titel");
+    }
+
+    public ILocator KartenanlageZurueckweisung(ILocator bahn)
+    {
+        return bahn.Locator(".kartenanlage-zurueckweisung");
+    }
+
+    public ILocator KartenanlageFehlermeldung(ILocator bahn)
+    {
+        return bahn.Locator(".kartenanlage-fehlermeldung");
+    }
+
+    public async Task OeffneKartenanlage(ILocator bahn)
+    {
+        await bahn.Locator(".kartenanlage-oeffnen").ClickAsync();
+        await Assertions.Expect(KartenanlageTitelfeld(bahn)).ToBeVisibleAsync();
+    }
+
+    public async Task LegeKarteAn(ILocator bahn, string titel)
+    {
+        await KartenanlageTitelfeld(bahn).FillAsync(titel);
+        await bahn.Locator(".kartenanlage-anlegen").ClickAsync();
+    }
+
+    public async Task BrichKartenanlageAb(ILocator bahn)
+    {
+        await bahn.Locator(".kartenanlage-abbrechen").ClickAsync();
     }
 }
