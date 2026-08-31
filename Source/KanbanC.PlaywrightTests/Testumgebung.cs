@@ -12,7 +12,6 @@ public sealed class Testumgebung
     private const string Browser = "chromium";
     private const string StartseitenPfad = "/";
     private static Testumgebung? _aktuelle;
-    private readonly string _webApiAdresse;
     private readonly string _webApiProjekt;
     private readonly string _blazorProjekt;
     private readonly string _konfiguration;
@@ -26,7 +25,7 @@ public sealed class Testumgebung
         _konfiguration = Buildkonfiguration();
         _webApiProjekt = Path.Combine(wurzel, "Source", "KanbanC.WebApi");
         _blazorProjekt = Path.Combine(wurzel, "Source", "KanbanC.Blazor");
-        _webApiAdresse = $"http://127.0.0.1:{FreierPort.Ermittle()}";
+        WebApiAdresse = $"http://127.0.0.1:{FreierPort.Ermittle()}";
         BlazorAdresse = $"http://127.0.0.1:{FreierPort.Ermittle()}";
     }
 
@@ -45,12 +44,14 @@ public sealed class Testumgebung
 
     public string BlazorAdresse { get; }
 
+    public string WebApiAdresse { get; }
+
     [OneTimeSetUp] // stil-check: C18 Prozess-Infrastruktur (Blazor einmal je Lauf), kein Arrange eines Tests
     public async Task StarteBlazor()
     {
         // Die Shell-Variable BROWSER (Standardbrowser des Nutzers) würde die .runsettings von Playwright überstimmen.
         Environment.SetEnvironmentVariable(BrowserVariable, Browser);
-        var umgebung = new Dictionary<string, string> { ["WebApi__BasisAdresse"] = _webApiAdresse + "/" };
+        var umgebung = new Dictionary<string, string> { ["WebApi__BasisAdresse"] = WebApiAdresse + "/" };
         _blazor = await Dienstprozess.Starte(_blazorProjekt, Assembly(_blazorProjekt), BlazorAdresse, umgebung, StartseitenPfad);
         _aktuelle = this;
     }
@@ -77,7 +78,7 @@ public sealed class Testumgebung
     private async Task StarteWebApi()
     {
         var umgebung = new Dictionary<string, string> { ["Datenhaltung__Verbindungszeichenfolge"] = $"Data Source={_datenbankDateipfad}" };
-        _webApi = await Dienstprozess.Starte(_webApiProjekt, Assembly(_webApiProjekt), _webApiAdresse, umgebung, ZustandsPfad);
+        _webApi = await Dienstprozess.Starte(_webApiProjekt, Assembly(_webApiProjekt), WebApiAdresse, umgebung, ZustandsPfad);
     }
 
     private void StoppeWebApi()

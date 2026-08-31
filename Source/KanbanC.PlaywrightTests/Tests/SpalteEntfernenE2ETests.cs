@@ -1,3 +1,4 @@
+using KanbanC.PlaywrightTests.Infrastructure;
 using KanbanC.PlaywrightTests.PageObjects;
 using Microsoft.Playwright.NUnit;
 
@@ -86,6 +87,33 @@ public class SpalteEntfernenE2ETests : PageTest
         await Expect(zweiteSeite.Spaltenbahnanzeigen).ToHaveCountAsync(3);
         await Expect(zweiteSeite.Spaltenbahnanzeigen.Nth(2)).ToHaveTextAsync("Wartet auf Zulieferung");
         await Expect(zweiteSeite.SpaltenZurueckweisung).ToBeHiddenAsync();
+    }
+
+    // Ergaenzt aus R00006: fuer die leere Spalte gilt das R00002-Kriterium unveraendert weiter,
+    // fuer die belegte gilt ab hier die Zurueckweisung.
+    [Test]
+    public async Task Wenn_eine_Spalte_mit_Karten_entfernt_wird_dann_erscheint_eine_lesbare_Meldung_und_die_Bahn_bleibt_stehen()
+    {
+        var seite = await BoardMitStandardspalten();
+        using var webApi = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        var spalten = (await webApi.LadeBoard(1)).Spalten;
+        await webApi.LegeKarteAn(1, spalten[0].SpalteId, "Migration schreiben");
+        await webApi.LegeKarteAn(1, spalten[0].SpalteId, "Endpunkt bauen");
+        await seite.OeffneImLayoutModus(1);
+        await Expect(seite.Karten).ToHaveCountAsync(2);
+
+        await seite.EntferneSpalte(seite.SpaltenbahnAnStelle(0));
+
+        await Expect(seite.SpaltenZurueckweisung).ToBeVisibleAsync();
+        await Expect(seite.SpaltenZurueckweisung).ToContainTextAsync("2 Karten");
+        await Expect(seite.Ausnahmeanzeige).ToBeHiddenAsync();
+        await Expect(seite.Spaltenbahnanzeigen).ToHaveCountAsync(3);
+        await Expect(seite.Karten).ToHaveCountAsync(2);
+
+        await seite.EntferneSpalte(seite.SpaltenbahnAnStelle(1));
+
+        await Expect(seite.Spaltenbahnanzeigen).ToHaveCountAsync(2);
+        await Expect(seite.SpaltenZurueckweisung).ToBeHiddenAsync();
     }
 
     private async Task<BoardSeite> BoardMitStandardspalten()
