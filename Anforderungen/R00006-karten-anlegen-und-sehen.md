@@ -1,6 +1,6 @@
 ---
 id: R00006
-status: Neu
+status: In Arbeit
 datum: 2026-08-30
 ---
 
