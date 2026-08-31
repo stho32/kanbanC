@@ -124,6 +124,41 @@ public class MigrationslaeuferTests
         Assert.That(Bezeichnungen(datenbank, boardId)[3], Is.EqualTo("Abgenommen"));
     }
 
+    [Test]
+    public void Wenn_die_Migration_gelaufen_ist_dann_traegt_das_Schema_die_Tabelle_Karte_mit_dem_Index_auf_ihrer_Spalte()
+    {
+        using var datenbank = new TemporaereDatenbank();
+
+        new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Tabellennamen(datenbank), Does.Contain("Karte"));
+            Assert.That(Indexdefinition(datenbank, "IX_Karte_Spalte"),
+                Is.EqualTo("CREATE INDEX IX_Karte_Spalte ON Karte (Spalte)"));
+            Assert.That(Spaltennamen(datenbank, "Karte"), Is.EqualTo(new[] { "KarteId", "Spalte", "Titel", "Position" }));
+        });
+    }
+
+    [Test]
+    public void Wenn_FuehreAus_auf_einer_Datei_mit_Karten_ein_zweites_Mal_laeuft_dann_bleiben_Schema_und_Karten_unveraendert()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "Migration schreiben", 1);
+        FuegeKarteEin(datenbank, spalteId, "Endpunkt bauen", 2);
+        var schemaVorher = SchemaDefinitionen(datenbank);
+
+        Assert.That(() => new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus(), Throws.Nothing);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(SchemaDefinitionen(datenbank), Is.EqualTo(schemaVorher));
+            Assert.That(Kartentitel(datenbank, spalteId), Is.EqualTo(new[] { "Migration schreiben", "Endpunkt bauen" }));
+        });
+    }
+
     private static long LegeBoardAn(TemporaereDatenbank datenbank)
     {
         var repository = new BoardRepository(datenbank.Verbindungsfabrik);
@@ -145,6 +180,43 @@ public class MigrationslaeuferTests
             INSERT INTO Spalte (Board, Bezeichnung, Position, IstAbschlussspalte, Anzeigegrenze)
             VALUES (@Board, @Bezeichnung, @Position, 0, NULL)",
             new { Board = boardId, Bezeichnung = bezeichnung, Position = position });
+    }
+
+    private static long ErsteSpalteId(TemporaereDatenbank datenbank, long boardId)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.ExecuteScalar<long>(@"
+            SELECT MIN(SpalteId)
+              FROM Spalte
+             WHERE Board = @Board", new { Board = boardId });
+    }
+
+    private static void FuegeKarteEin(TemporaereDatenbank datenbank, long spalteId, string titel, int position)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Karte (Spalte, Titel, Position)
+            VALUES (@Spalte, @Titel, @Position)",
+            new { Spalte = spalteId, Titel = titel, Position = position });
+    }
+
+    private static string[] Kartentitel(TemporaereDatenbank datenbank, long spalteId)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.Query<string>(@"
+            SELECT Titel
+              FROM Karte
+             WHERE Spalte = @Spalte
+             ORDER BY Position", new { Spalte = spalteId }).ToArray();
+    }
+
+    private static string[] Spaltennamen(TemporaereDatenbank datenbank, string tabelle)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.Query<string>($@"
+            SELECT name
+              FROM pragma_table_info('{tabelle}')
+             ORDER BY cid").ToArray();
     }
 
     private static string[] Bezeichnungen(TemporaereDatenbank datenbank, long boardId)
