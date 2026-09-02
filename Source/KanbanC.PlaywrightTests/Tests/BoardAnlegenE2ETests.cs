@@ -67,6 +67,6 @@ public class BoardAnlegenE2ETests : PageTest
         await Expect(board.Spaltenbezeichnungen.Nth(1)).ToHaveTextAsync("In Arbeit");
         await Expect(board.Spaltenbahnen.Nth(2)).ToContainTextAsync("Erledigt");
         await Expect(board.Abschlussvermerke).ToHaveCountAsync(1);
-        await Expect(board.Abschlussvermerke).ToHaveTextAsync(["Abschlussspalte, Anzeigegrenze 20"]);
+        await Expect(board.Abschlussvermerke).ToHaveTextAsync(["Grenze 20"]);
     }
 }

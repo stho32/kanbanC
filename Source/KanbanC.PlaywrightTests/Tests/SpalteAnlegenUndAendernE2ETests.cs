@@ -53,13 +53,13 @@ public class SpalteAnlegenUndAendernE2ETests : PageTest
 
         await seite.BearbeiteSpalte(seite.SpaltenbahnAnStelle(3), "Abgenommen", true, "10");
 
-        await Expect(seite.Spaltenbahnanzeigen.Nth(3)).ToContainTextAsync("Abschlussspalte, Anzeigegrenze 10");
-        await Expect(seite.Spaltenbahnanzeigen.Nth(2)).ToContainTextAsync("Abschlussspalte, Anzeigegrenze 20");
+        await Expect(seite.Spaltenbahnanzeigen.Nth(3)).ToContainTextAsync("Grenze 10");
+        await Expect(seite.Spaltenbahnanzeigen.Nth(2)).ToContainTextAsync("Grenze 20");
         await Expect(seite.Abschlussvermerke).ToHaveCountAsync(2);
 
         await seite.OeffneImLayoutModus(1);
-        await Expect(seite.Spaltenbahnanzeigen.Nth(3)).ToContainTextAsync("Anzeigegrenze 10");
-        await Expect(seite.Spaltenbahnanzeigen.Nth(2)).ToContainTextAsync("Anzeigegrenze 20");
+        await Expect(seite.Spaltenbahnanzeigen.Nth(3)).ToContainTextAsync("Grenze 10");
+        await Expect(seite.Spaltenbahnanzeigen.Nth(2)).ToContainTextAsync("Grenze 20");
     }
 
     [Test]
@@ -111,7 +111,7 @@ public class SpalteAnlegenUndAendernE2ETests : PageTest
         await Expect(seite.SpaltenZurueckweisung).ToContainTextAsync("Eine Abschlussspalte braucht eine Anzeigegrenze.");
         await Expect(seite.Spaltenbahnanzeigen).ToHaveCountAsync(3);
         await Expect(seite.Spaltenbahnen.Filter(new() { HasTextString = "Abgenommen" })).ToHaveCountAsync(0);
-        await Expect(seite.Spaltenbahnen.Filter(new() { HasTextString = "Abschlussspalte" })).ToHaveCountAsync(1);
+        await Expect(seite.Abschlusshaken).ToHaveCountAsync(1);
     }
 
     [Test]

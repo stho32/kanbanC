@@ -1,9 +1,10 @@
 .spaltenbahnen {
     display: flex;
+    flex: 1;
     align-items: stretch;
-    gap: var(--space-3);
+    gap: 0;
+    min-height: 0;
     overflow-x: auto;
-    padding-bottom: var(--space-3);
 }
 
 .spaltenbahn {
@@ -11,15 +12,24 @@
     flex: 0 0 16rem;
     flex-direction: column;
     background: var(--color-surface);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-divider);
+}
+
+/* Das Board liest sich als Tabelle: die Bahnen stossen aneinander und teilen sich
+   ihre Trennlinie, statt als abgerundete Kaesten nebeneinanderzuliegen. */
+.spaltenbahn + .spaltenbahn {
+    border-left: none;
 }
 
 .spaltenbahn-kopf {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
+    align-content: flex-start;
     gap: var(--space-2);
+    /* Eine feste Zeilenhöhe für alle Köpfe: sonst schiebt die kleinere Schrift des
+       Vermerks die Grundlinie um ein Pixel und die Trennlinien stehen nicht auf einer Höhe. */
+    line-height: var(--space-6);
     padding: var(--space-2) var(--space-3);
     border-bottom: 1px solid var(--color-divider);
 }
@@ -42,7 +52,6 @@
 }
 
 .spaltenbahn-vermerk {
-    flex-basis: 100%;
     font-size: 11px;
     color: color-mix(in srgb, var(--color-text) 55%, transparent);
 }
@@ -60,8 +69,9 @@
     flex: 1;
     flex-direction: column;
     gap: var(--space-2);
-    min-height: 10rem;
-    padding: var(--space-3);
+    min-height: 0;
+    padding: var(--space-2);
+    overflow-y: auto;
 }
 
 .spaltenbahn-flaeche:has(.spaltenbahn-leer) {

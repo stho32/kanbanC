@@ -17,7 +17,7 @@ public class LayoutModusE2ETests : PageTest
         await Expect(seite.Spaltenbezeichnungen.Nth(1)).ToHaveTextAsync("In Arbeit");
         await Expect(seite.Spaltenbezeichnungen.Nth(2)).ToHaveTextAsync("Erledigt");
         await Expect(seite.Abschlussvermerke).ToHaveCountAsync(1);
-        await Expect(seite.Abschlussvermerke.Nth(0)).ToContainTextAsync("Abschlussspalte, Anzeigegrenze 20");
+        await Expect(seite.Abschlussvermerke.Nth(0)).ToContainTextAsync("Grenze 20");
         await Expect(seite.Bahnbearbeitungen).ToHaveCountAsync(0);
         await Expect(seite.Anlegeformular).ToHaveCountAsync(0);
         await Expect(seite.LayoutBearbeiten).ToBeVisibleAsync();
