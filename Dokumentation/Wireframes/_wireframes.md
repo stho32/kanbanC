@@ -5,8 +5,8 @@ canvas: https://claude.ai/code/artifact/b61e3007-056d-44e0-9cf5-7350c22f858a
 seed: .claude/wireframes/kanbanc.html
 art: mockup
 richtung: aus dem Bestand — gestaltung.css (Caprasimo/Figtree, warmes Sandklima, runde Formen)
-stand: 2026-08-31
-zurueckgeholt: 2026-08-31
+stand: 2026-09-02
+zurueckgeholt: 2026-09-02
 ---
 
 # Wireframes — KanbanC
@@ -25,7 +25,7 @@ Reife je Dialog wird aus dem Dateibestand gerechnet: `D0002` und `D0003` stehen 
 | --- | --- |
 | `Main.dc.html` | Screen-Flow: neun Dialog-Kästen, dreizehn beschriftete Übergänge, Ampel je Dialog |
 | `D0002.dc.html` | **Kontributoren führen**, 1440×1560 — die Liste mit den drei Arten als Hauptzustand (I0006, I0007, I0009); darunter die Identitätswahl I0008 als **zwei nebeneinander gestellte Alternativen** B und C, damit die Entscheidung am Bild fällt |
-| `D0003.dc.html` | **Board bedienen**, 1440×900 — gefüllte Spaltenbahnen mit der Kartenform; die fünf Interactions I0010–I0014 als Zustände im selben Schirm, dazu drei Randfälle |
+| `D0003.dc.html` | **Board bedienen**, Fenster 1440×900, Rahmen 1100 (die Lesehilfe steht unter dem Fenster) — gefüllte Spaltenbahnen mit der Kartenform; die fünf Interactions I0010–I0014 als Zustände im selben Schirm, dazu drei Randfälle. **Am 2026-09-02 auf den gebauten Stand nachgezogen** |
 | `canvas.json` | Layout des Canvas: der Flow oben, D0003 und D0002 in der Reihe darunter, Start in der Canvas-Ansicht |
 | `kanbanc-wireframes.html`, `wireframes.js`, `styles.css`, `README.md` | **älterer Satz, unangetastet** — acht gezeichnete Schirme mit Varianten, aus denen `verfeinern` schöpft; siehe Offene Fragen |
 
@@ -84,6 +84,26 @@ Der Lauf fand keinen Menschen vor. Alle Entscheidungen sind nach der Regel
 „entscheiden statt raten, Annahme benennen" getroffen und stehen hier zur
 Widerrede.
 
+**Zur Richtung des Nachführens.** Für den älteren Wireframe-Satz gilt die Regel aus
+seiner [README.md](README.md): *„Diese Dateien werden nicht nachgefuehrt, wenn der
+Code sie einholt. Weicht der Code ab, gehoert das in eine Anforderung."* Sie gilt
+weiter und ist der Normalfall — der alte Satz bleibt unangetastet.
+
+**Das Nachziehen von `D0003.dc.html` am 2026-09-02 ist die Ausnahme, und zwar eine
+mit Beleg.** Die Abweichung ist keine stille Drift, sondern in
+[`R00005`](../../Anforderungen/R00005-oberflaeche-nach-wireframes.md) unter
+„Notizen" als *„Zwei abgelöste Zusagen aus der Gestaltungsarbeit nach der
+Umsetzung"* dokumentiert: die entfallene Wortmarke samt ausgeblendetem
+Navigationspunkt `Boards` und der gekürzte Vermerk „Grenze 20". Weil die
+Anforderung die Änderung bereits trägt, bleibt für das Artboard nur die Wahl,
+falsch zu bleiben oder nachzuziehen. Die `.dc.html`-Artboards sind außerdem, anders
+als der alte Satz, **Vorlage für noch nicht gebaute Interactions** (hier I0010–I0014
+für `R00006`) — eine Vorlage, die den gebauten Rahmen falsch zeigt, erzeugt beim
+Bauen genau den Diff, den sie verhindern soll. **Daraus wird keine Regel:** ein
+Artboard wird nur nachgezogen, wenn eine Anforderung die Abweichung bereits
+dokumentiert. Fehlt dieser Beleg, gilt weiter der Normalfall — die Abweichung
+gehört in eine Anforderung, nicht ins Bild.
+
 | Datum | Frage | Entscheidung | Grund |
 |---|---|---|---|
 | 2026-08-30 | Mockup oder Prototyp? | `art: mockup` | Der Screen-Flow ist eine Landkarte, keine bedienbare Oberfläche; ob einzelne Schirme klickbar gebraucht werden, entscheidet sich erst beim jeweiligen Dialog. |
@@ -118,6 +138,13 @@ Widerrede.
 | 2026-08-31 | Kachel-Avatare der Identitätswahl | **48 px** statt der gesetzten 20 px | 20 px ist der Durchmesser in Zeile und Karte. Variante B zeigt drei Kacheln über die halbe Schirmbreite; derselbe Kreis wäre dort kein Bedienelement mehr, sondern ein Punkt. Alle übrigen Avatare im Artboard bleiben bei 20 px. |
 | 2026-08-31 | Nachgezogen nach dem Gegenlesen | Radius 12 → 16 px · Platzhalterhöhe 34 → 35.2 px (`--space-8`) · Symbolfläche 28 → 36 px (`.btn-symbol`) · Deckkraft 0.62/0.55 → 0.45 (`.btn:disabled`) · Strichstärke 2.4 → 2.2 · Rahmenhöhe 1520 → 1560 px | Sieben freie Zahlen, die weder ein Token trafen noch in `D0003.dc.html` präzedenziert waren. Der Sinn dieses Artboards ist, exakte Werte vorzugeben — eine gerundete Zahl darin wäre eine stille Abweichung, die die Umsetzung erbt. Die 36-px-Flächen strecken fünf Tabellenzeilen, daher der höhere Rahmen. |
 | 2026-08-31 | Stillgelegte Zeile ist 13 px flacher als die aktiven | `min-height: 36px` auf der Pflege-Zelle | Die aktiven Zeilen bekommen ihre Höhe aus den 36-px-Symbolflächen; die stillgelegte trägt statt dessen den Textknopf „zurückholen". Eine Tabelle lebt vom gleichmäßigen Zeilenrhythmus — der Bruch wäre als Absicht lesbar gewesen, ist aber keine. |
+| 2026-09-02 | **D0003** — Artboard nachziehen oder Abweichung melden? | **nachziehen** | Die sechs Änderungen sind über `R00005` „Notizen" belegt; das Artboard ist zugleich die Vorlage für `R00006`. Siehe den Absatz „Zur Richtung des Nachführens" über dieser Tabelle. |
+| 2026-09-02 | Wohin mit der Lesehilfe, wenn das Board die volle Fensterhöhe füllt? | **unter das Fenster**, außerhalb der 1440×900 | Der gebaute Schirm hat genau zwei Elemente übereinander — Navigationszeile und Board. Läge die Lesehilfe weiter im Fenster, zeigte das Artboard eine dritte Zeile, die es nicht gibt. Sie gehört ohnehin dem Wireframe, nicht dem Schirm. |
+| 2026-09-02 | Rahmenhöhe in `canvas.json` | 900 → **1100** | Gemessen, nicht geschätzt (Chromium, Google-Fonts-Fassung derselben Schriften): Fenster 900 px, Lesehilfe 140,6 px, zusammen 1040,6 px. 1100 gibt 5,7 % Reserve; der Überschuss trägt die Grundfarbe des Lesehilfe-Bandes `#ebddc5` und ist deshalb unsichtbar. Das Artboard wird durch den entfallenen Boardkopf **nicht** flacher, weil die Lesehilfe aus dem Fenster herausrückt — die Boardfläche selbst gewinnt rund 100 px. |
+| 2026-09-02 | Kartenzahl im Bahnenkopf: gefüllt lassen, obwohl der Code die Stelle leer reserviert? | **gefüllt** | `R00005` stellt I0004 ausdrücklich out of scope („die Bahnen bekommen nur die Stellen"); das Artboard zeigt aber die Zielform, wie schon bei den vier Kartenelementen fremder Dialogs. Die Lesehilfe benennt es jetzt ausdrücklich als später gebaut. Eine leere Stelle zu zeichnen hieße, die Zielform zu verschweigen. |
+| 2026-09-02 | Fuß der Abschlussspalte: `+ Karte` oder „Ältere nachladen"? | **beides** — `+ Karte` im Fuß, „Ältere nachladen" ans Ende der Bahnenfläche | Der gebaute Fuß trägt in **jeder** Bahn die Kartenanlage; ihn in der Abschlussspalte durch etwas anderes zu ersetzen wäre eine erfundene Ausnahme. Das Bedienelement für I0013 bleibt trotzdem sichtbar, wie der Kontrakt es verlangt — es sitzt unter dem Nachlade-Hinweis, wo es hingehört. |
+| 2026-09-02 | Radius des `⋯`-Menüs, das der Code nicht kennt | `--radius-xs` 4 px | Karten sind jetzt fast eckig. Ein 16-px-Menü unmittelbar auf einer 4-px-Karte läse sich als zweites Formensystem. Die Zurückweisung dagegen behält 16 px, weil `.meldung` in `oberflaeche.css` gebaut ist — dort wird nichts angeglichen, was der Code festlegt. |
+| 2026-09-02 | Eingabefeld der Kartenanlage steht auf der Bahn in derselben Farbe wie die Bahn | **so gezeichnet**, nicht korrigiert | `.input` trägt `background: var(--color-surface)`, und die Bahn ist `--color-surface`: das Feld zeigt sich nur als umrandete Pille. `.karte` und `.meldung` sind für diesen Fall auf `--color-bg` gedreht worden, `.input` nicht. Ob das Absicht ist, entscheidet nicht das Artboard — es zeigt, was gebaut ist. Als Befund unter Offene Fragen 11. |
 
 ## Zuordnung Schirm → Dialog
 
@@ -251,3 +278,30 @@ Die Gegenrichtung, Schirm → Dialogs, in Kurzform:
    reservierte leere Stelle im Markup (wie `B0063` es für den Bahnenkopf gemacht hat)
    oder gar nicht anlegen. Das Artboard zeigt die Zielform; welchen Weg die
    Umsetzung nimmt, gehört in die Anforderung.
+
+9. **Der Kopf der Abschlussspalte ist einen Pixel höher als die vier anderen.**
+   Gemessen am gebauten Stand: 47 px gegenüber 46 px, die Trennlinie sitzt dort auf
+   96,38 statt 95,38 px. Ursache ist der Vermerk „Grenze 20" (11 px) neben der
+   Bezeichnung (15 px) in `.spaltenbahn-anzeige`, das mit `align-items: baseline`
+   ausgerichtet ist — nicht das Häkchen und nicht die Kartenzahl (durch Wegnehmen
+   je einzeln nachgewiesen). Die feste `line-height: var(--space-6)` auf dem Kopf
+   fängt den äußeren Flex-Container ab, den inneren nicht. Das Artboard zeichnet
+   den Rest, statt ihn wegzuglätten. **Kein Auftrag am Code** — wer die letzte
+   Pixelzeile will, gibt `.spaltenbahn-anzeige` eine feste Höhe oder richtet es
+   auf `center` statt `baseline` aus; das gehört in eine Anforderung.
+
+10. **Zwei Regeln beschreiben denselben Kopfzeilen-Inhalt, und die aus der
+    Kopfzeile gewinnt.** `Board.razor.css` setzt `.board-name` auf 18 px und
+    `.board-zurueck` auf 16 px in `--color-accent`; `Kopfzeile.razor.css` setzt
+    dieselben Elemente über `::deep` auf 17 px und den Rückweg auf 15 px in
+    `--color-text` bei 60 %. Die `::deep`-Regel ist spezifischer
+    (`.kopfzeile[b-…] .board-name` gegen `.board-name[b-…]`), sie gewinnt in
+    beiden Fällen. Das Artboard zeichnet den Gewinner — also einen gedämpften
+    Rückweg, keinen terrakottafarbenen. Die unterlegenen Werte in
+    `Board.razor.css` sind tot; das aufzuräumen ist Sache einer Anforderung.
+
+11. **Das Eingabefeld der Kartenanlage ist auf der Bahn fast unsichtbar.** Siehe
+    die Entscheidung vom 2026-09-02: `.input` bleibt `--color-surface` auf einer
+    Bahn derselben Farbe, während `.karte` und `.meldung` für genau diesen Fall
+    auf `--color-bg` gedreht wurden. Fällt beim Bauen von `R00006` auf oder nie.
+

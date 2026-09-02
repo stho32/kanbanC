@@ -9,10 +9,13 @@
 <helmet>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@300..900&display=swap">
   <style>
-    /* Werte exakt aus Source/KanbanC.Blazor/wwwroot/gestaltung.css und oberflaeche.css
-       uebernommen, nichts gerundet. Die Bahnenmasse stammen aus
-       Components/Spalten/Spaltenbahnen.razor.css (R00005, I0041 gruen),
-       der Kopf aus Components/Pages/Board.razor(.css) und Layout/Kopfzeile.razor(.css). */
+    /* Werte exakt aus dem gebauten Stand uebernommen, nichts gerundet:
+       Source/KanbanC.Blazor/wwwroot/gestaltung.css und oberflaeche.css (Tokens und Formen),
+       Components/Layout/Kopfzeile.razor(.css) und MainLayout.razor(.css) (Navigationszeile,
+       volle Fensterhoehe), Components/Pages/Board.razor(.css) (Kopfdaten in Zone 1),
+       Components/Spalten/Spaltenbahnen.razor(.css) (Bahnen als Tabelle, Kopf einzeilig),
+       Components/Karten/Karte.razor(.css) und Kartenanlage.razor(.css).
+       Stand des Codes: 2026-09-02, nachgezogen mit /wireframe verfeinern D0003. */
     :root {
       --color-bg: #f5ead8;
       --color-surface: #ebddc5;
@@ -42,7 +45,9 @@
       --space-3: 13.2px;
       --space-4: 17.6px;
       --space-6: 26.4px;
+      --space-8: 35.2px;
 
+      --radius-xs: 4px;
       --radius-md: 16px;
 
       --shadow-sm: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent);
@@ -74,267 +79,297 @@
   </style>
 </helmet>
 
+<div style="width: 1440px; background: #ebddc5; display: flex; flex-direction: column">
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     Das Fenster: 1440 × 900. Genau zwei Elemente uebereinander — die
+     Navigationszeile und das Board. Einen Boardkopf als eigene Zeile gibt es
+     nicht mehr; seine Daten stehen in Zone 1 der Navigationszeile.
+     ══════════════════════════════════════════════════════════════════════ -->
 <div style="position: relative; width: 1440px; height: 900px; background: #f5ead8; overflow: hidden; display: flex; flex-direction: column">
 
-  <!-- ══ Kopfzeile — Layout/Kopfzeile.razor ══════════════════════════════════ -->
-  <header style="display: flex; align-items: center; gap: 26.4px; padding: 13.2px 26.4px; background: #ebddc5; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent); flex: 0 0 auto">
-    <span style="font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 18px; color: #201e1d">KanbanC</span>
-    <nav style="display: flex; align-items: center; gap: 17.6px">
-      <span style="font-size: 14px; color: #c67139; box-shadow: inset 0 -2px 0 #c67139">Boards</span>
-      <span style="font-size: 14px; color: color-mix(in srgb, #201e1d 40%, transparent)">Auswertungen</span>
-      <span style="font-size: 14px; color: color-mix(in srgb, #201e1d 40%, transparent)">Kontributoren</span>
-    </nav>
-    <span style="margin-left: auto; font-size: 13px; color: color-mix(in srgb, #201e1d 55%, transparent)">nicht gewählt</span>
-  </header>
+  <!-- ══ Navigationszeile — Layout/Kopfzeile.razor(.css), min-height 35.2px ══════
+       Drei Zonen, getrennt durch dünne Linien: links die offene Seite, daneben
+       die Hauptnavigation, rechts Werkzeuge und Identität. Keine Wortmarke. ══ -->
+  <header style="display: flex; align-items: stretch; gap: 17.6px; min-height: 35.2px; padding: 0 17.6px; overflow: hidden; background: #ebddc5; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent); flex: 0 0 auto">
 
-  <!-- ══ Inhalt ══════════════════════════════════════════════════════════════ -->
-  <main style="flex: 1; min-height: 0; padding: 26.4px; display: flex; flex-direction: column">
-
-    <!-- ── Board-Kopfzeile — Pages/Board.razor ────────────────────────────── -->
-    <header style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 13.2px; margin-bottom: 17.6px; flex: 0 0 auto">
-      <span style="flex-basis: 100%; font-size: 12px; color: #c67139">← Boards</span>
-      <h1 style="font-size: 28px">KanbanC — Release 2</h1>
+    <!-- Zone 1 · die offene Seite — .kopfzeile-kontext, gefüllt von Board.razor -->
+    <div style="display: flex; flex: none; align-items: center; gap: 8.8px; min-width: 0; max-width: 45%">
+      <span style="display: flex; flex: none; align-items: center; justify-content: center; width: 26.4px; height: 26.4px; font-size: 15px; line-height: 1; color: color-mix(in srgb, #201e1d 60%, transparent); border-radius: 4px">←</span>
+      <h1 style="margin: 0; flex-shrink: 1; min-width: 35.2px; font-size: 17px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">KanbanC — Release 2</h1>
       <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #fff2eb; color: #643312">Projektboard</span>
-      <span style="font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">Start 01.08.2026 · Ziel 30.09.2026</span>
-      <span style="margin-left: auto; display: flex; align-items: center; gap: 8.8px">
-        <span style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #201e1d; background: transparent; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); padding: 8.8px 15.84px; border-radius: 999px">Layout bearbeiten</span>
-      </span>
-    </header>
-
-    <!-- ── Spaltenbahnen — Spalten/Spaltenbahnen.razor ────────────────────── -->
-    <div style="display: flex; align-items: stretch; gap: 13.2px; flex: 1; min-height: 0; padding-bottom: 13.2px">
-
-      <!-- ═══ Bahn 1 · Rückstand — Randfall langer Titel, Menü mit Archivieren (I0014) ═══ -->
-      <section style="display: flex; flex: 0 0 256px; flex-direction: column; background: #ebddc5; border-radius: 16px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
-        <header style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 8.8px; padding: 8.8px 13.2px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
-          <span style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4.4px">
-            <span style="font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 15px">Rückstand</span>
-          </span>
-          <span style="margin-left: auto; min-width: 17.6px; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent); text-align: right">11</span>
-        </header>
-        <div style="flex: 1; min-height: 0; padding: 13.2px; display: flex; flex-direction: column; gap: 8.8px">
-
-          <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 16px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
-            <div style="display: flex; align-items: center; gap: 8.8px">
-              <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-31</span>
-            </div>
-            <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty">Klassen-Nummerierung über die API</p>
-            <div style="display: flex; align-items: center; gap: 8.8px; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">
-              <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #e1eecc; color: #3d472b">ST</span>
-              <span style="display: inline-flex; align-items: center; gap: 4.4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="m8 12 3 3 5-6"/></svg>0/2</span>
-              <span style="margin-left: auto">3:00 Soll</span>
-            </div>
-          </div>
-
-          <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 16px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
-            <div style="display: flex; align-items: center; gap: 8.8px">
-              <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">BES-04</span>
-            </div>
-            <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty">Playwright-Lizenz klären, bevor die E2E-Strecke auf mehr als einen Rechner im LAN ausgerollt wird</p>
-            <div style="display: flex; align-items: center; gap: 8.8px; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">
-              <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #e1eecc; color: #3d472b">ST</span>
-              <span style="margin-left: auto">0:30 Soll</span>
-            </div>
-          </div>
-
-          <!-- Karte mit offenem Kartenmenü — I0014 Karte archivieren -->
-          <div style="position: relative">
-            <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 16px; box-shadow: 0 3px 10px color-mix(in srgb, #2e2b25 16%, transparent)">
-              <div style="display: flex; align-items: center; gap: 8.8px">
-                <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-32</span>
-                <span style="margin-left: auto; display: inline-flex; color: #c67139"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></span>
-              </div>
-              <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty">Export der Ist-Zeiten als CSV</p>
-              <div style="display: flex; align-items: center; gap: 8.8px; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">
-                <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #ffe1d0; color: #643312">KI</span>
-                <span style="margin-left: auto">1:30 Soll</span>
-              </div>
-            </div>
-            <div style="position: absolute; right: 0; top: 34px; z-index: 4; min-width: 168px; padding: 4.4px; background: #f9f4ed; border-radius: 16px; box-shadow: 0 12px 32px color-mix(in srgb, #2e2b25 22%, transparent)">
-              <span style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px; font-size: 13px; border-radius: 999px; background: color-mix(in srgb, #c67139 10%, transparent); color: #8c491a"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1.5"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/><path d="M10 12h4"/></svg>Archivieren</span>
-              <span style="display: block; padding: 2px 13.2px 4.4px; font-size: 10px; line-height: 1.35; color: color-mix(in srgb, #201e1d 55%, transparent)">verschwindet vom Board, bleibt über API und Archiv auffindbar</span>
-            </div>
-          </div>
-
-        </div>
-        <footer style="padding: 8.8px 13.2px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
-          <span style="display: inline-flex; align-items: center; gap: 6px; min-height: 17.6px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #c67139; padding-inline: 4.4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Karte</span>
-        </footer>
-      </section>
-
-      <!-- ═══ Bahn 2 · Bereit — offenes Anlegen (I0011) samt Zurückweisung ═══ -->
-      <section style="display: flex; flex: 0 0 256px; flex-direction: column; background: #ebddc5; border-radius: 16px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
-        <header style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 8.8px; padding: 8.8px 13.2px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
-          <span style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4.4px">
-            <span style="font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 15px">Bereit</span>
-          </span>
-          <span style="margin-left: auto; min-width: 17.6px; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent); text-align: right">6</span>
-        </header>
-        <div style="flex: 1; min-height: 0; padding: 13.2px; display: flex; flex-direction: column; gap: 8.8px">
-
-          <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 16px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
-            <div style="display: flex; align-items: center; gap: 8.8px">
-              <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-28</span>
-            </div>
-            <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty">Anzeigegrenze im Spaltenkopf</p>
-            <div style="display: flex; align-items: center; gap: 8.8px; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">
-              <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #e1eecc; color: #3d472b">ST</span>
-              <span style="display: inline-flex; align-items: center; gap: 4.4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="m8 12 3 3 5-6"/></svg>0/2</span>
-              <span style="margin-left: auto">2:00 Soll</span>
-            </div>
-          </div>
-
-          <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 16px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
-            <div style="display: flex; align-items: center; gap: 8.8px">
-              <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">BUG-07</span>
-              <span style="margin-left: auto; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">0:12</span>
-            </div>
-            <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty">Timer läuft nach Reload doppelt</p>
-            <div style="display: flex; align-items: center; gap: 8.8px; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">
-              <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #ffe1d0; color: #643312">KI</span>
-              <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; border: 1px solid #c67139; color: #c67139">Bug</span>
-              <span style="margin-left: auto">0:45 Soll</span>
-            </div>
-          </div>
-
-        </div>
-        <footer style="padding: 8.8px 13.2px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent); display: flex; flex-direction: column; gap: 8.8px">
-          <!-- Randfall: die Anlage wurde zurückgewiesen — Form von .meldung-abweisung -->
-          <div style="padding: 8.8px 13.2px; border-left: 3px solid #8c491a; border-radius: 16px; background: #f5ead8">
-            <p style="margin: 0; font-size: 11px; line-height: 1.35">Ohne Titel entsteht keine Karte.</p>
-          </div>
-          <span style="display: block; width: 100%; min-height: 36px; padding: 6px 14px; font-size: 14px; line-height: 1.55; border-radius: 999px; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); background: #f9f4ed; color: color-mix(in srgb, #201e1d 40%, transparent)">Titel der Karte</span>
-          <div style="display: flex; align-items: center; gap: 8.8px">
-            <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; padding: 8.8px 15.84px; border-radius: 999px; background: #c67139; color: #f5ead8">Anlegen</span>
-            <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; padding: 8.8px 15.84px; border-radius: 999px; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); color: #201e1d">Abbrechen</span>
-          </div>
-        </footer>
-      </section>
-
-      <!-- ═══ Bahn 3 · In Arbeit — Ablagestelle für die gezogene Karte (I0012) ═══ -->
-      <section style="display: flex; flex: 0 0 256px; flex-direction: column; background: #ebddc5; border-radius: 16px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
-        <header style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 8.8px; padding: 8.8px 13.2px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
-          <span style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4.4px">
-            <span style="font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 15px">In Arbeit</span>
-          </span>
-          <span style="margin-left: auto; min-width: 17.6px; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent); text-align: right">3</span>
-        </header>
-        <div style="flex: 1; min-height: 0; padding: 13.2px; display: flex; flex-direction: column; gap: 8.8px">
-
-          <!-- Ablagestelle: hier landet die gezogene Karte -->
-          <div style="display: flex; align-items: center; justify-content: center; min-height: 84px; border-radius: 16px; border: 2px dashed #c67139; background: color-mix(in srgb, #c67139 8%, transparent); font-size: 11px; color: #8c491a">hier ablegen · Position 1</div>
-
-          <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 16px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
-            <div style="display: flex; align-items: center; gap: 8.8px">
-              <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-14</span>
-              <span style="margin-left: auto; display: inline-flex; align-items: center; gap: 4.4px; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #e1eecc; color: #3d472b"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>2:14 läuft</span>
-            </div>
-            <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty">WBS-Import: Markdown-Baum in Karten überführen</p>
-            <div style="display: flex; align-items: center; gap: 8.8px; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">
-              <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #ffe1d0; color: #643312">KI</span>
-              <span style="display: inline-flex; align-items: center; gap: 4.4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="m8 12 3 3 5-6"/></svg>2/4</span>
-              <span style="margin-left: auto">5:00 Soll</span>
-            </div>
-          </div>
-
-          <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 16px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
-            <div style="display: flex; align-items: center; gap: 8.8px">
-              <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-21</span>
-              <span style="margin-left: auto; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">1:36</span>
-            </div>
-            <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty">Timer starten und stoppen</p>
-            <div style="display: flex; align-items: center; gap: 8.8px; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">
-              <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #e1eecc; color: #3d472b">ST</span>
-              <span style="display: inline-flex; align-items: center; gap: 4.4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="m8 12 3 3 5-6"/></svg>1/2</span>
-              <span style="margin-left: auto">3:00 Soll</span>
-            </div>
-          </div>
-
-        </div>
-        <footer style="padding: 8.8px 13.2px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
-          <span style="display: inline-flex; align-items: center; gap: 6px; min-height: 17.6px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #c67139; padding-inline: 4.4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Karte</span>
-        </footer>
-      </section>
-
-      <!-- ═══ Bahn 4 · Prüfung — Randfall: leere Bahn ═══ -->
-      <section style="display: flex; flex: 0 0 256px; flex-direction: column; background: #ebddc5; border-radius: 16px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
-        <header style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 8.8px; padding: 8.8px 13.2px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
-          <span style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4.4px">
-            <span style="font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 15px">Prüfung</span>
-          </span>
-          <span style="margin-left: auto; min-width: 17.6px; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent); text-align: right">0</span>
-        </header>
-        <div style="flex: 1; min-height: 160px; padding: 13.2px; display: flex; align-items: center; justify-content: center">
-          <p style="margin: 0; font-size: 12px; line-height: 1.35; text-align: center; text-wrap: pretty; color: color-mix(in srgb, #201e1d 55%, transparent)">Noch keine Karte.<br>Karten ziehen oder unten anlegen.</p>
-        </div>
-        <footer style="padding: 8.8px 13.2px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
-          <span style="display: inline-flex; align-items: center; gap: 6px; min-height: 17.6px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #c67139; padding-inline: 4.4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Karte</span>
-        </footer>
-      </section>
-
-      <!-- ═══ Bahn 5 · Fertig — Abschlussspalte nach Erledigungsdatum (I0013) ═══ -->
-      <section style="display: flex; flex: 0 0 256px; flex-direction: column; background: #ebddc5; border-radius: 16px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
-        <header style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 8.8px; padding: 8.8px 13.2px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
-          <span style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4.4px">
-            <span style="font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 15px">Fertig</span>
-            <span style="color: #728157">✓</span>
-            <span style="flex-basis: 100%; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">Abschlussspalte, Anzeigegrenze 20</span>
-          </span>
-          <span style="margin-left: auto; min-width: 17.6px; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent); text-align: right">20+</span>
-        </header>
-        <div style="flex: 1; min-height: 0; padding: 13.2px; display: flex; flex-direction: column; gap: 8.8px">
-
-          <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; color: color-mix(in srgb, #201e1d 55%, transparent)">Heute · 3</p>
-
-          <div style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px; background: #f5ead8; border-radius: 16px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
-            <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-09</span>
-            <p style="margin: 0; font-size: 12px; line-height: 1.3; flex: 1; min-width: 0; text-wrap: pretty">Boards anlegen</p>
-            <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: #e1eecc; color: #3d472b">ST</span>
-          </div>
-          <div style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px; background: #f5ead8; border-radius: 16px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
-            <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">BES-01</span>
-            <p style="margin: 0; font-size: 12px; line-height: 1.3; flex: 1; min-width: 0; text-wrap: pretty">SQLite-Ablage</p>
-            <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: #ffe1d0; color: #643312">KI</span>
-          </div>
-
-          <p style="margin: 4.4px 0 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; color: color-mix(in srgb, #201e1d 55%, transparent)">Gestern · 5</p>
-
-          <div style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px; background: #f5ead8; border-radius: 16px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
-            <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-06</span>
-            <p style="margin: 0; font-size: 12px; line-height: 1.3; flex: 1; min-width: 0; text-wrap: pretty">Migrationen idempotent</p>
-            <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: #e1eecc; color: #3d472b">ST</span>
-          </div>
-          <div style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px; background: #f5ead8; border-radius: 16px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
-            <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-11</span>
-            <p style="margin: 0; font-size: 12px; line-height: 1.3; flex: 1; min-width: 0; text-wrap: pretty">Kontributoren anlegen</p>
-            <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: #e1eecc; color: #3d472b">ST</span>
-          </div>
-
-          <p style="margin: 4.4px 0 0; font-size: 11px; line-height: 1.35; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">20 neueste gezeigt · ältere über die API vollständig</p>
-        </div>
-        <footer style="padding: 8.8px 13.2px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
-          <span style="display: inline-flex; align-items: center; gap: 6px; min-height: 17.6px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #c67139; padding-inline: 4.4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>Ältere nachladen</span>
-        </footer>
-      </section>
-
+      <span style="flex-shrink: 1000; overflow: hidden; white-space: nowrap; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">Start 01.08.2026 · Ziel 30.09.2026</span>
     </div>
 
-    <!-- ── Lesehilfe: was hier gezeichnet ist und wem es gehört ───────────── -->
-    <footer style="flex: 0 0 auto; display: flex; flex-direction: column; gap: 4.4px; padding-top: 8.8px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent); font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent)">
-      <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">D0003 zeigt hier:</span> <span style="color: #8c491a">I0010</span> Bahnen mit Karten in Reihenfolge · <span style="color: #8c491a">I0011</span> „+ Karte" im Bahnenfuß, offen in „Bereit", samt Zurückweisung · <span style="color: #8c491a">I0012</span> gezogene Karte mit Ablagestelle in „In Arbeit" · <span style="color: #8c491a">I0013</span> Abschlussspalte nach Erledigungsdatum, Anzeigegrenze 20, „Ältere nachladen" · <span style="color: #8c491a">I0014</span> Kartenmenü mit „Archivieren". Ränder: leere Bahn („Prüfung"), zu langer Titel (BES-04), zurückgewiesene Anlage („Bereit").</p>
-      <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Auf der Karte mitgezeichnet, aber später gebaut</span> — die Form steht fest, der Inhalt kommt aus anderen Dialogs: Klassennummer <span style="color: #201e1d">I0021</span> (D0005) · Subtask-Zähler <span style="color: #201e1d">I0016</span> und Etikett <span style="color: #201e1d">I0015</span> (D0004) · Soll-/Ist-Zeit und laufender Timer <span style="color: #201e1d">I0023</span>/<span style="color: #201e1d">I0024</span> (D0006) · Kontributor-Avatar <span style="color: #201e1d">I0008</span> (D0002). Live-Ereignisse (D0007) sind bewusst nicht gezeichnet.</p>
-    </footer>
+    <!-- Zone 2 · die Hauptnavigation — .kopfzeile-anwendung mit Trennlinie links.
+         „Boards“ fehlt, solange ein Board offen ist: der Rückweg steht schon in Zone 1. -->
+    <div style="display: flex; flex: 1; align-items: center; gap: 17.6px; min-width: 0; padding-left: 17.6px; border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+      <nav style="display: flex; align-self: stretch; align-items: stretch; gap: 13.2px">
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: color-mix(in srgb, #201e1d 35%, transparent); border-bottom: 2px solid transparent">Auswertungen</span>
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: color-mix(in srgb, #201e1d 35%, transparent); border-bottom: 2px solid transparent">Kontributoren</span>
+      </nav>
+    </div>
 
+    <!-- Zone 3 · Werkzeuge und Identität — .kopfzeile-werkzeuge -->
+    <div style="display: flex; flex: none; align-items: center; gap: 8.8px">
+      <span style="display: inline-flex; align-items: center; justify-content: center; width: 26.4px; height: 26.4px; padding: 0; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1; color: color-mix(in srgb, #201e1d 60%, transparent); background: transparent; border: 1px solid transparent; border-radius: 4px">✎</span>
+      <span style="padding-left: 8.8px; font-size: 13px; color: color-mix(in srgb, #201e1d 55%, transparent); border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">nicht gewählt</span>
+    </div>
+  </header>
+
+  <!-- ══ Inhalt — .inhalt aus MainLayout.razor.css: padding 13.2px 17.6px,
+       nimmt die ganze Resthöhe unter der Navigationszeile ══════════════════ -->
+  <main style="flex: 1; min-height: 0; min-width: 0; padding: 13.2px 17.6px; overflow: hidden; display: flex; flex-direction: column">
+
+    <!-- .boardflaeche — füllt die Resthöhe -->
+    <div style="display: flex; flex: 1; flex-direction: column; min-height: 0">
+
+      <!-- ── Spaltenbahnen — gap 0, die Bahnen stoßen aneinander ───────────── -->
+      <div style="display: flex; flex: 1; align-items: stretch; gap: 0; min-height: 0; overflow: hidden">
+
+        <!-- ═══ Bahn 1 · Rückstand — Randfall langer Titel, ⋯-Menü mit Archivieren (I0014) ═══ -->
+        <section style="display: flex; flex: 0 0 256px; flex-direction: column; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+          <header style="display: flex; flex-wrap: wrap; align-items: baseline; align-content: flex-start; gap: 8.8px; line-height: 26.4px; padding: 8.8px 13.2px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+            <span style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4.4px">
+              <span style="font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 15px">Rückstand</span>
+            </span>
+            <span style="margin-left: auto; min-width: 17.6px; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent); text-align: right">11</span>
+          </header>
+          <div style="flex: 1; min-height: 0; padding: 8.8px; display: flex; flex-direction: column; gap: 8.8px; overflow: hidden">
+
+            <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+              <div style="display: flex; align-items: center; gap: 8.8px">
+                <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-31</span>
+              </div>
+              <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty; overflow-wrap: anywhere">Klassen-Nummerierung über die API</p>
+              <div style="display: flex; align-items: center; gap: 8.8px; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">
+                <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #e1eecc; color: #3d472b">ST</span>
+                <span style="display: inline-flex; align-items: center; gap: 4.4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="m8 12 3 3 5-6"/></svg>0/2</span>
+                <span style="margin-left: auto">3:00 Soll</span>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+              <div style="display: flex; align-items: center; gap: 8.8px">
+                <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">BES-04</span>
+              </div>
+              <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty; overflow-wrap: anywhere">Playwright-Lizenz klären, bevor die E2E-Strecke auf mehr als einen Rechner im LAN ausgerollt wird</p>
+              <div style="display: flex; align-items: center; gap: 8.8px; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">
+                <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #e1eecc; color: #3d472b">ST</span>
+                <span style="margin-left: auto">0:30 Soll</span>
+              </div>
+            </div>
+
+            <!-- Karte mit offenem Kartenmenü — I0014 Karte archivieren -->
+            <div style="position: relative">
+              <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 3px 10px color-mix(in srgb, #2e2b25 16%, transparent)">
+                <div style="display: flex; align-items: center; gap: 8.8px">
+                  <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-32</span>
+                  <span style="margin-left: auto; display: inline-flex; color: #c67139"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></span>
+                </div>
+                <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty; overflow-wrap: anywhere">Export der Ist-Zeiten als CSV</p>
+                <div style="display: flex; align-items: center; gap: 8.8px; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">
+                  <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #ffe1d0; color: #643312">KI</span>
+                  <span style="margin-left: auto">1:30 Soll</span>
+                </div>
+              </div>
+              <div style="position: absolute; right: 0; top: 34px; z-index: 4; min-width: 168px; padding: 4.4px; background: #f9f4ed; border-radius: 4px; box-shadow: 0 12px 32px color-mix(in srgb, #2e2b25 22%, transparent)">
+                <span style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px; font-size: 13px; border-radius: 4px; background: color-mix(in srgb, #c67139 10%, transparent); color: #8c491a"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1.5"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/><path d="M10 12h4"/></svg>Archivieren</span>
+                <span style="display: block; padding: 2px 13.2px 4.4px; font-size: 10px; line-height: 1.35; color: color-mix(in srgb, #201e1d 55%, transparent)">verschwindet vom Board, bleibt über API und Archiv auffindbar</span>
+              </div>
+            </div>
+
+          </div>
+          <footer style="padding: 8.8px 13.2px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+            <div style="min-height: 17.6px; display: flex; flex-direction: column; gap: 8.8px">
+              <span style="align-self: flex-start; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #c67139; background: transparent; border: 1px solid transparent; padding: 8.8px 4.4px; border-radius: 999px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Karte</span>
+            </div>
+          </footer>
+        </section>
+
+        <!-- ═══ Bahn 2 · Bereit — offenes Anlegen (I0011) samt Zurückweisung ═══ -->
+        <section style="display: flex; flex: 0 0 256px; flex-direction: column; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-left: none">
+          <header style="display: flex; flex-wrap: wrap; align-items: baseline; align-content: flex-start; gap: 8.8px; line-height: 26.4px; padding: 8.8px 13.2px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+            <span style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4.4px">
+              <span style="font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 15px">Bereit</span>
+            </span>
+            <span style="margin-left: auto; min-width: 17.6px; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent); text-align: right">6</span>
+          </header>
+          <div style="flex: 1; min-height: 0; padding: 8.8px; display: flex; flex-direction: column; gap: 8.8px; overflow: hidden">
+
+            <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+              <div style="display: flex; align-items: center; gap: 8.8px">
+                <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-28</span>
+              </div>
+              <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty; overflow-wrap: anywhere">Anzeigegrenze im Spaltenkopf</p>
+              <div style="display: flex; align-items: center; gap: 8.8px; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">
+                <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #e1eecc; color: #3d472b">ST</span>
+                <span style="display: inline-flex; align-items: center; gap: 4.4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="m8 12 3 3 5-6"/></svg>0/2</span>
+                <span style="margin-left: auto">2:00 Soll</span>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+              <div style="display: flex; align-items: center; gap: 8.8px">
+                <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">BUG-07</span>
+                <span style="margin-left: auto; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">0:12</span>
+              </div>
+              <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty; overflow-wrap: anywhere">Timer läuft nach Reload doppelt</p>
+              <div style="display: flex; align-items: center; gap: 8.8px; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">
+                <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #ffe1d0; color: #643312">KI</span>
+                <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; border: 1px solid #c67139; color: #c67139">Bug</span>
+                <span style="margin-left: auto">0:45 Soll</span>
+              </div>
+            </div>
+
+          </div>
+          <footer style="padding: 8.8px 13.2px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+            <div style="min-height: 17.6px; display: flex; flex-direction: column; gap: 8.8px">
+              <!-- Randfall: die Anlage wurde zurückgewiesen — .meldung.meldung-abweisung -->
+              <div style="margin: 0; padding: 8.8px 13.2px; border-left: 3px solid #8c491a; border-radius: 16px; background: #f5ead8; font-size: 11px; line-height: 1.35">
+                <ul style="margin: 0; padding-left: 0; list-style: none">
+                  <li>Ohne Titel entsteht keine Karte.</li>
+                </ul>
+              </div>
+              <span style="display: block; width: 100%; min-height: 36px; padding: 6px 14px; font-size: 14px; line-height: 1.55; border-radius: 999px; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); background: #ebddc5; color: color-mix(in srgb, #201e1d 42%, transparent)">Titel der Karte</span>
+              <div style="display: flex; align-items: center; gap: 8.8px">
+                <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; padding: 8.8px 15.84px; border: 1px solid transparent; border-radius: 999px; background: #c67139; color: #f5ead8">Anlegen</span>
+                <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; padding: 8.8px 15.84px; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px; color: #201e1d">Abbrechen</span>
+              </div>
+            </div>
+          </footer>
+        </section>
+
+        <!-- ═══ Bahn 3 · In Arbeit — Ablagestelle für die gezogene Karte (I0012) ═══ -->
+        <section style="display: flex; flex: 0 0 256px; flex-direction: column; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-left: none">
+          <header style="display: flex; flex-wrap: wrap; align-items: baseline; align-content: flex-start; gap: 8.8px; line-height: 26.4px; padding: 8.8px 13.2px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+            <span style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4.4px">
+              <span style="font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 15px">In Arbeit</span>
+            </span>
+            <span style="margin-left: auto; min-width: 17.6px; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent); text-align: right">3</span>
+          </header>
+          <div style="flex: 1; min-height: 0; padding: 8.8px; display: flex; flex-direction: column; gap: 8.8px; overflow: hidden">
+
+            <!-- Ablagestelle: hier landet die gezogene Karte -->
+            <div style="display: flex; align-items: center; justify-content: center; min-height: 84px; border-radius: 4px; border: 2px dashed #c67139; background: color-mix(in srgb, #c67139 8%, transparent); font-size: 11px; color: #8c491a">hier ablegen · Position 1</div>
+
+            <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+              <div style="display: flex; align-items: center; gap: 8.8px">
+                <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-14</span>
+                <span style="margin-left: auto; display: inline-flex; align-items: center; gap: 4.4px; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #e1eecc; color: #3d472b"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>2:14 läuft</span>
+              </div>
+              <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty; overflow-wrap: anywhere">WBS-Import: Markdown-Baum in Karten überführen</p>
+              <div style="display: flex; align-items: center; gap: 8.8px; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">
+                <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #ffe1d0; color: #643312">KI</span>
+                <span style="display: inline-flex; align-items: center; gap: 4.4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="m8 12 3 3 5-6"/></svg>2/4</span>
+                <span style="margin-left: auto">5:00 Soll</span>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+              <div style="display: flex; align-items: center; gap: 8.8px">
+                <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-21</span>
+                <span style="margin-left: auto; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">1:36</span>
+              </div>
+              <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty; overflow-wrap: anywhere">Timer starten und stoppen</p>
+              <div style="display: flex; align-items: center; gap: 8.8px; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">
+                <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #e1eecc; color: #3d472b">ST</span>
+                <span style="display: inline-flex; align-items: center; gap: 4.4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="m8 12 3 3 5-6"/></svg>1/2</span>
+                <span style="margin-left: auto">3:00 Soll</span>
+              </div>
+            </div>
+
+          </div>
+          <footer style="padding: 8.8px 13.2px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+            <div style="min-height: 17.6px; display: flex; flex-direction: column; gap: 8.8px">
+              <span style="align-self: flex-start; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #c67139; background: transparent; border: 1px solid transparent; padding: 8.8px 4.4px; border-radius: 999px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Karte</span>
+            </div>
+          </footer>
+        </section>
+
+        <!-- ═══ Bahn 4 · Prüfung — Randfall: leere Bahn ═══ -->
+        <section style="display: flex; flex: 0 0 256px; flex-direction: column; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-left: none">
+          <header style="display: flex; flex-wrap: wrap; align-items: baseline; align-content: flex-start; gap: 8.8px; line-height: 26.4px; padding: 8.8px 13.2px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+            <span style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4.4px">
+              <span style="font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 15px">Prüfung</span>
+            </span>
+            <span style="margin-left: auto; min-width: 17.6px; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent); text-align: right">0</span>
+          </header>
+          <div style="flex: 1; min-height: 0; padding: 8.8px; display: flex; flex-direction: column; gap: 8.8px; align-items: center; justify-content: center; overflow: hidden">
+            <p style="margin: 0; font-size: 12px; line-height: 1.35; text-align: center; text-wrap: pretty; color: color-mix(in srgb, #201e1d 55%, transparent)">Noch keine Karte.<br>Unten eine anlegen.</p>
+          </div>
+          <footer style="padding: 8.8px 13.2px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+            <div style="min-height: 17.6px; display: flex; flex-direction: column; gap: 8.8px">
+              <span style="align-self: flex-start; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #c67139; background: transparent; border: 1px solid transparent; padding: 8.8px 4.4px; border-radius: 999px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Karte</span>
+            </div>
+          </footer>
+        </section>
+
+        <!-- ═══ Bahn 5 · Fertig — Abschlussspalte nach Erledigungsdatum (I0013).
+             Der Kopf ist einzeilig: „Grenze 20“ statt „Abschlussspalte, Anzeigegrenze 20“;
+             die Bedeutung trägt der Titel des Häkchens. ═══ -->
+        <section style="display: flex; flex: 0 0 256px; flex-direction: column; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-left: none">
+          <header style="display: flex; flex-wrap: wrap; align-items: baseline; align-content: flex-start; gap: 8.8px; line-height: 26.4px; padding: 8.8px 13.2px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+            <span style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4.4px">
+              <span style="font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 15px">Fertig</span>
+              <span title="Abschlussspalte" style="color: #728157">✓</span>
+              <span style="font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">Grenze 20</span>
+            </span>
+            <span style="margin-left: auto; min-width: 17.6px; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent); text-align: right">20+</span>
+          </header>
+          <div style="flex: 1; min-height: 0; padding: 8.8px; display: flex; flex-direction: column; gap: 8.8px; overflow: hidden">
+
+            <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; color: color-mix(in srgb, #201e1d 55%, transparent)">Heute · 3</p>
+
+            <div style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+              <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-09</span>
+              <p style="margin: 0; font-size: 12px; line-height: 1.3; flex: 1; min-width: 0; text-wrap: pretty">Boards anlegen</p>
+              <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: #e1eecc; color: #3d472b">ST</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+              <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">BES-01</span>
+              <p style="margin: 0; font-size: 12px; line-height: 1.3; flex: 1; min-width: 0; text-wrap: pretty">SQLite-Ablage</p>
+              <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: #ffe1d0; color: #643312">KI</span>
+            </div>
+
+            <p style="margin: 4.4px 0 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; color: color-mix(in srgb, #201e1d 55%, transparent)">Gestern · 5</p>
+
+            <div style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+              <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-06</span>
+              <p style="margin: 0; font-size: 12px; line-height: 1.3; flex: 1; min-width: 0; text-wrap: pretty">Migrationen idempotent</p>
+              <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: #e1eecc; color: #3d472b">ST</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+              <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-11</span>
+              <p style="margin: 0; font-size: 12px; line-height: 1.3; flex: 1; min-width: 0; text-wrap: pretty">Kontributoren anlegen</p>
+              <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: #e1eecc; color: #3d472b">ST</span>
+            </div>
+
+            <!-- Nachlade-Hinweis: die Anzeigegrenze ist erreicht. Der Fuß gehört
+                 in jeder Bahn dem Anlegen, also steht das Nachladen hier. -->
+            <p style="margin: 4.4px 0 0; font-size: 11px; line-height: 1.35; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">20 neueste gezeigt · ältere über die API vollständig</p>
+            <span style="align-self: flex-start; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #c67139; background: transparent; border: 1px solid transparent; padding: 4.4px; border-radius: 999px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>Ältere nachladen</span>
+
+          </div>
+          <footer style="padding: 8.8px 13.2px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+            <div style="min-height: 17.6px; display: flex; flex-direction: column; gap: 8.8px">
+              <span style="align-self: flex-start; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #c67139; background: transparent; border: 1px solid transparent; padding: 8.8px 4.4px; border-radius: 999px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Karte</span>
+            </div>
+          </footer>
+        </section>
+
+      </div>
+    </div>
   </main>
 
   <!-- ══ Gezogene Karte — schwebt über den Bahnen, I0012 ══════════════════════ -->
-  <div style="position: absolute; left: 470px; top: 268px; width: 256px; z-index: 9; transform: rotate(-2.5deg); pointer-events: none">
-    <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 16px; box-shadow: 0 12px 32px color-mix(in srgb, #2e2b25 22%, transparent)">
+  <div style="position: absolute; left: 556px; top: 150px; width: 256px; z-index: 9; transform: rotate(-2.5deg); pointer-events: none">
+    <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 12px 32px color-mix(in srgb, #2e2b25 22%, transparent)">
       <div style="display: flex; align-items: center; gap: 8.8px">
         <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">BUG-05</span>
         <span style="margin-left: auto; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">0:51</span>
       </div>
-      <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty">SignalR bricht nach Standby</p>
+      <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty; overflow-wrap: anywhere">SignalR bricht nach Standby</p>
       <div style="display: flex; align-items: center; gap: 8.8px; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">
         <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #ffe1d0; color: #643312">KI</span>
         <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; border: 1px solid #c67139; color: #c67139">Bug</span>
@@ -343,6 +378,18 @@
     </div>
     <span style="position: absolute; left: 214px; top: 62px; display: inline-flex; color: #201e1d"><svg width="20" height="20" viewBox="0 0 24 24" fill="#f5ead8" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M5 3l13 8-5.5 1.4L9.6 18z"/></svg></span>
   </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     Lesehilfe — gehört zum Wireframe, nicht zum Schirm. Sie steht deshalb
+     unter dem Fenster: im Fenster selbst liegen nur Navigationszeile und Board.
+     ══════════════════════════════════════════════════════════════════════ -->
+<footer style="display: flex; flex-direction: column; gap: 4.4px; padding: 17.6px; background: #ebddc5; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent); font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent)">
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">D0003 zeigt hier:</span> <span style="color: #8c491a">I0010</span> Bahnen mit Karten in Reihenfolge · <span style="color: #8c491a">I0011</span> „+ Karte“ im Bahnenfuß, offen in „Bereit“, samt Zurückweisung · <span style="color: #8c491a">I0012</span> gezogene Karte mit Ablagestelle in „In Arbeit“ · <span style="color: #8c491a">I0013</span> Abschlussspalte nach Erledigungsdatum, Grenze 20, „Ältere nachladen“ · <span style="color: #8c491a">I0014</span> Kartenmenü mit „Archivieren“. Ränder: leere Bahn („Prüfung“), zu langer Titel (BES-04), zurückgewiesene Anlage („Bereit“).</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Auf der Karte mitgezeichnet, aber später gebaut</span> — die Form steht fest, der Inhalt kommt aus anderen Dialogs: Klassennummer <span style="color: #201e1d">I0021</span> (D0005) · Subtask-Zähler <span style="color: #201e1d">I0016</span> und Etikett <span style="color: #201e1d">I0015</span> (D0004) · Soll-/Ist-Zeit und laufender Timer <span style="color: #201e1d">I0023</span>/<span style="color: #201e1d">I0024</span> (D0006) · Kontributor-Avatar <span style="color: #201e1d">I0008</span> (D0002). Ebenso die Kartenzahl im Bahnenkopf <span style="color: #201e1d">I0004</span> (D0001) — im Code steht dort eine reservierte leere Stelle. Live-Ereignisse (D0007) sind bewusst nicht gezeichnet.</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Gezeichnet ist der gebaute Stand</span> — Kopfdaten in der Navigationszeile ohne eigenen Boardkopf, Bahnen ohne Rundung und Schatten mit geteilter Trennlinie, Karten auf <span style="color: #201e1d">--radius-xs</span> 4 px, einzeiliger Bahnenkopf. Das Fenster darüber ist 1440 × 900; diese Zeilen gehören zum Wireframe und stehen außerhalb.</p>
+</footer>
 
 </div>
 </x-dc>
