@@ -8,25 +8,25 @@ namespace KanbanC.PlaywrightTests.Tests;
 public class RahmenE2ETests : PageTest
 {
     [Test]
-    public async Task Wenn_eine_Seite_offen_ist_dann_steht_oben_waagerecht_die_Marke_mit_den_drei_Navigationspunkten()
+    public async Task Wenn_eine_Seite_offen_ist_dann_steht_oben_waagerecht_ihr_Titel_mit_den_drei_Navigationspunkten()
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
         var liste = new BoardsSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
         var rahmen = new Rahmen(Page);
         await liste.Oeffne();
 
-        await Expect(rahmen.Marke).ToHaveTextAsync("KanbanC");
+        await Expect(rahmen.Seitentitel).ToHaveTextAsync("Boards");
         await Expect(rahmen.Navigationspunkte).ToHaveTextAsync(["Boards", "Auswertungen", "Kontributoren"]);
 
         var kopfzeile = await rahmen.Kopfzeile.BoundingBoxAsync();
-        var marke = await rahmen.Marke.BoundingBoxAsync();
+        var titel = await rahmen.Seitentitel.BoundingBoxAsync();
         var identitaet = await rahmen.Identitaetsplatz.BoundingBoxAsync();
         Assert.That(kopfzeile, Is.Not.Null);
-        Assert.That(marke, Is.Not.Null);
+        Assert.That(titel, Is.Not.Null);
         Assert.That(identitaet, Is.Not.Null);
-        Assert.That(marke!.Y, Is.EqualTo(identitaet!.Y).Within(kopfzeile!.Height),
-            "Marke und Identitaetsplatz stehen nicht auf derselben waagerechten Zeile.");
-        Assert.That(marke.X, Is.LessThan(identitaet.X));
+        Assert.That(titel!.Y, Is.EqualTo(identitaet!.Y).Within(kopfzeile!.Height),
+            "Seitentitel und Identitaetsplatz stehen nicht auf derselben waagerechten Zeile.");
+        Assert.That(titel.X, Is.LessThan(identitaet.X));
     }
 
     [Test]
@@ -95,8 +95,35 @@ public class RahmenE2ETests : PageTest
         var board = new BoardSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
         await board.Oeffne(1);
 
-        await Expect(rahmen.Marke).ToHaveTextAsync("KanbanC");
+        // Der Rahmen ist derselbe; sein Titel wechselt mit der Seite — auf einem Board
+        // steht dort dessen Name, nicht mehr eine feste Wortmarke.
+        await Expect(rahmen.Seitentitel).ToHaveTextAsync("Entwicklung");
         await Expect(rahmen.Identitaetsplatz).ToHaveTextAsync("nicht gewählt");
         await Expect(rahmen.Seitenleiste).ToHaveCountAsync(0);
+
+        // Der Rueckweg in der Kopfzeile fuehrt schon zur Uebersicht: der gleichnamige
+        // Navigationspunkt waere dieselbe Verknuepfung ein zweites Mal.
+        await Expect(rahmen.Navigationspunkte).ToHaveTextAsync(["Auswertungen", "Kontributoren"]);
+        await Expect(board.VerweisZurListe).ToBeVisibleAsync();
+    }
+
+    [Test]
+    public async Task Wenn_von_einem_Board_zur_Uebersicht_zurueckgegangen_wird_dann_steht_der_Punkt_Boards_wieder_da()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        var liste = new BoardsSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        var rahmen = new Rahmen(Page);
+        await liste.Oeffne();
+        await liste.FuelleFormular("Entwicklung", "Linie", null, null);
+        await liste.SendeFormularAb();
+        await Expect(liste.Boardzeile(1)).ToBeVisibleAsync();
+
+        var board = new BoardSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await board.Oeffne(1);
+        await Expect(rahmen.Navigationspunkte).ToHaveTextAsync(["Auswertungen", "Kontributoren"]);
+
+        await board.VerweisZurListe.ClickAsync();
+
+        await Expect(rahmen.Navigationspunkte).ToHaveTextAsync(["Boards", "Auswertungen", "Kontributoren"]);
     }
 }

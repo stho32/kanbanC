@@ -26,7 +26,7 @@ public class BahnenE2ETests : PageTest
 
         await Expect(seite.Abschlusshaken).ToHaveCountAsync(1);
         await Expect(seite.Abschlusshaken).ToHaveTextAsync([Haeckchen]);
-        await Expect(seite.Abschlussvermerke).ToHaveTextAsync(["Abschlussspalte, Anzeigegrenze 20"]);
+        await Expect(seite.Abschlussvermerke).ToHaveTextAsync(["Grenze 20"]);
         await Expect(seite.SpaltenbahnAnStelle(2)).ToContainTextAsync("Erledigt");
     }
 
@@ -45,20 +45,29 @@ public class BahnenE2ETests : PageTest
     }
 
     [Test]
-    public async Task Wenn_ueber_den_ersten_Bahnenkopf_geschaut_wird_dann_steht_darueber_nur_die_Board_Kopfzeile()
+    // Die Kopfdaten sind in die Navigationszeile gewandert: ueber dem ersten Bahnenkopf
+    // steht seither ueberhaupt nichts mehr, das Board beginnt unmittelbar unter dem Rahmen.
+    public async Task Wenn_ueber_den_ersten_Bahnenkopf_geschaut_wird_dann_steht_darueber_nichts_ausser_der_Navigationszeile()
     {
         var seite = await BoardMitStandardspalten();
 
-        var bahnenFolgenDirektAufDieKopfzeile = await Page.EvaluateAsync<bool>(
+        var bahnenStehenGanzOben = await Page.EvaluateAsync<bool>(
             """
             () => {
-                const kopf = document.getElementById('board-kopf');
-                const naechstes = kopf.nextElementSibling;
-                return naechstes !== null && naechstes.id === 'spaltenbahnen';
+                const bahnen = document.getElementById('spaltenbahnen');
+                const inhalt = bahnen.closest('.inhalt') ?? bahnen.parentElement;
+                const erstesElement = inhalt.firstElementChild;
+                return erstesElement.contains(bahnen);
             }
             """);
 
-        Assert.That(bahnenFolgenDirektAufDieKopfzeile, Is.True);
+        var kopfdatenInDerNavigationszeile = await Page.EvaluateAsync<bool>(
+            """
+            () => document.getElementById('kopfzeile').contains(document.getElementById('board-name'))
+            """);
+
+        Assert.That(bahnenStehenGanzOben, Is.True, "Ueber den Bahnen steht noch ein Element.");
+        Assert.That(kopfdatenInDerNavigationszeile, Is.True, "Der Boardname sitzt nicht in der Navigationszeile.");
     }
 
     [Test]

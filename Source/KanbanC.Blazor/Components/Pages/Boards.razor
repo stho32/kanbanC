@@ -1,13 +1,16 @@
 @page "/boards"
-@rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using KanbanC.Blazor.Services
 @using KanbanC.Contracts.Boards
 @inject BoardApiKlient ApiKlient
 
 <PageTitle>Boards</PageTitle>
 
+<SectionContent SectionName="kopfzeile-kontext">
+    <h1 class="kopfzeile-titel">Boards</h1>
+</SectionContent>
+
 <div class="seitenkopf">
-    <h1>Boards</h1>
+    <h1 class="nur-fuer-screenreader">Boards</h1>
     <span class="seitenkopf-rechts">
         <button type="button" class="btn btn-haupt" id="board-anlegen-oeffnen" @onclick="OeffneAnlegeformular">+ Board anlegen</button>
     </span>

@@ -1,5 +1,4 @@
 @page "/boards/{BoardId:long}"
-@rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using KanbanC.Blazor.Services
 @inject BoardApiKlient ApiKlient
 
@@ -25,34 +24,38 @@ else if (_board is null)
 }
 else
 {
-    <header id="board-kopf" class="board-kopf">
-        <a href="/boards" id="zur-board-liste" class="board-kopf-zurueck">← Boards</a>
-        <h1 id="board-name" class="board-kopf-name">@_board.Name</h1>
+    @* Die Kopfdaten sitzen in der Navigationszeile: das Board bekommt die volle Hoehe. *@
+    <SectionContent SectionName="kopfzeile-kontext">
+        <a href="/boards" id="zur-board-liste" class="board-zurueck" title="Zurück zu den Boards">←</a>
+        <h1 id="board-name" class="board-name">@_board.Name</h1>
         <span class="tag tag-accent" id="board-art">@_board.Art</span>
-        <span class="board-kopf-termine">
+        <span class="board-termine">
             Start <span id="board-starttermin">@Terminformatierer.AlsText(_board.Starttermin)</span>
             · Ziel <span id="board-zieltermin">@Terminformatierer.AlsText(_board.Zieltermin)</span>
         </span>
-        <span class="board-kopf-bedienung">
-            @if (_layoutModusIstAktiv)
-            {
-                <button type="button" class="btn btn-haupt" id="layout-fertig" @onclick="VerlasseLayoutModus">Fertig</button>
-            }
-            else
-            {
-                <button type="button" class="btn btn-neben" id="layout-bearbeiten" @onclick="BetreteLayoutModus">Layout bearbeiten</button>
-            }
-        </span>
-    </header>
+    </SectionContent>
 
-    @if (_layoutModusIstAktiv)
-    {
-        <Spaltenpflege BoardId="BoardId" Spalten="_board.Spalten" SpaltenHabenSichGeaendert="LadeBoard" />
-    }
-    else
-    {
-        <Spaltenbahnen BoardId="BoardId" Spalten="_board.Spalten" KarteWurdeAngelegt="LadeBoard" />
-    }
+    <SectionContent SectionName="kopfzeile-bedienung">
+        @if (_layoutModusIstAktiv)
+        {
+            <button type="button" class="btn btn-haupt btn-symbol" id="layout-fertig" title="Layout fertig" @onclick="VerlasseLayoutModus">✓</button>
+        }
+        else
+        {
+            <button type="button" class="btn btn-schlicht btn-symbol" id="layout-bearbeiten" title="Layout bearbeiten" @onclick="BetreteLayoutModus">✎</button>
+        }
+    </SectionContent>
+
+    <div class="boardflaeche">
+        @if (_layoutModusIstAktiv)
+        {
+            <Spaltenpflege BoardId="BoardId" Spalten="_board.Spalten" SpaltenHabenSichGeaendert="LadeBoard" />
+        }
+        else
+        {
+            <Spaltenbahnen BoardId="BoardId" Spalten="_board.Spalten" KarteWurdeAngelegt="LadeBoard" />
+        }
+    </div>
 }
 
 @code {

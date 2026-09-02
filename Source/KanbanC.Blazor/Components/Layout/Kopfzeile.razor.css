@@ -1,51 +1,133 @@
+/* Drei Zonen: links die Anwendung, in der Mitte die geöffnete Seite, rechts die
+   Werkzeuge. Ein dünner Trenner zeigt, wo die Anwendung aufhört und die Seite anfängt. */
 .kopfzeile {
     position: sticky;
     top: 0;
     z-index: 1;
     display: flex;
-    align-items: center;
-    gap: var(--space-6);
-    padding: var(--space-3) var(--space-6);
+    align-items: stretch;
+    gap: var(--space-4);
+    min-height: var(--space-8);
+    padding: 0 var(--space-4);
+    /* Die Zeile trägt die Kopfdaten der Seite — sie darf davon nicht breiter
+       werden als das Fenster, sonst scrollt die ganze Seite waagerecht. */
+    overflow: hidden;
     background: var(--color-surface);
     border-bottom: 1px solid var(--color-divider);
 }
 
-.kopfzeile-marke {
-    font-family: var(--font-heading);
-    font-weight: var(--font-heading-weight);
-    font-size: 18px;
-    color: var(--color-text);
-    text-decoration: none;
+/* — Zone 1: die Anwendung — */
+.kopfzeile-anwendung {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: var(--space-4);
+    min-width: 0;
+    padding-left: var(--space-4);
+    border-left: 1px solid var(--color-divider);
 }
 
 .kopfzeile-navigation {
     display: flex;
-    align-items: center;
-    gap: var(--space-4);
+    align-self: stretch;
+    align-items: stretch;
+    gap: var(--space-3);
 }
 
+/* Die Punkte füllen die Zeilenhöhe: der aktive trägt seine Marke an der Unterkante,
+   und die Trefferfläche ist so groß wie die Zeile statt nur so hoch wie der Text. */
 .kopfzeile-navigation ::deep .navigationspunkt {
+    display: flex;
+    align-items: center;
+    padding: 0 var(--space-1);
     font-size: 14px;
-    color: var(--color-text);
+    color: color-mix(in srgb, var(--color-text) 75%, transparent);
     text-decoration: none;
+    border-bottom: 2px solid transparent;
 }
 
 .kopfzeile-navigation ::deep .navigationspunkt:hover {
-    color: var(--color-accent);
+    color: var(--color-text);
 }
 
 .kopfzeile-navigation ::deep .navigationspunkt-aktiv {
-    color: var(--color-accent);
-    box-shadow: inset 0 -2px 0 var(--color-accent);
+    color: var(--color-text);
+    border-bottom-color: var(--color-accent);
 }
 
 .kopfzeile-navigation ::deep .navigationspunkt-gesperrt {
-    color: color-mix(in srgb, var(--color-text) 40%, transparent);
+    color: color-mix(in srgb, var(--color-text) 35%, transparent);
     cursor: not-allowed;
 }
 
+.kopfzeile-navigation ::deep .navigationspunkt-gesperrt:hover {
+    color: color-mix(in srgb, var(--color-text) 35%, transparent);
+}
+
+/* — Zone 2: die geöffnete Seite — */
+.kopfzeile-kontext {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+    max-width: 45%;
+}
+
+/* Der Titel der Seite steht, wo sonst eine Wortmarke stünde, und trägt deren Gewicht. */
+.kopfzeile ::deep .kopfzeile-titel,
+.kopfzeile ::deep .board-name {
+    margin: 0;
+    flex-shrink: 1;
+    min-width: var(--space-8);
+    font-family: var(--font-heading);
+    font-weight: var(--font-heading-weight);
+    font-size: 17px;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* — Zone 3: Werkzeuge und Identität — */
+.kopfzeile-werkzeuge {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--space-2);
+}
+
 .kopfzeile-identitaet {
-    margin-left: auto;
+    padding-left: var(--space-2);
     font-size: 13px;
     color: color-mix(in srgb, var(--color-text) 55%, transparent);
+    border-left: 1px solid var(--color-divider);
+}
+
+/* — was die Seite in Zone 2 stellt — */
+/* Wird die Zeile eng, weichen zuerst die Termine, dann kürzt der Name mit
+   Auslassungspunkten. Der Name selbst verschwindet nie ganz. */
+.kopfzeile ::deep .board-zurueck {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--space-6);
+    height: var(--space-6);
+    font-size: 15px;
+    line-height: 1;
+    color: color-mix(in srgb, var(--color-text) 60%, transparent);
+    text-decoration: none;
+    border-radius: var(--radius-xs);
+}
+
+.kopfzeile ::deep .board-zurueck:hover {
+    color: var(--color-text);
+    background: color-mix(in srgb, var(--color-text) 7%, transparent);
+}
+
+.kopfzeile ::deep .board-termine {
+    flex-shrink: 1000;
+    overflow: hidden;
+    white-space: nowrap;
 }

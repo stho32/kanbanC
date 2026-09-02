@@ -1,13 +1,21 @@
 .seite {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    height: 100vh;
 }
 
+/* Der Inhalt bekommt genau die Resthöhe unter der Navigationszeile: eine Seite,
+   die sie ausfüllen will (das Board), kann sich darauf verlassen. */
 .inhalt {
+    display: flex;
     flex: 1;
+    flex-direction: column;
     min-width: 0;
-    padding: var(--space-6);
+    min-height: 0;
+    padding: var(--space-3) var(--space-4);
+    /* Nur senkrecht: das waagerechte Scrollen gehoert den Bahnen, nicht der Seite. */
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 #blazor-error-ui {

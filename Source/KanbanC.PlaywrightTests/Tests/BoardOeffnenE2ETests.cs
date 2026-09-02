@@ -141,6 +141,6 @@ public class BoardOeffnenE2ETests : PageTest
 
         await Expect(liste.Boardzeilen).ToHaveCountAsync(2);
         Assert.That(Page.Url, Is.EqualTo($"{Testumgebung.Aktuelle.BlazorAdresse}/boards"));
-        await Expect(board.Kopfzeile).ToBeHiddenAsync();
+        await Expect(board.Kopfdaten).ToBeHiddenAsync();
     }
 }

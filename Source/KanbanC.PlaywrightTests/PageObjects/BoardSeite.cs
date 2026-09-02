@@ -13,7 +13,9 @@ public sealed class BoardSeite
         _basisAdresse = basisAdresse;
     }
 
-    public ILocator Kopfzeile => _seite.Locator("#board-kopf");
+    // Seit dem Umbau sitzen die Kopfdaten in der Navigationszeile statt in einem eigenen
+    // Kopf der Seite. Der Name steht fuer sie: er erscheint nur, wenn ein Board geladen ist.
+    public ILocator Kopfdaten => _seite.Locator("#board-name");
 
     public ILocator Name => _seite.Locator("#board-name");
 
@@ -70,7 +72,7 @@ public sealed class BoardSeite
 
     public async Task ErwarteGeoeffnet()
     {
-        await Assertions.Expect(Kopfzeile).ToBeVisibleAsync();
+        await Assertions.Expect(Name).ToBeVisibleAsync();
     }
 
     public async Task Rufe(long boardId)

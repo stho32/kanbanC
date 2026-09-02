@@ -24,7 +24,7 @@ public class BoardFehlerpfadeE2ETests : PageTest
 
         await Expect(board.MeldungUnbekanntesBoard).ToBeVisibleAsync();
         await Expect(board.MeldungUnbekanntesBoard).ToContainTextAsync("999");
-        await Expect(board.Kopfzeile).ToBeHiddenAsync();
+        await Expect(board.Kopfdaten).ToBeHiddenAsync();
         await Expect(board.Ausnahmeanzeige).ToBeHiddenAsync();
 
         await board.VerweisZurListe.ClickAsync();
@@ -52,7 +52,7 @@ public class BoardFehlerpfadeE2ETests : PageTest
 
         await Expect(board.Fehlermeldung).ToBeVisibleAsync();
         await Expect(board.Fehlermeldung).ToContainTextAsync(Ausfallmeldung);
-        await Expect(board.Kopfzeile).ToBeHiddenAsync();
+        await Expect(board.Kopfdaten).ToBeHiddenAsync();
         await Expect(board.Ausnahmeanzeige).ToBeHiddenAsync();
     }
 
@@ -65,7 +65,7 @@ public class BoardFehlerpfadeE2ETests : PageTest
         await Page.GotoAsync($"{Testumgebung.Aktuelle.BlazorAdresse}/boards/abc");
 
         await Expect(Page.GetByText("Not Found")).ToBeVisibleAsync();
-        await Expect(board.Kopfzeile).ToBeHiddenAsync();
+        await Expect(board.Kopfdaten).ToBeHiddenAsync();
         await Expect(board.MeldungUnbekanntesBoard).ToBeHiddenAsync();
         await Expect(board.Ausnahmeanzeige).ToBeHiddenAsync();
     }

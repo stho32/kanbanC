@@ -13,7 +13,9 @@ public sealed class Rahmen
 
     public ILocator Kopfzeile => _seite.Locator("#kopfzeile");
 
-    public ILocator Marke => _seite.Locator("#marke");
+    // Eine Wortmarke gibt es nicht mehr: an ihrer Stelle steht der Titel der offenen
+    // Seite — auf der Uebersicht "Boards", auf einem Board dessen Name.
+    public ILocator Seitentitel => _seite.Locator("#kopfzeile .kopfzeile-titel, #kopfzeile #board-name");
 
     public ILocator Navigationspunkte => _seite.Locator("#hauptnavigation .navigationspunkt");
 

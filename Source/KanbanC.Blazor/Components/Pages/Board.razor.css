@@ -1,28 +1,49 @@
-.board-kopf {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: var(--space-3);
-    margin-bottom: var(--space-4);
-}
-
-.board-kopf-zurueck {
-    flex-basis: 100%;
-    font-size: 12px;
+/* Die Kopfdaten sitzen in der Navigationszeile — sie ordnen sich deren Zeilenhöhe unter. */
+.board-zurueck {
+    font-size: 16px;
+    line-height: 1;
     color: var(--color-accent);
     text-decoration: none;
 }
 
-.board-kopf-name {
+.board-name {
     margin: 0;
-    font-size: 28px;
+    font-size: 18px;
+    line-height: 1.2;
+    white-space: nowrap;
 }
 
-.board-kopf-termine {
+.board-termine {
     font-size: 12px;
+    white-space: nowrap;
     color: color-mix(in srgb, var(--color-text) 55%, transparent);
 }
 
-.board-kopf-bedienung {
-    margin-left: auto;
+/* Das Board fuellt die Resthoehe unter der Navigationszeile. */
+.boardflaeche {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* Der Layout-Schalter sitzt in der Navigationszeile und braucht dort eine sichtbare
+   Trefferfläche — als blasses Zeichen allein wäre er weder auffindbar noch klickbar. */
+#layout-bearbeiten,
+#layout-fertig {
+    width: var(--space-6);
+    height: var(--space-6);
+    padding: 0;
+    font-size: 14px;
+    line-height: 1;
+    border-radius: var(--radius-xs);
+}
+
+#layout-bearbeiten {
+    color: color-mix(in srgb, var(--color-text) 60%, transparent);
+}
+
+#layout-bearbeiten:hover {
+    color: var(--color-text);
+    background: color-mix(in srgb, var(--color-text) 7%, transparent);
 }

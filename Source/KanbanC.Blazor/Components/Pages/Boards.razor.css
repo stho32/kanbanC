@@ -45,3 +45,16 @@
     gap: var(--space-2);
     margin-top: var(--space-4);
 }
+
+/* Der sichtbare Titel steht in der Kopfzeile. Hier bleibt er als Überschrift der Seite
+   stehen, damit Vorlesewerkzeuge und der Sprungfokus eine finden. */
+.nur-fuer-screenreader {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}

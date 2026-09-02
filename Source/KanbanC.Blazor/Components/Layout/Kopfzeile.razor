@@ -1,18 +1,66 @@
+@implements IDisposable
+@inject NavigationManager Navigation
+
 <header class="kopfzeile" id="kopfzeile">
-    <a class="kopfzeile-marke" id="marke" href="">KanbanC</a>
-    <nav class="kopfzeile-navigation" id="hauptnavigation" aria-label="Hauptnavigation">
-        <NavLink class="navigationspunkt"
-                 ActiveClass="navigationspunkt-aktiv"
-                 id="navigation-boards"
-                 href="boards">Boards</NavLink>
-        <span class="navigationspunkt navigationspunkt-gesperrt"
-              id="navigation-auswertungen"
-              aria-disabled="true"
-              title="Noch nicht verfügbar">Auswertungen</span>
-        <span class="navigationspunkt navigationspunkt-gesperrt"
-              id="navigation-kontributoren"
-              aria-disabled="true"
-              title="Noch nicht verfügbar">Kontributoren</span>
-    </nav>
-    <span class="kopfzeile-identitaet" id="identitaet">nicht gewählt</span>
+    @* Zone 1 — wo die Seite steht. Den Platz füllt sie selbst; auf dem Board steht
+       hier sein Name, auf der Übersicht deren Titel. Eine Wortmarke gibt es nicht:
+       wer die Anwendung offen hat, weiß, welche es ist — der Platz gehört dem Inhalt. *@
+    <div class="kopfzeile-kontext">
+        <SectionOutlet SectionName="kopfzeile-kontext" />
+    </div>
+
+    @* Zone 2 — die Hauptnavigation. *@
+    <div class="kopfzeile-anwendung">
+        <nav class="kopfzeile-navigation" id="hauptnavigation" aria-label="Hauptnavigation">
+            @* Steht ein Board offen, führt der Rückweg in seiner Kopfzeile schon dorthin —
+               der Punkt wäre dieselbe Verknüpfung ein zweites Mal. *@
+            @if (!_einBoardIstOffen)
+            {
+                <NavLink class="navigationspunkt"
+                         ActiveClass="navigationspunkt-aktiv"
+                         id="navigation-boards"
+                         href="boards">Boards</NavLink>
+            }
+            <span class="navigationspunkt navigationspunkt-gesperrt"
+                  id="navigation-auswertungen"
+                  aria-disabled="true"
+                  title="Noch nicht verfügbar">Auswertungen</span>
+            <span class="navigationspunkt navigationspunkt-gesperrt"
+                  id="navigation-kontributoren"
+                  aria-disabled="true"
+                  title="Noch nicht verfügbar">Kontributoren</span>
+        </nav>
+    </div>
+
+    @* Zone 3 — Werkzeuge und Identität, rechtsbündig. *@
+    <div class="kopfzeile-werkzeuge">
+        <SectionOutlet SectionName="kopfzeile-bedienung" />
+        <span class="kopfzeile-identitaet" id="identitaet">nicht gewählt</span>
+    </div>
 </header>
+
+@code {
+    private bool _einBoardIstOffen;
+
+    protected override void OnInitialized()
+    {
+        UebernimmAdresse();
+        Navigation.LocationChanged += AufAdresswechsel;
+    }
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= AufAdresswechsel;
+    }
+
+    private void AufAdresswechsel(object? absender, LocationChangedEventArgs ereignis)
+    {
+        UebernimmAdresse();
+        StateHasChanged();
+    }
+
+    private void UebernimmAdresse()
+    {
+        _einBoardIstOffen = Boardadresse.ZeigtAufEinBoard(Navigation.Uri);
+    }
+}
