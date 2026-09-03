@@ -1,3 +1,4 @@
+using KanbanC.BL.Tests.TestHelpers;
 using KanbanC.BL.Operations.Boards;
 using KanbanC.Contracts.Boards;
 
@@ -25,7 +26,7 @@ public class BoardAnlegenValidatorTests
 
         Assert.That(befunde.IstOhneBefund, Is.False);
         Assert.That(befunde.BefundAnzahl, Is.EqualTo(1));
-        Assert.That(befunde[0], Is.EqualTo("Der Name darf nicht leer sein."));
+        Assert.That(befunde[0].Meldung, Is.EqualTo("Der Name darf nicht leer sein."));
     }
 
     [Test]
@@ -36,7 +37,7 @@ public class BoardAnlegenValidatorTests
         var befunde = BoardAnlegenValidator.Pruefe(anfrage);
 
         Assert.That(befunde.BefundAnzahl, Is.EqualTo(1));
-        Assert.That(befunde[0], Does.Contain("Name"));
+        Assert.That(befunde[0].Meldung, Does.Contain("Name"));
     }
 
     [Test]
@@ -47,7 +48,7 @@ public class BoardAnlegenValidatorTests
         var befunde = BoardAnlegenValidator.Pruefe(anfrage);
 
         Assert.That(befunde.BefundAnzahl, Is.EqualTo(1));
-        Assert.That(befunde[0], Does.Contain("Board-Art"));
+        Assert.That(befunde[0].Meldung, Does.Contain("Board-Art"));
     }
 
     [Test]
@@ -58,7 +59,7 @@ public class BoardAnlegenValidatorTests
         var befunde = BoardAnlegenValidator.Pruefe(anfrage);
 
         Assert.That(befunde.BefundAnzahl, Is.EqualTo(1));
-        Assert.That(befunde[0], Is.EqualTo("Der Zieltermin darf nicht vor dem Starttermin liegen."));
+        Assert.That(befunde[0].Meldung, Is.EqualTo("Der Zieltermin darf nicht vor dem Starttermin liegen."));
     }
 
     [Test]
@@ -93,12 +94,26 @@ public class BoardAnlegenValidatorTests
 
         Assert.That(befunde.BefundAnzahl, Is.EqualTo(2));
         var meldungen = new List<string>();
-        foreach (var meldung in befunde)
+        foreach (var befund in befunde)
         {
-            meldungen.Add(meldung);
+            meldungen.Add(befund.Meldung);
         }
 
         Assert.That(meldungen[0], Does.Contain("Name"));
         Assert.That(meldungen[1], Does.Contain("Zieltermin"));
     }
+
+    [Test]
+    public void Wenn_alle_drei_Regeln_verletzt_sind_dann_traegt_jeder_Befund_Code_Meldung_und_Kompensationsaktion()
+    {
+        var anfrage = new BoardAnlegenAnfrage("", (BoardArt)99, new DateOnly(2026, 9, 1), new DateOnly(2026, 8, 1));
+
+        var befunde = BoardAnlegenValidator.Pruefe(anfrage);
+
+        Assert.That(befunde.BefundAnzahl, Is.EqualTo(3));
+        Befundpruefung.ErwarteVollstaendigenBefund(befunde[0], "board-name-leer");
+        Befundpruefung.ErwarteVollstaendigenBefund(befunde[1], "board-art-unbekannt");
+        Befundpruefung.ErwarteVollstaendigenBefund(befunde[2], "zieltermin-vor-starttermin");
+    }
+
 }

@@ -1,5 +1,5 @@
 using KanbanC.BL.Models;
-using KanbanC.Contracts.Boards;
+using KanbanC.Contracts.Fehler;
 
 namespace KanbanC.WebApi.Endpunkte;
 
@@ -7,12 +7,12 @@ public static class Zurueckweisungen
 {
     public static Zurueckweisung Aus(Pruefbefunde befunde)
     {
-        var meldungen = new List<string>();
-        foreach (var meldung in befunde)
+        var gesammelte = new List<Fehlerbefund>();
+        foreach (var befund in befunde)
         {
-            meldungen.Add(meldung);
+            gesammelte.Add(befund);
         }
 
-        return new Zurueckweisung(meldungen);
+        return new Zurueckweisung(gesammelte);
     }
 }

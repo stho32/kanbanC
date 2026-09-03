@@ -31,13 +31,13 @@ public class SpaltenApiKlientTests
     public async Task Wenn_die_WebApi_Befunde_meldet_dann_stehen_sie_im_Ergebnis()
     {
         using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.BadRequest,
-            """{"befunde":["Die Bezeichnung darf nicht leer sein."]}""", JsonInhaltstyp);
+            """{"befunde":[{"code":"spalte-bezeichnung-leer","meldung":"Die Bezeichnung darf nicht leer sein.","kompensation":"Den Aufruf mit nichtleerer Bezeichnung wiederholen."}]}""", JsonInhaltstyp);
         var klient = new SpaltenApiKlient(fabrik);
 
         var ergebnis = await klient.LegeSpalteAn(1, new SpalteAnlegenAnfrage("", false, null));
 
         Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
-        Assert.That(ergebnis.Zurueckweisung.Befunde, Is.EqualTo(new[] { "Die Bezeichnung darf nicht leer sein." }));
+        Assert.That(ergebnis.Zurueckweisung.Befunde.Select(befund => befund.Meldung), Is.EqualTo(new[] { "Die Bezeichnung darf nicht leer sein." }));
         Assert.That(() => ergebnis.Wert, Throws.InvalidOperationException);
     }
 
@@ -52,7 +52,7 @@ public class SpaltenApiKlientTests
 
         Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
         Assert.That(ergebnis.Zurueckweisung.Befunde, Has.Count.EqualTo(1));
-        Assert.That(ergebnis.Zurueckweisung.Befunde[0], Does.Contain("HTTP 400"));
+        Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("HTTP 400"));
     }
 
     [Test]
@@ -64,7 +64,7 @@ public class SpaltenApiKlientTests
         var ergebnis = await klient.LegeSpalteAn(1, new SpalteAnlegenAnfrage("Eingang", false, null));
 
         Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
-        Assert.That(ergebnis.Zurueckweisung.Befunde[0], Does.Contain("HTTP 400"));
+        Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("HTTP 400"));
     }
 
     [Test]
@@ -76,7 +76,7 @@ public class SpaltenApiKlientTests
         var ergebnis = await klient.AendereSpalte(1, 999, new SpalteAendernAnfrage("Erfunden", false, null));
 
         Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
-        Assert.That(ergebnis.Zurueckweisung.Befunde[0], Does.Contain("gibt es nicht mehr"));
+        Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("gibt es nicht mehr"));
     }
 
     [Test]
@@ -118,13 +118,13 @@ public class SpaltenApiKlientTests
     public async Task Wenn_die_WebApi_die_Reihenfolge_zurueckweist_dann_stehen_die_Befunde_im_Ergebnis()
     {
         using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.BadRequest,
-            """{"befunde":["Die Reihenfolge muss alle Spalten des Boards nennen."]}""", JsonInhaltstyp);
+            """{"befunde":[{"code":"reihenfolge-unvollstaendig","meldung":"Die Reihenfolge muss alle Spalten des Boards nennen.","kompensation":"GET /api/boards/1 abrufen und alle SpalteIds nennen."}]}""", JsonInhaltstyp);
         var klient = new SpaltenApiKlient(fabrik);
 
         var ergebnis = await klient.SetzeReihenfolge(1, new Spaltenreihenfolge([3]));
 
         Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
-        Assert.That(ergebnis.Zurueckweisung.Befunde[0], Does.Contain("alle Spalten"));
+        Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("alle Spalten"));
     }
 
     [Test]
@@ -147,20 +147,20 @@ public class SpaltenApiKlientTests
         var zurueckweisung = await klient.EntferneSpalte(1, 999);
 
         Assert.That(zurueckweisung, Is.Not.Null);
-        Assert.That(zurueckweisung!.Befunde[0], Does.Contain("gibt es nicht mehr"));
+        Assert.That(zurueckweisung!.Befunde[0].Meldung, Does.Contain("gibt es nicht mehr"));
     }
 
     [Test]
     public async Task Wenn_die_WebApi_das_Entfernen_wegen_enthaltener_Karten_zurueckweist_dann_reicht_der_Klient_ihre_Befunde_durch()
     {
-        const string rumpf = """{"befunde":["Die Spalte \u201EZu erledigen\u201C enth\u00E4lt noch 3 Karten und l\u00E4sst sich deshalb nicht entfernen."]}""";
+        const string rumpf = """{"befunde":[{"code":"spalte-traegt-karten","meldung":"Die Spalte \u201EZu erledigen\u201C enth\u00E4lt noch 3 Karten und l\u00E4sst sich deshalb nicht entfernen.","kompensation":"Die Karten zuerst verschieben."}]}""";
         using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.BadRequest, rumpf, "application/json");
         var klient = new SpaltenApiKlient(fabrik);
 
         var zurueckweisung = await klient.EntferneSpalte(1, 2);
 
         Assert.That(zurueckweisung, Is.Not.Null);
-        Assert.That(zurueckweisung.Befunde[0], Does.Contain("enthält noch 3 Karten"));
+        Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain("enthält noch 3 Karten"));
     }
 
     [Test]

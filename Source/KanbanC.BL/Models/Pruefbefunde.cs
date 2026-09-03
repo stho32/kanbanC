@@ -1,24 +1,26 @@
+using KanbanC.Contracts.Fehler;
+
 namespace KanbanC.BL.Models;
 
 public sealed class Pruefbefunde
 {
-    private readonly string[] _meldungen;
+    private readonly Fehlerbefund[] _befunde;
 
-    public Pruefbefunde(IEnumerable<string> meldungen)
+    public Pruefbefunde(IEnumerable<Fehlerbefund> befunde)
     {
-        _meldungen = meldungen.ToArray();
+        _befunde = befunde.ToArray();
     }
 
     public static Pruefbefunde Keine => new([]);
 
-    public bool IstOhneBefund => _meldungen.Length == 0;
+    public bool IstOhneBefund => _befunde.Length == 0;
 
-    public int BefundAnzahl => _meldungen.Length;
+    public int BefundAnzahl => _befunde.Length;
 
-    public string this[int index] => _meldungen[index];
+    public Fehlerbefund this[int index] => _befunde[index];
 
-    public IEnumerator<string> GetEnumerator()
+    public IEnumerator<Fehlerbefund> GetEnumerator()
     {
-        return ((IEnumerable<string>)_meldungen).GetEnumerator();
+        return ((IEnumerable<Fehlerbefund>)_befunde).GetEnumerator();
     }
 }

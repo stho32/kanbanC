@@ -48,7 +48,7 @@ public class SpaltenServiceTests
         var ergebnis = service.LegeSpalteAn(1, new SpalteAnlegenAnfrage("Abgenommen", true, null));
 
         Assert.That(ergebnis!.IstErfolg, Is.False);
-        Assert.That(ergebnis.Befunde[0], Does.Contain("Anzeigegrenze"));
+        Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("Anzeigegrenze"));
         Assert.That(repository.Spalten(1), Is.Empty);
     }
 
@@ -210,7 +210,7 @@ public class SpaltenServiceTests
         Assert.That(ergebnis!.IstErfolg, Is.False);
         Assert.Multiple(() =>
         {
-            Assert.That(ergebnis.Befunde[0], Does.Contain("schon vergeben"));
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("schon vergeben"));
             Assert.That(repository.WurdeAngelegt, Is.False);
             Assert.That(repository.Spalten(1), Has.Count.EqualTo(1));
         });
@@ -245,7 +245,7 @@ public class SpaltenServiceTests
         Assert.That(ergebnis!.IstErfolg, Is.False);
         Assert.Multiple(() =>
         {
-            Assert.That(ergebnis.Befunde[0], Does.Contain("schon vergeben"));
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("schon vergeben"));
             Assert.That(repository.WurdeGeaendert, Is.False);
             Assert.That(repository.Spalten(1)[1].Bezeichnung, Is.EqualTo("In Arbeit"));
         });

@@ -3,6 +3,7 @@ using KanbanC.BL.Operations.Boards;
 using KanbanC.BL.Persistenz.Boards;
 using KanbanC.BL.Persistenz.Karten;
 using KanbanC.Contracts.Boards;
+using KanbanC.Contracts.Fehler;
 using KanbanC.Contracts.Karten;
 using KanbanC.WebApi.IntegrationTests.Infrastructure;
 
@@ -70,7 +71,9 @@ public class SpaltenRepositoryTests
         Assert.Multiple(() =>
         {
             Assert.That(ergebnis!.IstErfolg, Is.False);
-            Assert.That(ergebnis.Befunde[0], Does.Contain("belegt"));
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("spalte-bezeichnung-vergeben"));
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("belegt"));
+            Assert.That(ergebnis.Befunde[0].Kompensation, Is.Not.Empty);
             Assert.That(GespeicherteSpaltenAnzahl(datenbank, boardId), Is.EqualTo(4));
         });
     }
@@ -389,8 +392,10 @@ public class SpaltenRepositoryTests
         Assert.Multiple(() =>
         {
             Assert.That(ergebnis.IstErfolg, Is.False);
-            Assert.That(ergebnis.Befunde[0], Does.Contain("2 Karten"));
-            Assert.That(ergebnis.Befunde[0], Does.Contain("Zu erledigen"));
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("spalte-traegt-karten"));
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("2 Karten"));
+            Assert.That(ergebnis.Befunde[0].Kompensation, Does.Contain("/lage"));
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("Zu erledigen"));
         });
         Assert.That(GespeicherteBezeichnungenNachPosition(datenbank, boardId),
             Is.EqualTo(new[] { "Zu erledigen", "In Arbeit", "Erledigt" }));
@@ -409,7 +414,7 @@ public class SpaltenRepositoryTests
         var ergebnis = repository.Entferne(boardId, zuErledigen);
 
         Assert.That(ergebnis, Is.Not.Null);
-        Assert.That(ergebnis.Befunde[0], Does.Contain("1 Karte "));
+        Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("1 Karte "));
     }
 
     [Test]

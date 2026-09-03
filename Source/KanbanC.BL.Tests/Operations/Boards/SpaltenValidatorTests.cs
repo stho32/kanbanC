@@ -1,3 +1,4 @@
+using KanbanC.BL.Tests.TestHelpers;
 using KanbanC.BL.Operations.Boards;
 
 namespace KanbanC.BL.Tests.Operations.Boards;
@@ -26,7 +27,7 @@ public class SpaltenValidatorTests
         var befunde = SpaltenValidator.Pruefe("   ", false, null, []);
 
         Assert.That(befunde.BefundAnzahl, Is.EqualTo(1));
-        Assert.That(befunde[0], Does.Contain("Bezeichnung"));
+        Assert.That(befunde[0].Meldung, Does.Contain("Bezeichnung"));
     }
 
     [Test]
@@ -35,7 +36,7 @@ public class SpaltenValidatorTests
         var befunde = SpaltenValidator.Pruefe("Abgenommen", true, null, []);
 
         Assert.That(befunde.BefundAnzahl, Is.EqualTo(1));
-        Assert.That(befunde[0], Does.Contain("Anzeigegrenze"));
+        Assert.That(befunde[0].Meldung, Does.Contain("Anzeigegrenze"));
     }
 
     [Test]
@@ -44,7 +45,7 @@ public class SpaltenValidatorTests
         var befunde = SpaltenValidator.Pruefe("Abgenommen", true, 0, []);
 
         Assert.That(befunde.BefundAnzahl, Is.EqualTo(1));
-        Assert.That(befunde[0], Does.Contain("größer"));
+        Assert.That(befunde[0].Meldung, Does.Contain("größer"));
     }
 
     [Test]
@@ -53,7 +54,7 @@ public class SpaltenValidatorTests
         var befunde = SpaltenValidator.Pruefe("Abgenommen", true, -1, []);
 
         Assert.That(befunde.BefundAnzahl, Is.EqualTo(1));
-        Assert.That(befunde[0], Does.Contain("größer"));
+        Assert.That(befunde[0].Meldung, Does.Contain("größer"));
     }
 
     [Test]
@@ -62,7 +63,7 @@ public class SpaltenValidatorTests
         var befunde = SpaltenValidator.Pruefe("In Arbeit", false, 5, []);
 
         Assert.That(befunde.BefundAnzahl, Is.EqualTo(1));
-        Assert.That(befunde[0], Does.Contain("nur an einer Abschlussspalte"));
+        Assert.That(befunde[0].Meldung, Does.Contain("nur an einer Abschlussspalte"));
     }
 
     [Test]
@@ -79,8 +80,8 @@ public class SpaltenValidatorTests
         var befunde = SpaltenValidator.Pruefe("Erledigt", false, null, ["Zu erledigen", "In Arbeit", "Erledigt"]);
 
         Assert.That(befunde.BefundAnzahl, Is.EqualTo(1));
-        Assert.That(befunde[0], Does.Contain("schon vergeben"));
-        Assert.That(befunde[0], Does.Contain("Erledigt"));
+        Assert.That(befunde[0].Meldung, Does.Contain("schon vergeben"));
+        Assert.That(befunde[0].Meldung, Does.Contain("Erledigt"));
     }
 
     [Test]
@@ -89,7 +90,7 @@ public class SpaltenValidatorTests
         var befunde = SpaltenValidator.Pruefe("erledigt", false, null, ["Erledigt"]);
 
         Assert.That(befunde.BefundAnzahl, Is.EqualTo(1));
-        Assert.That(befunde[0], Does.Contain("schon vergeben"));
+        Assert.That(befunde[0].Meldung, Does.Contain("schon vergeben"));
     }
 
     [Test]
@@ -98,7 +99,7 @@ public class SpaltenValidatorTests
         var befunde = SpaltenValidator.Pruefe("Erledigt ", false, null, ["Erledigt"]);
 
         Assert.That(befunde.BefundAnzahl, Is.EqualTo(1));
-        Assert.That(befunde[0], Does.Contain("schon vergeben"));
+        Assert.That(befunde[0].Meldung, Does.Contain("schon vergeben"));
     }
 
     [Test]
@@ -123,6 +124,28 @@ public class SpaltenValidatorTests
         var befunde = SpaltenValidator.Pruefe("   ", false, null, ["", "In Arbeit"]);
 
         Assert.That(befunde.BefundAnzahl, Is.EqualTo(1));
-        Assert.That(befunde[0], Does.Contain("nicht leer"));
+        Assert.That(befunde[0].Meldung, Does.Contain("nicht leer"));
     }
+
+    [Test]
+    public void Wenn_Bezeichnung_und_Markierung_zugleich_verletzt_sind_dann_traegt_jeder_Befund_Code_Meldung_und_Kompensationsaktion()
+    {
+        var befunde = SpaltenValidator.Pruefe("", true, null, []);
+
+        Assert.That(befunde.BefundAnzahl, Is.EqualTo(2));
+        Befundpruefung.ErwarteVollstaendigenBefund(befunde[0], "spalte-bezeichnung-leer");
+        Befundpruefung.ErwarteVollstaendigenBefund(befunde[1], "abschlussspalte-ohne-anzeigegrenze");
+    }
+
+    [Test]
+    public void Wenn_eine_vergebene_Bezeichnung_mit_unmoeglicher_Anzeigegrenze_kommt_dann_tragen_alle_drei_Befunde_ihren_Code()
+    {
+        var befunde = SpaltenValidator.Pruefe("Erledigt", false, 0, ["Erledigt"]);
+
+        Assert.That(befunde.BefundAnzahl, Is.EqualTo(3));
+        Befundpruefung.ErwarteVollstaendigenBefund(befunde[0], "spalte-bezeichnung-vergeben");
+        Befundpruefung.ErwarteVollstaendigenBefund(befunde[1], "anzeigegrenze-nicht-positiv");
+        Befundpruefung.ErwarteVollstaendigenBefund(befunde[2], "anzeigegrenze-ohne-abschlussspalte");
+    }
+
 }

@@ -1,5 +1,6 @@
 @using KanbanC.Blazor.Services
 @using KanbanC.Contracts.Boards
+@using KanbanC.Contracts.Fehler
 @using KanbanC.Contracts.Karten
 @inject KartenApiKlient KartenKlient
 
@@ -12,7 +13,7 @@
                 <ul>
                     @foreach (var befund in _zurueckweisung.Befunde)
                     {
-                        <li>@befund</li>
+                        <li>@befund.Meldung</li>
                     }
                 </ul>
             </div>

@@ -1,4 +1,5 @@
 using KanbanC.BL.Models;
+using KanbanC.Contracts.Fehler;
 
 namespace KanbanC.BL.Tests.Models;
 
@@ -17,7 +18,7 @@ public class ErgebnisTests
     [Test]
     public void Wenn_eine_Zurueckweisung_mit_Befund_gebildet_wird_dann_ist_sie_kein_Erfolg_und_hat_keinen_Wert()
     {
-        var befunde = new Pruefbefunde(["Der Name darf nicht leer sein."]);
+        var befunde = new Pruefbefunde([new Fehlerbefund("board-name-leer", "Der Name darf nicht leer sein.", "POST /api/boards mit nichtleerem Namen wiederholen.")]);
 
         var ergebnis = Ergebnis<string>.Zurueckgewiesen(befunde);
 

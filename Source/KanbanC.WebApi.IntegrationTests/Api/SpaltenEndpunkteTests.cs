@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text;
 using Dapper;
 using KanbanC.Contracts.Boards;
+using KanbanC.Contracts.Fehler;
 using KanbanC.Contracts.Karten;
 using KanbanC.WebApi.IntegrationTests.Infrastructure;
 
@@ -50,7 +51,7 @@ public class SpaltenEndpunkteTests
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
         var zurueckweisung = await antwort.Content.ReadFromJsonAsync<Zurueckweisung>();
         Assert.That(zurueckweisung, Is.Not.Null);
-        Assert.That(zurueckweisung.Befunde, Has.Some.Contains("schon vergeben"));
+        Assert.That(zurueckweisung.Befunde.Select(befund => befund.Meldung), Has.Some.Contains("schon vergeben"));
         var board = await LadeBoard(webApi, boardId);
         Assert.That(board.Spalten, Has.Count.EqualTo(4));
     }
@@ -249,7 +250,7 @@ public class SpaltenEndpunkteTests
 
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
         var zurueckweisung = await antwort.Content.ReadFromJsonAsync<Zurueckweisung>();
-        Assert.That(zurueckweisung!.Befunde, Has.Some.Contains("schon vergeben"));
+        Assert.That(zurueckweisung!.Befunde.Select(befund => befund.Meldung), Has.Some.Contains("schon vergeben"));
         var board = await LadeBoard(webApi, boardId);
         Assert.That(board.Spalten.Select(s => s.Bezeichnung), Is.EqualTo(new[] { "Zu erledigen", "In Arbeit", "Erledigt" }));
     }
@@ -303,7 +304,7 @@ public class SpaltenEndpunkteTests
         var zurueckweisung = await antwort.Content.ReadFromJsonAsync<Zurueckweisung>();
         Assert.That(zurueckweisung, Is.Not.Null);
         Assert.That(zurueckweisung.Befunde, Has.Count.GreaterThan(0));
-        Assert.That(zurueckweisung.Befunde[0], Does.Contain("Bezeichnung"));
+        Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain("Bezeichnung"));
         var board = await LadeBoard(webApi, boardId);
         Assert.That(board.Spalten, Has.Count.EqualTo(3));
     }
@@ -336,7 +337,7 @@ public class SpaltenEndpunkteTests
 
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
         var zurueckweisung = await antwort.Content.ReadFromJsonAsync<Zurueckweisung>();
-        Assert.That(zurueckweisung!.Befunde[0], Does.Contain("Anzeigegrenze"));
+        Assert.That(zurueckweisung!.Befunde[0].Meldung, Does.Contain("Anzeigegrenze"));
         var board = await LadeBoard(webApi, boardId);
         Assert.That(board.Spalten, Has.Count.EqualTo(3));
     }
@@ -353,7 +354,7 @@ public class SpaltenEndpunkteTests
 
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
         var zurueckweisung = await antwort.Content.ReadFromJsonAsync<Zurueckweisung>();
-        Assert.That(zurueckweisung!.Befunde[0], Does.Contain("größer"));
+        Assert.That(zurueckweisung!.Befunde[0].Meldung, Does.Contain("größer"));
     }
 
     [Test]
@@ -414,7 +415,7 @@ public class SpaltenEndpunkteTests
 
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
         var zurueckweisung = await antwort.Content.ReadFromJsonAsync<Zurueckweisung>();
-        Assert.That(zurueckweisung!.Befunde[0], Does.Contain("alle Spalten"));
+        Assert.That(zurueckweisung!.Befunde[0].Meldung, Does.Contain("alle Spalten"));
         var unveraendert = await LadeBoard(webApi, boardId);
         Assert.That(unveraendert.Spalten.Select(s => s.Bezeichnung),
             Is.EqualTo(new[] { "Zu erledigen", "In Arbeit", "Erledigt" }));
@@ -434,7 +435,7 @@ public class SpaltenEndpunkteTests
 
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
         var zurueckweisung = await antwort.Content.ReadFromJsonAsync<Zurueckweisung>();
-        Assert.That(zurueckweisung!.Befunde[0], Does.Contain("mehrfach"));
+        Assert.That(zurueckweisung!.Befunde[0].Meldung, Does.Contain("mehrfach"));
         var unveraendert = await LadeBoard(webApi, boardId);
         Assert.That(unveraendert.Spalten.Select(s => s.Bezeichnung),
             Is.EqualTo(new[] { "Zu erledigen", "In Arbeit", "Erledigt" }));
@@ -455,7 +456,7 @@ public class SpaltenEndpunkteTests
 
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
         var zurueckweisung = await antwort.Content.ReadFromJsonAsync<Zurueckweisung>();
-        Assert.That(zurueckweisung!.Befunde, Has.Some.Contains("nicht zu diesem Board"));
+        Assert.That(zurueckweisung!.Befunde.Select(befund => befund.Meldung), Has.Some.Contains("nicht zu diesem Board"));
         var unveraendert = await LadeBoard(webApi, zweitesBoard);
         Assert.That(unveraendert.Spalten.Select(s => s.SpalteId), Is.EqualTo(eigene.Select(s => s.SpalteId)));
     }
@@ -545,7 +546,7 @@ public class SpaltenEndpunkteTests
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
         var zurueckweisung = await antwort.Content.ReadFromJsonAsync<Zurueckweisung>();
         Assert.That(zurueckweisung, Is.Not.Null);
-        Assert.That(zurueckweisung.Befunde, Has.Some.Contains("2 Karten"));
+        Assert.That(zurueckweisung.Befunde.Select(befund => befund.Meldung), Has.Some.Contains("2 Karten"));
         var unveraendert = await LadeBoard(webApi, boardId);
         Assert.Multiple(() =>
         {
@@ -658,7 +659,7 @@ public class SpaltenEndpunkteTests
 
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
         var zurueckweisung = await antwort.Content.ReadFromJsonAsync<Zurueckweisung>();
-        Assert.That(zurueckweisung!.Befunde[0], Does.Contain("alle Spalten"));
+        Assert.That(zurueckweisung!.Befunde[0].Meldung, Does.Contain("alle Spalten"));
         var unveraendert = await LadeBoard(webApi, boardId);
         Assert.That(unveraendert.Spalten.Select(s => s.Bezeichnung),
             Is.EqualTo(new[] { "Zu erledigen", "In Arbeit", "Erledigt" }));

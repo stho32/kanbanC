@@ -56,7 +56,7 @@ public class BoardServiceTests
         var ergebnis = service.LegeBoardAn(anfrage);
 
         Assert.That(ergebnis.IstErfolg, Is.False);
-        Assert.That(ergebnis.Befunde[0], Does.Contain("Zieltermin"));
+        Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("Zieltermin"));
         Assert.That(repository.LadeAlle(), Is.Empty);
     }
 

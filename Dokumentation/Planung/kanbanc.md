@@ -4,7 +4,7 @@ system: KanbanC
 vision: Anforderungen/R00000-vision.md
 wireframes: Dokumentation/Wireframes/
 sprache: de
-zuletzt: 2026-09-02
+zuletzt: 2026-09-03
 ---
 
 # WBS — KanbanC
@@ -134,14 +134,14 @@ zuletzt: 2026-09-02
 | B0080 | Bubble | F0018 | Kartenanfrage prüfen | gruen | Test gruen | KarteAnlegenAnfrage → KartenValidator.Pruefe → Pruefbefunde | 0,4 | | | | Operation; Aufwand belegt (B0027); Befunde: leerer Titel und mehr als 1000 Zeichen nach dem Trimmen |
 | B0081 | Bubble | F0018 | Zurückweisung über die API | gruen | Test gruen | Pruefbefunde → KartenService + KartenEndpunkte → 400 Zurueckweisung, 404 bei fremder Spalte | 0,4 | | | | Integration; Aufwand belegt (B0029) |
 | B0082 | Bubble | F0018 | Zurückweisung in der Oberfläche | gruen | Test gruen | Zurueckweisung → Kartenanlage.razor → lesbare Meldung, Bahn bleibt bedienbar; E2E US-5 | 2 | | | | UI |
-| I0012 | Interaction | D0003 | Karte verschieben | rot | Eine Karte wechselt Spalte und Position; die neue Lage bleibt nach Reload erhalten | | | | I0011 | R00007 | |
-| F0021 | Feature | I0012 | Fehlerantworten für Agenten | rot | AK „Fehlerantworten, die ein Agent benutzen kann“: keine Fehlerantwort mit leerem Rumpf, je Befund Code, Meldung und Kompensation nichtleer, Vertragstest über alle Endpunkte | | | | I0011 | R00007 | quer durch den Bestand: 15 Befunde, 6 leere 404 |
-| B0096 | Bubble | F0021 | Fehlerbefund neben der Meldung | rot | Test gruen | Code + Meldung + Kompensation → Fehlerbefund; Pruefbefunde nimmt beide Formen → Bestand unverändert gruen | 2 | | | | Contracts + Model, additiv; Zurueckweisung zieht nach Contracts/Fehler/ |
-| B0097 | Bubble | F0021 | Die 15 Befunde bekommen Code und Kompensation | rot | Test gruen | vier Validatoren + SpaltenRepository → Fehlerbefund je Meldung → 15 Befunde mit drei Feldern | 2-4 | | | | Operations + Provider; unklar: wie lange 15 brauchbare Kompensationssätze brauchen — Fleiss, nicht Technik |
+| I0012 | Interaction | D0003 | Karte verschieben | gelb | Eine Karte wechselt Spalte und Position; die neue Lage bleibt nach Reload erhalten | | | | I0011 | R00007 | |
+| F0021 | Feature | I0012 | Fehlerantworten für Agenten | gelb | AK „Fehlerantworten, die ein Agent benutzen kann“: keine Fehlerantwort mit leerem Rumpf, je Befund Code, Meldung und Kompensation nichtleer, Vertragstest über alle Endpunkte | | | | I0011 | R00007 | quer durch den Bestand: 15 Befunde, 6 leere 404 |
+| B0096 | Bubble | F0021 | Fehlerbefund neben der Meldung | gruen | Test gruen | Code + Meldung + Kompensation → Fehlerbefund; Pruefbefunde nimmt beide Formen → Bestand unverändert gruen | 2 | | | | Contracts + Model; Zurueckweisung zieht nach Contracts/Fehler/ und traegt Fehlerbefund. Zusammen mit B0097, B0100 und B0101 in einem Zug gebaut: eine Zwischenform mit beiden Typen haette Platzhalter-Codes gebraucht, also einen absichtlichen Vertragsbruch |
+| B0097 | Bubble | F0021 | Die 16 Befunde bekommen Code und Kompensation | gruen | Test gruen | vier Validatoren + SpaltenRepository → Fehlerbefund je Meldung → 15 Befunde mit drei Feldern | 2-4 | | | | Operations + Provider; es waren 16, nicht 15: SpaltenRepository formuliert drei Zurueckweisungen, nicht zwei (BezeichnungWurdeInzwischenVergeben kam in der Zaehlung vom 2026-09-03 nicht vor) |
 | B0098 | Bubble | F0021 | Antwort auf „gibt es nicht“ | rot | Test gruen | boardId / karteId / spalteId → Nichtgefunden.Board/Karte/Spalte → 404 mit Befund | 2 | | | | Operation (WebApi); die eine Stelle statt sechs Varianten |
 | B0099 | Bubble | F0021 | Die sechs leeren 404 füllen | rot | Test gruen | Nichtgefunden → BoardEndpunkte, SpaltenEndpunkte, KartenEndpunkte → sechs Antworten mit Rumpf | 2 | | | | Integration |
-| B0100 | Bubble | F0021 | Oberfläche liest die Meldung | rot | Test gruen | Zurueckweisung mit Fehlerbefunden → Zurueckweisungsleser, Kartenanlage.razor, Spaltenpflege.razor → sichtbare Meldungen wie vorher | 2 | | | | UI; Code und Kompensation bleiben unsichtbar |
-| B0101 | Bubble | F0021 | Alte Form abbauen | rot | Test gruen | Pruefbefunde ohne Zeichenketten-Pfad → Bau gruen, 14 Testdateien nachgezogen → eine Form | 2-4 | | | | Das Ende des Stranglers; unklar: 14 Testdateien |
+| B0100 | Bubble | F0021 | Oberfläche liest die Meldung | gruen | Test gruen | Zurueckweisung mit Fehlerbefunden → Zurueckweisungsleser, Kartenanlage.razor, Spaltenpflege.razor → sichtbare Meldungen wie vorher | 2 | | | | UI; Code und Kompensation bleiben unsichtbar |
+| B0101 | Bubble | F0021 | Alte Form abbauen | gruen | Test gruen | Pruefbefunde ohne Zeichenketten-Pfad → Bau gruen, 14 Testdateien nachgezogen → eine Form | 2-4 | | | | 14 Testdateien nachgezogen, keine fachliche Aussage entfallen; der Strangler entfiel, siehe B0096 |
 | B0102 | Bubble | F0021 | Vertragstest über alle Fehlerantworten | rot | Test gruen | jede Fehlerantwort jedes Endpunkts über TestWebApi → Fehlervertragstests → Code, Meldung, Kompensation nichtleer | 2 | | | | Integration; das pruefbare Gegenstueck zum Akzeptanzkriterium |
 | F0019 | Feature | I0012 | Karte verschieben | rot | AK „Karte in eine andere Spalte bewegen (API)“, „Karte innerhalb ihrer Spalte umsortieren (API)“, „Lückenlose Positionen und Dauerhaftigkeit“ und „Verschieben in der Oberfläche“; US-1, US-2, US-3, US-4 | | | | F0021 | R00007 | |
 | B0085 | Bubble | F0019 | Zug in der Datenbank ausführen | rot | Test gruen | boardId + karteId + Kartenlage → KartenRepository.Verschiebe → Ergebnis<Spalten> oder null | 2 | | | | Provider, eine Transaktion; Quellspalte auf 1..n-1 verdichtet, Zielspalte ab der Zielposition aufgeschoben. Zwei Spalten — mehr als B0035/B0038, deshalb nicht belegt |

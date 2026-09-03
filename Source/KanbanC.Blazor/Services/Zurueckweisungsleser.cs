@@ -1,12 +1,16 @@
 using System.Text.Json;
-using KanbanC.Contracts.Boards;
+using KanbanC.Contracts.Fehler;
 
 namespace KanbanC.Blazor.Services;
 
 public static class Zurueckweisungsleser
 {
-    private static readonly Zurueckweisung OhneLesbareBefunde =
-        new(["Die WebApi hat die Anfrage zurückgewiesen (HTTP 400)."]);
+    private static readonly Zurueckweisung OhneLesbareBefunde = new([
+        new Fehlerbefund(
+            "antwort-unlesbar",
+            "Die WebApi hat die Anfrage zurückgewiesen (HTTP 400).",
+            "Den Aufruf wiederholen und den Rumpf der Antwort auswerten."),
+    ]);
 
     public static async Task<Zurueckweisung> Lies(HttpResponseMessage antwort)
     {

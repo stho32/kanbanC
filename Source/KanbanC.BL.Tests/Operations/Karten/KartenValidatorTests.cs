@@ -1,3 +1,4 @@
+using KanbanC.BL.Tests.TestHelpers;
 using KanbanC.BL.Operations.Karten;
 using KanbanC.Contracts.Karten;
 
@@ -23,7 +24,7 @@ public class KartenValidatorTests
         Assert.Multiple(() =>
         {
             Assert.That(befunde.IstOhneBefund, Is.False);
-            Assert.That(befunde[0], Is.EqualTo("Der Titel darf nicht leer sein."));
+            Assert.That(befunde[0].Meldung, Is.EqualTo("Der Titel darf nicht leer sein."));
         });
     }
 
@@ -35,7 +36,7 @@ public class KartenValidatorTests
         Assert.Multiple(() =>
         {
             Assert.That(befunde.BefundAnzahl, Is.EqualTo(1));
-            Assert.That(befunde[0], Is.EqualTo("Der Titel darf nicht leer sein."));
+            Assert.That(befunde[0].Meldung, Is.EqualTo("Der Titel darf nicht leer sein."));
         });
     }
 
@@ -59,7 +60,7 @@ public class KartenValidatorTests
         Assert.Multiple(() =>
         {
             Assert.That(befunde.IstOhneBefund, Is.False);
-            Assert.That(befunde[0], Does.Contain("1000"));
+            Assert.That(befunde[0].Meldung, Does.Contain("1000"));
         });
     }
 
@@ -72,4 +73,21 @@ public class KartenValidatorTests
 
         Assert.That(befunde.IstOhneBefund, Is.True);
     }
+
+    [Test]
+    public void Wenn_der_Titel_fehlt_dann_traegt_der_Befund_Code_Meldung_und_Kompensationsaktion()
+    {
+        var befunde = KartenValidator.Pruefe(new KarteAnlegenAnfrage(""));
+
+        Befundpruefung.ErwarteVollstaendigenBefund(befunde[0], "kartentitel-leer");
+    }
+
+    [Test]
+    public void Wenn_der_Titel_zu_lang_ist_dann_traegt_der_Befund_Code_Meldung_und_Kompensationsaktion()
+    {
+        var befunde = KartenValidator.Pruefe(new KarteAnlegenAnfrage(new string('a', HoechsteTitellaenge + 1)));
+
+        Befundpruefung.ErwarteVollstaendigenBefund(befunde[0], "kartentitel-zu-lang");
+    }
+
 }

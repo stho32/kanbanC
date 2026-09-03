@@ -1,5 +1,6 @@
 using KanbanC.Blazor.Services;
 using KanbanC.Contracts.Boards;
+using KanbanC.Contracts.Fehler;
 
 namespace KanbanC.Blazor.Tests.Services;
 
@@ -8,7 +9,7 @@ public class ApiErgebnisTests
     [Test]
     public void Wenn_ein_Ergebnis_zurueckgewiesen_wurde_dann_hat_der_Zugriff_auf_den_Wert_keinen_stillen_Ersatz()
     {
-        var ergebnis = ApiErgebnis<Board>.Zurueckgewiesen(new Zurueckweisung(["Der Name darf nicht leer sein."]));
+        var ergebnis = ApiErgebnis<Board>.Zurueckgewiesen(new Zurueckweisung([new Fehlerbefund("board-name-leer", "Der Name darf nicht leer sein.", "POST /api/boards mit nichtleerem Namen wiederholen.")]));
 
         Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
         Assert.That(ergebnis.Zurueckweisung.Befunde, Has.Count.EqualTo(1));

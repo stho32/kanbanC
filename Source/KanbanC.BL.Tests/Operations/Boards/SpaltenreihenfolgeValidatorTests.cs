@@ -1,3 +1,4 @@
+using KanbanC.BL.Tests.TestHelpers;
 using KanbanC.BL.Operations.Boards;
 
 namespace KanbanC.BL.Tests.Operations.Boards;
@@ -26,7 +27,7 @@ public class SpaltenreihenfolgeValidatorTests
         var befunde = SpaltenreihenfolgeValidator.Pruefe([2, 1], [1, 2, 3]);
 
         Assert.That(befunde.BefundAnzahl, Is.EqualTo(1));
-        Assert.That(befunde[0], Does.Contain("alle Spalten"));
+        Assert.That(befunde[0].Meldung, Does.Contain("alle Spalten"));
     }
 
     [Test]
@@ -35,7 +36,7 @@ public class SpaltenreihenfolgeValidatorTests
         var befunde = SpaltenreihenfolgeValidator.Pruefe([1, 1, 2], [1, 2, 3]);
 
         Assert.That(befunde.IstOhneBefund, Is.False);
-        Assert.That(befunde[0], Does.Contain("mehrfach"));
+        Assert.That(befunde[0].Meldung, Does.Contain("mehrfach"));
     }
 
     [Test]
@@ -44,7 +45,7 @@ public class SpaltenreihenfolgeValidatorTests
         var befunde = SpaltenreihenfolgeValidator.Pruefe([1, 2, 9], [1, 2, 3]);
 
         Assert.That(befunde.IstOhneBefund, Is.False);
-        Assert.That(befunde[0], Does.Contain("nicht zu diesem Board"));
+        Assert.That(befunde[0].Meldung, Does.Contain("nicht zu diesem Board"));
     }
 
     [Test]
@@ -53,6 +54,26 @@ public class SpaltenreihenfolgeValidatorTests
         var befunde = SpaltenreihenfolgeValidator.Pruefe([], [1, 2, 3]);
 
         Assert.That(befunde.BefundAnzahl, Is.EqualTo(1));
-        Assert.That(befunde[0], Does.Contain("alle Spalten"));
+        Assert.That(befunde[0].Meldung, Does.Contain("alle Spalten"));
     }
+
+    [Test]
+    public void Wenn_die_Reihenfolge_alle_drei_Regeln_verletzt_dann_traegt_jeder_Befund_Code_Meldung_und_Kompensationsaktion()
+    {
+        var befunde = SpaltenreihenfolgeValidator.Pruefe([1, 1, 9], [1, 2]);
+
+        Assert.That(befunde.BefundAnzahl, Is.EqualTo(3));
+        Befundpruefung.ErwarteVollstaendigenBefund(befunde[0], "reihenfolge-nennt-spalte-mehrfach");
+        Befundpruefung.ErwarteVollstaendigenBefund(befunde[1], "reihenfolge-nennt-fremde-spalte");
+        Befundpruefung.ErwarteVollstaendigenBefund(befunde[2], "reihenfolge-unvollstaendig");
+    }
+
+    [Test]
+    public void Wenn_eine_fremde_Spalte_genannt_wird_dann_nennt_die_Kompensationsaktion_ihre_SpalteId()
+    {
+        var befunde = SpaltenreihenfolgeValidator.Pruefe([1, 2, 9], [1, 2]);
+
+        Assert.That(befunde[0].Kompensation, Does.Contain("9"));
+    }
+
 }

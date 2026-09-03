@@ -66,7 +66,7 @@ public class KartenServiceTests
         Assert.Multiple(() =>
         {
             Assert.That(ergebnis.IstErfolg, Is.False);
-            Assert.That(ergebnis.Befunde[0], Is.EqualTo("Der Titel darf nicht leer sein."));
+            Assert.That(ergebnis.Befunde[0].Meldung, Is.EqualTo("Der Titel darf nicht leer sein."));
             Assert.That(kartenRepository.WurdeAngelegt, Is.False);
         });
     }
@@ -85,7 +85,7 @@ public class KartenServiceTests
         Assert.Multiple(() =>
         {
             Assert.That(ergebnis.IstErfolg, Is.False);
-            Assert.That(ergebnis.Befunde[0], Does.Contain("1000"));
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("1000"));
             Assert.That(kartenRepository.WurdeAngelegt, Is.False);
         });
     }

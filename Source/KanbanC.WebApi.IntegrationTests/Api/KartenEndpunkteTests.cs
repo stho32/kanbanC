@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using KanbanC.Contracts.Boards;
+using KanbanC.Contracts.Fehler;
 using KanbanC.Contracts.Karten;
 using KanbanC.WebApi.IntegrationTests.Infrastructure;
 
@@ -158,7 +159,7 @@ public class KartenEndpunkteTests
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
         var zurueckweisung = await antwort.Content.ReadFromJsonAsync<Zurueckweisung>();
         Assert.That(zurueckweisung, Is.Not.Null);
-        Assert.That(zurueckweisung.Befunde, Has.Some.Contains("Titel darf nicht leer sein"));
+        Assert.That(zurueckweisung.Befunde.Select(befund => befund.Meldung), Has.Some.Contains("Titel darf nicht leer sein"));
         var geladen = await LadeBoard(webApi, board.BoardId);
         Assert.That(geladen.Spalten[0].Karten.Select(karte => karte.Titel), Is.EqualTo(new[] { "Migration schreiben" }));
     }
@@ -204,7 +205,7 @@ public class KartenEndpunkteTests
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
         var zurueckweisung = await antwort.Content.ReadFromJsonAsync<Zurueckweisung>();
         Assert.That(zurueckweisung, Is.Not.Null);
-        Assert.That(zurueckweisung.Befunde, Has.Some.Contains("1000"));
+        Assert.That(zurueckweisung.Befunde.Select(befund => befund.Meldung), Has.Some.Contains("1000"));
         await ErwarteBoardOhneKarten(webApi, board.BoardId);
     }
 

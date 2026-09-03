@@ -1,12 +1,16 @@
 using System.Net;
-using KanbanC.Contracts.Boards;
+using KanbanC.Contracts.Fehler;
 
 namespace KanbanC.Blazor.Services;
 
 public static class ApiAntwortleser
 {
-    public static Zurueckweisung BoardOderSpalteVerschwunden { get; } =
-        new(["Das Board oder die Spalte gibt es nicht mehr."]);
+    public static Zurueckweisung BoardOderSpalteVerschwunden { get; } = new([
+        new Fehlerbefund(
+            "board-oder-spalte-verschwunden",
+            "Das Board oder die Spalte gibt es nicht mehr.",
+            "`GET /api/boards` abrufen und mit einem vorhandenen Board weiterarbeiten."),
+    ]);
 
     public static async Task<ApiErgebnis<T>> AlsErgebnis<T>(HttpResponseMessage antwort)
         where T : class

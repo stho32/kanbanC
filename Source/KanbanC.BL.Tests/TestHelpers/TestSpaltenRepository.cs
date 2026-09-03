@@ -1,6 +1,7 @@
 using KanbanC.BL.Interfaces.Boards;
 using KanbanC.BL.Models;
 using KanbanC.Contracts.Boards;
+using KanbanC.Contracts.Fehler;
 using KanbanC.Contracts.Karten;
 
 namespace KanbanC.BL.Tests.TestHelpers;
@@ -95,7 +96,11 @@ public sealed class TestSpaltenRepository : ISpaltenRepository
         var spalteTraegtNochKarten = zuEntfernendeSpalte.Karten.Count > 0;
         if (spalteTraegtNochKarten)
         {
-            return Ergebnis<Spalte>.Zurueckgewiesen(new Pruefbefunde(["Die Spalte enthält noch Karten und lässt sich deshalb nicht entfernen."]));
+            return Ergebnis<Spalte>.Zurueckgewiesen(new Pruefbefunde([
+                new Fehlerbefund(
+                    "spalte-traegt-karten",
+                    "Die Spalte enthält noch Karten und lässt sich deshalb nicht entfernen.",
+                    "Die Karten mit `PUT /api/boards/{boardId}/karten/{karteId}/lage` in eine andere Spalte verschieben.")]));
         }
 
         spalten.RemoveAt(stelle);

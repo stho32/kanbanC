@@ -29,14 +29,14 @@ public class KartenApiKlientTests
     [Test]
     public async Task Wenn_die_WebApi_die_Kartenanlage_zurueckweist_dann_reicht_der_Klient_die_Befunde_aus_dem_Rumpf_durch()
     {
-        const string rumpf = """{"befunde":["Der Titel darf nicht leer sein."]}""";
+        const string rumpf = """{"befunde":[{"code":"kartentitel-leer","meldung":"Der Titel darf nicht leer sein.","kompensation":"Den Aufruf mit nichtleerem Titel wiederholen."}]}""";
         using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.BadRequest, rumpf, "application/json");
         var klient = new KartenApiKlient(fabrik);
 
         var ergebnis = await klient.LegeKarteAn(1, 2, new KarteAnlegenAnfrage(""));
 
         Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
-        Assert.That(ergebnis.Zurueckweisung.Befunde[0], Is.EqualTo("Der Titel darf nicht leer sein."));
+        Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Is.EqualTo("Der Titel darf nicht leer sein."));
     }
 
     [Test]
@@ -48,7 +48,7 @@ public class KartenApiKlientTests
         var ergebnis = await klient.LegeKarteAn(1, 2, new KarteAnlegenAnfrage("Migration schreiben"));
 
         Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
-        Assert.That(ergebnis.Zurueckweisung.Befunde[0], Does.Contain("HTTP 400"));
+        Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("HTTP 400"));
     }
 
     [Test]
@@ -60,7 +60,7 @@ public class KartenApiKlientTests
         var ergebnis = await klient.LegeKarteAn(1, 999, new KarteAnlegenAnfrage("Migration schreiben"));
 
         Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
-        Assert.That(ergebnis.Zurueckweisung.Befunde[0], Does.Contain("gibt es nicht mehr"));
+        Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("gibt es nicht mehr"));
     }
 
     [Test]

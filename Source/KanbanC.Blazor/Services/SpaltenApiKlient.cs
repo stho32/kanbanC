@@ -1,5 +1,6 @@
 using System.Net;
 using KanbanC.Contracts.Boards;
+using KanbanC.Contracts.Fehler;
 
 namespace KanbanC.Blazor.Services;
 

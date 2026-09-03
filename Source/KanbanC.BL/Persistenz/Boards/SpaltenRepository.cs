@@ -6,6 +6,7 @@ using KanbanC.BL.Models;
 using KanbanC.BL.Operations.Boards;
 using KanbanC.BL.Persistenz.Karten;
 using KanbanC.Contracts.Boards;
+using KanbanC.Contracts.Fehler;
 using KanbanC.Contracts.Karten;
 using Microsoft.Data.Sqlite;
 
@@ -14,10 +15,18 @@ namespace KanbanC.BL.Persistenz.Boards;
 public sealed class SpaltenRepository : ISpaltenRepository
 {
     private const int UniqueConstraintFehlercode = 2067;
-    private static readonly Pruefbefunde SpaltenbestandHatSichGeaendert =
-        new(["Die Spalten des Boards haben sich zwischenzeitlich geändert; bitte die Reihenfolge erneut setzen."]);
-    private static readonly Pruefbefunde BezeichnungWurdeInzwischenVergeben =
-        new(["Die Bezeichnung ist inzwischen von einer anderen Spalte dieses Boards belegt; bitte eine andere wählen."]);
+    private static readonly Pruefbefunde SpaltenbestandHatSichGeaendert = new([
+        new Fehlerbefund(
+            "spaltenbestand-geaendert",
+            "Die Spalten des Boards haben sich zwischenzeitlich geändert; bitte die Reihenfolge erneut setzen.",
+            "`GET /api/boards/{boardId}` abrufen und `PUT /api/boards/{boardId}/spalten/reihenfolge` mit den jetzt vorhandenen SpalteIds wiederholen."),
+    ]);
+    private static readonly Pruefbefunde BezeichnungWurdeInzwischenVergeben = new([
+        new Fehlerbefund(
+            "spalte-bezeichnung-vergeben",
+            "Die Bezeichnung ist inzwischen von einer anderen Spalte dieses Boards belegt; bitte eine andere wählen.",
+            "`GET /api/boards/{boardId}` abrufen, die vergebenen Bezeichnungen ablesen und den Aufruf mit einer freien wiederholen."),
+    ]);
     private static readonly IReadOnlyList<Karte> OhneKarten = [];
     private readonly IDatenbankVerbindungsfabrik _verbindungsfabrik;
 
@@ -148,8 +157,12 @@ public sealed class SpaltenRepository : ISpaltenRepository
     private static Pruefbefunde SpalteTraegtNochKarten(Spalte spalte)
     {
         var kartenwort = Kartenwort(spalte.Karten.Count);
-        return new Pruefbefunde(
-            [$"Die Spalte „{spalte.Bezeichnung}“ enthält noch {spalte.Karten.Count} {kartenwort} und lässt sich deshalb nicht entfernen."]);
+        return new Pruefbefunde([
+            new Fehlerbefund(
+                "spalte-traegt-karten",
+                $"Die Spalte „{spalte.Bezeichnung}“ enthält noch {spalte.Karten.Count} {kartenwort} und lässt sich deshalb nicht entfernen.",
+                $"Die {spalte.Karten.Count} {kartenwort} mit `PUT /api/boards/{{boardId}}/karten/{{karteId}}/lage` in eine andere Spalte verschieben und das Entfernen wiederholen."),
+        ]);
     }
 
     private static string Kartenwort(int kartenanzahl)

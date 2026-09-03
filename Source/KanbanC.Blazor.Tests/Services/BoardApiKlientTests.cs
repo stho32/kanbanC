@@ -15,14 +15,19 @@ public class BoardApiKlientTests
     {
         using var fabrik = TestKlientFabrik.MitAntwort(
             HttpStatusCode.BadRequest,
-            """{"befunde":["Der Name darf nicht leer sein.","Der Zieltermin liegt vor dem Starttermin."]}""",
+            """
+            {"befunde":[
+              {"code":"board-name-leer","meldung":"Der Name darf nicht leer sein.","kompensation":"POST /api/boards mit nichtleerem Namen wiederholen."},
+              {"code":"zieltermin-vor-starttermin","meldung":"Der Zieltermin liegt vor dem Starttermin.","kompensation":"POST /api/boards mit spaeterem Zieltermin wiederholen."}
+            ]}
+            """,
             JsonTyp);
         var klient = new BoardApiKlient(fabrik);
 
         var ergebnis = await klient.LegeBoardAn(Anfrage);
 
         Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
-        Assert.That(ergebnis.Zurueckweisung.Befunde, Is.EqualTo(new[]
+        Assert.That(ergebnis.Zurueckweisung.Befunde.Select(befund => befund.Meldung), Is.EqualTo(new[]
         {
             "Der Name darf nicht leer sein.",
             "Der Zieltermin liegt vor dem Starttermin.",
@@ -45,7 +50,7 @@ public class BoardApiKlientTests
         {
             Assert.That(ergebnis.Zurueckweisung.Befunde, Is.Not.Null);
             Assert.That(ergebnis.Zurueckweisung.Befunde, Has.Count.EqualTo(1));
-            Assert.That(ergebnis.Zurueckweisung.Befunde[0], Does.Contain("400"));
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("400"));
         });
     }
 

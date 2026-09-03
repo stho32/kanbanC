@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using KanbanC.Contracts.Boards;
+using KanbanC.Contracts.Fehler;
 using KanbanC.WebApi.IntegrationTests.Infrastructure;
 
 namespace KanbanC.WebApi.IntegrationTests.Api;
@@ -179,7 +180,7 @@ public class BoardEndpunkteTests
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
         var zurueckweisung = await antwort.Content.ReadFromJsonAsync<Zurueckweisung>();
         Assert.That(zurueckweisung, Is.Not.Null);
-        Assert.That(zurueckweisung.Befunde, Is.EqualTo(new[] { "Der Name darf nicht leer sein." }));
+        Assert.That(zurueckweisung.Befunde.Select(befund => befund.Meldung), Is.EqualTo(new[] { "Der Name darf nicht leer sein." }));
         var boards = await webApi.Klient.GetFromJsonAsync<List<BoardUebersicht>>(BoardsRoute);
         Assert.That(boards, Is.Empty);
     }
@@ -196,7 +197,7 @@ public class BoardEndpunkteTests
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
         var zurueckweisung = await antwort.Content.ReadFromJsonAsync<Zurueckweisung>();
         Assert.That(zurueckweisung, Is.Not.Null);
-        Assert.That(zurueckweisung.Befunde[0], Does.Contain("Zieltermin"));
+        Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain("Zieltermin"));
         var boards = await webApi.Klient.GetFromJsonAsync<List<BoardUebersicht>>(BoardsRoute);
         Assert.That(boards, Is.Empty);
     }
@@ -227,7 +228,7 @@ public class BoardEndpunkteTests
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
         var zurueckweisung = await antwort.Content.ReadFromJsonAsync<Zurueckweisung>();
         Assert.That(zurueckweisung, Is.Not.Null);
-        Assert.That(zurueckweisung.Befunde[0], Does.Contain("Board-Art"));
+        Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain("Board-Art"));
         var boards = await webApi.Klient.GetFromJsonAsync<List<BoardUebersicht>>(BoardsRoute);
         Assert.That(boards, Is.Empty);
     }

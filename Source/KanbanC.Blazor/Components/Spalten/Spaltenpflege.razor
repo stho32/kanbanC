@@ -1,5 +1,6 @@
 @using KanbanC.Blazor.Services
 @using KanbanC.Contracts.Boards
+@using KanbanC.Contracts.Fehler
 @inject SpaltenApiKlient SpaltenKlient
 
 <Spaltenbahnen BoardId="BoardId"
@@ -28,7 +29,7 @@
         <ul>
             @foreach (var befund in _zurueckweisung.Befunde)
             {
-                <li>@befund</li>
+                <li>@befund.Meldung</li>
             }
         </ul>
     </div>
