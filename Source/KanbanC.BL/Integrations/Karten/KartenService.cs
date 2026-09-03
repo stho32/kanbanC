@@ -77,6 +77,14 @@ public sealed class KartenService
             return Zurueckgewiesen(BefundZurFehlendenSpalte(boardId, lage.SpalteId));
         }
 
+        var kartenzahlNachDemZug = KartenzahlNachDemZug(quellspalte!, zielspalte!);
+        var befunde = KartenlageValidator.Pruefe(boardId, zielspalte!, kartenzahlNachDemZug, lage);
+        var lageIstUnmoeglich = !befunde.IstOhneBefund;
+        if (lageIstUnmoeglich)
+        {
+            return Ergebnis<IReadOnlyList<Spalte>>.Zurueckgewiesen(befunde);
+        }
+
         var ergebnis = _kartenRepository.Verschiebe(boardId, karteId, lage);
         var karteIstInzwischenVerschwunden = ergebnis is null;
         if (karteIstInzwischenVerschwunden)
@@ -85,6 +93,19 @@ public sealed class KartenService
         }
 
         return ergebnis!;
+    }
+
+    // Zieht die Karte in ihre eigene Spalte, bleibt deren Kartenzahl gleich; kommt sie von
+    // woanders, kommt eine hinzu.
+    private static int KartenzahlNachDemZug(Spalte quellspalte, Spalte zielspalte)
+    {
+        var dieKarteBleibtInIhrerSpalte = quellspalte.SpalteId == zielspalte.SpalteId;
+        if (dieKarteBleibtInIhrerSpalte)
+        {
+            return zielspalte.Karten.Count;
+        }
+
+        return zielspalte.Karten.Count + 1;
     }
 
     private Fehlerbefund BefundZurFehlendenKarte(long boardId, long karteId)

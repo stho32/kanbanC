@@ -257,4 +257,68 @@ public class KartenServiceTests
         });
     }
 
+
+    [Test]
+    public void Wenn_die_Position_ausserhalb_der_Zielspalte_liegt_dann_weist_VerschiebeKarte_den_Zug_zurueck_ohne_zu_schreiben()
+    {
+        var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen", "In Arbeit");
+        var quellspalteId = spaltenRepository.Spalten(1)[0].SpalteId;
+        var zielspalteId = spaltenRepository.Spalten(1)[1].SpalteId;
+        spaltenRepository.MitKarte(1, quellspalteId, 5, "Endpunkt bauen");
+        spaltenRepository.MitKarte(1, zielspalteId, 6, "Kartenform zeichnen");
+        var kartenRepository = TestKartenRepository.Leer();
+        var service = new KartenService(spaltenRepository, kartenRepository);
+
+        var ergebnis = service.VerschiebeKarte(1, 5, new Kartenlage(zielspalteId, 3));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.IstErfolg, Is.False);
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("position-ausserhalb"));
+            Assert.That(kartenRepository.WurdeVerschoben, Is.False);
+        });
+    }
+
+    // Die Zielspalte traegt eine Karte. Kommt die gezogene Karte von woanders, sind 1 und 2
+    // gueltig; liegt sie schon dort, ist nur 1 gueltig — dieselbe Zahl, zwei Grenzen.
+    [Test]
+    public void Wenn_die_Karte_aus_einer_anderen_Spalte_kommt_dann_ist_die_Position_hinter_der_letzten_Karte_gueltig()
+    {
+        var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen", "In Arbeit");
+        var quellspalteId = spaltenRepository.Spalten(1)[0].SpalteId;
+        var zielspalteId = spaltenRepository.Spalten(1)[1].SpalteId;
+        spaltenRepository.MitKarte(1, quellspalteId, 5, "Endpunkt bauen");
+        spaltenRepository.MitKarte(1, zielspalteId, 6, "Kartenform zeichnen");
+        var kartenRepository = TestKartenRepository.Leer();
+        var service = new KartenService(spaltenRepository, kartenRepository);
+
+        var ergebnis = service.VerschiebeKarte(1, 5, new Kartenlage(zielspalteId, 2));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.IstErfolg, Is.True);
+            Assert.That(kartenRepository.WurdeVerschoben, Is.True);
+        });
+    }
+
+    [Test]
+    public void Wenn_die_Karte_schon_in_der_Zielspalte_liegt_dann_ist_die_Position_hinter_ihr_ausserhalb()
+    {
+        var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen");
+        var spalteId = spaltenRepository.Spalten(1)[0].SpalteId;
+        spaltenRepository.MitKarte(1, spalteId, 5, "Endpunkt bauen");
+        var kartenRepository = TestKartenRepository.Leer();
+        var service = new KartenService(spaltenRepository, kartenRepository);
+
+        var ergebnis = service.VerschiebeKarte(1, 5, new Kartenlage(spalteId, 2));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.IstErfolg, Is.False);
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("position-ausserhalb"));
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("1 Karte,"));
+            Assert.That(kartenRepository.WurdeVerschoben, Is.False);
+        });
+    }
+
 }

@@ -359,6 +359,91 @@ public class KartenEndpunkteTests
         Assert.That(geladen.Spalten[0].Karten.Select(k => k.Titel), Is.EqualTo(new[] { "A" }));
     }
 
+
+    // Rechenbeispiel der Anforderung: Zielspalte mit 3 Karten, die Karte kommt aus einer anderen
+    // Spalte — gueltig sind 1 bis 4; 0 und 5 werden zurueckgewiesen.
+    [Test]
+    public async Task Wenn_die_Position_ausserhalb_der_Zielspalte_liegt_dann_antwortet_die_API_mit_400_und_keine_Karte_bewegt_sich()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var quelle = board.Spalten[0].SpalteId;
+        var ziel = board.Spalten[1].SpalteId;
+        var karte = await LegeKarteAn(webApi, board.BoardId, quelle, "D");
+        await LegeKarteAn(webApi, board.BoardId, ziel, "X");
+        await LegeKarteAn(webApi, board.BoardId, ziel, "Y");
+        await LegeKarteAn(webApi, board.BoardId, ziel, "Z");
+
+        var zuKlein = await webApi.Klient.PutAsJsonAsync(Lageroute(board.BoardId, karte.KarteId), new Kartenlage(ziel, 0));
+        var zuGross = await webApi.Klient.PutAsJsonAsync(Lageroute(board.BoardId, karte.KarteId), new Kartenlage(ziel, 5));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(zuKlein.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+            Assert.That(zuGross.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        });
+        var zurueckweisung = await Fehlerrumpf.Lies(zuGross, "Position 5 in eine Zielspalte mit vier Karten nach dem Zug");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("position-ausserhalb"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain("gültig sind 1 bis 4"));
+            Assert.That(zurueckweisung.Befunde[0].Kompensation, Does.Contain($"GET /api/boards/{board.BoardId}"));
+        });
+
+        var geladen = await LadeBoard(webApi, board.BoardId);
+        Assert.Multiple(() =>
+        {
+            Assert.That(geladen.Spalten[0].Karten.Select(k => k.Titel), Is.EqualTo(new[] { "D" }));
+            Assert.That(geladen.Spalten[1].Karten.Select(k => k.Titel), Is.EqualTo(new[] { "X", "Y", "Z" }));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_Position_die_hinterste_Stelle_der_Zielspalte_ist_dann_wird_der_Zug_ausgefuehrt()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var quelle = board.Spalten[0].SpalteId;
+        var ziel = board.Spalten[1].SpalteId;
+        var karte = await LegeKarteAn(webApi, board.BoardId, quelle, "D");
+        await LegeKarteAn(webApi, board.BoardId, ziel, "X");
+        await LegeKarteAn(webApi, board.BoardId, ziel, "Y");
+        await LegeKarteAn(webApi, board.BoardId, ziel, "Z");
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Lageroute(board.BoardId, karte.KarteId), new Kartenlage(ziel, 4));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var geladen = await LadeBoard(webApi, board.BoardId);
+        Assert.Multiple(() =>
+        {
+            Assert.That(geladen.Spalten[0].Karten, Is.Empty);
+            Assert.That(geladen.Spalten[1].Karten.Select(k => k.Titel), Is.EqualTo(new[] { "X", "Y", "Z", "D" }));
+        });
+    }
+
+    // Liegt die Karte schon in der Zielspalte, traegt diese nach dem Zug unveraendert 3 Karten:
+    // Position 4 ist dann keine gueltige Stelle mehr.
+    [Test]
+    public async Task Wenn_die_Karte_schon_in_der_Zielspalte_liegt_dann_endet_der_gueltige_Bereich_bei_ihrer_Kartenzahl()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var spalteId = board.Spalten[0].SpalteId;
+        await LegeKarteAn(webApi, board.BoardId, spalteId, "A");
+        await LegeKarteAn(webApi, board.BoardId, spalteId, "B");
+        var c = await LegeKarteAn(webApi, board.BoardId, spalteId, "C");
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Lageroute(board.BoardId, c.KarteId), new Kartenlage(spalteId, 4));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "position-ausserhalb");
+        var geladen = await LadeBoard(webApi, board.BoardId);
+        Assert.That(geladen.Spalten[0].Karten.Select(k => k.Titel), Is.EqualTo(new[] { "A", "B", "C" }));
+    }
+
     private static string Lageroute(long boardId, long karteId)
     {
         return $"{BoardsRoute}/{boardId}/karten/{karteId}/lage";
