@@ -24,42 +24,42 @@ public class AblagestellenTests
         });
     }
 
-    // Zielbahn [A, B, C], der Zug kommt aus einer anderen Bahn: über A oben → Position 1.
+    // Zielbahn [A, B, C], der Zug kommt aus einer anderen Bahn: über A oben ergibt Position 1.
     [Test]
     public void Wenn_die_Karte_aus_einer_anderen_Bahn_ueber_die_obere_Haelfte_der_ersten_kommt_dann_landet_sie_auf_Position_eins()
     {
         Assert.That(Ablagestellen.Zielposition(0, Kartenhaelfte.Oben, null), Is.EqualTo(1));
     }
 
-    // Dieselbe Zielbahn: über A unten → Position 2.
+    // Dieselbe Zielbahn: über A unten ergibt Position 2.
     [Test]
     public void Wenn_die_Karte_aus_einer_anderen_Bahn_ueber_die_untere_Haelfte_der_ersten_kommt_dann_landet_sie_auf_Position_zwei()
     {
         Assert.That(Ablagestellen.Zielposition(0, Kartenhaelfte.Unten, null), Is.EqualTo(2));
     }
 
-    // Dieselbe Zielbahn: über C unten → Position 4, also hinter die letzte.
+    // Dieselbe Zielbahn: über C unten ergibt Position 4, also hinter die letzte.
     [Test]
     public void Wenn_die_Karte_aus_einer_anderen_Bahn_ueber_die_untere_Haelfte_der_letzten_kommt_dann_landet_sie_dahinter()
     {
         Assert.That(Ablagestellen.Zielposition(2, Kartenhaelfte.Unten, null), Is.EqualTo(4));
     }
 
-    // Bahn [A, B, C, D], gezogen wird D (Index 3): über A oben → [D, A, B, C].
+    // Bahn [A, B, C, D], gezogen wird D (Index 3): über A oben ergibt [D, A, B, C].
     [Test]
     public void Wenn_die_letzte_Karte_derselben_Bahn_vor_die_erste_gezogen_wird_dann_wird_sie_die_erste()
     {
         Assert.That(Ablagestellen.Zielposition(0, Kartenhaelfte.Oben, 3), Is.EqualTo(1));
     }
 
-    // Dieselbe Bahn, D gezogen: über B unten → [A, B, D, C], also Position 3.
+    // Dieselbe Bahn, D gezogen: über B unten ergibt [A, B, D, C], also Position 3.
     [Test]
     public void Wenn_die_letzte_Karte_derselben_Bahn_hinter_die_zweite_gezogen_wird_dann_ruecken_die_Positionen_um_eins_vor()
     {
         Assert.That(Ablagestellen.Zielposition(1, Kartenhaelfte.Unten, 3), Is.EqualTo(3));
     }
 
-    // Bahn [A, B, C, D], gezogen wird A (Index 0): über C unten → [B, C, A, D], also Position 3.
+    // Bahn [A, B, C, D], gezogen wird A (Index 0): über C unten ergibt [B, C, A, D], also Position 3.
     [Test]
     public void Wenn_die_erste_Karte_derselben_Bahn_hinter_die_dritte_gezogen_wird_dann_zaehlt_die_Fuge_ohne_sie()
     {
@@ -88,14 +88,14 @@ public class AblagestellenTests
         });
     }
 
-    // Zielbahn [A, B, C], der Zug kommt aus einer anderen Bahn auf die Restfläche → Position 4.
+    // Zielbahn [A, B, C], der Zug kommt aus einer anderen Bahn auf die Restfläche: Position 4.
     [Test]
     public void Wenn_eine_fremde_Karte_auf_der_Restflaeche_landet_dann_wird_sie_die_letzte_der_Bahn()
     {
         Assert.That(Ablagestellen.ZielpositionAmEnde(3, null), Is.EqualTo(4));
     }
 
-    // Bahn [A, B, C], A wird auf die eigene Restfläche gezogen → [B, C, A], also Position 3.
+    // Bahn [A, B, C], A wird auf die eigene Restfläche gezogen: [B, C, A], also Position 3.
     [Test]
     public void Wenn_eine_Karte_derselben_Bahn_auf_der_Restflaeche_landet_dann_zaehlt_die_Bahn_ohne_sie()
     {

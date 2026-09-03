@@ -90,7 +90,6 @@ public class KarteVerschiebenE2ETests : PageTest
     public async Task Wenn_die_Seite_nach_zwei_Zuegen_neu_geladen_wird_dann_stehen_die_Karten_an_ihren_neuen_Stellen()
     {
         var seite = await BoardMitKarten(["Migration schreiben", "Endpunkt bauen", "Bahn fuellen"], []);
-        var rueckstand = seite.SpaltenbahnAnStelle(0);
         var inArbeit = seite.SpaltenbahnAnStelle(1);
         await seite.ZieheKarteAufsBahnende(seite.KarteMitTitel("Endpunkt bauen"), inArbeit);
         await Expect(seite.KartentitelDerBahn(inArbeit)).ToHaveTextAsync(["Endpunkt bauen"]);
@@ -101,6 +100,7 @@ public class KarteVerschiebenE2ETests : PageTest
 
         await seite.LadeNeu();
 
+        var rueckstand = seite.SpaltenbahnAnStelle(0);
         await Expect(seite.KartentitelDerBahn(rueckstand)).ToHaveTextAsync(["Migration schreiben"]);
         await Expect(seite.KartentitelDerBahn(inArbeit)).ToHaveTextAsync(["Bahn fuellen", "Endpunkt bauen"]);
     }
@@ -154,9 +154,9 @@ public class KarteVerschiebenE2ETests : PageTest
     }
 
 
-    // Der Browser zeigt einen Stand, den es nicht mehr gibt: waehrend die Seite offen ist, raeumt
-    // ein Agent die Zielbahn ueber die API leer. Die untere Haelfte der zweiten Karte zielt danach
-    // auf eine Position, die es nach dem Zug nicht mehr gaebe.
+    // Der Browser zeigt einen Stand, den es nicht mehr gibt: während die Seite offen ist, räumt
+    // ein Agent die Zielbahn über die API leer. Die untere Hälfte der zweiten Karte zielt danach
+    // auf eine Position, die es nach dem Zug nicht mehr gäbe.
     [Test]
     [Category("US-5")]
     public async Task Wenn_die_Zielbahn_inzwischen_leerer_ist_dann_erscheint_eine_lesbare_Zurueckweisung_und_die_Karte_kehrt_zurueck()

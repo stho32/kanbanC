@@ -4,6 +4,7 @@ namespace KanbanC.PlaywrightTests.PageObjects;
 
 public sealed class BoardSeite
 {
+    private const int AbstandUnterDerLetztenKarte = 12;
     private readonly IPage _seite;
     private readonly string _basisAdresse;
 
@@ -317,7 +318,7 @@ public sealed class BoardSeite
             throw new InvalidOperationException("Die letzte Karte der Bahn ist nicht sichtbar.");
         }
 
-        var unterhalbDerLetztenKarte = letzteKarte.Y + letzteKarte.Height + 12;
+        var unterhalbDerLetztenKarte = letzteKarte.Y + letzteKarte.Height + AbstandUnterDerLetztenKarte;
         var dieBahnHatKeineFreieFlaeche = unterhalbDerLetztenKarte >= flaeche.Y + flaeche.Height;
         if (dieBahnHatKeineFreieFlaeche)
         {

@@ -68,6 +68,35 @@ public class VerschachtelteAblagezonenProbeE2ETests : PageTest
         </script>
         """;
 
+    private const string BahnMitNachgereichtenHaelften = """
+        <style>
+          body { margin: 0 }
+          #bahn { position: relative; padding: 10px; background: #eee }
+          .karte { position: relative; height: 80px; margin-bottom: 10px; background: #fff }
+          .haelfte { position: absolute; left: 0; right: 0; height: 50% }
+          .oben { top: 0 }
+        </style>
+        <div id="bahn">
+          <article class="karte" id="karte-a"></article>
+          <article class="karte" id="karte-b" draggable="true"></article>
+        </div>
+        <script>
+          window.ereignisse = [];
+          const b = document.getElementById('karte-b');
+          b.addEventListener('dragstart', e => {
+            e.dataTransfer.setData('text/plain', 'karte-b');
+            setTimeout(() => {
+              const zone = document.createElement('div');
+              zone.className = 'haelfte oben';
+              zone.dataset.zone = 'a-oben';
+              zone.addEventListener('dragover', e => e.preventDefault());
+              zone.addEventListener('drop', e => { e.preventDefault(); window.ereignisse.push('drop:a-oben'); });
+              document.getElementById('karte-a').appendChild(zone);
+            }, 300);
+          });
+        </script>
+        """;
+
     [Test]
     public async Task Wenn_der_Zeiger_von_der_oberen_in_die_untere_Haelfte_wechselt_dann_kommt_dragenter_vor_dragleave()
     {
@@ -158,35 +187,6 @@ public class VerschachtelteAblagezonenProbeE2ETests : PageTest
         var ereignisse = await Ereignisse();
         Assert.That(ereignisse, Does.Contain("drop:a-oben"));
     }
-
-    private const string BahnMitNachgereichtenHaelften = """
-        <style>
-          body { margin: 0 }
-          #bahn { position: relative; padding: 10px; background: #eee }
-          .karte { position: relative; height: 80px; margin-bottom: 10px; background: #fff }
-          .haelfte { position: absolute; left: 0; right: 0; height: 50% }
-          .oben { top: 0 }
-        </style>
-        <div id="bahn">
-          <article class="karte" id="karte-a"></article>
-          <article class="karte" id="karte-b" draggable="true"></article>
-        </div>
-        <script>
-          window.ereignisse = [];
-          const b = document.getElementById('karte-b');
-          b.addEventListener('dragstart', e => {
-            e.dataTransfer.setData('text/plain', 'karte-b');
-            setTimeout(() => {
-              const zone = document.createElement('div');
-              zone.className = 'haelfte oben';
-              zone.dataset.zone = 'a-oben';
-              zone.addEventListener('dragover', e => e.preventDefault());
-              zone.addEventListener('drop', e => { e.preventDefault(); window.ereignisse.push('drop:a-oben'); });
-              document.getElementById('karte-a').appendChild(zone);
-            }, 300);
-          });
-        </script>
-        """;
 
     private async Task<string[]> Ereignisse()
     {
