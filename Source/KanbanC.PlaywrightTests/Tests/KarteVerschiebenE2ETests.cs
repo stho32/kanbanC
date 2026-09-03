@@ -64,9 +64,12 @@ public class KarteVerschiebenE2ETests : PageTest
         await Expect(seite.KartentitelDerBahn(bahn)).ToHaveTextAsync(["A", "D", "B", "C"]);
     }
 
+    // Geprüft wird, dass die Ziele da sind: je Bahn eine Ablagefläche und je Karte zwei Hälften.
+    // Dass eine leere Bahn eine Karte auch wirklich annimmt, belegt EinfuegelinieE2ETests durch
+    // echtes Ablegen — die .ablageflaeche traegt pointer-events: none und ist nur die Einfaerbung.
     [Test]
     [Category("US-2")]
-    public async Task Wenn_ein_Zug_laeuft_dann_nimmt_jede_Bahn_an_auch_die_leere()
+    public async Task Wenn_ein_Zug_laeuft_dann_zeigt_jede_Bahn_ihre_Ablageziele_auch_die_leere()
     {
         var seite = await BoardMitKarten(["A", "B"], ["X"]);
         var rueckstand = seite.SpaltenbahnAnStelle(0);

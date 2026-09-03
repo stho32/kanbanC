@@ -20,7 +20,7 @@ public class EinfuegelinieE2ETests : PageTest
         await Expect(seite.Ablageflaechen).ToHaveCountAsync(3);
 
         var waehrendDesZugs = await Kartenlagen(seite, "A", "B", "C");
-        Assert.That(waehrendDesZugs, Is.EqualTo(vorDemZug).Within(1),
+        Assert.That(waehrendDesZugs, Is.EqualTo(vorDemZug).Within(0.5),
             "Der Beginn des Zugs hat die Karten verschoben — genau das soll die Einfügelinie verhindern.");
         await seite.LasseAusserhalbJederStelleLos();
     }
@@ -56,7 +56,7 @@ public class EinfuegelinieE2ETests : PageTest
         await Expect(seite.Einfuegelinien).ToHaveCountAsync(0);
         await Expect(seite.Ablageflaechen).ToHaveCountAsync(0);
         await Expect(seite.KartentitelDerBahn(bahn)).ToHaveTextAsync(["A", "B", "C", "D"]);
-        Assert.That(await Kartenlagen(seite, "A", "B", "C"), Is.EqualTo(vorDemZug).Within(1));
+        Assert.That(await Kartenlagen(seite, "A", "B", "C"), Is.EqualTo(vorDemZug).Within(0.5));
     }
 
     [Test]
@@ -79,9 +79,11 @@ public class EinfuegelinieE2ETests : PageTest
         Assert.Multiple(() =>
         {
             Assert.That(linie, Is.LessThan(karteX), "Die Linie steht nicht über der überfahrenen Karte.");
-            // Ein Pixel Toleranz gegen die Sub-Pixel-Rundung des Layouts; die Kästen, die diese
-            // Anforderung ablöst, verschoben je Bahn ein Vielfaches davon.
-            Assert.That(mitDerLinie, Is.EqualTo(vorDerLinie).Within(1),
+            // Ein halbes Pixel Toleranz gegen die Sub-Pixel-Rundung des Layouts. Gemessen wurden
+            // 0,016 px; der Artboard-Wert -4,4px ergäbe 2,0 px und ein fehlender Rand 10,8 px —
+            // beide fielen durch. Die Kästen, die diese Anforderung ablöst, verschoben 44 px je
+            // Stück.
+            Assert.That(mitDerLinie, Is.EqualTo(vorDerLinie).Within(0.5),
                 "Die erschienene Linie hat die Karten der Bahn verschoben.");
         });
         await seite.LasseAusserhalbJederStelleLos();
