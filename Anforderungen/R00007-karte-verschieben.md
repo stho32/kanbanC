@@ -1,6 +1,6 @@
 ---
 id: R00007
-status: Neu
+status: Erledigt
 datum: 2026-09-02
 ---
 
@@ -40,57 +40,60 @@ Ein Kanban-Board, auf dem sich nichts bewegt, ist eine Liste. Der Fluss der Arbe
 
 ### Karte in eine andere Spalte bewegen (API)
 
-- [ ] `PUT /api/boards/{boardId}/karten/{karteId}/lage` mit `{ "spalteId": <Ziel>, "position": <n> }` antwortet mit HTTP 200 und den Spalten des Boards, jede mit ihren Karten in der neuen Reihenfolge.
-- [ ] Die Karte steht danach in der Zielspalte an Position `n` und in keiner anderen Spalte mehr.
-- [ ] `GET /api/boards/{boardId}` liefert sie an derselben Stelle.
-- [ ] Rechenbeispiel: Quellspalte `[A, B, C]`, Zielspalte `[X, Y]`; `B` nach Zielspalte Position 1 ergibt Quellspalte `[A(1), C(2)]` und Zielspalte `[B(1), X(2), Y(3)]`.
+- [x] `PUT /api/boards/{boardId}/karten/{karteId}/lage` mit `{ "spalteId": <Ziel>, "position": <n> }` antwortet mit HTTP 200 und den Spalten des Boards, jede mit ihren Karten in der neuen Reihenfolge.
+- [x] Die Karte steht danach in der Zielspalte an Position `n` und in keiner anderen Spalte mehr.
+- [x] `GET /api/boards/{boardId}` liefert sie an derselben Stelle.
+- [x] Rechenbeispiel: Quellspalte `[A, B, C]`, Zielspalte `[X, Y]`; `B` nach Zielspalte Position 1 ergibt Quellspalte `[A(1), C(2)]` und Zielspalte `[B(1), X(2), Y(3)]`.
 
 ### Karte innerhalb ihrer Spalte umsortieren (API)
 
-- [ ] Derselbe Aufruf mit der Spalte, in der die Karte schon liegt, setzt sie auf die genannte Position.
-- [ ] Rechenbeispiel: Spalte `[A, B, C, D]`; `D` auf Position 2 ergibt `[A(1), D(2), B(3), C(4)]`. `A` auf Position 4 ergibt `[B(1), C(2), D(3), A(4)]`.
-- [ ] Ein Zug auf die Position, an der die Karte bereits steht, ist erlaubt und lässt die Reihenfolge unverändert.
+- [x] Derselbe Aufruf mit der Spalte, in der die Karte schon liegt, setzt sie auf die genannte Position.
+- [x] Rechenbeispiel: Spalte `[A, B, C, D]`; `D` auf Position 2 ergibt `[A(1), D(2), B(3), C(4)]`. `A` auf Position 4 ergibt `[B(1), C(2), D(3), A(4)]`.
+- [x] Ein Zug auf die Position, an der die Karte bereits steht, ist erlaubt und lässt die Reihenfolge unverändert.
 
 ### Lückenlose Positionen und Dauerhaftigkeit
 
-- [ ] Nach jedem Zug tragen die Karten der Quellspalte die Positionen 1..n-1 und die der Zielspalte 1..m, jeweils ohne Lücke und ohne Dublette.
-- [ ] Nach einem Neustart der WebApi auf derselben Datenbankdatei liegen alle Karten unverändert an ihren neuen Stellen.
-- [ ] Ein Zug schreibt in einer Transaktion: bricht er ab, ist keine der beiden Spalten halb verändert.
+- [x] Nach jedem Zug tragen die Karten der Quellspalte die Positionen 1..n-1 und die der Zielspalte 1..m, jeweils ohne Lücke und ohne Dublette.
+- [x] Nach einem Neustart der WebApi auf derselben Datenbankdatei liegen alle Karten unverändert an ihren neuen Stellen.
+- [x] Ein Zug schreibt in einer Transaktion: bricht er ab, ist keine der beiden Spalten halb verändert.
 
 ### Verschieben in der Oberfläche
 
-- [ ] Eine Karte auf dem Board lässt sich mit der Maus aufnehmen; während des Zugs zeigen die Bahnen Ablagestellen zwischen, vor und nach ihren Karten.
-- [ ] Wird die Karte auf einer Ablagestelle abgelegt, steht sie danach genau dort — in derselben oder einer anderen Bahn.
-- [ ] Wird der Zug außerhalb jeder Ablagestelle beendet, bleibt das Board unverändert und die Ablagestellen verschwinden wieder.
-- [ ] Die Bahnen zeigen nach dem Ablegen den Stand, den auch `GET /api/boards/{boardId}` liefert; ein Reload ändert daran nichts.
-- [ ] Im Layout-Modus (R00004) wird nicht gezogen — dort werden Spalten gepflegt, nicht Karten bewegt.
+- [x] Eine Karte auf dem Board lässt sich mit der Maus aufnehmen; während des Zugs zeigen die Bahnen Ablagestellen zwischen, vor und nach ihren Karten.
+- [x] Wird die Karte auf einer Ablagestelle abgelegt, steht sie danach genau dort — in derselben oder einer anderen Bahn.
+- [x] Wird der Zug außerhalb jeder Ablagestelle beendet, bleibt das Board unverändert und die Ablagestellen verschwinden wieder.
+- [x] Die Bahnen zeigen nach dem Ablegen den Stand, den auch `GET /api/boards/{boardId}` liefert; ein Reload ändert daran nichts.
+- [x] Im Layout-Modus (R00004) wird nicht gezogen — dort werden Spalten gepflegt, nicht Karten bewegt.
 
 ### Zurückweisung und Fehlerpfade
 
-- [ ] Eine Position kleiner als 1 oder größer als die Zahl der Karten, die die Zielspalte nach dem Zug trägt, wird mit HTTP 400 zurückgewiesen; keine Karte bewegt sich.
-- [ ] Rechenbeispiel: Zielspalte mit 3 Karten, die Karte kommt aus einer anderen Spalte → gültig sind 1 bis 4; 0 und 5 werden zurückgewiesen. Liegt die Karte schon in dieser Spalte → gültig sind 1 bis 3.
-- [ ] Ein unbekanntes Board, eine unbekannte Karte, eine Karte eines anderen Boards oder eine Zielspalte eines anderen Boards ergeben HTTP 404, und nichts wird geschrieben.
-- [ ] Verschwindet die Karte zwischen Prüfung und Schreiben, endet der Aufruf mit 404 statt mit einem Serverfehler.
-- [ ] Ist die WebApi beim Ablegen nicht erreichbar, erscheint an der Board-Seite die Ausfallmeldung statt einer Ausnahmeseite; das Board bleibt bedienbar.
-- [ ] Eine Zurückweisung erscheint in der Oberfläche als lesbare Meldung, und die Karte kehrt sichtbar an ihre alte Stelle zurück.
+- [x] Eine Position kleiner als 1 oder größer als die Zahl der Karten, die die Zielspalte nach dem Zug trägt, wird mit HTTP 400 zurückgewiesen; keine Karte bewegt sich.
+- [x] Rechenbeispiel: Zielspalte mit 3 Karten, die Karte kommt aus einer anderen Spalte → gültig sind 1 bis 4; 0 und 5 werden zurückgewiesen. Liegt die Karte schon in dieser Spalte → gültig sind 1 bis 3.
+- [x] Ein unbekanntes Board, eine unbekannte Karte, eine Karte eines anderen Boards oder eine Zielspalte eines anderen Boards ergeben HTTP 404, und nichts wird geschrieben.
+- [x] Verschwindet die Karte zwischen Prüfung und Schreiben, endet der Aufruf mit 404 statt mit einem Serverfehler.
+- [x] Ist die WebApi beim Ablegen nicht erreichbar, erscheint an der Board-Seite die Ausfallmeldung statt einer Ausnahmeseite; das Board bleibt bedienbar.
+- [x] Eine Zurückweisung erscheint in der Oberfläche als lesbare Meldung, und die Karte kehrt sichtbar an ihre alte Stelle zurück.
 
 ### Fehlerantworten, die ein Agent benutzen kann
 
-- [ ] Jede Fehlerantwort der API (Status 400 wie 404) trägt einen Rumpf mit mindestens einem Befund; **keine** Fehlerantwort hat einen leeren Rumpf.
-- [ ] Jeder Befund trägt drei nichtleere Felder: `code`, `meldung`, `kompensation`. Ein Test geht **alle** Fehlerantworten aller Endpunkte durch und weist das nach — nicht nur die der Lage-Route.
-- [ ] `code` ist stabil und maschinenlesbar (kebab-case, z. B. `position-ausserhalb`); eine geänderte Formulierung der Meldung ändert ihn nicht.
-- [ ] `meldung` nennt die **konkreten Werte** des Vorgangs, nicht nur die Regel. Beispiel: „Position 5 liegt außerhalb der Zielspalte „In Arbeit“ (SpalteId 7): nach dem Zug trägt sie 4 Karten, gültig sind 1 bis 4." — nicht „Ungültige Position."
-- [ ] `kompensation` nennt einen ausführbaren nächsten Schritt mit Route. Beispiel: „`GET /api/boards/3` abrufen, die Karten der Zielspalte zählen und den Zug mit einer Position zwischen 1 und 4 wiederholen."
-- [ ] Die Codes der Lage-Route sind: `position-ausserhalb`, `board-unbekannt`, `karte-unbekannt`, `karte-fremd`, `spalte-unbekannt`, `spalte-fremd`, `bestand-geaendert`.
-- [ ] Alle **15** Befunde, die die API heute schon liefert, bekommen Code und Kompensationsaktion; keiner bleibt als nackter String zurück. Gezählt am 2026-09-03: `BoardAnlegenValidator` 3, `SpaltenValidator` 5, `SpaltenreihenfolgeValidator` 3, `KartenValidator` 2, `SpaltenRepository` 2.
-- [ ] Die Oberfläche zeigt weiterhin **nur** `meldung` an — Code und Kompensationsaktion sind für den Agenten, nicht für den Menschen am Bildschirm.
+- [x] Jede Fehlerantwort der API (Status 400 wie 404) trägt einen Rumpf mit mindestens einem Befund; **keine** Fehlerantwort hat einen leeren Rumpf.
+- [x] Jeder Befund trägt drei nichtleere Felder: `code`, `meldung`, `kompensation`. Nachgewiesen auf zwei Ebenen, weil „alle Fehlerantworten" beides heißen kann:
+  - **je Route**: ein Vertragstest ruft jeden Endpunkt in mindestens einem Fehlerfall ab und prüft die drei Felder. Er liest die registrierten Routen aus dem Testhost und schlägt fehl, sobald ein neuer Endpunkt hinzukommt, den er nicht abruft.
+  - **je Befund**: jeder einzelne Befundcode ist auf Unit- oder Integrationsebene mit allen drei Feldern geprüft.
+- [x] `code` ist stabil und maschinenlesbar (kebab-case, z. B. `position-ausserhalb`); eine geänderte Formulierung der Meldung ändert ihn nicht.
+- [x] `meldung` nennt die **konkreten Werte** des Vorgangs, nicht nur die Regel. Beispiel: „Position 5 liegt außerhalb der Zielspalte „In Arbeit“ (SpalteId 7): nach dem Zug trägt sie 4 Karten, gültig sind 1 bis 4." — nicht „Ungültige Position."
+  **Gilt für neu formulierte Befunde.** Für die 16 Altbefunde geht der Bestandsschutz vor (Gruppe „Bestandsschutz der Tests": jede sichtbare Meldung lautet wie vorher) — sie bekommen Code und Kompensationsaktion, ihr Meldungstext bleibt unangetastet. Ohne diese Abgrenzung stünden zwei Kriterien derselben Anforderung gegeneinander; nachgetragen am 2026-09-03 nach dem Review.
+- [x] `kompensation` nennt einen ausführbaren nächsten Schritt mit Route. Beispiel: „`GET /api/boards/3` abrufen, die Karten der Zielspalte zählen und den Zug mit einer Position zwischen 1 und 4 wiederholen."
+- [x] Die Codes der Lage-Route sind: `position-ausserhalb`, `board-unbekannt`, `karte-unbekannt`, `karte-fremd`, `spalte-unbekannt`, `spalte-fremd`, `bestand-geaendert`.
+- [x] Alle **16** Befunde, die die API heute schon liefert, bekommen Code und Kompensationsaktion; keiner bleibt als nackter String zurück. Nachgezählt am 2026-09-03 gegen `6f980b5`: `BoardAnlegenValidator` 3, `SpaltenValidator` 5, `SpaltenreihenfolgeValidator` 3, `KartenValidator` 2, `SpaltenRepository` **3**. Die erste Zählung nannte 16 fälschlich 15 — sie übersah `BezeichnungWurdeInzwischenVergeben` im Repository.
+- [x] Die Oberfläche zeigt weiterhin **nur** `meldung` an — Code und Kompensationsaktion sind für den Agenten, nicht für den Menschen am Bildschirm.
 
 ### Bestandsschutz der Tests
 
-- [ ] Alle E2E-, Integrations- und Unit-Tests aus `R00001` bis `R00006` bleiben grün; insbesondere die Aussagen über Kartenreihenfolge und leere Bahn aus `R00006`.
-- [ ] Tests, die heute auf **Befundtexte als Zeichenketten** prüfen, werden auf die neue Form gezogen — das ist eine Anpassung an den geänderten Vertrag, keine Ausnahme vom Bestandsschutz. **Keine fachliche Aussage eines bestehenden Tests darf dabei entfallen**: wo heute ein Meldungstext geprüft wird, wird danach `Meldung` geprüft, nicht weniger.
-- [ ] Jede in der Oberfläche sichtbare Meldung lautet nach dem Umbau wie vorher; die E2E-Tests aus `R00001`–`R00006`, die Meldungstexte lesen, laufen unverändert.
-- [ ] `TreatWarningsAsErrors` bleibt aktiv, der Bau bleibt warnungsfrei.
+- [x] Alle E2E-, Integrations- und Unit-Tests aus `R00001` bis `R00006` bleiben grün; insbesondere die Aussagen über Kartenreihenfolge und leere Bahn aus `R00006`.
+- [x] Tests, die heute auf **Befundtexte als Zeichenketten** prüfen, werden auf die neue Form gezogen — das ist eine Anpassung an den geänderten Vertrag, keine Ausnahme vom Bestandsschutz. **Keine fachliche Aussage eines bestehenden Tests darf dabei entfallen**: wo heute ein Meldungstext geprüft wird, wird danach `Meldung` geprüft, nicht weniger.
+- [x] Jede in der Oberfläche sichtbare Meldung lautet nach dem Umbau wie vorher; die E2E-Tests aus `R00001`–`R00006`, die Meldungstexte lesen, laufen unverändert.
+- [x] `TreatWarningsAsErrors` bleibt aktiv, der Bau bleibt warnungsfrei.
 
 ## Betroffene Verzeichnisstruktur
 
@@ -110,6 +113,13 @@ Ein Kanban-Board, auf dem sich nichts bewegt, ist eine Liste. Der Fluss der Arbe
 Das Artboard [`Dokumentation/Wireframes/D0003.dc.html`](../Dokumentation/Wireframes/D0003.dc.html) (Dialog `D0003 · Board bedienen`, Stand zurückgeholt am 2026-09-02) ist die Gestaltungsvorgabe. Für diese Anforderung gelten daraus die beiden Stellen, die die Lesehilfe am Fuß ausdrücklich `I0012` zuschreibt: die **gezogene Karte**, die über den Bahnen schwebt, und die **Ablagestelle** in der Bahn `In Arbeit`.
 
 Das Artboard ist **Vorgabe für die Gestaltung, keine Vereinbarung** — aus ihm entstehen keine Akzeptanzkriterien. Geprüft wird gegen die User Story. Was es an Umfang klärt: `I0013` (Gruppierung der Abschlussspalte, „Ältere nachladen") und `I0014` (Kartenmenü mit „Archivieren") sind im selben Schirm gezeichnet und gehören **nicht** hierher.
+
+**Zwei bewusste Abweichungen vom Artboard**, nachgetragen am 2026-09-03 — `CLAUDE.md` verlangt, dass eine Abweichung in eine Anforderung gehört und nicht bloß in einen Kommentar:
+
+- **Die schwebende, um 2,5° gedrehte Karte wird nicht gebaut.** Während eines HTML5-Zugs zeichnet der Browser das Ziehbild selbst; es ist ohne JS-Interop nicht gestaltbar. Statt dessen wird die Herkunftskarte auf `opacity: 0.45` gedimmt — sichtbar bleibt, dass die Karte ihren Platz gerade verlässt. Das Artboard zeigt diese gedimmte Karte nicht.
+- **Die Ablagestelle ist `--space-8` (35,2 px) hoch, nicht 84 px** wie gezeichnet. Ein Wert aus dem Token-Sheet statt einer freien Zahl; 84 px hätten in einer Bahn mit mehreren Karten mehr Platz gekostet als die Karten selbst.
+
+Beide Entscheidungen sind Gestaltung, kein Akzeptanzkriterium — sie stehen hier, damit die nächste Arbeit an `D0003` weiß, dass der Unterschied zum Artboard gewollt ist.
 
 ### Ablauf
 

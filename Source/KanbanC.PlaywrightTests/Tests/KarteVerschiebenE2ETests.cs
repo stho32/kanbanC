@@ -176,6 +176,25 @@ public class KarteVerschiebenE2ETests : PageTest
         await Expect(seite.Ausnahmeanzeige).ToBeHiddenAsync();
     }
 
+    [Test]
+    [Category("US-5")]
+    public async Task Wenn_nach_einer_Zurueckweisung_die_WebApi_ausfaellt_dann_steht_die_alte_Zurueckweisung_nicht_mehr_daneben()
+    {
+        var seite = await BoardMitKarten(["A", "B", "C", "D"], ["X", "Y"]);
+        var inArbeit = seite.SpaltenbahnAnStelle(1);
+        await RaeumeZweiteBahnLeer();
+        await seite.ZieheKarteAuf(seite.KarteMitTitel("D"), seite.AblagestelleDerBahn(inArbeit, 2));
+        await Expect(seite.KarteZurueckweisung).ToBeVisibleAsync();
+
+        Testumgebung.Aktuelle.HalteWebApiAn();
+        await seite.ZieheKarteAuf(seite.KarteMitTitel("C"), seite.AblagestelleDerBahn(inArbeit, 0));
+
+        // Die Ausfallmeldung sagt, dass der Zug nicht ankam. Bliebe die Zurückweisung des vorigen
+        // Zugs daneben stehen, nennte sie einen Grund, der für diesen Zug nie geprüft wurde.
+        await Expect(seite.KarteFehlermeldung).ToBeVisibleAsync();
+        await Expect(seite.KarteZurueckweisung).ToBeHiddenAsync();
+    }
+
     private static async Task RaeumeZweiteBahnLeer()
     {
         using var webApi = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);

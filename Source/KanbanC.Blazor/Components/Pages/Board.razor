@@ -128,18 +128,20 @@ else
 
     private async Task VerschiebeKarte(Kartenablage ablage)
     {
+        // Zuerst räumen, dann rufen: bricht der Aufruf mit einer Ausfallmeldung ab, stünde die
+        // Zurückweisung des vorigen Zugs sonst daneben und behauptete einen Grund, der nicht gilt.
+        _zugZurueckweisung = null;
+
         var lage = new Kartenlage(ablage.SpalteId, ablage.Position);
         var ergebnis = await KartenKlient.VerschiebeKarte(BoardId, ablage.KarteId, lage);
         if (ergebnis.WurdeZurueckgewiesen)
         {
             _zugZurueckweisung = ergebnis.Zurueckweisung;
-            // Das Board wird auch nach einer Zurückweisung neu geladen: die Karte springt
-            // dadurch sichtbar an ihre alte Stelle zurück.
-            await LadeBoard();
-            return;
         }
 
-        _zugZurueckweisung = null;
+        // Auch nach einer Zurückweisung wird neu geladen: die Bahnen zeigen danach den Stand der
+        // API. Die Karte bewegt sich dabei nicht zurück — sie hat ihren Platz nie verlassen, denn
+        // gezogen wird ohne optimistische Vorwegnahme.
         await LadeBoard();
     }
 
