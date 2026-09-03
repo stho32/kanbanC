@@ -39,6 +39,19 @@ public sealed class WebApiKlient : IDisposable
         return karte;
     }
 
+    public async Task<IReadOnlyList<Spalte>> VerschiebeKarte(long boardId, long karteId, Kartenlage lage)
+    {
+        var antwort = await _klient.PutAsJsonAsync($"{BoardsRoute}/{boardId}/karten/{karteId}/lage", lage);
+        antwort.EnsureSuccessStatusCode();
+        var spalten = await antwort.Content.ReadFromJsonAsync<IReadOnlyList<Spalte>>();
+        if (spalten is null)
+        {
+            throw new InvalidOperationException("Die WebApi hat keine Spalten zurückgegeben.");
+        }
+
+        return spalten;
+    }
+
     public void Dispose()
     {
         _klient.Dispose();

@@ -205,4 +205,70 @@ public sealed class BoardSeite
     {
         await bahn.Locator(".kartenanlage-abbrechen").ClickAsync();
     }
+
+    public ILocator Ablagestellen => _seite.Locator("#spaltenbahnen .ablagestelle");
+
+    public ILocator ZiehbareKarten => _seite.Locator("#spaltenbahnen .karte[draggable='true']");
+
+    public ILocator KarteZurueckweisung => _seite.Locator("#karte-zurueckweisung");
+
+    public ILocator KarteFehlermeldung => _seite.Locator("#karte-fehlermeldung");
+
+    public ILocator KarteMitTitel(string titel)
+    {
+        return _seite.Locator("#spaltenbahnen .karte").Filter(new LocatorFilterOptions { HasText = titel });
+    }
+
+    public ILocator AblagestelleDerBahn(ILocator bahn, int stelle)
+    {
+        return bahn.Locator(".ablagestelle").Nth(stelle);
+    }
+
+    // Der Zug bleibt offen, während die Oberfläche die Ablagestellen über SignalR nachreicht:
+    // erst aufnehmen, dann auf die erschienene Stelle ziehen. DragToAsync löst beides in einem
+    // Zug aus und käme zu früh — belegt im Probe-Test ZiehenUndAblegenProbeE2ETests.
+    public async Task ZieheKarteAuf(ILocator karte, ILocator ablagestelle)
+    {
+        await NimmKarteAuf(karte);
+        await Assertions.Expect(ablagestelle).ToBeVisibleAsync();
+        await LegeAufStelleAb(ablagestelle);
+    }
+
+    public async Task NimmKarteAuf(ILocator karte)
+    {
+        var kasten = await karte.BoundingBoxAsync();
+        if (kasten is null)
+        {
+            throw new InvalidOperationException("Die Karte ist nicht sichtbar.");
+        }
+
+        await _seite.Mouse.MoveAsync(kasten.X + kasten.Width / 2, kasten.Y + kasten.Height / 2);
+        await _seite.Mouse.DownAsync();
+        await _seite.Mouse.MoveAsync(kasten.X + kasten.Width / 2, kasten.Y + kasten.Height / 2 + 12, new MouseMoveOptions { Steps = 5 });
+    }
+
+    public async Task LegeAufStelleAb(ILocator ablagestelle)
+    {
+        var kasten = await ablagestelle.BoundingBoxAsync();
+        if (kasten is null)
+        {
+            throw new InvalidOperationException("Die Ablagestelle ist nicht sichtbar.");
+        }
+
+        await _seite.Mouse.MoveAsync(kasten.X + kasten.Width / 2, kasten.Y + kasten.Height / 2, new MouseMoveOptions { Steps = 5 });
+        await _seite.Mouse.UpAsync();
+    }
+
+    // Beendet den laufenden Zug über der Kopfzeile — dort gibt es keine Ablagestelle.
+    public async Task LasseAusserhalbJederStelleLos()
+    {
+        var kasten = await Kopfdaten.BoundingBoxAsync();
+        if (kasten is null)
+        {
+            throw new InvalidOperationException("Die Kopfzeile ist nicht sichtbar.");
+        }
+
+        await _seite.Mouse.MoveAsync(kasten.X + kasten.Width / 2, kasten.Y + kasten.Height / 2, new MouseMoveOptions { Steps = 5 });
+        await _seite.Mouse.UpAsync();
+    }
 }
