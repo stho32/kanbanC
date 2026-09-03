@@ -710,6 +710,24 @@ public class SpaltenEndpunkteTests
         return spalte!;
     }
 
+
+    [Test]
+    public async Task Wenn_das_Board_beim_Aendern_unbekannt_ist_dann_antwortet_die_API_mit_404_und_einem_Befund()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var boardId = await LegeBoardAn(webApi);
+        var spalteId = (await LadeBoard(webApi, boardId)).Spalten[0].SpalteId;
+
+        var antwort = await webApi.Klient.PutAsJsonAsync($"{BoardsRoute}/{boardId + 1}/spalten/{spalteId}",
+            new SpalteAendernAnfrage("Gekapert", false, null));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "spalte-unbekannt");
+        var unveraendert = await LadeBoard(webApi, boardId);
+        Assert.That(unveraendert.Spalten[0].Bezeichnung, Is.EqualTo("Zu erledigen"));
+    }
+
     private static async Task AendereSpalte(TestWebApi webApi, long boardId, long spalteId, SpalteAendernAnfrage anfrage)
     {
         var antwort = await webApi.Klient.PutAsJsonAsync($"{BoardsRoute}/{boardId}/spalten/{spalteId}", anfrage);

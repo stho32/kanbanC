@@ -54,7 +54,7 @@ public sealed class KartenService
 
     // Ein Zug wechselt die Spalte; deshalb kennt der Aufruf nur Board und Karte, und die
     // Herkunftsspalte wird hier aus dem Bestand gelesen.
-    public Ergebnis<IReadOnlyList<Spalte>> VerschiebeKarte(long boardId, long karteId, Kartenlage lage)
+    public Ergebnis<IReadOnlyList<Spalte>> VerschiebeKarte(long boardId, long karteId, Kartenlage lage) // stil-check: C13 fuenf Waechter in Folge, ohne Verschachtelung
     {
         var spaltenDesBoards = _spaltenRepository.LadeAlle(boardId);
         var boardIstUnbekannt = spaltenDesBoards is null;
@@ -139,7 +139,16 @@ public sealed class KartenService
 
     private static Spalte? SpalteDerKarte(IReadOnlyList<Spalte> spalten, long karteId)
     {
-        return spalten.FirstOrDefault(spalte => spalte.Karten.Any(karte => karte.KarteId == karteId));
+        foreach (var spalte in spalten)
+        {
+            var dieseSpalteTraegtDieKarte = spalte.Karten.Any(karte => karte.KarteId == karteId);
+            if (dieseSpalteTraegtDieKarte)
+            {
+                return spalte;
+            }
+        }
+
+        return null;
     }
 
     private static Spalte? SpalteMitNummer(IReadOnlyList<Spalte> spalten, long spalteId)
