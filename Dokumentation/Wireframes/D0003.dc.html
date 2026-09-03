@@ -240,7 +240,7 @@
           </footer>
         </section>
 
-        <!-- ═══ Bahn 3 · In Arbeit — Ablagestelle für die gezogene Karte (I0012) ═══ -->
+        <!-- ═══ Bahn 3 · In Arbeit — Einfügelinie und Ablagefläche für die gezogene Karte (I0012) ═══ -->
         <section style="display: flex; flex: 0 0 256px; flex-direction: column; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-left: none">
           <header style="display: flex; flex-wrap: wrap; align-items: baseline; align-content: flex-start; gap: 8.8px; line-height: 26.4px; padding: 8.8px 13.2px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
             <span style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4.4px">
@@ -249,9 +249,6 @@
             <span style="margin-left: auto; min-width: 17.6px; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent); text-align: right">3</span>
           </header>
           <div style="flex: 1; min-height: 0; padding: 8.8px; display: flex; flex-direction: column; gap: 8.8px; overflow: hidden">
-
-            <!-- Ablagestelle: hier landet die gezogene Karte -->
-            <div style="display: flex; align-items: center; justify-content: center; min-height: 84px; border-radius: 4px; border: 2px dashed #c67139; background: color-mix(in srgb, #c67139 8%, transparent); font-size: 11px; color: #8c491a">hier ablegen · Position 1</div>
 
             <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
               <div style="display: flex; align-items: center; gap: 8.8px">
@@ -266,6 +263,10 @@
               </div>
             </div>
 
+            <!-- Einfügelinie: sie folgt dem Zeiger und steht dort, wo die Karte landet.
+                 Kein Kasten, keine Beschriftung — 2 px im Akzentton. -->
+            <div style="height: 2px; margin: -4.4px 0; background: #c67139; border-radius: 2px"></div>
+
             <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
               <div style="display: flex; align-items: center; gap: 8.8px">
                 <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-21</span>
@@ -278,6 +279,10 @@
                 <span style="margin-left: auto">3:00 Soll</span>
               </div>
             </div>
+
+            <!-- Die ganze Restfläche unter der letzten Karte nimmt an: wer hier loslässt,
+                 hängt die Karte ans Ende der Bahn. Kein eigenes Bedienelement, nur Grund. -->
+            <div style="flex: 1; min-height: 26.4px; border-radius: 4px; background: color-mix(in srgb, #c67139 6%, transparent)"></div>
 
           </div>
           <footer style="padding: 8.8px 13.2px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
@@ -386,7 +391,7 @@
      unter dem Fenster: im Fenster selbst liegen nur Navigationszeile und Board.
      ══════════════════════════════════════════════════════════════════════ -->
 <footer style="display: flex; flex-direction: column; gap: 4.4px; padding: 17.6px; background: #ebddc5; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent); font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent)">
-  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">D0003 zeigt hier:</span> <span style="color: #8c491a">I0010</span> Bahnen mit Karten in Reihenfolge · <span style="color: #8c491a">I0011</span> „+ Karte“ im Bahnenfuß, offen in „Bereit“, samt Zurückweisung · <span style="color: #8c491a">I0012</span> gezogene Karte mit Ablagestelle in „In Arbeit“ · <span style="color: #8c491a">I0013</span> Abschlussspalte nach Erledigungsdatum, Grenze 20, „Ältere nachladen“ · <span style="color: #8c491a">I0014</span> Kartenmenü mit „Archivieren“. Ränder: leere Bahn („Prüfung“), zu langer Titel (BES-04), zurückgewiesene Anlage („Bereit“).</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">D0003 zeigt hier:</span> <span style="color: #8c491a">I0010</span> Bahnen mit Karten in Reihenfolge · <span style="color: #8c491a">I0011</span> „+ Karte“ im Bahnenfuß, offen in „Bereit“, samt Zurückweisung · <span style="color: #8c491a">I0012</span> gezogene Karte, Einfügelinie zwischen zwei Karten in „In Arbeit“ und die annehmende Restfläche darunter (eine leere Bahn nimmt ganzflächig an) · <span style="color: #8c491a">I0013</span> Abschlussspalte nach Erledigungsdatum, Grenze 20, „Ältere nachladen“ · <span style="color: #8c491a">I0014</span> Kartenmenü mit „Archivieren“. Ränder: leere Bahn („Prüfung“), zu langer Titel (BES-04), zurückgewiesene Anlage („Bereit“).</p>
   <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Auf der Karte mitgezeichnet, aber später gebaut</span> — die Form steht fest, der Inhalt kommt aus anderen Dialogs: Klassennummer <span style="color: #201e1d">I0021</span> (D0005) · Subtask-Zähler <span style="color: #201e1d">I0016</span> und Etikett <span style="color: #201e1d">I0015</span> (D0004) · Soll-/Ist-Zeit und laufender Timer <span style="color: #201e1d">I0023</span>/<span style="color: #201e1d">I0024</span> (D0006) · Kontributor-Avatar <span style="color: #201e1d">I0008</span> (D0002). Ebenso die Kartenzahl im Bahnenkopf <span style="color: #201e1d">I0004</span> (D0001) — im Code steht dort eine reservierte leere Stelle. Live-Ereignisse (D0007) sind bewusst nicht gezeichnet.</p>
   <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Gezeichnet ist der gebaute Stand</span> — Kopfdaten in der Navigationszeile ohne eigenen Boardkopf, Bahnen ohne Rundung und Schatten mit geteilter Trennlinie, Karten auf <span style="color: #201e1d">--radius-xs</span> 4 px, einzeiliger Bahnenkopf. Das Fenster darüber ist 1440 × 900; diese Zeilen gehören zum Wireframe und stehen außerhalb.</p>
 </footer>
