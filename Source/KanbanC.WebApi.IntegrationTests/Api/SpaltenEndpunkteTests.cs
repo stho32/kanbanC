@@ -153,6 +153,7 @@ public class SpaltenEndpunkteTests
             new SpalteAnlegenAnfrage("Eingang", false, null));
 
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "board-unbekannt");
         var board = await LadeBoard(webApi, boardId);
         Assert.That(board.Spalten, Has.Count.EqualTo(3));
     }
@@ -233,6 +234,7 @@ public class SpaltenEndpunkteTests
             new SpalteAendernAnfrage("Gekapert", false, null));
 
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "spalte-unbekannt");
         var unveraendert = await LadeBoard(webApi, erstesBoard);
         Assert.That(unveraendert.Spalten[0].Bezeichnung, Is.EqualTo("Zu erledigen"));
     }
@@ -286,6 +288,7 @@ public class SpaltenEndpunkteTests
             new SpalteAendernAnfrage("Erfunden", false, null));
 
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "spalte-unbekannt");
         var board = await LadeBoard(webApi, boardId);
         Assert.That(board.Spalten, Has.Count.EqualTo(3));
     }
@@ -472,6 +475,7 @@ public class SpaltenEndpunkteTests
             new Spaltenreihenfolge([1, 2, 3]));
 
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "board-unbekannt");
         var unveraendert = await LadeBoard(webApi, boardId);
         Assert.That(unveraendert.Spalten.Select(s => s.Position), Is.EqualTo(new[] { 1, 2, 3 }));
     }
@@ -604,6 +608,7 @@ public class SpaltenEndpunkteTests
         var antwort = await webApi.Klient.DeleteAsync($"{BoardsRoute}/{boardId}/spalten/999");
 
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "spalte-unbekannt");
         var board = await LadeBoard(webApi, boardId);
         Assert.That(board.Spalten, Has.Count.EqualTo(3));
     }
@@ -620,6 +625,7 @@ public class SpaltenEndpunkteTests
         var antwort = await webApi.Klient.DeleteAsync($"{BoardsRoute}/{zweitesBoard}/spalten/{fremde.SpalteId}");
 
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "spalte-unbekannt");
         var unveraendert = await LadeBoard(webApi, erstesBoard);
         Assert.That(unveraendert.Spalten, Has.Count.EqualTo(3));
     }

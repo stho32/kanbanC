@@ -15,4 +15,9 @@ public static class Zurueckweisungen
 
         return new Zurueckweisung(gesammelte);
     }
+
+    public static IResult AlsNichtgefunden(Fehlerbefund befund)
+    {
+        return Results.NotFound(new Zurueckweisung([befund]));
+    }
 }

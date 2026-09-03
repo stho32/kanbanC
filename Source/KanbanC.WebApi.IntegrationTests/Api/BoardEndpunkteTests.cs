@@ -166,6 +166,7 @@ public class BoardEndpunkteTests
         var antwort = await webApi.Klient.GetAsync($"{BoardsRoute}/99");
 
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "board-unbekannt");
     }
 
     [Test]

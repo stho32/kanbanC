@@ -1,4 +1,5 @@
 using KanbanC.BL.Integrations.Karten;
+using KanbanC.BL.Operations.Fehler;
 using KanbanC.Contracts.Karten;
 
 namespace KanbanC.WebApi.Endpunkte;
@@ -17,7 +18,9 @@ public static class KartenEndpunkte
         var ergebnis = kartenService.LegeKarteAn(boardId, spalteId, anfrage);
         if (ergebnis is null)
         {
-            return Results.NotFound();
+            // Unbekanntes Board, fremde Spalte und zwischenzeitlich verschwundene Spalte laufen
+            // auf dieselbe Aussage hinaus: diese Spalte gibt es an dieser Stelle nicht.
+            return Zurueckweisungen.AlsNichtgefunden(Nichtgefunden.Spalte(boardId, spalteId));
         }
 
         var anfrageWurdeZurueckgewiesen = !ergebnis.IstErfolg;

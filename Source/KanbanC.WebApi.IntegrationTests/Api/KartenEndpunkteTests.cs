@@ -113,6 +113,7 @@ public class KartenEndpunkteTests
         var antwort = await webApi.Klient.PostAsJsonAsync(KartenRoute(board.BoardId, 999), new KarteAnlegenAnfrage("Migration schreiben"));
 
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "spalte-unbekannt");
         await ErwarteBoardOhneKarten(webApi, board.BoardId);
     }
 
@@ -128,6 +129,7 @@ public class KartenEndpunkteTests
         var antwort = await webApi.Klient.PostAsJsonAsync(KartenRoute(zweites.BoardId, fremdeSpalteId), new KarteAnlegenAnfrage("Migration schreiben"));
 
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "spalte-unbekannt");
         await ErwarteBoardOhneKarten(webApi, erstes.BoardId);
         await ErwarteBoardOhneKarten(webApi, zweites.BoardId);
     }
@@ -142,6 +144,7 @@ public class KartenEndpunkteTests
         var antwort = await webApi.Klient.PostAsJsonAsync(KartenRoute(99, board.Spalten[0].SpalteId), new KarteAnlegenAnfrage("Migration schreiben"));
 
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "spalte-unbekannt");
         await ErwarteBoardOhneKarten(webApi, board.BoardId);
     }
 

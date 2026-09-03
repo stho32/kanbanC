@@ -1,4 +1,5 @@
 using KanbanC.BL.Integrations.Boards;
+using KanbanC.BL.Operations.Fehler;
 using KanbanC.Contracts.Boards;
 
 namespace KanbanC.WebApi.Endpunkte;
@@ -38,7 +39,7 @@ public static class BoardEndpunkte
         var board = boardService.LadeBoard(boardId);
         if (board is null)
         {
-            return Results.NotFound();
+            return Zurueckweisungen.AlsNichtgefunden(Nichtgefunden.Board(boardId));
         }
 
         return Results.Ok(board);

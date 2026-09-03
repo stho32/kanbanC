@@ -1,4 +1,5 @@
 using KanbanC.BL.Integrations.Boards;
+using KanbanC.BL.Operations.Fehler;
 using KanbanC.Contracts.Boards;
 
 namespace KanbanC.WebApi.Endpunkte;
@@ -20,7 +21,7 @@ public static class SpaltenEndpunkte
         var ergebnis = spaltenService.LegeSpalteAn(boardId, anfrage);
         if (ergebnis is null)
         {
-            return Results.NotFound();
+            return Zurueckweisungen.AlsNichtgefunden(Nichtgefunden.Board(boardId));
         }
 
         var anfrageWurdeZurueckgewiesen = !ergebnis.IstErfolg;
@@ -38,7 +39,7 @@ public static class SpaltenEndpunkte
         var ergebnis = spaltenService.SetzeReihenfolge(boardId, GenannteSpalteIds(reihenfolge));
         if (ergebnis is null)
         {
-            return Results.NotFound();
+            return Zurueckweisungen.AlsNichtgefunden(Nichtgefunden.Board(boardId));
         }
 
         var reihenfolgeWurdeZurueckgewiesen = !ergebnis.IstErfolg;
@@ -65,7 +66,9 @@ public static class SpaltenEndpunkte
         var ergebnis = spaltenService.AendereSpalte(boardId, spalteId, anfrage);
         if (ergebnis is null)
         {
-            return Results.NotFound();
+            // Trifft ein unbekanntes Board wie eine unbekannte Spalte: beides heißt, dass es
+            // diese Spalte an dieser Stelle nicht gibt.
+            return Zurueckweisungen.AlsNichtgefunden(Nichtgefunden.Spalte(boardId, spalteId));
         }
 
         var anfrageWurdeZurueckgewiesen = !ergebnis.IstErfolg;
@@ -82,7 +85,7 @@ public static class SpaltenEndpunkte
         var ergebnis = spaltenService.EntferneSpalte(boardId, spalteId);
         if (ergebnis is null)
         {
-            return Results.NotFound();
+            return Zurueckweisungen.AlsNichtgefunden(Nichtgefunden.Spalte(boardId, spalteId));
         }
 
         var entfernenWurdeZurueckgewiesen = !ergebnis.IstErfolg;
