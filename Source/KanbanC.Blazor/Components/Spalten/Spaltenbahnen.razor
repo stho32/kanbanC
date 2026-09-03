@@ -1,3 +1,5 @@
+@using KanbanC.Blazor.Components.Karten
+@using KanbanC.Blazor.Services
 @using KanbanC.Contracts.Boards
 
 <div class="spaltenbahnen" id="spaltenbahnen">
@@ -33,15 +35,31 @@
                 }
             </header>
             <div class="spaltenbahn-flaeche">
-                @if (spalte.Karten.Count == 0)
+                @if (spalte.Karten.Count == 0 && !ZeigtAblagestellen)
                 {
                     <p class="spaltenbahn-leer">Noch keine Karte.<br />Unten eine anlegen.</p>
                 }
                 else
                 {
-                    @foreach (var kartendaten in spalte.Karten)
+                    var stelleDerGezogenenKarte = StelleDerGezogenenKarte(spalte);
+                    @if (ZeigtAblagestellen)
                     {
-                        <Karte @key="kartendaten.KarteId" Kartendaten="kartendaten" />
+                        @Ablagestelle(spalte, 0, stelleDerGezogenenKarte)
+                    }
+                    @for (var stelle = 0; stelle < spalte.Karten.Count; stelle++)
+                    {
+                        var kartendaten = spalte.Karten[stelle];
+                        var spalteId = spalte.SpalteId;
+                        <Karte @key="kartendaten.KarteId"
+                               Kartendaten="kartendaten"
+                               IstZiehbar="ZeigtZiehbareKarten"
+                               WirdGezogen="WirdGezogen(kartendaten.KarteId)"
+                               ZugBegann="karteId => BeginneZug(spalteId, karteId)"
+                               ZugEndete="BeendeZug" />
+                        @if (ZeigtAblagestellen)
+                        {
+                            @Ablagestelle(spalte, stelle + 1, stelleDerGezogenenKarte)
+                        }
                     }
                 }
             </div>
@@ -54,9 +72,26 @@
     }
 </div>
 
+@* Eine Ablagestelle sagt, wo die Karte landet: ihre Bahn und ihre Position nach dem Zug. *@
+@{
+    RenderFragment Ablagestelle(Spalte spalte, int stelle, int? stelleDerGezogenenKarte) => @<div
+        class="@Ablagestellenklassen(spalte.SpalteId, stelle)"
+        data-spalte-id="@spalte.SpalteId"
+        data-position="@Ablagestellen.Zielposition(stelle, stelleDerGezogenenKarte)"
+        @key="(spalte.SpalteId, stelle)"
+        @ondragover:preventDefault
+        @ondragenter="() => BetreteStelle(spalte.SpalteId, stelle)"
+        @ondragleave="VerlasseStelle"
+        @ondrop="() => LegeAb(spalte.SpalteId, Ablagestellen.Zielposition(stelle, stelleDerGezogenenKarte))">
+        hier ablegen · Position @Ablagestellen.Zielposition(stelle, stelleDerGezogenenKarte)
+    </div>;
+}
+
 @code {
     private Dictionary<long, SpaltenFormular> _formulare = [];
     private IReadOnlyList<Spalte> _gezeigteSpalten = [];
+    private Kartenzug? _laufenderZug;
+    private (long SpalteId, int Stelle)? _ueberfahreneStelle;
 
     [Parameter]
     [EditorRequired]
@@ -84,6 +119,14 @@
     [Parameter]
     public EventCallback<long> SpalteEntfernt { get; set; }
 
+    [Parameter]
+    public EventCallback<Kartenablage> KarteWurdeAbgelegt { get; set; }
+
+    // Im Layout-Modus werden Spalten gepflegt, nicht Karten bewegt.
+    private bool ZeigtZiehbareKarten => !IstBearbeitbar;
+
+    private bool ZeigtAblagestellen => _laufenderZug is not null && !IstBearbeitbar;
+
     protected override void OnParametersSet()
     {
         // Ein Elternrender allein ist kein Grund, getippte Eingaben zu verwerfen: nach einer
@@ -101,5 +144,84 @@
     private async Task SpeichereBahn(long spalteId)
     {
         await SpalteGeaendert.InvokeAsync(_formulare[spalteId].AlsGespeichert(spalteId));
+    }
+
+    private void BeginneZug(long spalteId, long karteId)
+    {
+        _laufenderZug = new Kartenzug(karteId, spalteId);
+    }
+
+    private void BeendeZug()
+    {
+        _laufenderZug = null;
+        _ueberfahreneStelle = null;
+    }
+
+    private void BetreteStelle(long spalteId, int stelle)
+    {
+        _ueberfahreneStelle = (spalteId, stelle);
+    }
+
+    private void VerlasseStelle()
+    {
+        _ueberfahreneStelle = null;
+    }
+
+    private async Task LegeAb(long spalteId, int position)
+    {
+        var abgelegteKarte = _laufenderZug;
+        BeendeZug();
+        if (abgelegteKarte is null)
+        {
+            return;
+        }
+
+        await KarteWurdeAbgelegt.InvokeAsync(new Kartenablage(abgelegteKarte.KarteId, spalteId, position));
+    }
+
+    private bool WirdGezogen(long karteId)
+    {
+        return _laufenderZug is not null && _laufenderZug.KarteId == karteId;
+    }
+
+    private int? StelleDerGezogenenKarte(Spalte spalte)
+    {
+        var derZugKommtAusEinerAnderenBahn = _laufenderZug is null || _laufenderZug.SpalteId != spalte.SpalteId;
+        if (derZugKommtAusEinerAnderenBahn)
+        {
+            return null;
+        }
+
+        var stelle = IndexDerKarte(spalte, _laufenderZug!.KarteId);
+        if (stelle < 0)
+        {
+            return null;
+        }
+
+        return stelle;
+    }
+
+    private static int IndexDerKarte(Spalte spalte, long karteId)
+    {
+        for (var stelle = 0; stelle < spalte.Karten.Count; stelle++)
+        {
+            if (spalte.Karten[stelle].KarteId == karteId)
+            {
+                return stelle;
+            }
+        }
+
+        return -1;
+    }
+
+    private string Ablagestellenklassen(long spalteId, int stelle)
+    {
+        var stelleWirdUeberfahren = _ueberfahreneStelle == (spalteId, stelle);
+        if (stelleWirdUeberfahren)
+        {
+            return "ablagestelle ablagestelle-ueberfahren";
+        }
+
+        return "ablagestelle";
     }
 }

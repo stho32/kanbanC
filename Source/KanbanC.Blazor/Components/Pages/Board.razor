@@ -1,6 +1,10 @@
 @page "/boards/{BoardId:long}"
+@using KanbanC.Blazor.Components.Karten
 @using KanbanC.Blazor.Services
+@using KanbanC.Contracts.Fehler
+@using KanbanC.Contracts.Karten
 @inject BoardApiKlient ApiKlient
+@inject KartenApiKlient KartenKlient
 
 <PageTitle>Board @BoardId</PageTitle>
 
@@ -47,13 +51,31 @@ else
     </SectionContent>
 
     <div class="boardflaeche">
+        @if (_zugFehlermeldung is not null)
+        {
+            <div class="meldung" role="alert" id="karte-fehlermeldung">@_zugFehlermeldung</div>
+        }
+        @if (_zugZurueckweisung is not null)
+        {
+            <div class="meldung meldung-abweisung" role="alert" id="karte-zurueckweisung">
+                <ul>
+                    @foreach (var befund in _zugZurueckweisung.Befunde)
+                    {
+                        <li>@befund.Meldung</li>
+                    }
+                </ul>
+            </div>
+        }
         @if (_layoutModusIstAktiv)
         {
             <Spaltenpflege BoardId="BoardId" Spalten="_board.Spalten" SpaltenHabenSichGeaendert="LadeBoard" />
         }
         else
         {
-            <Spaltenbahnen BoardId="BoardId" Spalten="_board.Spalten" KarteWurdeAngelegt="LadeBoard" />
+            <Spaltenbahnen BoardId="BoardId"
+                           Spalten="_board.Spalten"
+                           KarteWurdeAngelegt="LadeBoard"
+                           KarteWurdeAbgelegt="LegeKarteAb" />
         }
     </div>
 }
@@ -67,6 +89,8 @@ else
     // Der Layout-Modus ist bewusst Zustand der Komponente und nicht der Adresse: ein Reload
     // soll in der Arbeitsansicht landen (R00004).
     private bool _layoutModusIstAktiv;
+    private Zurueckweisung? _zugZurueckweisung;
+    private string? _zugFehlermeldung;
 
     [Parameter]
     public long BoardId { get; set; }
@@ -95,6 +119,28 @@ else
     private void VerlasseLayoutModus()
     {
         _layoutModusIstAktiv = false;
+    }
+
+    private async Task LegeKarteAb(Kartenablage ablage)
+    {
+        _zugFehlermeldung = await WebApiAufruf.MitAusfallmeldung(() => VerschiebeKarte(ablage));
+    }
+
+    private async Task VerschiebeKarte(Kartenablage ablage)
+    {
+        var lage = new Kartenlage(ablage.SpalteId, ablage.Position);
+        var ergebnis = await KartenKlient.VerschiebeKarte(BoardId, ablage.KarteId, lage);
+        if (ergebnis.WurdeZurueckgewiesen)
+        {
+            _zugZurueckweisung = ergebnis.Zurueckweisung;
+            // Das Board wird auch nach einer Zurückweisung neu geladen: die Karte springt
+            // dadurch sichtbar an ihre alte Stelle zurück.
+            await LadeBoard();
+            return;
+        }
+
+        _zugZurueckweisung = null;
+        await LadeBoard();
     }
 
     private async Task LadeBoard()

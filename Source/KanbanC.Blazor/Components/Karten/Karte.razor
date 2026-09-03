@@ -1,4 +1,5 @@
-<article class="karte" data-karte-id="@Kartendaten.KarteId">
+<article class="@Klassen" data-karte-id="@Kartendaten.KarteId" draggable="@Ziehbarkeit"
+         @ondragstart="BeginneZug" @ondragend="BeendeZug">
     <p class="karte-titel">@Kartendaten.Titel</p>
 </article>
 
@@ -7,4 +8,54 @@
     [Parameter]
     [EditorRequired]
     public KanbanC.Contracts.Karten.Karte Kartendaten { get; set; } = null!;
+
+    [Parameter]
+    public bool IstZiehbar { get; set; }
+
+    [Parameter]
+    public bool WirdGezogen { get; set; }
+
+    [Parameter]
+    public EventCallback<long> ZugBegann { get; set; }
+
+    [Parameter]
+    public EventCallback ZugEndete { get; set; }
+
+    // draggable ist kein boolesches Attribut: ohne Wert gilt „auto“, und auto heißt für ein
+    // article „nicht ziehbar“. Der Wert muss deshalb ausgeschrieben werden.
+    private string Ziehbarkeit
+    {
+        get
+        {
+            if (IstZiehbar)
+            {
+                return "true";
+            }
+
+            return "false";
+        }
+    }
+
+    private string Klassen
+    {
+        get
+        {
+            if (WirdGezogen)
+            {
+                return "karte karte-wird-gezogen";
+            }
+
+            return "karte";
+        }
+    }
+
+    private async Task BeginneZug()
+    {
+        await ZugBegann.InvokeAsync(Kartendaten.KarteId);
+    }
+
+    private async Task BeendeZug()
+    {
+        await ZugEndete.InvokeAsync();
+    }
 }

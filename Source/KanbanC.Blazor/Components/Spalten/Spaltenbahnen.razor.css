@@ -116,3 +116,22 @@
     flex-wrap: wrap;
     gap: var(--space-1);
 }
+
+/* Die Ablagestelle steht dort, wo die Karte landen würde — mit gestricheltem Rahmen im
+   Akzentton und ihrer künftigen Position als Beschriftung (Artboard D0003). */
+.ablagestelle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--space-8);
+    border: 2px dashed var(--color-accent);
+    border-radius: var(--radius-xs);
+    background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+    font-size: 11px;
+    color: var(--color-accent-700);
+}
+
+.ablagestelle-ueberfahren {
+    border-style: solid;
+    background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+}

@@ -15,3 +15,13 @@
     text-wrap: pretty;
     overflow-wrap: anywhere;
 }
+
+.karte[draggable="true"] {
+    cursor: grab;
+}
+
+/* Die schwebende Karte über den Bahnen zeichnet der Browser selbst als Ziehbild; sichtbar
+   bleibt hier nur, dass die Karte ihren Platz gerade verlässt. */
+.karte-wird-gezogen {
+    opacity: 0.45;
+}
