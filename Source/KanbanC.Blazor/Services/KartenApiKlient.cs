@@ -1,3 +1,4 @@
+using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
 
 namespace KanbanC.Blazor.Services;
@@ -18,5 +19,12 @@ public sealed class KartenApiKlient
         using var klient = _klientFabrik.CreateClient(KlientName);
         using var antwort = await klient.PostAsJsonAsync($"{BoardsRoute}/{boardId}/spalten/{spalteId}/karten", anfrage);
         return await ApiAntwortleser.AlsErgebnis<Karte>(antwort);
+    }
+
+    public async Task<ApiErgebnis<IReadOnlyList<Spalte>>> VerschiebeKarte(long boardId, long karteId, Kartenlage lage)
+    {
+        using var klient = _klientFabrik.CreateClient(KlientName);
+        using var antwort = await klient.PutAsJsonAsync($"{BoardsRoute}/{boardId}/karten/{karteId}/lage", lage);
+        return await ApiAntwortleser.AlsErgebnis<IReadOnlyList<Spalte>>(antwort);
     }
 }
