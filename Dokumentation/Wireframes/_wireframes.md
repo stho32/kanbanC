@@ -5,8 +5,8 @@ canvas: https://claude.ai/code/artifact/b61e3007-056d-44e0-9cf5-7350c22f858a
 seed: .claude/wireframes/kanbanc.html
 art: mockup
 richtung: aus dem Bestand — gestaltung.css (Caprasimo/Figtree, warmes Sandklima, runde Formen)
-stand: 2026-09-02
-zurueckgeholt: 2026-09-02
+stand: 2026-09-03
+zurueckgeholt: 2026-09-03
 ---
 
 # Wireframes — KanbanC

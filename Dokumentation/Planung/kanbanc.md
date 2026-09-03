@@ -4,7 +4,7 @@ system: KanbanC
 vision: Anforderungen/R00000-vision.md
 wireframes: Dokumentation/Wireframes/
 sprache: de
-zuletzt: 2026-08-31
+zuletzt: 2026-09-02
 ---
 
 # WBS — KanbanC
@@ -134,7 +134,28 @@ zuletzt: 2026-08-31
 | B0080 | Bubble | F0018 | Kartenanfrage prüfen | gruen | Test gruen | KarteAnlegenAnfrage → KartenValidator.Pruefe → Pruefbefunde | 0,4 | | | | Operation; Aufwand belegt (B0027); Befunde: leerer Titel und mehr als 1000 Zeichen nach dem Trimmen |
 | B0081 | Bubble | F0018 | Zurückweisung über die API | gruen | Test gruen | Pruefbefunde → KartenService + KartenEndpunkte → 400 Zurueckweisung, 404 bei fremder Spalte | 0,4 | | | | Integration; Aufwand belegt (B0029) |
 | B0082 | Bubble | F0018 | Zurückweisung in der Oberfläche | gruen | Test gruen | Zurueckweisung → Kartenanlage.razor → lesbare Meldung, Bahn bleibt bedienbar; E2E US-5 | 2 | | | | UI |
-| I0012 | Interaction | D0003 | Karte verschieben | rot | Eine Karte wechselt Spalte und Position; die neue Lage bleibt nach Reload erhalten | | | | I0011 | | |
+| I0012 | Interaction | D0003 | Karte verschieben | rot | Eine Karte wechselt Spalte und Position; die neue Lage bleibt nach Reload erhalten | | | | I0011 | R00007 | |
+| F0021 | Feature | I0012 | Fehlerantworten für Agenten | rot | AK „Fehlerantworten, die ein Agent benutzen kann“: keine Fehlerantwort mit leerem Rumpf, je Befund Code, Meldung und Kompensation nichtleer, Vertragstest über alle Endpunkte | | | | I0011 | R00007 | quer durch den Bestand: 15 Befunde, 6 leere 404 |
+| B0096 | Bubble | F0021 | Fehlerbefund neben der Meldung | rot | Test gruen | Code + Meldung + Kompensation → Fehlerbefund; Pruefbefunde nimmt beide Formen → Bestand unverändert gruen | 2 | | | | Contracts + Model, additiv; Zurueckweisung zieht nach Contracts/Fehler/ |
+| B0097 | Bubble | F0021 | Die 15 Befunde bekommen Code und Kompensation | rot | Test gruen | vier Validatoren + SpaltenRepository → Fehlerbefund je Meldung → 15 Befunde mit drei Feldern | 2-4 | | | | Operations + Provider; unklar: wie lange 15 brauchbare Kompensationssätze brauchen — Fleiss, nicht Technik |
+| B0098 | Bubble | F0021 | Antwort auf „gibt es nicht“ | rot | Test gruen | boardId / karteId / spalteId → Nichtgefunden.Board/Karte/Spalte → 404 mit Befund | 2 | | | | Operation (WebApi); die eine Stelle statt sechs Varianten |
+| B0099 | Bubble | F0021 | Die sechs leeren 404 füllen | rot | Test gruen | Nichtgefunden → BoardEndpunkte, SpaltenEndpunkte, KartenEndpunkte → sechs Antworten mit Rumpf | 2 | | | | Integration |
+| B0100 | Bubble | F0021 | Oberfläche liest die Meldung | rot | Test gruen | Zurueckweisung mit Fehlerbefunden → Zurueckweisungsleser, Kartenanlage.razor, Spaltenpflege.razor → sichtbare Meldungen wie vorher | 2 | | | | UI; Code und Kompensation bleiben unsichtbar |
+| B0101 | Bubble | F0021 | Alte Form abbauen | rot | Test gruen | Pruefbefunde ohne Zeichenketten-Pfad → Bau gruen, 14 Testdateien nachgezogen → eine Form | 2-4 | | | | Das Ende des Stranglers; unklar: 14 Testdateien |
+| B0102 | Bubble | F0021 | Vertragstest über alle Fehlerantworten | rot | Test gruen | jede Fehlerantwort jedes Endpunkts über TestWebApi → Fehlervertragstests → Code, Meldung, Kompensation nichtleer | 2 | | | | Integration; das pruefbare Gegenstueck zum Akzeptanzkriterium |
+| F0019 | Feature | I0012 | Karte verschieben | rot | AK „Karte in eine andere Spalte bewegen (API)“, „Karte innerhalb ihrer Spalte umsortieren (API)“, „Lückenlose Positionen und Dauerhaftigkeit“ und „Verschieben in der Oberfläche“; US-1, US-2, US-3, US-4 | | | | F0021 | R00007 | |
+| B0085 | Bubble | F0019 | Zug in der Datenbank ausführen | rot | Test gruen | boardId + karteId + Kartenlage → KartenRepository.Verschiebe → Ergebnis<Spalten> oder null | 2 | | | | Provider, eine Transaktion; Quellspalte auf 1..n-1 verdichtet, Zielspalte ab der Zielposition aufgeschoben. Zwei Spalten — mehr als B0035/B0038, deshalb nicht belegt |
+| B0086 | Bubble | F0019 | Zug verdrahten | rot | Test gruen | boardId + karteId + Kartenlage → KartenService.VerschiebeKarte → Ergebnis<Spalten>? | 0,4 | | | | Integration, Test-Repository; null heisst unbekannt (404); Aufwand belegt (B0029) |
+| B0087 | Bubble | F0019 | Lage-Endpunkt | rot | Test gruen | HTTP PUT /api/boards/{boardId}/karten/{karteId}/lage → KartenEndpunkte → 200 / 404 | 2 | | | | Integration; die Route sitzt am Board, nicht unter der Herkunftsspalte; kein Messwert für Endpunkt-Bubbles |
+| B0088 | Bubble | F0019 | API-Klient des Zugs | rot | Test gruen | Kartenlage → KartenApiKlient.VerschiebeKarte → ApiErgebnis<Spalten> | 2 | | | | Integration; Fehlerpfade in KanbanC.Blazor.Tests |
+| B0089 | Bubble | F0019 | Karte wird ziehbar | rot | Test gruen | Karte.razor → draggable + ondragstart/ondragend → gemeldeter Kartenzug | 2 | | | | UI; die Karte hört auf, reine Anzeige zu sein |
+| B0090 | Bubble | F0019 | Ablagestellen in der Bahn | rot | Test gruen | laufender Kartenzug → Spaltenbahnen.razor → Stellen vor, zwischen und nach den Karten, überfahrene hervorgehoben | 2-4 | | | | UI; ondragover:preventDefault ohne Handler. unklar: Ereignislast über SignalR bei verschachtelten Stellen — dependency-probe vor dem Bauen |
+| B0091 | Bubble | F0019 | Ablegen löst den Zug aus | rot | Test gruen | ondrop → Board.razor + KartenApiKlient → Board neu geladen, Karte an neuer Stelle | 2 | | | | UI; nutzt den vorhandenen LadeBoard-Pfad |
+| B0092 | Bubble | F0019 | E2E Karte verschieben | rot | Test gruen | beide Prozesse auf freien Ports → Playwright DragToAsync → US-1, US-2, US-3, US-4 | 2-4 | | | | E2E; unklar: ob DragToAsync die nativen drag-Ereignisse auslöst. Der einzige Beweis für die Oberfläche |
+| F0020 | Feature | I0012 | Unmöglichen Zug zurückweisen | rot | AK „Zurückweisung und Fehlerpfade“; US-5 | | | | F0019 | R00007 | |
+| B0093 | Bubble | F0020 | Ziellage prüfen | rot | Test gruen | Kartenlage + Kartenzahl der Zielspalte nach dem Zug → KartenlageValidator.Pruefe → Pruefbefunde | 0,4 | | | | Operation, pure Logik; Randwerte 0, 1, n, n+1; Aufwand belegt (B0027) |
+| B0094 | Bubble | F0020 | Zurückweisung über die API | rot | Test gruen | Pruefbefunde → KartenService + KartenEndpunkte → 400 Zurueckweisung; 404 bei fremder Karte oder Zielspalte, auch wenn sie zwischen Pruefung und Schreiben verschwindet | 0,4 | | | | Integration; Aufwand belegt (B0029) |
+| B0095 | Bubble | F0020 | Zurückweisung und Ausfall in der Oberfläche | rot | Test gruen | Zurueckweisung / HttpRequestException → Board.razor + WebApiAufruf.MitAusfallmeldung → lesbare Meldung, Karte sichtbar an alter Stelle; E2E US-5 | 2 | | | | UI; WebApiAufruf steht seit B0041 bereit — zweiter Nutzer |
 | I0013 | Interaction | D0003 | Erledigte Karten gebündelt sehen | rot | Die Abschlussspalte gruppiert ihre Karten nach Erledigungsdatum und zeigt nur die N neuesten; ältere sind über die API vollständig und in der Oberfläche über Nachladen erreichbar | | | | I0012, I0003 | | Vorbild Kanbanflow: Done gruppiert nach Datum, Standard 20 neueste |
 | I0014 | Interaction | D0003 | Karte archivieren | rot | Eine archivierte Karte verschwindet vom Board, bleibt aber über API und Archiv auffindbar | | | | I0011 | | |
 | D0004 | Dialog | A0001 | Karteninhalt pflegen | rot | alle Interactions gruen | | | | | | aus Vision, kein Requirement |
