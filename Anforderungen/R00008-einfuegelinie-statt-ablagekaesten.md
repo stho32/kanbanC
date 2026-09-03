@@ -1,6 +1,6 @@
 ---
 id: R00008
-status: Neu
+status: Erledigt
 datum: 2026-09-03
 ---
 
@@ -38,36 +38,36 @@ Eine Einfügelinie sagt dasselbe, ohne etwas zu verschieben — das Board bleibt
 
 ### Die Einfügelinie
 
-- [ ] Während eines Zugs ist genau **eine** Einfügelinie sichtbar — die an der Stelle, die das aktuelle Ziel ist; nicht mehrere gleichzeitig.
-- [ ] Die Linie trägt **keine Beschriftung**; die Zeichenkette „hier ablegen" kommt in der Oberfläche nicht mehr vor.
-- [ ] Beginnt ein Zug, ändern die Karten einer Bahn ihre Position auf dem Schirm nicht — gemessen an der Kartenreihenfolge und daran, dass keine Karte aus dem sichtbaren Bereich rückt.
-- [ ] Endet der Zug ohne Ablegen, verschwindet die Linie und das Board ist unverändert.
+- [x] Während eines Zugs ist genau **eine** Einfügelinie sichtbar — die an der Stelle, die das aktuelle Ziel ist; nicht mehrere gleichzeitig.
+- [x] Die Linie trägt **keine Beschriftung**; die Zeichenkette „hier ablegen" kommt in der Oberfläche nicht mehr vor.
+- [x] Beginnt ein Zug, ändern die Karten einer Bahn ihre Position auf dem Schirm nicht — gemessen an der Kartenreihenfolge und daran, dass keine Karte aus dem sichtbaren Bereich rückt.
+- [x] Endet der Zug ohne Ablegen, verschwindet die Linie und das Board ist unverändert.
 
 ### Ablegen auf einer Karte
 
-- [ ] Wird über der **oberen** Hälfte einer Karte losgelassen, landet die gezogene Karte **davor**.
-- [ ] Wird über der **unteren** Hälfte losgelassen, landet sie **dahinter**.
-- [ ] Rechenbeispiel, Zug aus einer anderen Bahn: Zielbahn `[A, B, C]`. Über `A` oben → Position 1, über `A` unten → 2, über `C` unten → 4.
-- [ ] Rechenbeispiel, Zug **innerhalb** derselben Bahn: `[A, B, C, D]`, gezogen wird `D`. Über `A` oben → `[D, A, B, C]`; über `B` unten → `[A, B, D, C]`. Gezogen wird `A`: über `C` unten → `[B, C, A, D]`.
-- [ ] Wird eine Karte über sich selbst losgelassen, ändert sich die Reihenfolge nicht.
+- [x] Wird über der **oberen** Hälfte einer Karte losgelassen, landet die gezogene Karte **davor**.
+- [x] Wird über der **unteren** Hälfte losgelassen, landet sie **dahinter**.
+- [x] Rechenbeispiel, Zug aus einer anderen Bahn: Zielbahn `[A, B, C]`. Über `A` oben → Position 1, über `A` unten → 2, über `C` unten → 4.
+- [x] Rechenbeispiel, Zug **innerhalb** derselben Bahn: `[A, B, C, D]`, gezogen wird `D`. Über `A` oben → `[D, A, B, C]`; über `B` unten → `[A, B, D, C]`. Gezogen wird `A`: über `C` unten → `[B, C, A, D]`.
+- [x] Wird eine Karte über sich selbst losgelassen, ändert sich die Reihenfolge nicht.
 
 ### Restfläche und leere Bahn
 
-- [ ] Die Fläche zwischen der letzten Karte und dem Bahnenfuß nimmt an; die Karte landet als letzte der Bahn.
-- [ ] Rechenbeispiel: Zielbahn `[A, B, C]`, Zug aus einer anderen Bahn auf die Restfläche → Position 4. Wird `A` aus derselben Bahn auf die Restfläche gezogen → `[B, C, A]`.
-- [ ] Eine Bahn ohne Karten nimmt über ihre gesamte Fläche an; die Karte wird ihre erste.
-- [ ] Der Leer-Hinweis „Noch keine Karte" bleibt sichtbar und verhindert das Ablegen nicht.
+- [x] Die Fläche zwischen der letzten Karte und dem Bahnenfuß nimmt an; die Karte landet als letzte der Bahn.
+- [x] Rechenbeispiel: Zielbahn `[A, B, C]`, Zug aus einer anderen Bahn auf die Restfläche → Position 4. Wird `A` aus derselben Bahn auf die Restfläche gezogen → `[B, C, A]`.
+- [x] Eine Bahn ohne Karten nimmt über ihre gesamte Fläche an; die Karte wird ihre erste.
+- [x] Der Leer-Hinweis „Noch keine Karte" bleibt sichtbar und verhindert das Ablegen nicht.
 
 ### Was entfällt
 
-- [ ] Es gibt keine `n+1` Ablagestellen je Bahn mehr; das Element mit der Klasse `ablagestelle` existiert nicht mehr.
-- [ ] Im Layout-Modus (`R00004`) sind weiterhin weder Karten ziehbar noch Ablageziele aktiv.
+- [x] Es gibt keine `n+1` Ablagestellen je Bahn mehr; das Element mit der Klasse `ablagestelle` existiert nicht mehr.
+- [x] Im Layout-Modus (`R00004`) sind weiterhin weder Karten ziehbar noch Ablageziele aktiv.
 
 ### Bestandsschutz
 
-- [ ] Alle Akzeptanzkriterien aus `R00007` gelten unverändert weiter: Spalten- und Positionswechsel über die API, lückenlose Positionen, Reload- und Neustartfestigkeit, Zurückweisung und Ausfallmeldung. **An API, Fachlogik und Datenhaltung ändert diese Anforderung nichts.**
-- [ ] Die sechs E2E-Tests aus `R00007`, die heute über `BoardSeite.AblagestelleDerBahn` zielen, werden auf die neue Bedienung gezogen — **keine ihrer fachlichen Aussagen entfällt**.
-- [ ] Alle übrigen Tests aus `R00001`–`R00007` bleiben grün; `TreatWarningsAsErrors` bleibt aktiv, der Bau warnungsfrei.
+- [x] Alle Akzeptanzkriterien aus `R00007` gelten unverändert weiter: Spalten- und Positionswechsel über die API, lückenlose Positionen, Reload- und Neustartfestigkeit, Zurückweisung und Ausfallmeldung. **An API, Fachlogik und Datenhaltung ändert diese Anforderung nichts.**
+- [x] Die sechs E2E-Tests aus `R00007`, die heute über `BoardSeite.AblagestelleDerBahn` zielen, werden auf die neue Bedienung gezogen — **keine ihrer fachlichen Aussagen entfällt**.
+- [x] Alle übrigen Tests aus `R00001`–`R00007` bleiben grün; `TreatWarningsAsErrors` bleibt aktiv, der Bau warnungsfrei.
 
 ## Betroffene Verzeichnisstruktur
 
