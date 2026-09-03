@@ -8,9 +8,15 @@ public static class KartenEndpunkte
 {
     private const string Basisroute = "/api/boards/{boardId:long}/spalten/{spalteId:long}/karten";
 
+    // Die Lage-Route sitzt am Board, nicht unter der Herkunftsspalte: ein Zug wechselt die
+    // Spalte, und die Herkunft in der Adresse festzuhalten machte aus einer Bewegung eine
+    // Eigenschaft ihres Ausgangspunkts.
+    private const string Lageroute = "/api/boards/{boardId:long}/karten/{karteId:long}/lage";
+
     public static void Registriere(IEndpointRouteBuilder routen)
     {
         routen.MapPost(Basisroute, LegeKarteAn).WithName("KarteAnlegen");
+        routen.MapPut(Lageroute, VerschiebeKarte).WithName("KarteVerschieben");
     }
 
     private static IResult LegeKarteAn(long boardId, long spalteId, KarteAnlegenAnfrage anfrage, KartenService kartenService)
@@ -31,5 +37,16 @@ public static class KartenEndpunkte
 
         var karte = ergebnis.Wert;
         return Results.Created($"/api/boards/{boardId}/spalten/{spalteId}/karten/{karte.KarteId}", karte);
+    }
+
+    private static IResult VerschiebeKarte(long boardId, long karteId, Kartenlage lage, KartenService kartenService)
+    {
+        var ergebnis = kartenService.VerschiebeKarte(boardId, karteId, lage);
+        if (ergebnis.IstErfolg)
+        {
+            return Results.Ok(ergebnis.Wert);
+        }
+
+        return Zurueckweisungen.AlsFehlerantwort(ergebnis.Befunde);
     }
 }

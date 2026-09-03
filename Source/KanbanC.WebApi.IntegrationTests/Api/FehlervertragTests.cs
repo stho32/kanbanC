@@ -23,9 +23,9 @@ public class FehlervertragTests
     {
         using var datenbank = new TemporaereDatenbank();
         using var webApi = new TestWebApi(datenbank.Dateipfad);
-        var board = await LegeBoardMitKarteAn(webApi);
+        var aufbau = await LegeBoardMitKarteAn(webApi);
 
-        var faelle = await AlleFehlerantworten(webApi, board);
+        var faelle = await AlleFehlerantworten(webApi, aufbau);
 
         Assert.That(faelle, Is.Not.Empty);
         foreach (var fall in faelle)
@@ -41,8 +41,8 @@ public class FehlervertragTests
     {
         using var datenbank = new TemporaereDatenbank();
         using var webApi = new TestWebApi(datenbank.Dateipfad);
-        var board = await LegeBoardMitKarteAn(webApi);
-        var faelle = await AlleFehlerantworten(webApi, board);
+        var aufbau = await LegeBoardMitKarteAn(webApi);
+        var faelle = await AlleFehlerantworten(webApi, aufbau);
         foreach (var fall in faelle)
         {
             fall.Antwort.Dispose();
@@ -54,8 +54,9 @@ public class FehlervertragTests
         Assert.That(ungeprueft, Is.Empty, "Diese Routen liefern Fehlerantworten, die der Vertragstest nicht abruft.");
     }
 
-    private static async Task<IReadOnlyList<Fehlerfall>> AlleFehlerantworten(TestWebApi webApi, Board board)
+    private static async Task<IReadOnlyList<Fehlerfall>> AlleFehlerantworten(TestWebApi webApi, Aufbau aufbau)
     {
+        var board = aufbau.Board;
         var spalteId = board.Spalten[0].SpalteId;
         var faelle = new List<Fehlerfall>();
 
@@ -119,22 +120,46 @@ public class FehlervertragTests
             "Karte anlegen an unbekannter Spalte",
             await webApi.Klient.PostAsJsonAsync($"{BoardsRoute}/{board.BoardId}/spalten/999/karten", new KarteAnlegenAnfrage("Migration schreiben"))));
 
+        faelle.Add(new Fehlerfall(
+            "PUT /api/boards/{boardId:long}/karten/{karteId:long}/lage",
+            "Karte verschieben auf eine Position ausserhalb der Zielspalte",
+            await webApi.Klient.PutAsJsonAsync($"{BoardsRoute}/{board.BoardId}/karten/{aufbau.Karte.KarteId}/lage", new Kartenlage(spalteId, 99))));
+
+        faelle.Add(new Fehlerfall(
+            "PUT /api/boards/{boardId:long}/karten/{karteId:long}/lage",
+            "Karte verschieben an unbekanntem Board",
+            await webApi.Klient.PutAsJsonAsync($"{BoardsRoute}/999/karten/{aufbau.Karte.KarteId}/lage", new Kartenlage(spalteId, 1))));
+
+        faelle.Add(new Fehlerfall(
+            "PUT /api/boards/{boardId:long}/karten/{karteId:long}/lage",
+            "Karte verschieben mit unbekannter KarteId",
+            await webApi.Klient.PutAsJsonAsync($"{BoardsRoute}/{board.BoardId}/karten/999/lage", new Kartenlage(spalteId, 1))));
+
+        faelle.Add(new Fehlerfall(
+            "PUT /api/boards/{boardId:long}/karten/{karteId:long}/lage",
+            "Karte verschieben in eine unbekannte Zielspalte",
+            await webApi.Klient.PutAsJsonAsync($"{BoardsRoute}/{board.BoardId}/karten/{aufbau.Karte.KarteId}/lage", new Kartenlage(999, 1))));
+
         return faelle;
     }
 
-    private static async Task<Board> LegeBoardMitKarteAn(TestWebApi webApi)
+    private static async Task<Aufbau> LegeBoardMitKarteAn(TestWebApi webApi)
     {
         var antwort = await webApi.Klient.PostAsJsonAsync(BoardsRoute, new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null));
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.Created));
         var board = await antwort.Content.ReadFromJsonAsync<Board>();
         Assert.That(board, Is.Not.Null);
 
-        var karte = await webApi.Klient.PostAsJsonAsync(
+        var angelegt = await webApi.Klient.PostAsJsonAsync(
             $"{BoardsRoute}/{board!.BoardId}/spalten/{board.Spalten[0].SpalteId}/karten",
             new KarteAnlegenAnfrage("Migration schreiben"));
-        Assert.That(karte.StatusCode, Is.EqualTo(HttpStatusCode.Created));
-        return board;
+        Assert.That(angelegt.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        var karte = await angelegt.Content.ReadFromJsonAsync<Karte>();
+        Assert.That(karte, Is.Not.Null);
+        return new Aufbau(board, karte!);
     }
+
+    private sealed record Aufbau(Board Board, Karte Karte);
 
     private sealed record Fehlerfall(string Route, string Lage, HttpResponseMessage Antwort);
 }

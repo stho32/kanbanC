@@ -231,6 +231,139 @@ public class KartenEndpunkteTests
         return $"{BoardsRoute}/{boardId}/spalten/{spalteId}/karten";
     }
 
+
+    [Test]
+    public async Task Wenn_eine_Karte_per_PUT_in_eine_andere_Spalte_zieht_dann_antwortet_die_API_mit_200_und_den_neuen_Spalten()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var quelle = board.Spalten[0].SpalteId;
+        var ziel = board.Spalten[1].SpalteId;
+        await LegeKarteAn(webApi, board.BoardId, quelle, "A");
+        var b = await LegeKarteAn(webApi, board.BoardId, quelle, "B");
+        await LegeKarteAn(webApi, board.BoardId, quelle, "C");
+        await LegeKarteAn(webApi, board.BoardId, ziel, "X");
+        await LegeKarteAn(webApi, board.BoardId, ziel, "Y");
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Lageroute(board.BoardId, b.KarteId), new Kartenlage(ziel, 1));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var spalten = await antwort.Content.ReadFromJsonAsync<IReadOnlyList<Spalte>>();
+        Assert.That(spalten, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(spalten![0].Karten.Select(karte => karte.Titel), Is.EqualTo(new[] { "A", "C" }));
+            Assert.That(spalten[1].Karten.Select(karte => karte.Titel), Is.EqualTo(new[] { "B", "X", "Y" }));
+            Assert.That(spalten[0].Karten.Select(karte => karte.Position), Is.EqualTo(new[] { 1, 2 }));
+            Assert.That(spalten[1].Karten.Select(karte => karte.Position), Is.EqualTo(new[] { 1, 2, 3 }));
+        });
+
+        var geladen = await LadeBoard(webApi, board.BoardId);
+        Assert.Multiple(() =>
+        {
+            Assert.That(geladen.Spalten[0].Karten.Select(karte => karte.Titel), Is.EqualTo(new[] { "A", "C" }));
+            Assert.That(geladen.Spalten[1].Karten.Select(karte => karte.Titel), Is.EqualTo(new[] { "B", "X", "Y" }));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_eine_Karte_innerhalb_ihrer_Spalte_umsortiert_wird_dann_liefert_GET_danach_dieselbe_Reihenfolge()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var spalteId = board.Spalten[0].SpalteId;
+        await LegeKarteAn(webApi, board.BoardId, spalteId, "A");
+        await LegeKarteAn(webApi, board.BoardId, spalteId, "B");
+        await LegeKarteAn(webApi, board.BoardId, spalteId, "C");
+        var d = await LegeKarteAn(webApi, board.BoardId, spalteId, "D");
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Lageroute(board.BoardId, d.KarteId), new Kartenlage(spalteId, 2));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var geladen = await LadeBoard(webApi, board.BoardId);
+        Assert.That(geladen.Spalten[0].Karten.Select(karte => karte.Titel), Is.EqualTo(new[] { "A", "D", "B", "C" }));
+    }
+
+    [Test]
+    public async Task Wenn_die_boardId_beim_Verschieben_unbekannt_ist_dann_antwortet_die_API_mit_404_und_nichts_bewegt_sich()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var spalteId = board.Spalten[0].SpalteId;
+        var karte = await LegeKarteAn(webApi, board.BoardId, spalteId, "A");
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Lageroute(999, karte.KarteId), new Kartenlage(spalteId, 1));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "board-unbekannt");
+        var geladen = await LadeBoard(webApi, board.BoardId);
+        Assert.That(geladen.Spalten[0].Karten.Select(k => k.Titel), Is.EqualTo(new[] { "A" }));
+    }
+
+    [Test]
+    public async Task Wenn_die_karteId_beim_Verschieben_unbekannt_ist_dann_antwortet_die_API_mit_404()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var spalteId = board.Spalten[0].SpalteId;
+        await LegeKarteAn(webApi, board.BoardId, spalteId, "A");
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Lageroute(board.BoardId, 999), new Kartenlage(spalteId, 1));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "karte-unbekannt");
+    }
+
+    [Test]
+    public async Task Wenn_die_Karte_zu_einem_anderen_Board_gehoert_dann_nennt_die_404_Antwort_dieses_Board()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var erstes = await LegeBoardAn(webApi);
+        var zweites = await LegeBoardAn(webApi);
+        var fremde = await LegeKarteAn(webApi, erstes.BoardId, erstes.Spalten[0].SpalteId, "A");
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Lageroute(zweites.BoardId, fremde.KarteId),
+            new Kartenlage(zweites.Spalten[0].SpalteId, 1));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "fremde Karte verschieben");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("karte-fremd"));
+            Assert.That(zurueckweisung.Befunde[0].Kompensation, Does.Contain($"/api/boards/{erstes.BoardId}"));
+        });
+        var geladen = await LadeBoard(webApi, erstes.BoardId);
+        Assert.That(geladen.Spalten[0].Karten.Select(k => k.Titel), Is.EqualTo(new[] { "A" }));
+    }
+
+    [Test]
+    public async Task Wenn_die_Zielspalte_zu_einem_anderen_Board_gehoert_dann_antwortet_die_API_mit_404_spalte_fremd()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var erstes = await LegeBoardAn(webApi);
+        var zweites = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, erstes.BoardId, erstes.Spalten[0].SpalteId, "A");
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Lageroute(erstes.BoardId, karte.KarteId),
+            new Kartenlage(zweites.Spalten[0].SpalteId, 1));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "spalte-fremd");
+        var geladen = await LadeBoard(webApi, erstes.BoardId);
+        Assert.That(geladen.Spalten[0].Karten.Select(k => k.Titel), Is.EqualTo(new[] { "A" }));
+    }
+
+    private static string Lageroute(long boardId, long karteId)
+    {
+        return $"{BoardsRoute}/{boardId}/karten/{karteId}/lage";
+    }
+
     private static async Task ErwarteBoardOhneKarten(TestWebApi webApi, long boardId)
     {
         var geladen = await LadeBoard(webApi, boardId);
