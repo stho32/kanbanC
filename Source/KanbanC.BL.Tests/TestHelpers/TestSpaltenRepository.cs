@@ -58,6 +58,32 @@ public sealed class TestSpaltenRepository : ISpaltenRepository
         return this;
     }
 
+    // Ein zweites Board im selben Repository: seine Spalten sind fuer LadeAlle(erstesBoard)
+    // unsichtbar, BoardDerSpalte findet sie aber — genau die Lage „fremde Spalte“.
+    public TestSpaltenRepository MitZusaetzlichemBoard(long boardId, params string[] bezeichnungen)
+    {
+        _spaltenJeBoard[boardId] = [];
+        foreach (var bezeichnung in bezeichnungen)
+        {
+            LegeAn(boardId, new SpalteAnlegenAnfrage(bezeichnung, false, null));
+        }
+
+        WurdeAngelegt = false;
+        return this;
+    }
+
+    // Legt eine Karte mit bekannter Nummer in eine geseedete Spalte, damit ein Test sie
+    // gezielt bewegen kann.
+    public TestSpaltenRepository MitKarte(long boardId, long spalteId, long karteId, string titel)
+    {
+        var spalten = _spaltenJeBoard[boardId];
+        var stelle = spalten.FindIndex(spalte => spalte.SpalteId == spalteId);
+        var karten = spalten[stelle].Karten.ToList();
+        karten.Add(new Karte(karteId, titel, karten.Count + 1));
+        spalten[stelle] = spalten[stelle] with { Karten = karten };
+        return this;
+    }
+
     public IReadOnlyList<Spalte> Spalten(long boardId)
     {
         return _spaltenJeBoard[boardId];

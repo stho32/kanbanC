@@ -1,5 +1,6 @@
 using KanbanC.BL.Integrations.Karten;
 using KanbanC.BL.Tests.TestHelpers;
+using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
 
 namespace KanbanC.BL.Tests.Integrations.Karten;
@@ -120,4 +121,140 @@ public class KartenServiceTests
         Assert.That(kartenRepository.Karten(spalteId).Select(karte => karte.Titel),
             Is.EqualTo(new[] { "Migration schreiben", "Endpunkt bauen" }));
     }
+
+    [Test]
+    public void Wenn_die_BoardId_unbekannt_ist_dann_weist_VerschiebeKarte_den_Zug_zurueck_und_schreibt_nicht()
+    {
+        var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen", "In Arbeit");
+        var kartenRepository = TestKartenRepository.Leer();
+        var service = new KartenService(spaltenRepository, kartenRepository);
+
+        var ergebnis = service.VerschiebeKarte(99, 1, new Kartenlage(1, 1));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.IstErfolg, Is.False);
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("board-unbekannt"));
+            Assert.That(kartenRepository.WurdeVerschoben, Is.False);
+        });
+    }
+
+    [Test]
+    public void Wenn_es_die_Karte_nirgends_gibt_dann_meldet_VerschiebeKarte_karte_unbekannt_und_schreibt_nicht()
+    {
+        var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen", "In Arbeit");
+        var kartenRepository = TestKartenRepository.Leer();
+        var service = new KartenService(spaltenRepository, kartenRepository);
+        var zielspalteId = spaltenRepository.Spalten(1)[1].SpalteId;
+
+        var ergebnis = service.VerschiebeKarte(1, 777, new Kartenlage(zielspalteId, 1));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("karte-unbekannt"));
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("777"));
+            Assert.That(kartenRepository.WurdeVerschoben, Is.False);
+        });
+    }
+
+    [Test]
+    public void Wenn_die_Karte_zu_einem_anderen_Board_gehoert_dann_nennt_der_Befund_dieses_Board()
+    {
+        var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen", "In Arbeit");
+        var kartenRepository = TestKartenRepository.Leer().MitKarteAufBoard(2);
+        var service = new KartenService(spaltenRepository, kartenRepository);
+        var zielspalteId = spaltenRepository.Spalten(1)[1].SpalteId;
+
+        var ergebnis = service.VerschiebeKarte(1, 777, new Kartenlage(zielspalteId, 1));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("karte-fremd"));
+            Assert.That(ergebnis.Befunde[0].Kompensation, Does.Contain("/api/boards/2"));
+            Assert.That(kartenRepository.WurdeVerschoben, Is.False);
+        });
+    }
+
+    [Test]
+    public void Wenn_es_die_Zielspalte_nirgends_gibt_dann_meldet_VerschiebeKarte_spalte_unbekannt()
+    {
+        var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen");
+        var quellspalteId = spaltenRepository.Spalten(1)[0].SpalteId;
+        spaltenRepository.MitKarte(1, quellspalteId, 5, "Endpunkt bauen");
+        var kartenRepository = TestKartenRepository.Leer();
+        var service = new KartenService(spaltenRepository, kartenRepository);
+
+        var ergebnis = service.VerschiebeKarte(1, 5, new Kartenlage(888, 1));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("spalte-unbekannt"));
+            Assert.That(kartenRepository.WurdeVerschoben, Is.False);
+        });
+    }
+
+    [Test]
+    public void Wenn_die_Zielspalte_zu_einem_anderen_Board_gehoert_dann_meldet_VerschiebeKarte_spalte_fremd()
+    {
+        var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen").MitZusaetzlichemBoard(2, "Eingang");
+        var quellspalteId = spaltenRepository.Spalten(1)[0].SpalteId;
+        spaltenRepository.MitKarte(1, quellspalteId, 5, "Endpunkt bauen");
+        var fremdeSpalteId = spaltenRepository.Spalten(2)[0].SpalteId;
+        var service = new KartenService(spaltenRepository, TestKartenRepository.Leer());
+
+        var ergebnis = service.VerschiebeKarte(1, 5, new Kartenlage(fremdeSpalteId, 1));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("spalte-fremd"));
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("Board 2"));
+        });
+    }
+
+    [Test]
+    public void Wenn_der_Zug_moeglich_ist_dann_reicht_VerschiebeKarte_die_Spalten_des_Repositories_durch()
+    {
+        var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen", "In Arbeit");
+        var quellspalteId = spaltenRepository.Spalten(1)[0].SpalteId;
+        var zielspalteId = spaltenRepository.Spalten(1)[1].SpalteId;
+        spaltenRepository.MitKarte(1, quellspalteId, 5, "Endpunkt bauen");
+        var nachDemZug = new List<Spalte>
+        {
+            new(quellspalteId, "Zu erledigen", 1, false, null, []),
+            new(zielspalteId, "In Arbeit", 2, false, null, [new Karte(5, "Endpunkt bauen", 1)]),
+        };
+        var kartenRepository = TestKartenRepository.Leer().MitSpaltenNachDemZug(nachDemZug);
+        var service = new KartenService(spaltenRepository, kartenRepository);
+
+        var ergebnis = service.VerschiebeKarte(1, 5, new Kartenlage(zielspalteId, 1));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.IstErfolg, Is.True);
+            Assert.That(kartenRepository.WurdeVerschoben, Is.True);
+            Assert.That(ergebnis.Wert[1].Karten.Select(karte => karte.Titel), Is.EqualTo(new[] { "Endpunkt bauen" }));
+            Assert.That(ergebnis.Wert[0].Karten, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void Wenn_die_Karte_zwischen_Pruefung_und_Schreiben_verschwindet_dann_endet_der_Zug_als_karte_unbekannt()
+    {
+        var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen", "In Arbeit");
+        var quellspalteId = spaltenRepository.Spalten(1)[0].SpalteId;
+        var zielspalteId = spaltenRepository.Spalten(1)[1].SpalteId;
+        spaltenRepository.MitKarte(1, quellspalteId, 5, "Endpunkt bauen");
+        var kartenRepository = TestKartenRepository.Leer().MitVerschwundenerKarte();
+        var service = new KartenService(spaltenRepository, kartenRepository);
+
+        var ergebnis = service.VerschiebeKarte(1, 5, new Kartenlage(zielspalteId, 1));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.IstErfolg, Is.False);
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("karte-unbekannt"));
+            Assert.That(kartenRepository.WurdeVerschoben, Is.True);
+        });
+    }
+
 }

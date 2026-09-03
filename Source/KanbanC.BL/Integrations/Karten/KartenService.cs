@@ -1,8 +1,10 @@
 using KanbanC.BL.Interfaces.Boards;
 using KanbanC.BL.Interfaces.Karten;
 using KanbanC.BL.Models;
+using KanbanC.BL.Operations.Fehler;
 using KanbanC.BL.Operations.Karten;
 using KanbanC.Contracts.Boards;
+using KanbanC.Contracts.Fehler;
 using KanbanC.Contracts.Karten;
 
 namespace KanbanC.BL.Integrations.Karten;
@@ -48,6 +50,80 @@ public sealed class KartenService
         }
 
         return Ergebnis<Karte>.Erfolg(karte!);
+    }
+
+    // Ein Zug wechselt die Spalte; deshalb kennt der Aufruf nur Board und Karte, und die
+    // Herkunftsspalte wird hier aus dem Bestand gelesen.
+    public Ergebnis<IReadOnlyList<Spalte>> VerschiebeKarte(long boardId, long karteId, Kartenlage lage)
+    {
+        var spaltenDesBoards = _spaltenRepository.LadeAlle(boardId);
+        var boardIstUnbekannt = spaltenDesBoards is null;
+        if (boardIstUnbekannt)
+        {
+            return Zurueckgewiesen(Nichtgefunden.Board(boardId));
+        }
+
+        var quellspalte = SpalteDerKarte(spaltenDesBoards!, karteId);
+        var karteLiegtInKeinerSpalteDesBoards = quellspalte is null;
+        if (karteLiegtInKeinerSpalteDesBoards)
+        {
+            return Zurueckgewiesen(BefundZurFehlendenKarte(boardId, karteId));
+        }
+
+        var zielspalte = SpalteMitNummer(spaltenDesBoards!, lage.SpalteId);
+        var zielspalteGehoertNichtZumBoard = zielspalte is null;
+        if (zielspalteGehoertNichtZumBoard)
+        {
+            return Zurueckgewiesen(BefundZurFehlendenSpalte(boardId, lage.SpalteId));
+        }
+
+        var ergebnis = _kartenRepository.Verschiebe(boardId, karteId, lage);
+        var karteIstInzwischenVerschwunden = ergebnis is null;
+        if (karteIstInzwischenVerschwunden)
+        {
+            return Zurueckgewiesen(Nichtgefunden.Karte(boardId, karteId));
+        }
+
+        return ergebnis!;
+    }
+
+    private Fehlerbefund BefundZurFehlendenKarte(long boardId, long karteId)
+    {
+        var boardDerKarte = _kartenRepository.BoardDerKarte(karteId);
+        var karteGibtEsNirgends = boardDerKarte is null;
+        if (karteGibtEsNirgends)
+        {
+            return Nichtgefunden.Karte(boardId, karteId);
+        }
+
+        return Nichtgefunden.FremdeKarte(boardId, karteId, boardDerKarte!.Value);
+    }
+
+    private Fehlerbefund BefundZurFehlendenSpalte(long boardId, long spalteId)
+    {
+        var boardDerSpalte = _spaltenRepository.BoardDerSpalte(spalteId);
+        var spalteGibtEsNirgends = boardDerSpalte is null;
+        if (spalteGibtEsNirgends)
+        {
+            return Nichtgefunden.Spalte(boardId, spalteId);
+        }
+
+        return Nichtgefunden.FremdeSpalte(boardId, spalteId, boardDerSpalte!.Value);
+    }
+
+    private static Ergebnis<IReadOnlyList<Spalte>> Zurueckgewiesen(Fehlerbefund befund)
+    {
+        return Ergebnis<IReadOnlyList<Spalte>>.Zurueckgewiesen(new Pruefbefunde([befund]));
+    }
+
+    private static Spalte? SpalteDerKarte(IReadOnlyList<Spalte> spalten, long karteId)
+    {
+        return spalten.FirstOrDefault(spalte => spalte.Karten.Any(karte => karte.KarteId == karteId));
+    }
+
+    private static Spalte? SpalteMitNummer(IReadOnlyList<Spalte> spalten, long spalteId)
+    {
+        return spalten.FirstOrDefault(spalte => spalte.SpalteId == spalteId);
     }
 
     private static bool EnthaeltSpalte(IReadOnlyList<Spalte> spalten, long spalteId)
