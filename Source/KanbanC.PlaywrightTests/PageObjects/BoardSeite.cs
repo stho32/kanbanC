@@ -272,7 +272,10 @@ public sealed class BoardSeite
     public async Task ZieheKarteAufsBahnende(ILocator karte, ILocator bahn)
     {
         await NimmKarteAuf(karte);
-        await Assertions.Expect(BahnenflaecheDerBahn(bahn)).ToBeVisibleAsync();
+        // Auf die Ablagefläche warten, nicht auf die Bahnenfläche: die gibt es immer, jene nur
+        // bei laufendem Zug. Nur so ist belegt, dass der Zugbeginn den Server erreicht hat,
+        // bevor losgelassen wird.
+        await Assertions.Expect(AblageflaecheDerBahn(bahn)).ToBeVisibleAsync();
         await FahreAufFreieFlaeche(bahn);
         await _seite.Mouse.UpAsync();
     }

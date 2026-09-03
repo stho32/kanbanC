@@ -31,7 +31,7 @@ Eine Einfügelinie sagt dasselbe, ohne etwas zu verschieben — das Board bleibt
 
 ## Nicht-funktionale Anforderungen
 
-- Performance: `dragover` läuft weiterhin ohne Serverbeteiligung. Je überfahrener Hälfte höchstens ein Ereignis über den Live-Kanal — nicht mehr als bei den bisherigen Ablagestellen.
+- Performance: `dragover` läuft weiterhin ohne Serverbeteiligung; über den Live-Kanal geht **höchstens ein Ereignis je überfahrener Hälfte**. Der Vergleich mit den bisherigen Ablagestellen entfällt — er war beim Schreiben falsch angenommen: eine Bahn von oben nach unten zu durchqueren kostet mit zwei Hälften je Karte `2n+1` Ereignisse statt vorher `n+1`. Das ist der Preis der feineren Zielhilfe und ausdrücklich in Kauf genommen; die Obergrenze bleibt „eines je Hälfte". (Korrigiert am 2026-09-03 nach dem Review.)
 - Benutzerfreundlichkeit: Das Layout der Bahnen darf sich durch den Beginn eines Zugs **nicht** verändern. Karten behalten Position und Größe; die Linie liegt im Zwischenraum.
 
 ## Akzeptanzkriterien
@@ -40,7 +40,7 @@ Eine Einfügelinie sagt dasselbe, ohne etwas zu verschieben — das Board bleibt
 
 - [x] Während eines Zugs ist genau **eine** Einfügelinie sichtbar — die an der Stelle, die das aktuelle Ziel ist; nicht mehrere gleichzeitig.
 - [x] Die Linie trägt **keine Beschriftung**; die Zeichenkette „hier ablegen" kommt in der Oberfläche nicht mehr vor.
-- [x] Beginnt ein Zug, ändern die Karten einer Bahn ihre Position auf dem Schirm nicht — gemessen an der Kartenreihenfolge und daran, dass keine Karte aus dem sichtbaren Bereich rückt.
+- [x] Beginnt ein Zug, ändern die Karten einer Bahn ihre Position auf dem Schirm nicht — **gemessen an der Y-Oberkante jeder Karte vor und während des Zugs**, Toleranz höchstens 1 px gegen Sub-Pixel-Rundung. Die ursprüngliche Fassung maß an Reihenfolge und Sichtbarkeit; sie wäre auch bei 176 px Versatz erfüllt gewesen und schloss damit genau den Anlass der Anforderung nicht aus. (Geschärft am 2026-09-03 nach dem Review; die Umsetzung maß von Anfang an so.)
 - [x] Endet der Zug ohne Ablegen, verschwindet die Linie und das Board ist unverändert.
 
 ### Ablegen auf einer Karte
@@ -66,7 +66,7 @@ Eine Einfügelinie sagt dasselbe, ohne etwas zu verschieben — das Board bleibt
 ### Bestandsschutz
 
 - [x] Alle Akzeptanzkriterien aus `R00007` gelten unverändert weiter: Spalten- und Positionswechsel über die API, lückenlose Positionen, Reload- und Neustartfestigkeit, Zurückweisung und Ausfallmeldung. **An API, Fachlogik und Datenhaltung ändert diese Anforderung nichts.**
-- [x] Die sechs E2E-Tests aus `R00007`, die heute über `BoardSeite.AblagestelleDerBahn` zielen, werden auf die neue Bedienung gezogen — **keine ihrer fachlichen Aussagen entfällt**.
+- [x] Die **neun** E2E-Tests aus `R00007`, die über `BoardSeite.AblagestelleDerBahn` und `Ablagestellen` zielen (zehn Aufrufstellen), werden auf die neue Bedienung gezogen — **keine ihrer fachlichen Aussagen entfällt**. Nachgezählt am 2026-09-03 gegen `9cddebc`; die erste Fassung nannte sechs.
 - [x] Alle übrigen Tests aus `R00001`–`R00007` bleiben grün; `TreatWarningsAsErrors` bleibt aktiv, der Bau warnungsfrei.
 
 ## Betroffene Verzeichnisstruktur
@@ -84,6 +84,11 @@ Das Artboard [`Dokumentation/Wireframes/D0003.dc.html`](../Dokumentation/Wirefra
 Das Artboard ist **Vorgabe für die Gestaltung, keine Vereinbarung** — aus ihm entstehen keine Akzeptanzkriterien. Die konkreten Werte (Strichstärke, Deckkraft der Restfläche) stehen dort und im Token-Sheet; ob die Linie am Ende 2 oder 3 px trägt, entscheidet sich beim Bauen am Bild, nicht an diesem Dokument.
 
 Unverändert gilt die Abweichung aus `R00007`: die schwebende gedrehte Karte wird nicht gebaut, die Herkunftskarte bleibt gedimmt.
+
+**Zwei Abweichungen vom Artboard**, nachgetragen am 2026-09-03 — `CLAUDE.md` verlangt sie in der Anforderung, nicht bloß im Quelltext:
+
+- **Der negative Rand der Linie ist −5,4 px, nicht −4,4 px wie gezeichnet.** Das Artboard hebt mit `--space-1` den zusätzlichen Flex-Abstand auf, aber nicht die 2 px Linienhöhe; mit dem gezeichneten Wert bliebe ein 2-px-Sprung, und das **Kernkriterium dieser Anforderung wäre verletzt**. Richtig ist `−(gap + Linienhöhe)/2 = −(8,8 + 2)/2`. Nachgemessen: 0,016 px Rest gegen 2,015 px mit dem Artboard-Wert. Die Skizze hatte an dieser Stelle einen Rechenfehler; die Gestaltung selbst (2 px, `--color-accent`, `border-radius: 2px`) ist unverändert übernommen.
+- **Die Ablagefläche liegt während des ganzen Zugs in jeder Bahn**, nicht nur in der überfahrenen wie gezeichnet. Sie zeigt damit die Annahmebereitschaft aller Bahnen; nachgemessen verschiebt sie nichts (0,000 px). Eine Einfärbung nur unter dem Zeiger kostete je Bahnwechsel einen zusätzlichen Rundlauf über den Live-Kanal — genau das, was die nicht-funktionale Anforderung begrenzt. Die Fläche trägt `pointer-events: none`; das eigentliche Ablageziel ist die Bahnenfläche darunter.
 
 ### Ablauf
 
@@ -152,7 +157,7 @@ Fortschritt: 0 von 5 Bubbles gruen (0 %) · 0 laufen · 5 offen
 
 `F0022` ist die **Ausbaustufe 2** der Ziehbedienung; `F0019` bleibt als Stufe 1 grün stehen. Die Bubbles `B0103`–`B0107` sind die Vorplanung — welche es am Ende werden, entscheidet der Entwickler beim Bauen.
 
-Die eine unklare Bubble ist `B0107`: nicht die Technik ist offen, sondern wie viel am Nachzug der sechs bestehenden E2E-Tests hängt, wenn `AblagestelleDerBahn` entfällt.
+Die eine unklare Bubble ist `B0107`: nicht die Technik ist offen, sondern wie viel am Nachzug der bestehenden E2E-Tests hängt, wenn `AblagestelleDerBahn` entfällt. Aufgelöst: **neun Tests, zehn Aufrufstellen**.
 
 ## Offene Fragen
 

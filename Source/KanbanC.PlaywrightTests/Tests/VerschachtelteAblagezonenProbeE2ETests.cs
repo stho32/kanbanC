@@ -104,6 +104,11 @@ public class VerschachtelteAblagezonenProbeE2ETests : PageTest
 
         await NimmAuf(Page.Locator("#karte-b"));
         await FahreUeber(Page.Locator("[data-zone='a-oben']"));
+        // Der Weg von der Karte hinauf zur oberen Hälfte durchquert die untere. Ohne dieses
+        // Leeren fände IndexOf weiter unten das dragenter der Durchquerung statt das des
+        // Hälftenwechsels — und die Prüfung bliebe auch dann grün, wenn der Browser dragleave
+        // zuerst feuerte, also genau im Fall, gegen den sie schützt.
+        await LeereEreignisse();
         await FahreUeber(Page.Locator("[data-zone='a-unten']"));
 
         var ereignisse = await Ereignisse();

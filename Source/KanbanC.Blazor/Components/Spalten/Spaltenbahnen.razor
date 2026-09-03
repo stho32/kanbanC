@@ -37,11 +37,14 @@
             @* Die Bahnenfläche selbst ist das Ablageziel „ans Ende“: die Fläche unter der letzten
                Karte, die Zwischenräume und die ganze leere Bahn nehmen damit an, ohne dass ein
                einziges Element hinzukäme, das die Karten verschieben könnte. *@
+            @* preventDefault hängt an ZeigtAblageziele: solange der Zugbeginn den Server nicht
+               erreicht hat, ist die Fläche kein gültiges Ziel. Der Browser weist das Ablegen
+               dann sichtbar ab, statt dass es hier still ins Leere liefe. *@
             <div class="spaltenbahn-flaeche"
-                 @ondragover:preventDefault
+                 @ondragover:preventDefault="ZeigtAblageziele"
                  @ondragenter:stopPropagation
                  @ondragenter="() => ZieleAnsBahnende(spalte)"
-                 @ondrop:preventDefault
+                 @ondrop:preventDefault="ZeigtAblageziele"
                  @ondrop="() => LegeAmBahnendeAb(spalte)">
                 @if (spalte.Karten.Count == 0)
                 {
