@@ -137,6 +137,56 @@ public class KarteVerschiebenE2ETests : PageTest
         await Expect(seite.ZiehbareKarten).ToHaveCountAsync(0);
     }
 
+
+    // Der Browser zeigt einen Stand, den es nicht mehr gibt: waehrend die Seite offen ist, raeumt
+    // ein Agent die Zielbahn ueber die API leer. Die Ablagestelle „Position 3“ verweist danach auf
+    // eine Stelle, die es nach dem Zug nicht mehr gaebe.
+    [Test]
+    [Category("US-5")]
+    public async Task Wenn_die_Zielbahn_inzwischen_leerer_ist_dann_erscheint_eine_lesbare_Zurueckweisung_und_die_Karte_kehrt_zurueck()
+    {
+        var seite = await BoardMitKarten(["A", "B", "C", "D"], ["X", "Y"]);
+        var rueckstand = seite.SpaltenbahnAnStelle(0);
+        var inArbeit = seite.SpaltenbahnAnStelle(1);
+        await Expect(seite.KartentitelDerBahn(inArbeit)).ToHaveTextAsync(["X", "Y"]);
+        await RaeumeZweiteBahnLeer();
+
+        await seite.ZieheKarteAuf(seite.KarteMitTitel("D"), seite.AblagestelleDerBahn(inArbeit, 2));
+
+        await Expect(seite.KarteZurueckweisung).ToBeVisibleAsync();
+        await Expect(seite.KarteZurueckweisung).ToContainTextAsync("liegt außerhalb der Zielspalte");
+        await Expect(seite.KartentitelDerBahn(rueckstand)).ToHaveTextAsync(["A", "B", "C", "D"]);
+        await Expect(seite.Ausnahmeanzeige).ToBeHiddenAsync();
+    }
+
+    [Test]
+    [Category("US-5")]
+    public async Task Wenn_die_WebApi_beim_Ablegen_nicht_erreichbar_ist_dann_erscheint_die_Ausfallmeldung_und_das_Board_bleibt_stehen()
+    {
+        var seite = await BoardMitKarten(["A", "B"], []);
+        var rueckstand = seite.SpaltenbahnAnStelle(0);
+        var inArbeit = seite.SpaltenbahnAnStelle(1);
+
+        Testumgebung.Aktuelle.HalteWebApiAn();
+        await seite.ZieheKarteAuf(seite.KarteMitTitel("B"), seite.AblagestelleDerBahn(inArbeit, 0));
+
+        await Expect(seite.KarteFehlermeldung).ToBeVisibleAsync();
+        await Expect(seite.KarteFehlermeldung).ToContainTextAsync("Die WebApi ist nicht erreichbar.");
+        await Expect(seite.KartentitelDerBahn(rueckstand)).ToHaveTextAsync(["A", "B"]);
+        await Expect(seite.Ausnahmeanzeige).ToBeHiddenAsync();
+    }
+
+    private static async Task RaeumeZweiteBahnLeer()
+    {
+        using var webApi = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        var spalten = (await webApi.LadeBoard(1)).Spalten;
+        var erledigt = spalten[2].SpalteId;
+        foreach (var karte in spalten[1].Karten)
+        {
+            await webApi.VerschiebeKarte(1, karte.KarteId, new Kartenlage(erledigt, 1));
+        }
+    }
+
     private async Task<BoardSeite> BoardMitKarten(IReadOnlyList<string> rueckstand, IReadOnlyList<string> inArbeit)
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
