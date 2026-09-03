@@ -20,13 +20,15 @@ public class KarteVerschiebenE2ETests : PageTest
         var inArbeit = seite.SpaltenbahnAnStelle(1);
         await Expect(seite.Karten).ToHaveCountAsync(5);
 
-        await seite.ZieheKarteAuf(seite.KarteMitTitel("Endpunkt bauen"), seite.AblagestelleDerBahn(inArbeit, 0));
+        await seite.ZieheKarteAuf(
+            seite.KarteMitTitel("Endpunkt bauen"),
+            seite.ObereHaelfte(seite.KarteMitTitel("Kartenform zeichnen")));
 
         await Expect(seite.KartentitelDerBahn(inArbeit))
             .ToHaveTextAsync(["Endpunkt bauen", "Kartenform zeichnen", "Bahn testen"]);
         await Expect(seite.KartentitelDerBahn(rueckstand)).ToHaveTextAsync(["Migration schreiben", "Bahn fuellen"]);
         await Expect(seite.Karten).ToHaveCountAsync(5);
-        await Expect(seite.Ablagestellen).ToHaveCountAsync(0);
+        await Expect(seite.Einfuegelinien).ToHaveCountAsync(0);
     }
 
     [Test]
@@ -36,39 +38,51 @@ public class KarteVerschiebenE2ETests : PageTest
         var seite = await BoardMitKarten(["A", "B", "C", "D"], []);
         var bahn = seite.SpaltenbahnAnStelle(0);
 
-        await seite.ZieheKarteAuf(seite.KarteMitTitel("D"), seite.AblagestelleDerBahn(bahn, 1));
+        await seite.ZieheKarteAuf(seite.KarteMitTitel("D"), seite.UntereHaelfte(seite.KarteMitTitel("A")));
 
         await Expect(seite.KartentitelDerBahn(bahn)).ToHaveTextAsync(["A", "D", "B", "C"]);
     }
 
     [Test]
     [Category("US-2")]
-    public async Task Wenn_der_Zug_ausserhalb_jeder_Ablagestelle_endet_dann_bleibt_die_Bahn_unveraendert_und_die_Stellen_verschwinden()
+    public async Task Wenn_der_Zug_ausserhalb_jedes_Ablageziels_endet_dann_bleibt_die_Bahn_unveraendert_und_die_Linie_verschwindet()
     {
         var seite = await BoardMitKarten(["A", "B", "C", "D"], []);
         var bahn = seite.SpaltenbahnAnStelle(0);
 
         await seite.NimmKarteAuf(seite.KarteMitTitel("D"));
-        await Expect(bahn.Locator(".ablagestelle")).ToHaveCountAsync(5);
+        await seite.LegeAufStelleAb(seite.ObereHaelfte(seite.KarteMitTitel("B")));
+        await Expect(seite.Einfuegelinien).ToHaveCountAsync(0);
+        await Expect(seite.KartentitelDerBahn(bahn)).ToHaveTextAsync(["A", "D", "B", "C"]);
+
+        await seite.NimmKarteAuf(seite.KarteMitTitel("D"));
+        await seite.FahreUeberZone(seite.ObereHaelfte(seite.KarteMitTitel("A")));
+        await Expect(seite.Einfuegelinien).ToHaveCountAsync(1);
         await seite.LasseAusserhalbJederStelleLos();
 
-        await Expect(seite.Ablagestellen).ToHaveCountAsync(0);
-        await Expect(seite.KartentitelDerBahn(bahn)).ToHaveTextAsync(["A", "B", "C", "D"]);
+        await Expect(seite.Einfuegelinien).ToHaveCountAsync(0);
+        await Expect(seite.KartentitelDerBahn(bahn)).ToHaveTextAsync(["A", "D", "B", "C"]);
     }
 
     [Test]
     [Category("US-2")]
-    public async Task Wenn_ein_Zug_laeuft_dann_traegt_jede_Bahn_eine_Ablagestelle_mehr_als_Karten()
+    public async Task Wenn_ein_Zug_laeuft_dann_nimmt_jede_Bahn_an_auch_die_leere()
     {
         var seite = await BoardMitKarten(["A", "B"], ["X"]);
+        var rueckstand = seite.SpaltenbahnAnStelle(0);
+        var inArbeit = seite.SpaltenbahnAnStelle(1);
+        var erledigt = seite.SpaltenbahnAnStelle(2);
 
         await seite.NimmKarteAuf(seite.KarteMitTitel("A"));
 
-        await Expect(seite.AblagestelleDerBahn(seite.SpaltenbahnAnStelle(0), 0)).ToBeVisibleAsync();
-        await Expect(seite.SpaltenbahnAnStelle(0).Locator(".ablagestelle")).ToHaveCountAsync(3);
-        await Expect(seite.SpaltenbahnAnStelle(1).Locator(".ablagestelle")).ToHaveCountAsync(2);
-        await Expect(seite.SpaltenbahnAnStelle(2).Locator(".ablagestelle")).ToHaveCountAsync(1);
+        await Expect(seite.AblageflaecheDerBahn(rueckstand)).ToHaveCountAsync(1);
+        await Expect(seite.KartenhaelftenDerBahn(rueckstand)).ToHaveCountAsync(4);
+        await Expect(seite.AblageflaecheDerBahn(inArbeit)).ToHaveCountAsync(1);
+        await Expect(seite.KartenhaelftenDerBahn(inArbeit)).ToHaveCountAsync(2);
+        await Expect(seite.AblageflaecheDerBahn(erledigt)).ToHaveCountAsync(1);
+        await Expect(seite.KartenhaelftenDerBahn(erledigt)).ToHaveCountAsync(0);
         await seite.LasseAusserhalbJederStelleLos();
+        await Expect(seite.Ablageflaechen).ToHaveCountAsync(0);
     }
 
     [Test]
@@ -78,9 +92,11 @@ public class KarteVerschiebenE2ETests : PageTest
         var seite = await BoardMitKarten(["Migration schreiben", "Endpunkt bauen", "Bahn fuellen"], []);
         var rueckstand = seite.SpaltenbahnAnStelle(0);
         var inArbeit = seite.SpaltenbahnAnStelle(1);
-        await seite.ZieheKarteAuf(seite.KarteMitTitel("Endpunkt bauen"), seite.AblagestelleDerBahn(inArbeit, 0));
+        await seite.ZieheKarteAufsBahnende(seite.KarteMitTitel("Endpunkt bauen"), inArbeit);
         await Expect(seite.KartentitelDerBahn(inArbeit)).ToHaveTextAsync(["Endpunkt bauen"]);
-        await seite.ZieheKarteAuf(seite.KarteMitTitel("Bahn fuellen"), seite.AblagestelleDerBahn(inArbeit, 0));
+        await seite.ZieheKarteAuf(
+            seite.KarteMitTitel("Bahn fuellen"),
+            seite.ObereHaelfte(seite.KarteMitTitel("Endpunkt bauen")));
         await Expect(seite.KartentitelDerBahn(inArbeit)).ToHaveTextAsync(["Bahn fuellen", "Endpunkt bauen"]);
 
         await seite.LadeNeu();
@@ -95,7 +111,7 @@ public class KarteVerschiebenE2ETests : PageTest
     {
         var seite = await BoardMitKarten(["Migration schreiben", "Endpunkt bauen"], []);
         var inArbeit = seite.SpaltenbahnAnStelle(1);
-        await seite.ZieheKarteAuf(seite.KarteMitTitel("Endpunkt bauen"), seite.AblagestelleDerBahn(inArbeit, 0));
+        await seite.ZieheKarteAufsBahnende(seite.KarteMitTitel("Endpunkt bauen"), inArbeit);
         await Expect(seite.KartentitelDerBahn(inArbeit)).ToHaveTextAsync(["Endpunkt bauen"]);
 
         await Testumgebung.Aktuelle.StarteWebApiNeu();
@@ -139,8 +155,8 @@ public class KarteVerschiebenE2ETests : PageTest
 
 
     // Der Browser zeigt einen Stand, den es nicht mehr gibt: waehrend die Seite offen ist, raeumt
-    // ein Agent die Zielbahn ueber die API leer. Die Ablagestelle „Position 3“ verweist danach auf
-    // eine Stelle, die es nach dem Zug nicht mehr gaebe.
+    // ein Agent die Zielbahn ueber die API leer. Die untere Haelfte der zweiten Karte zielt danach
+    // auf eine Position, die es nach dem Zug nicht mehr gaebe.
     [Test]
     [Category("US-5")]
     public async Task Wenn_die_Zielbahn_inzwischen_leerer_ist_dann_erscheint_eine_lesbare_Zurueckweisung_und_die_Karte_kehrt_zurueck()
@@ -151,7 +167,7 @@ public class KarteVerschiebenE2ETests : PageTest
         await Expect(seite.KartentitelDerBahn(inArbeit)).ToHaveTextAsync(["X", "Y"]);
         await RaeumeZweiteBahnLeer();
 
-        await seite.ZieheKarteAuf(seite.KarteMitTitel("D"), seite.AblagestelleDerBahn(inArbeit, 2));
+        await seite.ZieheKarteAuf(seite.KarteMitTitel("D"), seite.UntereHaelfte(seite.KarteMitTitel("Y")));
 
         await Expect(seite.KarteZurueckweisung).ToBeVisibleAsync();
         await Expect(seite.KarteZurueckweisung).ToContainTextAsync("liegt außerhalb der Zielspalte");
@@ -168,7 +184,7 @@ public class KarteVerschiebenE2ETests : PageTest
         var inArbeit = seite.SpaltenbahnAnStelle(1);
 
         Testumgebung.Aktuelle.HalteWebApiAn();
-        await seite.ZieheKarteAuf(seite.KarteMitTitel("B"), seite.AblagestelleDerBahn(inArbeit, 0));
+        await seite.ZieheKarteAufsBahnende(seite.KarteMitTitel("B"), inArbeit);
 
         await Expect(seite.KarteFehlermeldung).ToBeVisibleAsync();
         await Expect(seite.KarteFehlermeldung).ToContainTextAsync("Die WebApi ist nicht erreichbar.");
@@ -183,11 +199,11 @@ public class KarteVerschiebenE2ETests : PageTest
         var seite = await BoardMitKarten(["A", "B", "C", "D"], ["X", "Y"]);
         var inArbeit = seite.SpaltenbahnAnStelle(1);
         await RaeumeZweiteBahnLeer();
-        await seite.ZieheKarteAuf(seite.KarteMitTitel("D"), seite.AblagestelleDerBahn(inArbeit, 2));
+        await seite.ZieheKarteAuf(seite.KarteMitTitel("D"), seite.UntereHaelfte(seite.KarteMitTitel("Y")));
         await Expect(seite.KarteZurueckweisung).ToBeVisibleAsync();
 
         Testumgebung.Aktuelle.HalteWebApiAn();
-        await seite.ZieheKarteAuf(seite.KarteMitTitel("C"), seite.AblagestelleDerBahn(inArbeit, 0));
+        await seite.ZieheKarteAufsBahnende(seite.KarteMitTitel("C"), inArbeit);
 
         // Die Ausfallmeldung sagt, dass der Zug nicht ankam. Bliebe die Zurückweisung des vorigen
         // Zugs daneben stehen, nennte sie einen Grund, der für diesen Zug nie geprüft wurde.

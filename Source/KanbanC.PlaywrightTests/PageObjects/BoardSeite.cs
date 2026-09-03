@@ -206,7 +206,15 @@ public sealed class BoardSeite
         await bahn.Locator(".kartenanlage-abbrechen").ClickAsync();
     }
 
-    public ILocator Ablagestellen => _seite.Locator("#spaltenbahnen .ablagestelle");
+    // Die beschrifteten Kästen aus R00007 sind ersatzlos entfallen — der Locator bleibt, damit
+    // ein Test das belegen kann.
+    public ILocator Ablagekaesten => _seite.Locator("#spaltenbahnen .ablagestelle");
+
+    public ILocator Einfuegelinien => _seite.Locator("#spaltenbahnen .einfuegelinie");
+
+    public ILocator Ablageflaechen => _seite.Locator("#spaltenbahnen .ablageflaeche");
+
+    public ILocator Kartenhaelften => _seite.Locator("#spaltenbahnen .kartenhaelfte");
 
     public ILocator ZiehbareKarten => _seite.Locator("#spaltenbahnen .karte[draggable='true']");
 
@@ -219,19 +227,104 @@ public sealed class BoardSeite
         return _seite.Locator("#spaltenbahnen .karte").Filter(new LocatorFilterOptions { HasText = titel });
     }
 
-    public ILocator AblagestelleDerBahn(ILocator bahn, int stelle)
+    public ILocator ObereHaelfte(ILocator karte)
     {
-        return bahn.Locator(".ablagestelle").Nth(stelle);
+        return karte.Locator(".kartenhaelfte-oben");
     }
 
-    // Der Zug bleibt offen, während die Oberfläche die Ablagestellen über SignalR nachreicht:
-    // erst aufnehmen, dann auf die erschienene Stelle ziehen. DragToAsync löst beides in einem
+    public ILocator UntereHaelfte(ILocator karte)
+    {
+        return karte.Locator(".kartenhaelfte-unten");
+    }
+
+    public ILocator BahnenflaecheDerBahn(ILocator bahn)
+    {
+        return bahn.Locator(".spaltenbahn-flaeche");
+    }
+
+    public ILocator EinfuegelinienDerBahn(ILocator bahn)
+    {
+        return bahn.Locator(".einfuegelinie");
+    }
+
+    public ILocator KartenhaelftenDerBahn(ILocator bahn)
+    {
+        return bahn.Locator(".kartenhaelfte");
+    }
+
+    public ILocator AblageflaecheDerBahn(ILocator bahn)
+    {
+        return bahn.Locator(".ablageflaeche");
+    }
+
+    // Der Zug bleibt offen, während die Oberfläche die Ablagezonen über SignalR nachreicht:
+    // erst aufnehmen, dann auf die erschienene Zone ziehen. DragToAsync löst beides in einem
     // Zug aus und käme zu früh — belegt im Probe-Test ZiehenUndAblegenProbeE2ETests.
-    public async Task ZieheKarteAuf(ILocator karte, ILocator ablagestelle)
+    public async Task ZieheKarteAuf(ILocator karte, ILocator zone)
     {
         await NimmKarteAuf(karte);
-        await Assertions.Expect(ablagestelle).ToBeVisibleAsync();
-        await LegeAufStelleAb(ablagestelle);
+        await Assertions.Expect(zone).ToBeVisibleAsync();
+        await LegeAufStelleAb(zone);
+    }
+
+    // Die freie Fläche unter der letzten Karte nimmt ganzflächig an; eine leere Bahn ebenso.
+    public async Task ZieheKarteAufsBahnende(ILocator karte, ILocator bahn)
+    {
+        await NimmKarteAuf(karte);
+        await Assertions.Expect(BahnenflaecheDerBahn(bahn)).ToBeVisibleAsync();
+        await FahreAufFreieFlaeche(bahn);
+        await _seite.Mouse.UpAsync();
+    }
+
+    // Zielen ohne loszulassen: der Zug bleibt offen, damit die Linie geprüft werden kann.
+    public async Task FahreUeberZone(ILocator zone)
+    {
+        await Assertions.Expect(zone).ToBeVisibleAsync();
+        var kasten = await zone.BoundingBoxAsync();
+        if (kasten is null)
+        {
+            throw new InvalidOperationException("Die Ablagezone ist nicht sichtbar.");
+        }
+
+        await _seite.Mouse.MoveAsync(kasten.X + kasten.Width / 2, kasten.Y + kasten.Height / 2, new MouseMoveOptions { Steps = 5 });
+    }
+
+    public async Task FahreAufFreieFlaeche(ILocator bahn)
+    {
+        var punkt = await FreierPunktDerBahn(bahn);
+        await _seite.Mouse.MoveAsync(punkt.X, punkt.Y, new MouseMoveOptions { Steps = 5 });
+    }
+
+    private async Task<(float X, float Y)> FreierPunktDerBahn(ILocator bahn)
+    {
+        var flaeche = await BahnenflaecheDerBahn(bahn).BoundingBoxAsync();
+        if (flaeche is null)
+        {
+            throw new InvalidOperationException("Die Bahnenfläche ist nicht sichtbar.");
+        }
+
+        var mitte = flaeche.X + flaeche.Width / 2;
+        var karten = bahn.Locator(".karte");
+        var kartenzahl = await karten.CountAsync();
+        if (kartenzahl == 0)
+        {
+            return (mitte, flaeche.Y + flaeche.Height / 2);
+        }
+
+        var letzteKarte = await karten.Nth(kartenzahl - 1).BoundingBoxAsync();
+        if (letzteKarte is null)
+        {
+            throw new InvalidOperationException("Die letzte Karte der Bahn ist nicht sichtbar.");
+        }
+
+        var unterhalbDerLetztenKarte = letzteKarte.Y + letzteKarte.Height + 12;
+        var dieBahnHatKeineFreieFlaeche = unterhalbDerLetztenKarte >= flaeche.Y + flaeche.Height;
+        if (dieBahnHatKeineFreieFlaeche)
+        {
+            throw new InvalidOperationException("Unter der letzten Karte der Bahn ist keine freie Fläche.");
+        }
+
+        return (mitte, unterhalbDerLetztenKarte);
     }
 
     public async Task NimmKarteAuf(ILocator karte)
@@ -247,19 +340,19 @@ public sealed class BoardSeite
         await _seite.Mouse.MoveAsync(kasten.X + kasten.Width / 2, kasten.Y + kasten.Height / 2 + 12, new MouseMoveOptions { Steps = 5 });
     }
 
-    public async Task LegeAufStelleAb(ILocator ablagestelle)
+    public async Task LegeAufStelleAb(ILocator zone)
     {
-        var kasten = await ablagestelle.BoundingBoxAsync();
+        var kasten = await zone.BoundingBoxAsync();
         if (kasten is null)
         {
-            throw new InvalidOperationException("Die Ablagestelle ist nicht sichtbar.");
+            throw new InvalidOperationException("Die Ablagezone ist nicht sichtbar.");
         }
 
         await _seite.Mouse.MoveAsync(kasten.X + kasten.Width / 2, kasten.Y + kasten.Height / 2, new MouseMoveOptions { Steps = 5 });
         await _seite.Mouse.UpAsync();
     }
 
-    // Beendet den laufenden Zug über der Kopfzeile — dort gibt es keine Ablagestelle.
+    // Beendet den laufenden Zug über der Kopfzeile — dort gibt es kein Ablageziel.
     public async Task LasseAusserhalbJederStelleLos()
     {
         var kasten = await Kopfdaten.BoundingBoxAsync();
