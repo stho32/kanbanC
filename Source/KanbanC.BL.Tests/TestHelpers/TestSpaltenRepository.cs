@@ -129,6 +129,20 @@ public sealed class TestSpaltenRepository : ISpaltenRepository
         return spalten;
     }
 
+    public long? BoardDerSpalte(long spalteId)
+    {
+        foreach (var eintrag in _spaltenJeBoard)
+        {
+            var boardTraegtDieSpalte = eintrag.Value.Any(spalte => spalte.SpalteId == spalteId);
+            if (boardTraegtDieSpalte)
+            {
+                return eintrag.Key;
+            }
+        }
+
+        return null;
+    }
+
     public Ergebnis<IReadOnlyList<Spalte>>? SetzeReihenfolge(long boardId, IReadOnlyList<long> reihenfolge)
     {
         WurdeUmsortiert = true;

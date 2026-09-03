@@ -294,5 +294,10 @@ public class SpaltenServiceTests
         {
             throw new NotSupportedException();
         }
+
+        public long? BoardDerSpalte(long spalteId)
+        {
+            throw new NotSupportedException();
+        }
     }
 }

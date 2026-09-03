@@ -105,6 +105,15 @@ public sealed class SpaltenRepository : ISpaltenRepository
         return Spaltenleser.LiesSpaltenNachPosition(verbindung, null, boardId, kartenJeSpalte);
     }
 
+    public long? BoardDerSpalte(long spalteId)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+        return verbindung.QuerySingleOrDefault<long?>(@"
+            SELECT Board
+              FROM Spalte
+             WHERE SpalteId = @SpalteId", new { SpalteId = spalteId });
+    }
+
     public Ergebnis<IReadOnlyList<Spalte>>? SetzeReihenfolge(long boardId, IReadOnlyList<long> reihenfolge)
     {
         using var verbindung = _verbindungsfabrik.Oeffne();

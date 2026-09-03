@@ -11,6 +11,8 @@ public interface ISpaltenRepository
 
     IReadOnlyList<Spalte>? LadeAlle(long boardId);
 
+    long? BoardDerSpalte(long spalteId);
+
     Ergebnis<IReadOnlyList<Spalte>>? SetzeReihenfolge(long boardId, IReadOnlyList<long> reihenfolge);
 
     Ergebnis<Spalte>? Entferne(long boardId, long spalteId);
