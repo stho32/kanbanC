@@ -36,10 +36,8 @@
             </header>
             @* Die Bahnenfläche selbst ist das Ablageziel „ans Ende“: die Fläche unter der letzten
                Karte, die Zwischenräume und die ganze leere Bahn nehmen damit an, ohne dass ein
-               einziges Element hinzukäme, das die Karten verschieben könnte. *@
-            @* preventDefault hängt an ZeigtAblageziele: solange der Zugbeginn den Server nicht
-               erreicht hat, ist die Fläche kein gültiges Ziel. Der Browser weist das Ablegen
-               dann sichtbar ab, statt dass es hier still ins Leere liefe. *@
+               einziges Element hinzukäme, das die Karten verschieben könnte. Sie nimmt nur an,
+               solange ein Zug läuft — sonst wiese der Browser ein Ablegen nicht sichtbar ab. *@
             <div class="spaltenbahn-flaeche"
                  @ondragover:preventDefault="ZeigtAblageziele"
                  @ondragenter:stopPropagation
@@ -162,9 +160,9 @@
         _ablageziel = null;
     }
 
-    // Geräumt wird über dragend und über das dragenter der bedienfreien Fläche — nie über
-    // dragleave: dessen Ereignis kommt nach dem dragenter der neuen Zone und löschte damit
-    // das Ziel, das gerade gesetzt wurde (belegt in VerschachtelteAblagezonenProbeE2ETests).
+    // Aufgerufen vom dragenter der bedienfreien Flächen, nicht von einem dragleave: der Browser
+    // meldet das Verlassen erst nach dem Betreten der neuen Zone, und die Linie stünde dann kurz
+    // an keiner Stelle.
     private void VerlasseZiel()
     {
         _ablageziel = null;

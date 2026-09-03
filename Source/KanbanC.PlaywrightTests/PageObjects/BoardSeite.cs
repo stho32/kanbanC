@@ -15,7 +15,7 @@ public sealed class BoardSeite
     }
 
     // Seit dem Umbau sitzen die Kopfdaten in der Navigationszeile statt in einem eigenen
-    // Kopf der Seite. Der Name steht fuer sie: er erscheint nur, wenn ein Board geladen ist.
+    // Kopf der Seite. Der Name steht für sie: er erscheint nur, wenn ein Board geladen ist.
     public ILocator Kopfdaten => _seite.Locator("#board-name");
 
     public ILocator Name => _seite.Locator("#board-name");
@@ -207,8 +207,7 @@ public sealed class BoardSeite
         await bahn.Locator(".kartenanlage-abbrechen").ClickAsync();
     }
 
-    // Die beschrifteten Kästen aus R00007 sind ersatzlos entfallen — der Locator bleibt, damit
-    // ein Test das belegen kann.
+    // Zeigt auf eine Form, die es nicht mehr geben darf: die Tests prüfen damit auf Abwesenheit.
     public ILocator Ablagekaesten => _seite.Locator("#spaltenbahnen .ablagestelle");
 
     public ILocator Einfuegelinien => _seite.Locator("#spaltenbahnen .einfuegelinie");
@@ -259,8 +258,8 @@ public sealed class BoardSeite
     }
 
     // Der Zug bleibt offen, während die Oberfläche die Ablagezonen über SignalR nachreicht:
-    // erst aufnehmen, dann auf die erschienene Zone ziehen. DragToAsync löst beides in einem
-    // Zug aus und käme zu früh — belegt im Probe-Test ZiehenUndAblegenProbeE2ETests.
+    // erst aufnehmen, dann auf die erschienene Zone ziehen: die Zonen entstehen erst, nachdem der
+    // Zugbeginn den Server erreicht hat. DragToAsync löst beides in einem Zug aus und käme zu früh.
     public async Task ZieheKarteAuf(ILocator karte, ILocator zone)
     {
         await NimmKarteAuf(karte);
