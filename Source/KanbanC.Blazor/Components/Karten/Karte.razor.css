@@ -1,5 +1,6 @@
 .karte {
     display: flex;
+    position: relative;
     flex-direction: column;
     gap: var(--space-2);
     padding: var(--space-2) var(--space-3);
@@ -24,4 +25,21 @@
    bleibt hier nur, dass die Karte ihren Platz gerade verlässt. */
 .karte-wird-gezogen {
     opacity: 0.45;
+}
+
+/* Die beiden Ablagezonen liegen als Auflagen auf der Karte: obere Hälfte legt davor ab,
+   untere dahinter. Sie tragen keine Farbe — sichtbar wird nur die Einfügelinie in der Bahn. */
+.kartenhaelfte {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 50%;
+}
+
+.kartenhaelfte-oben {
+    top: 0;
+}
+
+.kartenhaelfte-unten {
+    bottom: 0;
 }

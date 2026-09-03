@@ -1,6 +1,23 @@
 <article class="@Klassen" data-karte-id="@Kartendaten.KarteId" draggable="@Ziehbarkeit"
          @ondragstart="BeginneZug" @ondragend="BeendeZug">
     <p class="karte-titel">@Kartendaten.Titel</p>
+    @if (NimmtAn)
+    {
+        <div class="kartenhaelfte kartenhaelfte-oben"
+             @ondragover:preventDefault
+             @ondragenter:stopPropagation
+             @ondragenter="() => UeberfahreHaelfte(Kartenhaelfte.Oben)"
+             @ondrop:preventDefault
+             @ondrop:stopPropagation
+             @ondrop="() => LegeAbAufHaelfte(Kartenhaelfte.Oben)"></div>
+        <div class="kartenhaelfte kartenhaelfte-unten"
+             @ondragover:preventDefault
+             @ondragenter:stopPropagation
+             @ondragenter="() => UeberfahreHaelfte(Kartenhaelfte.Unten)"
+             @ondrop:preventDefault
+             @ondrop:stopPropagation
+             @ondrop="() => LegeAbAufHaelfte(Kartenhaelfte.Unten)"></div>
+    }
 </article>
 
 @code {
@@ -20,6 +37,17 @@
 
     [Parameter]
     public EventCallback ZugEndete { get; set; }
+
+    // Die zwei Ablagezonen liegen als Auflagen über der Karte, nicht als Kinder im Fluss:
+    // sonst wüchse die Karte in dem Moment, in dem der Nutzer zu zielen beginnt.
+    [Parameter]
+    public bool NimmtAn { get; set; }
+
+    [Parameter]
+    public EventCallback<Kartenhaelfte> HaelfteUeberfahren { get; set; }
+
+    [Parameter]
+    public EventCallback<Kartenhaelfte> HierAbgelegt { get; set; }
 
     // draggable ist kein boolesches Attribut: ohne Wert gilt „auto“, und auto heißt für ein
     // article „nicht ziehbar“. Der Wert muss deshalb ausgeschrieben werden.
@@ -57,5 +85,15 @@
     private async Task BeendeZug()
     {
         await ZugEndete.InvokeAsync();
+    }
+
+    private async Task UeberfahreHaelfte(Kartenhaelfte haelfte)
+    {
+        await HaelfteUeberfahren.InvokeAsync(haelfte);
+    }
+
+    private async Task LegeAbAufHaelfte(Kartenhaelfte haelfte)
+    {
+        await HierAbgelegt.InvokeAsync(haelfte);
     }
 }

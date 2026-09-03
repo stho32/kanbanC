@@ -66,6 +66,7 @@
 
 .spaltenbahn-flaeche {
     display: flex;
+    position: relative;
     flex: 1;
     flex-direction: column;
     gap: var(--space-2);
@@ -117,21 +118,32 @@
     gap: var(--space-1);
 }
 
-/* Die Ablagestelle steht dort, wo die Karte landen würde — mit gestricheltem Rahmen im
-   Akzentton und ihrer künftigen Position als Beschriftung (Artboard D0003). */
-.ablagestelle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: var(--space-8);
-    border: 2px dashed var(--color-accent);
-    border-radius: var(--radius-xs);
-    background: color-mix(in srgb, var(--color-accent) 8%, transparent);
-    font-size: 11px;
-    color: var(--color-accent-700);
+/* Die Einfügelinie steht in der Fuge, auf die gerade gezielt wird — 2 px im Akzentton,
+   ohne Beschriftung (Artboard D0003). Der negative Rand hebt die Lücke, die sie in der Bahn
+   erzeugt, genau wieder auf: der Beginn eines Zugs darf keine Karte verschieben. */
+.einfuegelinie {
+    align-self: stretch;
+    height: 2px;
+    margin: calc((var(--space-2) + 2px) * -0.5) 0;
+    background: var(--color-accent);
+    border-radius: 2px;
 }
 
-.ablagestelle-ueberfahren {
-    border-style: solid;
-    background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+/* Die Fläche unter der letzten Karte nimmt an: wer hier loslässt, hängt die Karte ans Ende.
+   Sie nimmt nur den Raum, der ohnehin frei war, und liegt nie über einem Bedienelement. */
+.ablageflaeche {
+    flex: 1;
+    min-height: 0;
+    margin-top: calc(var(--space-2) * -1);
+    border-radius: var(--radius-xs);
+    background: color-mix(in srgb, var(--color-accent) 6%, transparent);
+    pointer-events: none;
+}
+
+/* Eine leere Bahn nimmt über ihre gesamte Fläche an — dort tritt die Ablagefläche aus dem
+   Fluss, damit der Leer-Hinweis in der Mitte stehen bleibt. */
+.spaltenbahn-flaeche:has(.spaltenbahn-leer) .ablageflaeche {
+    position: absolute;
+    inset: 0;
+    margin: 0;
 }
