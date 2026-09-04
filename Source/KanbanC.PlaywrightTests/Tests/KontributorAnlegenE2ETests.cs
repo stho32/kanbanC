@@ -1,3 +1,5 @@
+using KanbanC.Contracts.Kontributoren;
+using KanbanC.PlaywrightTests.Infrastructure;
 using KanbanC.PlaywrightTests.PageObjects;
 using Microsoft.Playwright.NUnit;
 
@@ -74,5 +76,110 @@ public class KontributorAnlegenE2ETests : PageTest
         await Expect(seite.Kontributorzeile(1)).ToContainTextAsync("Nina Barth");
         await Expect(seite.Artplaketten).ToHaveTextAsync(["abgebildet"]);
         await Expect(seite.Artplaketten.First).ToHaveClassAsync(new System.Text.RegularExpressions.Regex("tag-neutral"));
+    }
+
+    [Test]
+    [Category("US-1")]
+    public async Task Wenn_die_Seite_nach_dem_Anlegen_neu_geladen_wird_dann_stehen_beide_Kontributoren_weiterhin_da()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        var seite = new KontributorenSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await seite.Oeffne();
+        await seite.TrageNamenEin("Stefan");
+        await seite.LegeAn();
+        await Expect(seite.Kontributorzeilen).ToHaveCountAsync(1);
+        await seite.TrageNamenEin("Codex-Agent");
+        await seite.WaehleArt("agent");
+        await seite.LegeAn();
+        await Expect(seite.Kontributorzeilen).ToHaveCountAsync(2);
+
+        await seite.Oeffne();
+
+        await Expect(seite.Kontributorzeilen).ToHaveCountAsync(2);
+        await Expect(seite.Kontributorzeilen).ToContainTextAsync(["Codex-Agent", "Stefan"]);
+        await Expect(seite.Artplaketten).ToHaveTextAsync(["Agent", "Mensch"]);
+    }
+
+    [Test]
+    [Category("US-2")]
+    public async Task Wenn_ein_Agent_sich_ueber_die_API_selbst_anlegt_dann_sieht_der_Mensch_ihn_in_der_danach_geoeffneten_Liste()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        using var agent = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        var seite = new KontributorenSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await seite.Oeffne();
+        await Expect(seite.Kontributorzeilen).ToHaveCountAsync(0);
+
+        var angelegter = await agent.LegeKontributorAn("Codex-Agent", Kontributorart.Agent);
+
+        await seite.Oeffne();
+        await Expect(seite.Kontributorzeilen).ToHaveCountAsync(1);
+        await Expect(seite.Kontributorzeile(angelegter.KontributorId)).ToContainTextAsync("Codex-Agent");
+        await Expect(seite.Artplaketten).ToHaveTextAsync(["Agent"]);
+    }
+
+    [Test]
+    [Category("US-2")]
+    public async Task Wenn_der_Mensch_in_der_Oberflaeche_anlegt_dann_liefert_der_Abruf_des_Agenten_denselben_Kontributor()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        using var agent = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        var seite = new KontributorenSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await seite.Oeffne();
+
+        await seite.TrageNamenEin("Nina Barth");
+        await seite.WaehleArt("abgebildet");
+        await seite.LegeAn();
+        await Expect(seite.Kontributorzeilen).ToHaveCountAsync(1);
+
+        var kontributoren = await agent.LadeAlleKontributoren();
+        Assert.That(kontributoren, Is.EqualTo(new[] { new Kontributor(1, "Nina Barth", Kontributorart.Abgebildet) }));
+    }
+
+    [Test]
+    [Category("US-3")]
+    public async Task Wenn_alle_drei_Arten_in_der_Oberflaeche_angelegt_sind_dann_ueberstehen_sie_einen_Neustart_der_WebApi_unveraendert()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        var seite = new KontributorenSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await seite.Oeffne();
+        await seite.TrageNamenEin("stefan");
+        await seite.LegeAn();
+        await Expect(seite.Kontributorzeilen).ToHaveCountAsync(1);
+        await seite.TrageNamenEin("Codex-Agent");
+        await seite.WaehleArt("agent");
+        await seite.LegeAn();
+        await Expect(seite.Kontributorzeilen).ToHaveCountAsync(2);
+        await seite.TrageNamenEin("Nina Barth");
+        await seite.WaehleArt("abgebildet");
+        await seite.LegeAn();
+        await Expect(seite.Kontributorzeilen).ToContainTextAsync(["Codex-Agent", "Nina Barth", "stefan"]);
+
+        await Testumgebung.Aktuelle.StarteWebApiNeu();
+
+        await seite.Oeffne();
+        await Expect(seite.Kontributorzeilen).ToContainTextAsync(["Codex-Agent", "Nina Barth", "stefan"]);
+        await Expect(seite.Artplaketten).ToHaveTextAsync(["Agent", "abgebildet", "Mensch"]);
+    }
+
+    [Test]
+    [Category("US-5")]
+    public async Task Wenn_die_WebApi_beim_Anlegen_nicht_erreichbar_ist_dann_erscheint_die_Ausfallmeldung_und_die_Liste_bleibt_stehen()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        var seite = new KontributorenSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await seite.Oeffne();
+        await seite.TrageNamenEin("Stefan");
+        await seite.LegeAn();
+        await Expect(seite.Kontributorzeilen).ToHaveCountAsync(1);
+
+        Testumgebung.Aktuelle.HalteWebApiAn();
+        await seite.TrageNamenEin("Codex-Agent");
+        await seite.LegeAn();
+
+        await Expect(seite.Fehlermeldung).ToBeVisibleAsync();
+        await Expect(seite.Fehlermeldung).ToContainTextAsync("Die WebApi ist nicht erreichbar.");
+        await Expect(seite.Kontributorzeilen).ToHaveCountAsync(1);
+        await Expect(seite.Anlegezeile).ToBeVisibleAsync();
     }
 }
