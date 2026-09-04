@@ -234,6 +234,103 @@ public class BoardEndpunkteTests
         Assert.That(boards, Is.Empty);
     }
 
+    [Test]
+    public async Task Wenn_ein_Board_neu_angelegt_ist_dann_liefert_GET_zeigtKartenzahl_falsch()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var angelegt = await LegeBoardAn(webApi, new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null));
+
+        var geladen = await webApi.Klient.GetFromJsonAsync<Board>($"{BoardsRoute}/{angelegt.BoardId}");
+
+        Assert.That(geladen, Is.Not.Null);
+        Assert.That(angelegt.ZeigtKartenzahl, Is.False);
+        Assert.That(geladen.ZeigtKartenzahl, Is.False);
+    }
+
+    [Test]
+    public async Task Wenn_die_Kartenzahl_per_PUT_eingeschaltet_wird_dann_antwortet_die_API_mit_200_und_GET_liefert_denselben_Wert()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi, new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null));
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(KartenzahlRoute(board.BoardId), new Kartenzahlanzeige(true));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var geschaltet = await antwort.Content.ReadFromJsonAsync<Board>();
+        var geladen = await webApi.Klient.GetFromJsonAsync<Board>($"{BoardsRoute}/{board.BoardId}");
+        Assert.Multiple(() =>
+        {
+            Assert.That(geschaltet!.ZeigtKartenzahl, Is.True);
+            Assert.That(geschaltet.Spalten.Select(spalte => spalte.SpalteId), Is.EqualTo(board.Spalten.Select(spalte => spalte.SpalteId)));
+            Assert.That(geladen!.ZeigtKartenzahl, Is.True);
+        });
+    }
+
+    [Test]
+    public async Task Wenn_zweimal_eingeschaltet_und_dann_ausgeschaltet_wird_dann_folgt_die_API_dem_letzten_Aufruf()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi, new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null));
+        var erstes = await SchalteKartenzahl(webApi, board.BoardId, true);
+        var zweites = await SchalteKartenzahl(webApi, board.BoardId, true);
+
+        var ausgeschaltet = await SchalteKartenzahl(webApi, board.BoardId, false);
+
+        var geladen = await webApi.Klient.GetFromJsonAsync<Board>($"{BoardsRoute}/{board.BoardId}");
+        Assert.Multiple(() =>
+        {
+            Assert.That(erstes.ZeigtKartenzahl, Is.True);
+            // Nicht die Records vergleichen: nach dem Weg über JSON baut jede Antwort frische
+            // Spaltenlisten, und der Record vergleicht diesen Member per Referenz (Spalte.cs).
+            Assert.That(zweites.ZeigtKartenzahl, Is.True);
+            Assert.That(zweites.Spalten.Select(spalte => spalte.SpalteId), Is.EqualTo(erstes.Spalten.Select(spalte => spalte.SpalteId)));
+            Assert.That(ausgeschaltet.ZeigtKartenzahl, Is.False);
+            Assert.That(geladen!.ZeigtKartenzahl, Is.False);
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_Kartenzahl_auf_eine_unbekannte_BoardId_geschaltet_wird_dann_antwortet_die_API_mit_404_und_einem_Befund()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi, new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null));
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(KartenzahlRoute(999), new Kartenzahlanzeige(true));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Kartenzahl an unbekanntem Board");
+        var geladen = await webApi.Klient.GetFromJsonAsync<Board>($"{BoardsRoute}/{board.BoardId}");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("board-unbekannt"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain("999"));
+            Assert.That(zurueckweisung.Befunde[0].Kompensation, Does.Contain("/api/boards"));
+            Assert.That(geladen!.ZeigtKartenzahl, Is.False);
+        });
+    }
+
+    private static string KartenzahlRoute(long boardId)
+    {
+        return $"{BoardsRoute}/{boardId}/kartenzahl";
+    }
+
+    private static async Task<Board> SchalteKartenzahl(TestWebApi webApi, long boardId, bool zeigtKartenzahl)
+    {
+        var antwort = await webApi.Klient.PutAsJsonAsync(KartenzahlRoute(boardId), new Kartenzahlanzeige(zeigtKartenzahl));
+        antwort.EnsureSuccessStatusCode();
+        var board = await antwort.Content.ReadFromJsonAsync<Board>();
+        if (board is null)
+        {
+            throw new InvalidOperationException("Die API hat kein Board zurückgegeben.");
+        }
+
+        return board;
+    }
+
     private static async Task<Board> LegeBoardAn(TestWebApi webApi, BoardAnlegenAnfrage anfrage)
     {
         var antwort = await webApi.Klient.PostAsJsonAsync(BoardsRoute, anfrage);

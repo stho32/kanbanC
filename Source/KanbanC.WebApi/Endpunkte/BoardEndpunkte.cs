@@ -13,6 +13,7 @@ public static class BoardEndpunkte
         routen.MapPost(Basisroute, LegeBoardAn).WithName("BoardAnlegen");
         routen.MapGet(Basisroute, LadeAlleBoards).WithName("BoardsAuflisten");
         routen.MapGet(Basisroute + "/{boardId:long}", LadeBoard).WithName("BoardLesen");
+        routen.MapPut(Basisroute + "/{boardId:long}/kartenzahl", SchalteKartenzahl).WithName("KartenzahlSchalten");
     }
 
     private static IResult LegeBoardAn(BoardAnlegenAnfrage anfrage, BoardService boardService)
@@ -37,6 +38,19 @@ public static class BoardEndpunkte
     private static IResult LadeBoard(long boardId, BoardService boardService)
     {
         var board = boardService.LadeBoard(boardId);
+        if (board is null)
+        {
+            return Zurueckweisungen.AlsNichtgefunden(Nichtgefunden.Board(boardId));
+        }
+
+        return Results.Ok(board);
+    }
+
+    // Eine eigene Unterressource wie spalten/reihenfolge und karten/{karteId}/lage: der Board-PUT
+    // bleibt damit für das Umbenennen und Archivieren frei.
+    private static IResult SchalteKartenzahl(long boardId, Kartenzahlanzeige anzeige, BoardService boardService)
+    {
+        var board = boardService.SchalteKartenzahl(boardId, anzeige);
         if (board is null)
         {
             return Zurueckweisungen.AlsNichtgefunden(Nichtgefunden.Board(boardId));

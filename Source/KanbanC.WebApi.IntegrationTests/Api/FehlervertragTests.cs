@@ -71,6 +71,11 @@ public class FehlervertragTests
             await webApi.Klient.GetAsync($"{BoardsRoute}/999")));
 
         faelle.Add(new Fehlerfall(
+            "PUT /api/boards/{boardId:long}/kartenzahl",
+            "Kartenzahl schalten an unbekanntem Board",
+            await webApi.Klient.PutAsJsonAsync($"{BoardsRoute}/999/kartenzahl", new Kartenzahlanzeige(true))));
+
+        faelle.Add(new Fehlerfall(
             "POST /api/boards/{boardId:long}/spalten",
             "Spalte anlegen ohne Bezeichnung",
             await webApi.Klient.PostAsJsonAsync($"{BoardsRoute}/{board.BoardId}/spalten", new SpalteAnlegenAnfrage("", false, null))));

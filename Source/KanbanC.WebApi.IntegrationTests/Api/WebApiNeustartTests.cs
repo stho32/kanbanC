@@ -63,6 +63,29 @@ public class WebApiNeustartTests
         });
     }
 
+    [Test]
+    public async Task Wenn_die_WebApi_nach_dem_Einschalten_der_Kartenzahl_neu_startet_dann_steht_die_Einstellung_unveraendert_da()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using (var ersteInstanz = new TestWebApi(datenbank.Dateipfad))
+        {
+            var mitZahl = await LegeBoardAn(ersteInstanz, new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null));
+            await LegeBoardAn(ersteInstanz, new BoardAnlegenAnfrage("Vertrieb", BoardArt.Linie, null, null));
+            var geschaltet = await ersteInstanz.Klient.PutAsJsonAsync($"{BoardsRoute}/{mitZahl.BoardId}/kartenzahl", new Kartenzahlanzeige(true));
+            geschaltet.EnsureSuccessStatusCode();
+        }
+
+        using var zweiteInstanz = new TestWebApi(datenbank.Dateipfad);
+
+        var mitZahlNachNeustart = await zweiteInstanz.Klient.GetFromJsonAsync<Board>($"{BoardsRoute}/1");
+        var ohneZahlNachNeustart = await zweiteInstanz.Klient.GetFromJsonAsync<Board>($"{BoardsRoute}/2");
+        Assert.Multiple(() =>
+        {
+            Assert.That(mitZahlNachNeustart!.ZeigtKartenzahl, Is.True);
+            Assert.That(ohneZahlNachNeustart!.ZeigtKartenzahl, Is.False);
+        });
+    }
+
     private static async Task<Karte> LegeKarteAn(TestWebApi webApi, long boardId, long spalteId, string titel)
     {
         var antwort = await webApi.Klient.PostAsJsonAsync($"{BoardsRoute}/{boardId}/spalten/{spalteId}/karten", new KarteAnlegenAnfrage(titel));
