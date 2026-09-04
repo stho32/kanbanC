@@ -5,11 +5,11 @@ using KanbanC.WebApi.IntegrationTests.Infrastructure;
 
 namespace KanbanC.WebApi.IntegrationTests.Api;
 
-// Earned Trust vor der ersten Adresse des einzelnen Kontributors: Sie traegt nur PUT. Beantwortet
-// ASP.NET Core ein GET darauf mit 405 und leerem Rumpf — und zaehlt der Fehlervertrag dieses GET
-// als ungeprueft, weil es in den registrierten Routen auftaucht? Davon haengt ab, ob der
+// Earned Trust vor der ersten Adresse des einzelnen Kontributors: Sie trägt nur PUT. Beantwortet
+// ASP.NET Core ein GET darauf mit 405 und leerem Rumpf — und zählt der Fehlervertrag dieses GET
+// als ungeprüft, weil es in den registrierten Routen auftaucht? Davon hängt ab, ob der
 // Location-Kopf des Anlegens auf eine Adresse zeigen darf, die kein GET beantwortet.
-// Geprueft an der bestehenden Route /api/boards/{boardId}/kartenzahl, die schon heute nur PUT hat.
+// Geprüft an der bestehenden Route /api/boards/{boardId}/kartenzahl, die schon heute nur PUT hat.
 public class NurEinVerbProbeTests
 {
     private const string BoardsRoute = "/api/boards";

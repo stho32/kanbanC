@@ -14,7 +14,7 @@ public static class KontributorenValidator
     }
 
     // Die Kompensationsaktion nennt die Route, an der der Aufrufer gerade steht, samt seiner
-    // Nummer: wer aendert, soll nicht auf die Anlegeroute geschickt werden.
+    // Nummer: wer ändert, soll nicht auf die Anlegeroute geschickt werden.
     public static Pruefbefunde Pruefe(long kontributorId, KontributorAendernAnfrage anfrage)
     {
         return PruefeNamenUndArt(anfrage.Name, anfrage.Art, $"PUT /api/kontributoren/{kontributorId}");
