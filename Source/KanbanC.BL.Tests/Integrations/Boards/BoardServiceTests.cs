@@ -64,8 +64,8 @@ public class BoardServiceTests
     public void Wenn_alle_Boards_geladen_werden_dann_kommen_die_gespeicherten_als_Uebersicht()
     {
         var repository = new TestBoardRepository();
-        repository.Speichere(new Board(1, "Entwicklung", BoardArt.Linie, null, null, []));
-        repository.Speichere(new Board(2, "KanbanC 1.0", BoardArt.Projekt, null, null, []));
+        repository.Speichere(new Board(1, "Entwicklung", BoardArt.Linie, null, null, [], false));
+        repository.Speichere(new Board(2, "KanbanC 1.0", BoardArt.Projekt, null, null, [], false));
         var service = new BoardService(repository);
 
         var boards = service.LadeAlleBoards();
@@ -77,7 +77,7 @@ public class BoardServiceTests
     public void Wenn_ein_Board_geladen_wird_dann_fragt_der_Service_das_Repository_nach_genau_dieser_BoardId()
     {
         var repository = new TestBoardRepository();
-        var gespeichert = repository.Speichere(new Board(7, "Entwicklung", BoardArt.Linie, null, null, []));
+        var gespeichert = repository.Speichere(new Board(7, "Entwicklung", BoardArt.Linie, null, null, [], false));
         var service = new BoardService(repository);
 
         var geladen = service.LadeBoard(7);
@@ -90,7 +90,7 @@ public class BoardServiceTests
     public void Wenn_die_BoardId_unbekannt_ist_dann_liefert_LadeBoard_null()
     {
         var repository = new TestBoardRepository();
-        repository.Speichere(new Board(1, "Entwicklung", BoardArt.Linie, null, null, []));
+        repository.Speichere(new Board(1, "Entwicklung", BoardArt.Linie, null, null, [], false));
         var service = new BoardService(repository);
 
         var geladen = service.LadeBoard(2);

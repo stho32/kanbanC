@@ -24,7 +24,7 @@ public sealed class TestBoardRepository : IBoardRepository
     {
         ErhalteneAnfrage = anfrage;
         ErhalteneSpalten = standardspalten;
-        var board = new Board(_boards.Count + 1, anfrage.Name, anfrage.Art, anfrage.Starttermin, anfrage.Zieltermin, []);
+        var board = new Board(_boards.Count + 1, anfrage.Name, anfrage.Art, anfrage.Starttermin, anfrage.Zieltermin, [], false);
         return Speichere(board);
     }
 

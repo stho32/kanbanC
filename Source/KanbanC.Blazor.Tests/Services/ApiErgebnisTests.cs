@@ -19,7 +19,7 @@ public class ApiErgebnisTests
     [Test]
     public void Wenn_ein_Ergebnis_erfolgreich_ist_dann_gibt_es_keine_Zurueckweisung_zu_lesen()
     {
-        var board = new Board(1, "Entwicklung", BoardArt.Linie, null, null, []);
+        var board = new Board(1, "Entwicklung", BoardArt.Linie, null, null, [], false);
 
         var ergebnis = ApiErgebnis<Board>.Erfolg(board);
 

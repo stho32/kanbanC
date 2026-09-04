@@ -35,13 +35,15 @@ public sealed class BoardRepository : IBoardRepository
         }
 
         transaktion.Commit();
-        return new Board(boardId, anfrage.Name, anfrage.Art, anfrage.Starttermin, anfrage.Zieltermin, spalten);
+        // Ein neues Board bekommt keine Einstellungszeile: die Abwesenheit der Zeile ist die
+        // Voreinstellung, und die heißt aus.
+        return new Board(boardId, anfrage.Name, anfrage.Art, anfrage.Starttermin, anfrage.Zieltermin, spalten, false);
     }
 
     public IReadOnlyList<BoardUebersicht> LadeAlle()
     {
         using var verbindung = _verbindungsfabrik.Oeffne();
-        var zeilen = verbindung.Query<BoardZeile>(@"
+        var zeilen = verbindung.Query<BoardUebersichtZeile>(@"
             SELECT BoardId, Name, Art, Starttermin, Zieltermin
               FROM Board
              ORDER BY Name COLLATE NOCASE, BoardId");
@@ -51,10 +53,7 @@ public sealed class BoardRepository : IBoardRepository
     public Board? Lade(long boardId)
     {
         using var verbindung = _verbindungsfabrik.Oeffne();
-        var boardZeile = verbindung.QuerySingleOrDefault<BoardZeile>(@"
-            SELECT BoardId, Name, Art, Starttermin, Zieltermin
-              FROM Board
-             WHERE BoardId = @BoardId", new { BoardId = boardId });
+        var boardZeile = LiesBoardzeile(verbindung, null, boardId);
         if (boardZeile is null)
         {
             return null;
@@ -63,6 +62,18 @@ public sealed class BoardRepository : IBoardRepository
         var kartenJeSpalte = Kartenleser.LiesKartenNachPosition(verbindung, null, boardId);
         var spalten = Spaltenleser.LiesSpaltenNachPosition(verbindung, null, boardId, kartenJeSpalte);
         return AlsBoard(boardZeile, spalten);
+    }
+
+    // Der LEFT JOIN liefert für ein Board ohne Einstellungszeile NULL — COALESCE macht daraus
+    // die Voreinstellung aus.
+    private static BoardZeile? LiesBoardzeile(IDbConnection verbindung, IDbTransaction? transaktion, long boardId)
+    {
+        return verbindung.QuerySingleOrDefault<BoardZeile>(@"
+            SELECT b.BoardId, b.Name, b.Art, b.Starttermin, b.Zieltermin,
+                   COALESCE(e.ZeigtKartenzahl, 0) AS ZeigtKartenzahl
+              FROM Board b
+              LEFT JOIN Boardeinstellung e ON e.Board = b.BoardId
+             WHERE b.BoardId = @BoardId", new { BoardId = boardId }, transaktion);
     }
 
     private static long FuegeBoardEin(IDbConnection verbindung, IDbTransaction transaktion, BoardAnlegenAnfrage anfrage)
@@ -105,7 +116,7 @@ public sealed class BoardRepository : IBoardRepository
 
         return termin.Value.ToString(IsoDatumsformat, CultureInfo.InvariantCulture);
     }
-    private static BoardUebersicht AlsUebersicht(BoardZeile zeile)
+    private static BoardUebersicht AlsUebersicht(BoardUebersichtZeile zeile)
     {
         return new BoardUebersicht(zeile.BoardId, zeile.Name, Enum.Parse<BoardArt>(zeile.Art), AlsTermin(zeile.Starttermin), AlsTermin(zeile.Zieltermin));
     }
@@ -120,9 +131,13 @@ public sealed class BoardRepository : IBoardRepository
         return DateOnly.ParseExact(isoText, IsoDatumsformat, CultureInfo.InvariantCulture);
     }
 
-    private sealed record BoardZeile(long BoardId, string Name, string Art, string? Starttermin, string? Zieltermin);
+    private sealed record BoardUebersichtZeile(long BoardId, string Name, string Art, string? Starttermin, string? Zieltermin);
+
+    private sealed record BoardZeile(long BoardId, string Name, string Art, string? Starttermin, string? Zieltermin, long ZeigtKartenzahl);
+
     private static Board AlsBoard(BoardZeile zeile, IReadOnlyList<Spalte> spalten)
     {
-        return new Board(zeile.BoardId, zeile.Name, Enum.Parse<BoardArt>(zeile.Art), AlsTermin(zeile.Starttermin), AlsTermin(zeile.Zieltermin), spalten);
+        var zeigtKartenzahl = zeile.ZeigtKartenzahl != 0;
+        return new Board(zeile.BoardId, zeile.Name, Enum.Parse<BoardArt>(zeile.Art), AlsTermin(zeile.Starttermin), AlsTermin(zeile.Zieltermin), spalten, zeigtKartenzahl);
     }
 }

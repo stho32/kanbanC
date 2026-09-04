@@ -6,4 +6,5 @@ public record Board(
     BoardArt Art,
     DateOnly? Starttermin,
     DateOnly? Zieltermin,
-    IReadOnlyList<Spalte> Spalten);
+    IReadOnlyList<Spalte> Spalten,
+    bool ZeigtKartenzahl);

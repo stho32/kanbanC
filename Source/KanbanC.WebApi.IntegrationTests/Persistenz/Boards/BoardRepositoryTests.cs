@@ -242,6 +242,72 @@ public class BoardRepositoryTests
             Is.EqualTo(new[] { "Angebot schreiben" }));
     }
 
+    [Test]
+    public void Wenn_ein_Board_neu_angelegt_ist_dann_zeigt_es_die_Kartenzahl_nicht_und_traegt_keine_Einstellungszeile()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+
+        var angelegt = repository.LegeAn(new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+
+        var geladen = repository.Lade(angelegt.BoardId);
+        Assert.That(geladen, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(angelegt.ZeigtKartenzahl, Is.False);
+            Assert.That(geladen.ZeigtKartenzahl, Is.False);
+            Assert.That(GespeicherteEinstellungsanzahl(datenbank), Is.EqualTo(0));
+        });
+    }
+
+    [Test]
+    public void Wenn_die_Einstellungszeile_eines_Boards_eingeschaltet_ist_dann_liefert_Lade_ZeigtKartenzahl_wahr()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        var mitZahl = repository.LegeAn(new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+        var ohneZahl = repository.LegeAn(new BoardAnlegenAnfrage("Vertrieb", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+        Assert.That(repository.Lade(mitZahl.BoardId)!.ZeigtKartenzahl, Is.False);
+
+        FuegeBoardeinstellungEin(datenbank, mitZahl.BoardId, zeigtKartenzahl: true);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(repository.Lade(mitZahl.BoardId)!.ZeigtKartenzahl, Is.True);
+            Assert.That(repository.Lade(ohneZahl.BoardId)!.ZeigtKartenzahl, Is.False);
+        });
+    }
+
+    [Test]
+    public void Wenn_die_Einstellungszeile_ausgeschaltet_ist_dann_liefert_Lade_ZeigtKartenzahl_falsch()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        var board = repository.LegeAn(new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+        FuegeBoardeinstellungEin(datenbank, board.BoardId, zeigtKartenzahl: false);
+
+        var geladen = repository.Lade(board.BoardId);
+
+        Assert.That(geladen, Is.Not.Null);
+        Assert.That(geladen.ZeigtKartenzahl, Is.False);
+    }
+
+    private static void FuegeBoardeinstellungEin(TemporaereDatenbank datenbank, long boardId, bool zeigtKartenzahl)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Boardeinstellung (Board, ZeigtKartenzahl)
+            VALUES (@Board, @ZeigtKartenzahl)", new { Board = boardId, ZeigtKartenzahl = zeigtKartenzahl });
+    }
+
+    private static long GespeicherteEinstellungsanzahl(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.ExecuteScalar<long>(@"
+            SELECT COUNT(*)
+              FROM Boardeinstellung");
+    }
+
     private static void FuegeKarteEin(TemporaereDatenbank datenbank, long spalteId, string titel, int position)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
