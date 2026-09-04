@@ -49,8 +49,7 @@
                            id="kontributor-name"
                            placeholder="Name"
                            aria-label="Name"
-                           value="@_formular.Name"
-                           @oninput="UebernimmNamen" />
+                           @bind="_formular.Name" />
                     <span class="seg" id="kontributor-artwahl">
                         @foreach (var art in Waehlbare)
                         {
@@ -89,11 +88,6 @@
     protected override async Task OnInitializedAsync()
     {
         await LadeListeNeu();
-    }
-
-    private void UebernimmNamen(ChangeEventArgs ereignis)
-    {
-        _formular.Name = ereignis.Value?.ToString() ?? "";
     }
 
     private void WaehleArt(Kontributorart art)
