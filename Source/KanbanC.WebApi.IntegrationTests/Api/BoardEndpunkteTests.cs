@@ -1,7 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Fehler;
+using KanbanC.Contracts.Karten;
 using KanbanC.WebApi.IntegrationTests.Infrastructure;
 
 namespace KanbanC.WebApi.IntegrationTests.Api;
@@ -311,6 +313,36 @@ public class BoardEndpunkteTests
             Assert.That(zurueckweisung.Befunde[0].Kompensation, Does.Contain("/api/boards"));
             Assert.That(geladen!.ZeigtKartenzahl, Is.False);
         });
+    }
+
+    // Die angezeigte Zahl ist die Länge der gelieferten Kartenliste. Träte daneben ein Zählfeld,
+    // gäbe es einen zweiten Ort für dieselbe Wahrheit, der veralten könnte.
+    [Test]
+    public async Task Wenn_ein_Board_mit_Karten_abgerufen_wird_dann_traegt_eine_Spalte_neben_ihren_Karten_keine_zweite_Zahl()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi, new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null));
+        await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Migration schreiben");
+        await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Endpunkt bauen");
+        await SchalteKartenzahl(webApi, board.BoardId, true);
+
+        var rumpf = await webApi.Klient.GetStringAsync($"{BoardsRoute}/{board.BoardId}");
+
+        using var dokument = JsonDocument.Parse(rumpf);
+        var ersteSpalte = dokument.RootElement.GetProperty("spalten")[0];
+        Assert.Multiple(() =>
+        {
+            Assert.That(ersteSpalte.EnumerateObject().Select(feld => feld.Name),
+                Is.EqualTo(new[] { "spalteId", "bezeichnung", "position", "istAbschlussspalte", "anzeigegrenze", "karten" }));
+            Assert.That(ersteSpalte.GetProperty("karten").GetArrayLength(), Is.EqualTo(2));
+        });
+    }
+
+    private static async Task LegeKarteAn(TestWebApi webApi, long boardId, long spalteId, string titel)
+    {
+        var antwort = await webApi.Klient.PostAsJsonAsync($"{BoardsRoute}/{boardId}/spalten/{spalteId}/karten", new KarteAnlegenAnfrage(titel));
+        antwort.EnsureSuccessStatusCode();
     }
 
     private static string KartenzahlRoute(long boardId)
