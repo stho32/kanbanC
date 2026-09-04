@@ -87,6 +87,75 @@ public class BoardServiceTests
     }
 
     [Test]
+    public void Wenn_ein_Board_umbenannt_wird_dann_traegt_das_gelieferte_Board_den_neuen_Namen()
+    {
+        var repository = new TestBoardRepository();
+        repository.Speichere(new Board(7, "KanbanC — Release 1", BoardArt.Projekt, null, null, [], false));
+        var service = new BoardService(repository);
+
+        var ergebnis = service.BenenneBoardUm(7, new BoardUmbenennenAnfrage("KanbanC — Release 2"));
+
+        Assert.That(ergebnis.IstErfolg, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Wert.Name, Is.EqualTo("KanbanC — Release 2"));
+            Assert.That(ergebnis.Wert.Art, Is.EqualTo(BoardArt.Projekt));
+            Assert.That(repository.GeschriebeneUmbenennung, Is.EqualTo(new BoardUmbenennenAnfrage("KanbanC — Release 2")));
+            Assert.That(service.LadeBoard(7)!.Name, Is.EqualTo("KanbanC — Release 2"));
+        });
+    }
+
+    [Test]
+    public void Wenn_der_neue_Name_leer_ist_dann_wird_zurueckgewiesen_und_das_Repository_schreibt_nichts()
+    {
+        var repository = new TestBoardRepository();
+        repository.Speichere(new Board(7, "Entwicklung", BoardArt.Linie, null, null, [], false));
+        var service = new BoardService(repository);
+
+        var ergebnis = service.BenenneBoardUm(7, new BoardUmbenennenAnfrage("   "));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("board-name-leer"));
+            Assert.That(repository.GeschriebeneUmbenennung, Is.Null);
+            Assert.That(service.LadeBoard(7)!.Name, Is.EqualTo("Entwicklung"));
+        });
+    }
+
+    [Test]
+    public void Wenn_die_BoardId_beim_Umbenennen_unbekannt_ist_dann_meldet_der_Service_den_Nichtgefunden_Befund()
+    {
+        var repository = new TestBoardRepository();
+        repository.Speichere(new Board(1, "Entwicklung", BoardArt.Linie, null, null, [], false));
+        var service = new BoardService(repository);
+
+        var ergebnis = service.BenenneBoardUm(99, new BoardUmbenennenAnfrage("Betrieb"));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("board-unbekannt"));
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("99"));
+            Assert.That(repository.GeschriebeneUmbenennung, Is.Null);
+            Assert.That(service.LadeBoard(1)!.Name, Is.EqualTo("Entwicklung"));
+        });
+    }
+
+    [Test]
+    public void Wenn_der_Name_leer_ist_und_die_BoardId_unbekannt_dann_gewinnt_der_leere_Name()
+    {
+        var repository = new TestBoardRepository();
+        var service = new BoardService(repository);
+
+        var ergebnis = service.BenenneBoardUm(99, new BoardUmbenennenAnfrage(""));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Assert.That(ergebnis.Befunde.BefundAnzahl, Is.EqualTo(1));
+        Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("board-name-leer"));
+    }
+
+    [Test]
     public void Wenn_die_Kartenzahl_geschaltet_wird_dann_traegt_das_gelieferte_Board_den_gewuenschten_Wert()
     {
         var repository = new TestBoardRepository();
