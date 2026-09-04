@@ -64,11 +64,25 @@
             }
             else
             {
-                <tr class="kontributorzeile" id="kontributor-@kontributor.KontributorId">
+                @* Die Gruppenzeile steht vor der ersten stillgelegten Zeile und nur dann, wenn es
+                   eine gibt — eine Überschrift „stillgelegt · 0“ hätte keinen Inhalt. Muster ist
+                   die Trennlinie der Identitätswahl. *@
+                if (BeginntDieGruppeDerStillgelegten(kontributor))
+                {
+                    <tr class="gruppenzeile" id="kontributor-gruppe-stillgelegt">
+                        <td colspan="3">stillgelegt · @AnzahlStillgelegter()</td>
+                    </tr>
+                }
+
+                <tr class="kontributorzeile @Zeilenklasse(kontributor)" id="kontributor-@kontributor.KontributorId">
                     <td>
                         <span class="kontributor-name">
                             <span class="kuerzel @Kontributorartform.Kuerzelklasse(kontributor.Art)">@Kontributorartform.Kuerzel(kontributor.Name)</span>@kontributor.Name
                         </span>
+                        @if (!IstAktiv(kontributor))
+                        {
+                            <span class="stillgelegt-seit">stillgelegt seit @Terminformatierer.AlsText(kontributor.StillgelegtAm)</span>
+                        }
                     </td>
                     <td>
                         <span class="artplakette tag @Kontributorartform.Plakettenklasse(kontributor.Art)">@Kontributorartform.Beschriftung(kontributor.Art)</span>
@@ -92,6 +106,16 @@
                                     aria-label="@kontributor.Name stilllegen"
                                     @onclick="() => SetzeStilllegung(kontributor, true)">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 5v14M15 5v14"></path></svg>
+                            </button>
+                            }
+                            else
+                            {
+                            <button type="button"
+                                    class="btn btn-schlicht kontributor-zurueckholen"
+                                    id="kontributor-zurueckholen-@kontributor.KontributorId"
+                                    aria-label="@kontributor.Name zurückholen"
+                                    @onclick="() => SetzeStilllegung(kontributor, false)">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 4v5h5"></path></svg>zurückholen
                             </button>
                             }
                         </span>
@@ -155,6 +179,29 @@
     private static bool IstAktiv(Kontributor kontributor)
     {
         return kontributor.StillgelegtAm is null;
+    }
+
+    private static string Zeilenklasse(Kontributor kontributor)
+    {
+        if (IstAktiv(kontributor))
+        {
+            return "";
+        }
+
+        return "kontributorzeile-stillgelegt";
+    }
+
+    // Die Liste kommt sortiert: die Stillgelegten stehen am Ende. Der erste von ihnen ist der,
+    // vor dem die Gruppenzeile steht.
+    private bool BeginntDieGruppeDerStillgelegten(Kontributor kontributor)
+    {
+        var ersterStillgelegter = _kontributoren.FirstOrDefault(kandidat => !IstAktiv(kandidat));
+        return ersterStillgelegter is not null && ersterStillgelegter.KontributorId == kontributor.KontributorId;
+    }
+
+    private int AnzahlStillgelegter()
+    {
+        return _kontributoren.Count(kandidat => !IstAktiv(kandidat));
     }
 
     private bool IstInBearbeitung(Kontributor kontributor)

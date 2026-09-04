@@ -72,4 +72,85 @@ public class KontributorStilllegenE2ETests : PageTest
         await Expect(seite.Kontributorzeilen).ToContainTextAsync(["Anna", "Bert", "Cem"]);
         await Expect(seite.Pausensymbole).ToHaveCountAsync(3);
     }
+
+    [Test]
+    [Category("US-1")]
+    public async Task Wenn_niemand_stillgelegt_ist_dann_steht_keine_Gruppenzeile_da()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        using var agent = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        await agent.LegeKontributorAn("Anna", Kontributorart.Mensch);
+        await agent.LegeKontributorAn("Bert", Kontributorart.Agent);
+        var seite = new KontributorenSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+
+        await seite.Oeffne();
+
+        await Expect(seite.Kontributorzeilen).ToHaveCountAsync(2);
+        await Expect(seite.Gruppenzeile).ToHaveCountAsync(0);
+        await Expect(seite.StillgelegteZeilen).ToHaveCountAsync(0);
+    }
+
+    [Test]
+    [Category("US-1")]
+    public async Task Wenn_jemand_stillgelegt_wird_dann_steht_er_unter_der_Gruppenzeile_durchgestrichen_mit_seinem_Datum()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        using var agent = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        var anna = await agent.LegeKontributorAn("Anna", Kontributorart.Mensch);
+        await agent.LegeKontributorAn("Bert", Kontributorart.Agent);
+        await agent.LegeKontributorAn("Cem", Kontributorart.Abgebildet);
+        var seite = new KontributorenSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await seite.Oeffne();
+        await Expect(seite.Gruppenzeile).ToHaveCountAsync(0);
+
+        await seite.LegeStill(anna.KontributorId);
+
+        await Expect(seite.Gruppenzeile).ToHaveTextAsync("stillgelegt · 1");
+        await Expect(seite.StillgelegteZeilen).ToHaveCountAsync(1);
+        await Expect(seite.StillgelegteZeilen).ToContainTextAsync("Anna");
+        await Expect(seite.StillgelegteZeilen).ToContainTextAsync($"stillgelegt seit {DateOnly.FromDateTime(DateTime.Today):yyyy-MM-dd}");
+        await Expect(seite.Zurueckholknoepfe).ToHaveCountAsync(1);
+        await Expect(seite.Kontributorzeile(anna.KontributorId).Locator(".kontributor-stilllegen")).ToHaveCountAsync(0);
+    }
+
+    [Test]
+    [Category("US-2")]
+    public async Task Wenn_zurueckgeholt_wird_dann_steht_die_Zeile_wieder_oben_und_die_Gruppenzeile_verschwindet()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        using var agent = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        var anna = await agent.LegeKontributorAn("Anna", Kontributorart.Mensch);
+        await agent.LegeKontributorAn("Bert", Kontributorart.Agent);
+        await agent.LegeKontributorAn("Cem", Kontributorart.Abgebildet);
+        await agent.SetzeStilllegung(anna.KontributorId, true);
+        var seite = new KontributorenSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await seite.Oeffne();
+        await Expect(seite.Kontributorzeilen).ToContainTextAsync(["Bert", "Cem", "Anna"]);
+
+        await seite.HoleZurueck(anna.KontributorId);
+
+        await Expect(seite.Kontributorzeilen).ToContainTextAsync(["Anna", "Bert", "Cem"]);
+        await Expect(seite.Gruppenzeile).ToHaveCountAsync(0);
+        await Expect(seite.StillgelegteZeilen).ToHaveCountAsync(0);
+        await Expect(seite.Pausensymbole).ToHaveCountAsync(3);
+    }
+
+    [Test]
+    [Category("US-1")]
+    public async Task Wenn_zwei_stillgelegt_sind_dann_zaehlt_die_Gruppenzeile_beide()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        using var agent = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        var anna = await agent.LegeKontributorAn("Anna", Kontributorart.Mensch);
+        var bert = await agent.LegeKontributorAn("Bert", Kontributorart.Agent);
+        await agent.LegeKontributorAn("Cem", Kontributorart.Abgebildet);
+        await agent.SetzeStilllegung(anna.KontributorId, true);
+        await agent.SetzeStilllegung(bert.KontributorId, true);
+        var seite = new KontributorenSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+
+        await seite.Oeffne();
+
+        await Expect(seite.Gruppenzeile).ToHaveTextAsync("stillgelegt · 2");
+        await Expect(seite.Kontributorzeilen).ToContainTextAsync(["Cem", "Anna", "Bert"]);
+    }
 }

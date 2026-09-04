@@ -30,6 +30,12 @@ public sealed class KontributorenSeite
 
     public ILocator Pausensymbole => _seite.Locator("#kontributoren-liste .kontributor-stilllegen");
 
+    public ILocator Gruppenzeile => _seite.Locator("#kontributor-gruppe-stillgelegt");
+
+    public ILocator StillgelegteZeilen => _seite.Locator("#kontributoren-liste .kontributorzeile-stillgelegt");
+
+    public ILocator Zurueckholknoepfe => _seite.Locator("#kontributoren-liste .kontributor-zurueckholen");
+
     public ILocator Bearbeitungszeile => _seite.Locator("#kontributor-bearbeiten-zeile");
 
     public ILocator BearbeitungsKuerzel => _seite.Locator("#kontributor-bearbeiten-zeile .kuerzel");
@@ -51,6 +57,11 @@ public sealed class KontributorenSeite
     public async Task LegeStill(long kontributorId)
     {
         await _seite.Locator($"#kontributor-stilllegen-{kontributorId}").ClickAsync();
+    }
+
+    public async Task HoleZurueck(long kontributorId)
+    {
+        await _seite.Locator($"#kontributor-zurueckholen-{kontributorId}").ClickAsync();
     }
 
     public async Task OeffneBearbeitung(long kontributorId)
