@@ -67,6 +67,46 @@ public sealed class KontributorenRepository : IKontributorenRepository
         return zeilen.Select(AlsKontributor).ToList();
     }
 
+    // Erst lesen, dann schreiben wie in Aendere: eine unbekannte Nummer darf nicht wie ein
+    // Erfolg aussehen. Zurückgegeben wird die geschriebene Zeile aus derselben Transaktion.
+    public Kontributor? SetzeStilllegung(long kontributorId, Stilllegung stilllegung)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+        using var transaktion = verbindung.BeginTransaction();
+
+        if (KontributorIstUnbekannt(verbindung, transaktion, kontributorId))
+        {
+            return null;
+        }
+
+        SchreibeStilllegung(verbindung, transaktion, kontributorId, stilllegung);
+        var kontributor = LiesKontributor(verbindung, transaktion, kontributorId);
+        transaktion.Commit();
+        return kontributor;
+    }
+
+    // Die Zeile selbst ist die Aussage: stilllegen legt sie mit dem heutigen Datum an,
+    // zurückholen entfernt sie. Beides lässt sich beliebig oft wiederholen, ohne dass sich etwas
+    // ändert — ON CONFLICT DO NOTHING lässt insbesondere das Datum stehen, denn „stillgelegt
+    // seit“ bezeichnet den Beginn und darf durch einen zweiten Klick nicht verschoben werden.
+    private static void SchreibeStilllegung(IDbConnection verbindung, IDbTransaction transaktion, long kontributorId, Stilllegung stilllegung)
+    {
+        if (stilllegung.IstStillgelegt)
+        {
+            var heute = DateOnly.FromDateTime(DateTime.Today);
+            var einzutragende = new { Kontributor = kontributorId, StillgelegtAm = heute.ToString(IsoDatumsformat, CultureInfo.InvariantCulture) };
+            verbindung.Execute(@"
+                INSERT INTO Kontributorstilllegung (Kontributor, StillgelegtAm)
+                VALUES (@Kontributor, @StillgelegtAm)
+                ON CONFLICT (Kontributor) DO NOTHING", einzutragende, transaktion);
+            return;
+        }
+
+        verbindung.Execute(@"
+            DELETE FROM Kontributorstilllegung
+             WHERE Kontributor = @Kontributor", new { Kontributor = kontributorId }, transaktion);
+    }
+
     private static long FuegeKontributorEin(IDbConnection verbindung, IDbTransaction transaktion, KontributorAnlegenAnfrage anfrage)
     {
         var parameter = new { anfrage.Name, Kontributorart = anfrage.Art.ToString() };

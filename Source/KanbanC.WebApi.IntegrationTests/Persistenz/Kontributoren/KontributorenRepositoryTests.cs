@@ -237,6 +237,92 @@ public class KontributorenRepositoryTests
         Assert.That(repository.LadeAlle().Select(kontributor => kontributor.KontributorId), Is.EqualTo(new[] { 2L, 3L, 4L, 1L }));
     }
 
+    [Test]
+    public void Wenn_ein_Kontributor_stillgelegt_wird_dann_traegt_er_das_heutige_Datum_und_steht_so_in_der_Datei()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KontributorenRepository(datenbank.Verbindungsfabrik);
+        var anna = repository.LegeAn(new KontributorAnlegenAnfrage("Anna", Kontributorart.Mensch));
+        Assert.That(anna.StillgelegtAm, Is.Null);
+
+        var stillgelegte = repository.SetzeStilllegung(anna.KontributorId, new Stilllegung(true));
+
+        var heute = DateOnly.FromDateTime(DateTime.Today);
+        Assert.That(stillgelegte, Is.EqualTo(new Kontributor(1, "Anna", Kontributorart.Mensch, heute)));
+        Assert.That(Stilllegungszeilen(datenbank), Is.EqualTo(new[] { (1L, heute.ToString("yyyy-MM-dd")) }));
+    }
+
+    [Test]
+    public void Wenn_ein_stillgelegter_Kontributor_ein_zweites_Mal_stillgelegt_wird_dann_bleibt_sein_Datum_stehen()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KontributorenRepository(datenbank.Verbindungsfabrik);
+        var anna = repository.LegeAn(new KontributorAnlegenAnfrage("Anna", Kontributorart.Mensch));
+        FuegeStilllegungEin(datenbank, anna.KontributorId, "2026-08-12");
+
+        var erneut = repository.SetzeStilllegung(anna.KontributorId, new Stilllegung(true));
+
+        Assert.That(erneut!.StillgelegtAm, Is.EqualTo(new DateOnly(2026, 8, 12)), "„stillgelegt seit“ bezeichnet den Beginn und darf nicht verschoben werden.");
+        Assert.That(Stilllegungszeilen(datenbank), Is.EqualTo(new[] { (1L, "2026-08-12") }));
+    }
+
+    [Test]
+    public void Wenn_ein_Kontributor_zurueckgeholt_wird_dann_verschwindet_seine_Zeile_und_das_Datum_ist_wieder_null()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KontributorenRepository(datenbank.Verbindungsfabrik);
+        var anna = repository.LegeAn(new KontributorAnlegenAnfrage("Anna", Kontributorart.Mensch));
+        FuegeStilllegungEin(datenbank, anna.KontributorId, "2026-08-12");
+
+        var zurueckgeholte = repository.SetzeStilllegung(anna.KontributorId, new Stilllegung(false));
+
+        Assert.That(zurueckgeholte, Is.EqualTo(new Kontributor(1, "Anna", Kontributorart.Mensch, StillgelegtAm: null)));
+        Assert.That(Stilllegungszeilen(datenbank), Is.Empty);
+    }
+
+    // Das Rechenbeispiel des Akzeptanzkriteriums: zweimal stilllegen, zweimal zurueckholen,
+    // einmal stilllegen — am Ende ein Kontributor, gesetztes Datum, genau eine Zeile.
+    [Test]
+    public void Wenn_beide_Richtungen_wiederholt_geschaltet_werden_dann_steht_am_Ende_genau_eine_Zeile()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KontributorenRepository(datenbank.Verbindungsfabrik);
+        var anna = repository.LegeAn(new KontributorAnlegenAnfrage("Anna", Kontributorart.Mensch));
+
+        repository.SetzeStilllegung(anna.KontributorId, new Stilllegung(true));
+        repository.SetzeStilllegung(anna.KontributorId, new Stilllegung(true));
+        repository.SetzeStilllegung(anna.KontributorId, new Stilllegung(false));
+        repository.SetzeStilllegung(anna.KontributorId, new Stilllegung(false));
+        var letzte = repository.SetzeStilllegung(anna.KontributorId, new Stilllegung(true));
+
+        Assert.That(letzte!.StillgelegtAm, Is.EqualTo(DateOnly.FromDateTime(DateTime.Today)));
+        Assert.That(Stilllegungszeilen(datenbank), Has.Length.EqualTo(1));
+    }
+
+    [Test]
+    public void Wenn_die_KontributorId_unbekannt_ist_dann_liefert_SetzeStilllegung_null_und_die_Datei_bleibt_wie_sie_war()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KontributorenRepository(datenbank.Verbindungsfabrik);
+        repository.LegeAn(new KontributorAnlegenAnfrage("Anna", Kontributorart.Mensch));
+
+        var stillgelegte = repository.SetzeStilllegung(999, new Stilllegung(true));
+
+        Assert.That(stillgelegte, Is.Null);
+        Assert.That(Stilllegungszeilen(datenbank), Is.Empty);
+        Assert.That(Gespeicherte(datenbank), Is.EqualTo(new[] { (1L, "Anna", "Mensch") }));
+    }
+
+    private static (long Kontributor, string StillgelegtAm)[] Stilllegungszeilen(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        var zeilen = verbindung.Query<(long Kontributor, string StillgelegtAm)>(@"
+            SELECT Kontributor, StillgelegtAm
+              FROM Kontributorstilllegung
+             ORDER BY Kontributor");
+        return zeilen.ToArray();
+    }
+
     private static string[] Namensfolge(KontributorenRepository repository)
     {
         return repository.LadeAlle().Select(kontributor => kontributor.Name).ToArray();
