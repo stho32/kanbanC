@@ -4,7 +4,7 @@ using KanbanC.Contracts.Fehler;
 
 namespace KanbanC.BL.Operations.Boards;
 
-// Der Abfrageparameter „archiviert" kommt als Text herein und wird an der Grenze geprüft: ASP.NET
+// Der Abfrageparameter „archiviert“ kommt als Text herein und wird an der Grenze geprüft: ASP.NET
 // weist einen unlesbaren bool-Wert vor dem Handler ab, und zwar mit einer Antwort ohne unseren
 // Befund. Ohne Parameter gilt die Standardliste.
 public static class Archivfilter

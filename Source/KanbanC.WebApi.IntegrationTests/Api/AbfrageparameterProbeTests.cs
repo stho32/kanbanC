@@ -8,7 +8,7 @@ namespace KanbanC.WebApi.IntegrationTests.Api;
 
 // Earned Trust für den ersten Abfrageparameter des Bestands: Bindet ASP.NET einen unlesbaren
 // bool-Wert vor dem Handler ab — und liefert dabei eine Fehlerantwort ohne unseren Befund —,
-// oder behält der Handler die Kontrolle? Davon hängt ab, ob der Guard für „?archiviert=vielleicht"
+// oder behält der Handler die Kontrolle? Davon hängt ab, ob der Guard für „?archiviert=vielleicht“
 // mit `bool?` möglich ist oder eine `string?`-Bindung braucht.
 public class AbfrageparameterProbeTests
 {
