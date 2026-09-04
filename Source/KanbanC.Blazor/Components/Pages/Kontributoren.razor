@@ -95,32 +95,32 @@
                         <span class="pflegeschalter">
                             @if (IstAktiv(kontributor))
                             {
-                            <button type="button"
-                                    class="btn btn-schlicht btn-symbol kontributor-stift"
-                                    id="kontributor-bearbeiten-@kontributor.KontributorId"
-                                    title="bearbeiten"
-                                    aria-label="@kontributor.Name bearbeiten"
-                                    @onclick="() => OeffneBearbeitung(kontributor)">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4l10-10-4-4L4 16z"></path><path d="m14 6 4 4"></path></svg>
-                            </button>
-                            <button type="button"
-                                    class="btn btn-schlicht btn-symbol kontributor-stilllegen"
-                                    id="kontributor-stilllegen-@kontributor.KontributorId"
-                                    title="stilllegen"
-                                    aria-label="@kontributor.Name stilllegen"
-                                    @onclick="() => SetzeStilllegung(kontributor, true)">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 5v14M15 5v14"></path></svg>
-                            </button>
+                                <button type="button"
+                                        class="btn btn-schlicht btn-symbol kontributor-stift"
+                                        id="kontributor-bearbeiten-@kontributor.KontributorId"
+                                        title="bearbeiten"
+                                        aria-label="@kontributor.Name bearbeiten"
+                                        @onclick="() => OeffneBearbeitung(kontributor)">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4l10-10-4-4L4 16z"></path><path d="m14 6 4 4"></path></svg>
+                                </button>
+                                <button type="button"
+                                        class="btn btn-schlicht btn-symbol kontributor-stilllegen"
+                                        id="kontributor-stilllegen-@kontributor.KontributorId"
+                                        title="stilllegen"
+                                        aria-label="@kontributor.Name stilllegen"
+                                        @onclick="() => SetzeStilllegung(kontributor, true)">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 5v14M15 5v14"></path></svg>
+                                </button>
                             }
                             else
                             {
-                            <button type="button"
-                                    class="btn btn-schlicht kontributor-zurueckholen"
-                                    id="kontributor-zurueckholen-@kontributor.KontributorId"
-                                    aria-label="@kontributor.Name zurückholen"
-                                    @onclick="() => SetzeStilllegung(kontributor, false)">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 4v5h5"></path></svg>zurückholen
-                            </button>
+                                <button type="button"
+                                        class="btn btn-schlicht kontributor-zurueckholen"
+                                        id="kontributor-zurueckholen-@kontributor.KontributorId"
+                                        aria-label="@kontributor.Name zurückholen"
+                                        @onclick="() => SetzeStilllegung(kontributor, false)">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 4v5h5"></path></svg>zurückholen
+                                </button>
                             }
                         </span>
                     </td>
