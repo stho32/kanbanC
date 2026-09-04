@@ -83,6 +83,7 @@ public class KontributorAendernE2ETests : PageTest
         await Expect(seite.BearbeitungsNamensfeld).ToHaveValueAsync("Bert");
         await Expect(seite.Bearbeitungsartwahl).ToHaveTextAsync(["Mensch", "Agent", "abgebildet"]);
         await Expect(Page.Locator("#bearbeiten-art-agent input")).ToBeCheckedAsync();
+        await Expect(seite.BearbeitungsKuerzel).ToHaveTextAsync("BE");
         var breiteDerBearbeitungszeile = await seite.BearbeitungsNamensfeld.BoundingBoxAsync();
         Assert.That(breiteDerBearbeitungszeile!.Width, Is.EqualTo(breiteDerAnlegezeile!.Width));
     }
@@ -316,5 +317,24 @@ public class KontributorAendernE2ETests : PageTest
         await seite.Oeffne();
         await Expect(seite.Kontributorzeile(bert.KontributorId)).ToContainTextAsync("Zora");
         await Expect(seite.Artplaketten).ToHaveTextAsync(["Mensch"]);
+    }
+
+    [Test]
+    [Category("US-1")]
+    public async Task Wenn_in_der_offenen_Zeile_Name_und_Art_gewechselt_werden_dann_folgt_das_Kuerzel_dem_bearbeiteten_Stand()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        using var agent = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        var bert = await agent.LegeKontributorAn("Bert", Kontributorart.Agent);
+        var seite = new KontributorenSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await seite.Oeffne();
+        await seite.OeffneBearbeitung(bert.KontributorId);
+        await Expect(seite.BearbeitungsKuerzel).ToHaveClassAsync(new System.Text.RegularExpressions.Regex("kuerzel-agent"));
+
+        await seite.TrageBearbeitungsnamenEin("Zora");
+        await seite.WaehleBearbeitungsart("mensch");
+
+        await Expect(seite.BearbeitungsKuerzel).ToHaveTextAsync("ZO");
+        await Expect(seite.BearbeitungsKuerzel).ToHaveClassAsync(new System.Text.RegularExpressions.Regex("kuerzel-mensch"));
     }
 }

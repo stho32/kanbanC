@@ -30,6 +30,8 @@ public sealed class KontributorenSeite
 
     public ILocator Bearbeitungszeile => _seite.Locator("#kontributor-bearbeiten-zeile");
 
+    public ILocator BearbeitungsKuerzel => _seite.Locator("#kontributor-bearbeiten-zeile .kuerzel");
+
     public ILocator BearbeitungsNamensfeld => _seite.Locator("#kontributor-bearbeiten-name");
 
     public ILocator Bearbeitungsartwahl => _seite.Locator("#kontributor-bearbeiten-artwahl .seg-opt");

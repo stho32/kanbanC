@@ -35,20 +35,20 @@
                 <tr class="bearbeitungszeile" id="kontributor-bearbeiten-zeile">
                     <td colspan="3">
                         <div class="bearbeitungsfelder">
-                            <span class="kuerzel @Kontributorartform.Kuerzelklasse(kontributor.Art)">@Kontributorartform.Kuerzel(kontributor.Name)</span>
+                            <span class="kuerzel @Kontributorartform.Kuerzelklasse(_bearbeitung!.Art)">@Kontributorartform.Kuerzel(_bearbeitung.Name)</span>
                             <input type="text"
                                    class="input feld-name"
                                    id="kontributor-bearbeiten-name"
                                    placeholder="Name"
                                    aria-label="Name"
-                                   @bind="_bearbeitung!.Name" />
+                                   @bind="_bearbeitung.Name" />
                             <span class="seg" id="kontributor-bearbeiten-artwahl">
                                 @foreach (var art in Waehlbare)
                                 {
                                     <label class="seg-opt" id="@Bearbeitungsartwahlkennung(art)">
                                         <input type="radio"
                                                name="kontributorart-bearbeiten"
-                                               checked="@(_bearbeitung!.Art == art)"
+                                               checked="@(_bearbeitung.Art == art)"
                                                @onchange="() => WaehleBearbeitungsart(art)" />
                                         @Kontributorartform.Beschriftung(art)
                                     </label>
