@@ -32,6 +32,9 @@ public class BoardkachelMenueE2ETests : PageTest
 
         await seite.Menuepunkt(1, "umbenennen").ClickAsync();
 
+        // Erst abwarten, dass der Menuepunkt gewirkt hat — sonst waere die Adresspruefung schon
+        // gruen, bevor eine faelschlich ausgeloeste Navigation ueberhaupt stattgefunden haette.
+        await Expect(seite.Namenseingabe(1)).ToBeVisibleAsync();
         await Expect(Page).ToHaveURLAsync($"{Testumgebung.Aktuelle.BlazorAdresse}/boards");
 
         await seite.BrichUmbenennenAb(1);

@@ -655,6 +655,22 @@ public class BoardRepositoryTests
         });
     }
 
+    [Test]
+    public void Wenn_zwei_archivierte_Boards_denselben_Namen_tragen_dann_steht_das_mit_der_kleineren_BoardId_vorn()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        FuegeBoardEin(datenbank, 5, "Wartung", BoardArt.Linie);
+        FuegeBoardEin(datenbank, 2, "Wartung", BoardArt.Projekt);
+        FuegeBoardEin(datenbank, 4, "Zwischenstand", BoardArt.Linie);
+        FuegeArchivzeileEin(datenbank, 5);
+        FuegeArchivzeileEin(datenbank, 2);
+        FuegeArchivzeileEin(datenbank, 4);
+
+        var archivierte = new BoardRepository(datenbank.Verbindungsfabrik).LadeAlle(Archivierte);
+
+        Assert.That(archivierte.Select(b => b.BoardId), Is.EqualTo(new long[] { 2, 5, 4 }));
+    }
+
     private static void FuegeArchivzeileEin(TemporaereDatenbank datenbank, long boardId)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();

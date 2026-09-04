@@ -583,6 +583,25 @@ public class BoardEndpunkteTests
         });
     }
 
+    [Test]
+    public async Task Wenn_ein_Board_auf_den_Namen_eines_anderen_umbenannt_wird_dann_weist_die_API_das_nicht_zurueck()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        await LegeBoardAn(webApi, new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null));
+        var zweites = await LegeBoardAn(webApi, new BoardAnlegenAnfrage("Vertrieb", BoardArt.Linie, null, null));
+
+        var antwort = await webApi.Klient.PutAsJsonAsync($"{BoardsRoute}/{zweites.BoardId}", new BoardUmbenennenAnfrage("Entwicklung"));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var liste = await webApi.Klient.GetFromJsonAsync<List<BoardUebersicht>>(BoardsRoute);
+        Assert.Multiple(() =>
+        {
+            Assert.That(liste!.Select(b => b.Name), Is.All.EqualTo("Entwicklung"));
+            Assert.That(liste!.Select(b => b.BoardId), Is.EqualTo(new long[] { 1, 2 }));
+        });
+    }
+
     private static string ArchivierungsRoute(long boardId)
     {
         return $"{BoardsRoute}/{boardId}/archivierung";
