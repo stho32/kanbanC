@@ -55,6 +55,55 @@ public class KartenzahlImBahnenkopfE2ETests : PageTest
         await Expect(seite.Kartenzahlstellen).ToHaveTextAsync(["3", "1", "0"]);
     }
 
+    [Test]
+    [Category("US-4")]
+    public async Task Wenn_eine_Karte_angelegt_wird_dann_steht_in_ihrer_Bahn_ohne_Reload_eine_um_eins_hoehere_Zahl()
+    {
+        var seite = await BoardMitDreiBahnenUndVierKarten();
+        await seite.SchalteKartenzahl(true);
+        await Expect(seite.Kartenzahlstellen).ToHaveTextAsync(["3", "1", "0"]);
+
+        var rueckstand = seite.SpaltenbahnAnStelle(0);
+        await seite.OeffneKartenanlage(rueckstand);
+        await seite.LegeKarteAn(rueckstand, "Zahl nachziehen");
+
+        await Expect(seite.Kartenzahlstellen).ToHaveTextAsync(["4", "1", "0"]);
+        await Expect(seite.Karten).ToHaveCountAsync(5);
+    }
+
+    [Test]
+    [Category("US-4")]
+    public async Task Wenn_eine_Karte_in_eine_andere_Bahn_abgelegt_wird_dann_sinkt_die_Quellzahl_und_die_Zielzahl_steigt()
+    {
+        var seite = await BoardMitDreiBahnenUndVierKarten();
+        await seite.SchalteKartenzahl(true);
+        await Expect(seite.Kartenzahlstellen).ToHaveTextAsync(["3", "1", "0"]);
+
+        await seite.ZieheKarteAuf(
+            seite.KarteMitTitel("Endpunkt bauen"),
+            seite.ObereHaelfte(seite.KarteMitTitel("Kartenform zeichnen")));
+
+        await Expect(seite.Kartenzahlstellen).ToHaveTextAsync(["2", "2", "0"]);
+        await Expect(seite.Karten).ToHaveCountAsync(4);
+    }
+
+    [Test]
+    [Category("US-4")]
+    public async Task Wenn_eine_Karte_innerhalb_ihrer_Bahn_verschoben_wird_dann_aendert_sich_keine_Zahl()
+    {
+        var seite = await BoardMitDreiBahnenUndVierKarten();
+        await seite.SchalteKartenzahl(true);
+        await Expect(seite.Kartenzahlstellen).ToHaveTextAsync(["3", "1", "0"]);
+
+        await seite.ZieheKarteAuf(
+            seite.KarteMitTitel("Bahn fuellen"),
+            seite.ObereHaelfte(seite.KarteMitTitel("Migration schreiben")));
+
+        await Expect(seite.KartentitelDerBahn(seite.SpaltenbahnAnStelle(0)))
+            .ToHaveTextAsync(["Bahn fuellen", "Migration schreiben", "Endpunkt bauen"]);
+        await Expect(seite.Kartenzahlstellen).ToHaveTextAsync(["3", "1", "0"]);
+    }
+
     private async Task<BoardSeite> BoardMitDreiBahnenUndVierKarten()
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
