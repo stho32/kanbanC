@@ -234,4 +234,87 @@ public class KontributorAendernE2ETests : PageTest
         await Expect(seite.Bearbeitungszeile).ToHaveCountAsync(1);
         await Expect(seite.BearbeitungsNamensfeld).ToHaveValueAsync("Zora");
     }
+
+    [Test]
+    [Category("US-1")]
+    public async Task Wenn_die_Seite_nach_dem_Sichern_neu_geladen_wird_dann_steht_der_neue_Stand_weiterhin_da_und_die_uebrigen_sind_unveraendert()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        using var agent = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        await agent.LegeKontributorAn("Anna", Kontributorart.Mensch);
+        var bert = await agent.LegeKontributorAn("Bert", Kontributorart.Agent);
+        await agent.LegeKontributorAn("Cara", Kontributorart.Abgebildet);
+        var seite = new KontributorenSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await seite.Oeffne();
+        await seite.OeffneBearbeitung(bert.KontributorId);
+        await seite.TrageBearbeitungsnamenEin("Zora");
+        await seite.WaehleBearbeitungsart("mensch");
+        await seite.Sichere();
+        await Expect(seite.Kontributorzeilen).ToContainTextAsync(["Anna", "Cara", "Zora"]);
+
+        await seite.Oeffne();
+
+        await Expect(seite.Kontributorzeilen).ToContainTextAsync(["Anna", "Cara", "Zora"]);
+        await Expect(seite.Artplaketten).ToHaveTextAsync(["Mensch", "abgebildet", "Mensch"]);
+    }
+
+    [Test]
+    [Category("US-4")]
+    public async Task Wenn_ein_Agent_sich_ueber_die_API_selbst_richtigstellt_dann_sieht_der_Mensch_den_neuen_Stand_in_der_danach_geoeffneten_Liste()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        using var agent = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        var codex = await agent.LegeKontributorAn("Codex", Kontributorart.Mensch);
+        var seite = new KontributorenSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await seite.Oeffne();
+        await Expect(seite.Artplaketten).ToHaveTextAsync(["Mensch"]);
+
+        await agent.AendereKontributor(codex.KontributorId, "Codex-Agent", Kontributorart.Agent);
+
+        await seite.Oeffne();
+        await Expect(seite.Kontributorzeile(codex.KontributorId)).ToContainTextAsync("Codex-Agent");
+        await Expect(seite.Artplaketten).ToHaveTextAsync(["Agent"]);
+    }
+
+    [Test]
+    [Category("US-4")]
+    public async Task Wenn_der_Mensch_in_der_Oberflaeche_aendert_dann_liefert_der_Abruf_des_Agenten_denselben_Stand()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        using var agent = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        var bert = await agent.LegeKontributorAn("Bert", Kontributorart.Agent);
+        var seite = new KontributorenSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await seite.Oeffne();
+
+        await seite.OeffneBearbeitung(bert.KontributorId);
+        await seite.TrageBearbeitungsnamenEin("Nina Barth");
+        await seite.WaehleBearbeitungsart("abgebildet");
+        await seite.Sichere();
+        await Expect(seite.Bearbeitungszeile).ToHaveCountAsync(0);
+
+        var kontributoren = await agent.LadeAlleKontributoren();
+        Assert.That(kontributoren, Is.EqualTo(new[] { new Kontributor(bert.KontributorId, "Nina Barth", Kontributorart.Abgebildet) }));
+    }
+
+    [Test]
+    [Category("US-4")]
+    public async Task Wenn_die_WebApi_nach_einer_Aenderung_in_der_Oberflaeche_neu_startet_dann_ist_der_neue_Stand_da_und_nicht_der_alte()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        using var agent = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        var bert = await agent.LegeKontributorAn("Bert", Kontributorart.Agent);
+        var seite = new KontributorenSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await seite.Oeffne();
+        await seite.OeffneBearbeitung(bert.KontributorId);
+        await seite.TrageBearbeitungsnamenEin("Zora");
+        await seite.WaehleBearbeitungsart("mensch");
+        await seite.Sichere();
+        await Expect(seite.Kontributorzeile(bert.KontributorId)).ToContainTextAsync("Zora");
+
+        await Testumgebung.Aktuelle.StarteWebApiNeu();
+
+        await seite.Oeffne();
+        await Expect(seite.Kontributorzeile(bert.KontributorId)).ToContainTextAsync("Zora");
+        await Expect(seite.Artplaketten).ToHaveTextAsync(["Mensch"]);
+    }
 }
