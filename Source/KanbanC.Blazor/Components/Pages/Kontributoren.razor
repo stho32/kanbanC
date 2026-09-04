@@ -40,10 +40,41 @@
                 </td>
             </tr>
         }
+        <tr class="anlegezeile">
+            <td colspan="2">
+                <div class="anlegefelder" id="kontributor-anlegen-zeile">
+                    <span class="kuerzel kuerzel-neu" aria-hidden="true">+</span>
+                    <input type="text"
+                           class="input feld-name"
+                           id="kontributor-name"
+                           placeholder="Name"
+                           aria-label="Name"
+                           value="@_formular.Name"
+                           @oninput="UebernimmNamen" />
+                    <span class="seg" id="kontributor-artwahl">
+                        @foreach (var art in Waehlbare)
+                        {
+                            <label class="seg-opt" id="@Artwahlkennung(art)">
+                                <input type="radio"
+                                       name="kontributorart"
+                                       checked="@(_formular.Art == art)"
+                                       @onchange="() => WaehleArt(art)" />
+                                @Kontributorartform.Beschriftung(art)
+                            </label>
+                        }
+                    </span>
+                    <button type="button" class="btn btn-haupt" id="kontributor-anlegen" @onclick="LegeKontributorAn">anlegen</button>
+                </div>
+            </td>
+        </tr>
     </tbody>
 </table>
 
 @code {
+    // Die Reihenfolge der Segmentwahl folgt dem Artboard; Mensch steht vorn und ist vorgewählt.
+    private static readonly Kontributorart[] Waehlbare = [Kontributorart.Mensch, Kontributorart.Agent, Kontributorart.Abgebildet];
+
+    private readonly Kontributorformular _formular = new();
     private IReadOnlyList<Kontributor> _kontributoren = [];
     private string? _fehlermeldung;
 
@@ -52,8 +83,61 @@
         await LadeListeNeu();
     }
 
+    private void UebernimmNamen(ChangeEventArgs ereignis)
+    {
+        _formular.Name = ereignis.Value?.ToString() ?? "";
+    }
+
+    private void WaehleArt(Kontributorart art)
+    {
+        _formular.Art = art;
+    }
+
+    // Nach dem Anlegen wird die ganze Liste neu geholt, statt den neuen Kontributor lokal
+    // einzusortieren: die Reihenfolge gehört der Abfrage.
+    private async Task LegeKontributorAn()
+    {
+        await MitErreichbarerWebApi(async () =>
+        {
+            await ApiKlient.LegeAn(_formular.AlsAnfrage());
+            _formular.LeereNamensfeld();
+            _kontributoren = await ApiKlient.LadeAlle();
+        });
+    }
+
     private async Task LadeListeNeu()
     {
-        _fehlermeldung = await WebApiAufruf.MitAusfallmeldung(async () => _kontributoren = await ApiKlient.LadeAlle());
+        await MitErreichbarerWebApi(async () => _kontributoren = await ApiKlient.LadeAlle());
+    }
+
+    private async Task MitErreichbarerWebApi(Func<Task> aufruf)
+    {
+        _fehlermeldung = await WebApiAufruf.MitAusfallmeldung(aufruf);
+    }
+
+    private static string Artwahlkennung(Kontributorart art)
+    {
+        return $"art-{art.ToString().ToLowerInvariant()}";
+    }
+
+    // Adaptermodell des Formular-Bindings: veränderlich, weil die Zeile es so braucht; verlässt
+    // die Seite nie.
+    private sealed class Kontributorformular
+    {
+        public string Name { get; set; } = "";
+
+        public Kontributorart Art { get; set; } = Kontributorart.Mensch;
+
+        public KontributorAnlegenAnfrage AlsAnfrage()
+        {
+            return new KontributorAnlegenAnfrage(Name, Art);
+        }
+
+        // Die eingestellte Art bleibt stehen: wer mehrere Agenten eintraegt, waehlt nicht jedes
+        // Mal neu.
+        public void LeereNamensfeld()
+        {
+            Name = "";
+        }
     }
 }

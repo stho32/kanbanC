@@ -24,7 +24,30 @@ public sealed class KontributorenSeite
 
     public ILocator Artplaketten => _seite.Locator("#kontributoren-liste .kontributorzeile .artplakette");
 
+    public ILocator Anlegezeile => _seite.Locator("#kontributor-anlegen-zeile");
+
+    public ILocator Namensfeld => _seite.Locator("#kontributor-name");
+
+    public ILocator Artwahl => _seite.Locator("#kontributor-artwahl .seg-opt");
+
     public ILocator Fehlermeldung => _seite.Locator("#fehlermeldung");
+
+    public async Task TrageNamenEin(string name)
+    {
+        await Namensfeld.FillAsync(name);
+    }
+
+    // Der Radioknopf selbst ist unsichtbar — bedient wird die Beschriftung, wie ein Mensch es tut.
+    public async Task WaehleArt(string art)
+    {
+        await _seite.Locator($"#art-{art}").ClickAsync();
+        await Assertions.Expect(_seite.Locator($"#art-{art} input")).ToBeCheckedAsync();
+    }
+
+    public async Task LegeAn()
+    {
+        await _seite.Locator("#kontributor-anlegen").ClickAsync();
+    }
 
     public async Task Oeffne()
     {

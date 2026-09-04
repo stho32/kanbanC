@@ -60,3 +60,25 @@
     clip-path: inset(50%);
     white-space: nowrap;
 }
+
+/* Angelegt wird in einer Zeile am Ende der Liste, nicht auf einem zweiten Schirm. */
+.anlegezeile > td {
+    border-bottom: none;
+    padding-top: var(--space-4);
+}
+
+.anlegefelder {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.feld-name {
+    width: 300px;
+}
+
+.kuerzel-neu {
+    color: var(--color-accent);
+    border: 1px dashed var(--color-accent);
+}
