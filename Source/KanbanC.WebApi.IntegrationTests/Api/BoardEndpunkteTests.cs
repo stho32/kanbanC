@@ -419,6 +419,111 @@ public class BoardEndpunkteTests
         });
     }
 
+    [Test]
+    public async Task Wenn_ein_Board_per_PUT_archiviert_wird_dann_antwortet_die_API_mit_200_und_dem_archivierten_Board()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi, new BoardAnlegenAnfrage("KanbanC — Release 1", BoardArt.Projekt, null, null));
+        Assert.That(board.IstArchiviert, Is.False);
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(ArchivierungsRoute(board.BoardId), new Archivierung(true));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var archiviert = await antwort.Content.ReadFromJsonAsync<Board>();
+        var geladen = await webApi.Klient.GetFromJsonAsync<Board>($"{BoardsRoute}/{board.BoardId}");
+        Assert.Multiple(() =>
+        {
+            Assert.That(archiviert!.IstArchiviert, Is.True);
+            Assert.That(geladen!.IstArchiviert, Is.True);
+            Assert.That(geladen.Name, Is.EqualTo("KanbanC — Release 1"));
+            Assert.That(geladen.Spalten.Select(spalte => spalte.SpalteId), Is.EqualTo(board.Spalten.Select(spalte => spalte.SpalteId)));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_zweimal_archiviert_und_danach_zurueckgeholt_wird_dann_antwortet_die_API_jedesmal_gleich_und_der_letzte_Stand_gilt()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi, new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null));
+
+        var erstes = await SchalteArchivierung(webApi, board.BoardId, true);
+        var zweites = await SchalteArchivierung(webApi, board.BoardId, true);
+        var zurueckgeholt = await SchalteArchivierung(webApi, board.BoardId, false);
+        var nieArchiviertZurueckgeholt = await SchalteArchivierung(webApi, board.BoardId, false);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(erstes.IstArchiviert, Is.True);
+            Assert.That(zweites.IstArchiviert, Is.True);
+            Assert.That(zweites.Name, Is.EqualTo(erstes.Name));
+            Assert.That(zweites.Spalten.Select(spalte => spalte.SpalteId), Is.EqualTo(erstes.Spalten.Select(spalte => spalte.SpalteId)));
+            Assert.That(zurueckgeholt.IstArchiviert, Is.False);
+            Assert.That(nieArchiviertZurueckgeholt.IstArchiviert, Is.False);
+            Assert.That(nieArchiviertZurueckgeholt.Spalten.Select(spalte => spalte.SpalteId), Is.EqualTo(zurueckgeholt.Spalten.Select(spalte => spalte.SpalteId)));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_ein_archiviertes_Board_bedient_wird_dann_verhalten_sich_Spalten_und_Karten_wie_zuvor()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi, new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null));
+        await SchalteArchivierung(webApi, board.BoardId, true);
+
+        await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Migration schreiben");
+        var neueSpalte = await webApi.Klient.PostAsJsonAsync($"{BoardsRoute}/{board.BoardId}/spalten", new SpalteAnlegenAnfrage("Abgenommen", false, null));
+
+        Assert.That(neueSpalte.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        var geladen = await webApi.Klient.GetFromJsonAsync<Board>($"{BoardsRoute}/{board.BoardId}");
+        Assert.Multiple(() =>
+        {
+            Assert.That(geladen!.IstArchiviert, Is.True);
+            Assert.That(geladen.Spalten, Has.Count.EqualTo(4));
+            Assert.That(geladen.Spalten[0].Karten.Select(karte => karte.Titel), Is.EqualTo(new[] { "Migration schreiben" }));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_eine_unbekannte_BoardId_archiviert_wird_dann_antwortet_die_API_mit_404_einem_Rumpf_und_speichert_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi, new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null));
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(ArchivierungsRoute(999), new Archivierung(true));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Archivierung an unbekanntem Board");
+        var liste = await webApi.Klient.GetFromJsonAsync<List<BoardUebersicht>>(BoardsRoute);
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("board-unbekannt"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain("999"));
+            Assert.That(liste!.Select(b => b.BoardId), Is.EqualTo(new[] { board.BoardId }));
+        });
+    }
+
+    private static string ArchivierungsRoute(long boardId)
+    {
+        return $"{BoardsRoute}/{boardId}/archivierung";
+    }
+
+    private static async Task<Board> SchalteArchivierung(TestWebApi webApi, long boardId, bool istArchiviert)
+    {
+        var antwort = await webApi.Klient.PutAsJsonAsync(ArchivierungsRoute(boardId), new Archivierung(istArchiviert));
+        antwort.EnsureSuccessStatusCode();
+        var board = await antwort.Content.ReadFromJsonAsync<Board>();
+        if (board is null)
+        {
+            throw new InvalidOperationException("Die API hat kein Board zurückgegeben.");
+        }
+
+        return board;
+    }
+
     private static async Task LegeKarteAn(TestWebApi webApi, long boardId, long spalteId, string titel)
     {
         var antwort = await webApi.Klient.PostAsJsonAsync($"{BoardsRoute}/{boardId}/spalten/{spalteId}/karten", new KarteAnlegenAnfrage(titel));

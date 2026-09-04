@@ -15,6 +15,7 @@ public static class BoardEndpunkte
         routen.MapGet(Basisroute + "/{boardId:long}", LadeBoard).WithName("BoardLesen");
         routen.MapPut(Basisroute + "/{boardId:long}", BenenneBoardUm).WithName("BoardUmbenennen");
         routen.MapPut(Basisroute + "/{boardId:long}/kartenzahl", SchalteKartenzahl).WithName("KartenzahlSchalten");
+        routen.MapPut(Basisroute + "/{boardId:long}/archivierung", SchalteArchivierung).WithName("ArchivierungSchalten");
     }
 
     private static IResult LegeBoardAn(BoardAnlegenAnfrage anfrage, BoardService boardService)
@@ -62,6 +63,18 @@ public static class BoardEndpunkte
     private static IResult SchalteKartenzahl(long boardId, Kartenzahlanzeige anzeige, BoardService boardService)
     {
         var board = boardService.SchalteKartenzahl(boardId, anzeige);
+        if (board is null)
+        {
+            return Zurueckweisungen.AlsNichtgefunden(Nichtgefunden.Board(boardId));
+        }
+
+        return Results.Ok(board);
+    }
+
+    // Dieselbe Route holt zurueck: der gewuenschte Zustand steht im Rumpf, nicht in der Methode.
+    private static IResult SchalteArchivierung(long boardId, Archivierung archivierung, BoardService boardService)
+    {
+        var board = boardService.SchalteArchivierung(boardId, archivierung);
         if (board is null)
         {
             return Zurueckweisungen.AlsNichtgefunden(Nichtgefunden.Board(boardId));
