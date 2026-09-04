@@ -2,7 +2,22 @@
 @using KanbanC.Contracts.Boards
 
 <article class="board-kachel card elev-sm" data-board-id="@Board.BoardId">
-    <span class="card-kicker board-kachel-art">@_artbezeichnung</span>
+    <div class="board-kachel-kopf">
+        <span class="card-kicker board-kachel-art">@_artbezeichnung</span>
+        <div class="board-kachel-menue">
+            <button type="button"
+                    class="btn btn-schlicht btn-symbol board-kachel-menue-schalter"
+                    aria-label="Menü von @Board.Name"
+                    aria-expanded="@_menuezustand"
+                    @onclick="SchalteMenue">⋯</button>
+            @if (_menueIstOffen)
+            {
+                <div class="board-kachel-menueliste">
+                    <button type="button" class="board-kachel-menuepunkt board-kachel-menuepunkt-umbenennen" @onclick="SchliesseMenue">Umbenennen</button>
+                </div>
+            }
+        </div>
+    </div>
     <h3 class="card-title board-kachel-name">
         <a class="board-verweis" href="@($"/boards/{Board.BoardId}")">@Board.Name</a>
     </h3>
@@ -12,6 +27,8 @@
 @code {
     private string _artbezeichnung = "";
     private string _fusszeile = "";
+    private bool _menueIstOffen;
+    private string _menuezustand = "false";
 
     [Parameter]
     [EditorRequired]
@@ -21,6 +38,33 @@
     {
         _artbezeichnung = ArtbezeichnungVon(Board.Art);
         _fusszeile = FusszeileVon(Board);
+    }
+
+    // Das Menü schließt über einen zweiten Klick auf ⋯, so wie das Anlegeformular über sein ✕.
+    private void SchalteMenue()
+    {
+        SetzeMenue(!_menueIstOffen);
+    }
+
+    private void SchliesseMenue()
+    {
+        SetzeMenue(false);
+    }
+
+    private void SetzeMenue(bool istOffen)
+    {
+        _menueIstOffen = istOffen;
+        _menuezustand = AlsAttributtext(istOffen);
+    }
+
+    private static string AlsAttributtext(bool wert)
+    {
+        if (wert)
+        {
+            return "true";
+        }
+
+        return "false";
     }
 
     private static string ArtbezeichnungVon(BoardArt art)

@@ -131,4 +131,30 @@ public sealed class BoardsSeite
     {
         await Boardverweis(boardId).ClickAsync();
     }
+
+    public ILocator Menueschalter(long boardId)
+    {
+        return Boardzeile(boardId).Locator(".board-kachel-menue-schalter");
+    }
+
+    public ILocator Menueliste(long boardId)
+    {
+        return Boardzeile(boardId).Locator(".board-kachel-menueliste");
+    }
+
+    public ILocator Menuepunkt(long boardId, string kennung)
+    {
+        return Boardzeile(boardId).Locator($".board-kachel-menuepunkt-{kennung}");
+    }
+
+    public async Task SchalteMenue(long boardId)
+    {
+        await Menueschalter(boardId).ClickAsync();
+    }
+
+    public async Task OeffneMenue(long boardId)
+    {
+        await SchalteMenue(boardId);
+        await Assertions.Expect(Menueliste(boardId)).ToBeVisibleAsync();
+    }
 }
