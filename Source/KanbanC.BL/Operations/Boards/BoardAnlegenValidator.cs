@@ -12,13 +12,10 @@ public static class BoardAnlegenValidator
     {
         var befunde = new List<Fehlerbefund>();
 
-        var nameIstLeer = string.IsNullOrWhiteSpace(anfrage.Name);
+        var nameIstLeer = Boardname.IstLeer(anfrage.Name);
         if (nameIstLeer)
         {
-            befunde.Add(new Fehlerbefund(
-                "board-name-leer",
-                "Der Name darf nicht leer sein.",
-                $"`{Boardroute}` mit einem nichtleeren „name“ wiederholen."));
+            befunde.Add(Boardname.LeererName(Boardroute));
         }
 
         var artIstUnbekannt = !Enum.IsDefined(anfrage.Art);
