@@ -264,6 +264,125 @@ public class KontributorenEndpunkteTests
         await Fehlerrumpf.ErwarteBefundMitCode(antwort, "kontributor-name-leer");
     }
 
+    [Test]
+    public async Task Wenn_eine_Stilllegung_per_PUT_gesetzt_wird_dann_antwortet_die_API_mit_200_und_gesetztem_StillgelegtAm()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var anna = await LegeKontributorAn(webApi, new KontributorAnlegenAnfrage("Anna", Kontributorart.Mensch));
+        Assert.That(anna.StillgelegtAm, Is.Null);
+
+        using var antwort = await webApi.Klient.PutAsJsonAsync($"{KontributorenRoute}/{anna.KontributorId}/stilllegung", new Stilllegung(true));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var stillgelegte = await antwort.Content.ReadFromJsonAsync<Kontributor>();
+        Assert.That(stillgelegte, Is.EqualTo(new Kontributor(anna.KontributorId, "Anna", Kontributorart.Mensch, DateOnly.FromDateTime(DateTime.Today))));
+    }
+
+    [Test]
+    public async Task Wenn_eine_Stilllegung_zurueckgenommen_wird_dann_antwortet_die_API_mit_200_und_StillgelegtAm_null()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var anna = await LegeKontributorAn(webApi, new KontributorAnlegenAnfrage("Anna", Kontributorart.Mensch));
+        await SetzeStilllegung(webApi, anna.KontributorId, new Stilllegung(true));
+
+        using var antwort = await webApi.Klient.PutAsJsonAsync($"{KontributorenRoute}/{anna.KontributorId}/stilllegung", new Stilllegung(false));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var zurueckgeholte = await antwort.Content.ReadFromJsonAsync<Kontributor>();
+        Assert.That(zurueckgeholte, Is.EqualTo(new Kontributor(anna.KontributorId, "Anna", Kontributorart.Mensch, StillgelegtAm: null)));
+    }
+
+    // Das Rechenbeispiel des Akzeptanzkriteriums: zweimal true, zweimal false, einmal true.
+    [Test]
+    public async Task Wenn_dieselbe_Richtung_zweimal_gesetzt_wird_dann_aendert_sich_nach_dem_ersten_Mal_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var anna = await LegeKontributorAn(webApi, new KontributorAnlegenAnfrage("Anna", Kontributorart.Mensch));
+
+        var erste = await SetzeStilllegung(webApi, anna.KontributorId, new Stilllegung(true));
+        var zweite = await SetzeStilllegung(webApi, anna.KontributorId, new Stilllegung(true));
+        await SetzeStilllegung(webApi, anna.KontributorId, new Stilllegung(false));
+        var zurueckgeholte = await SetzeStilllegung(webApi, anna.KontributorId, new Stilllegung(false));
+        var letzte = await SetzeStilllegung(webApi, anna.KontributorId, new Stilllegung(true));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(zweite, Is.EqualTo(erste));
+            Assert.That(zurueckgeholte.StillgelegtAm, Is.Null);
+            Assert.That(letzte.StillgelegtAm, Is.EqualTo(DateOnly.FromDateTime(DateTime.Today)));
+        });
+        var kontributoren = await webApi.Klient.GetFromJsonAsync<List<Kontributor>>(KontributorenRoute);
+        Assert.That(kontributoren, Has.Count.EqualTo(1));
+    }
+
+    [Test]
+    public async Task Wenn_jemand_stillgelegt_ist_dann_traegt_jede_Zeile_der_Liste_ihr_StillgelegtAm_und_die_Stillgelegten_stehen_hinten()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var anna = await LegeKontributorAn(webApi, new KontributorAnlegenAnfrage("Anna", Kontributorart.Mensch));
+        await LegeKontributorAn(webApi, new KontributorAnlegenAnfrage("Bert", Kontributorart.Agent));
+        await LegeKontributorAn(webApi, new KontributorAnlegenAnfrage("Cem", Kontributorart.Abgebildet));
+
+        await SetzeStilllegung(webApi, anna.KontributorId, new Stilllegung(true));
+
+        var kontributoren = await webApi.Klient.GetFromJsonAsync<List<Kontributor>>(KontributorenRoute);
+        Assert.That(kontributoren, Is.EqualTo(new[]
+        {
+            new Kontributor(2, "Bert", Kontributorart.Agent, StillgelegtAm: null),
+            new Kontributor(3, "Cem", Kontributorart.Abgebildet, StillgelegtAm: null),
+            new Kontributor(1, "Anna", Kontributorart.Mensch, DateOnly.FromDateTime(DateTime.Today)),
+        }));
+    }
+
+    [Test]
+    public async Task Wenn_die_KontributorId_der_Stilllegung_unbekannt_ist_dann_antwortet_die_API_mit_404_und_einem_Befund_der_die_Nummer_nennt()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        await LegeKontributorAn(webApi, new KontributorAnlegenAnfrage("Anna", Kontributorart.Mensch));
+
+        using var antwort = await webApi.Klient.PutAsJsonAsync($"{KontributorenRoute}/4711/stilllegung", new Stilllegung(true));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Stilllegung schalten mit unbekannter KontributorId");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("kontributor-unbekannt"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain("4711"));
+            Assert.That(zurueckweisung.Befunde[0].Kompensation, Does.Contain("GET /api/kontributoren"));
+        });
+        var kontributoren = await webApi.Klient.GetFromJsonAsync<List<Kontributor>>(KontributorenRoute);
+        Assert.That(kontributoren, Is.EqualTo(new[] { new Kontributor(1, "Anna", Kontributorart.Mensch, StillgelegtAm: null) }));
+    }
+
+    // Keine Sperre der Bearbeitung: I0007 bleibt an einem Stillgelegten unverändert nutzbar, und
+    // sein Stilllegungsstand bleibt dabei unangetastet.
+    [Test]
+    public async Task Wenn_ein_stillgelegter_Kontributor_umbenannt_wird_dann_gelingt_das_und_sein_Stilllegungsstand_bleibt()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var anna = await LegeKontributorAn(webApi, new KontributorAnlegenAnfrage("Anna", Kontributorart.Mensch));
+        var stillgelegte = await SetzeStilllegung(webApi, anna.KontributorId, new Stilllegung(true));
+
+        var umbenannte = await AendereKontributor(webApi, anna.KontributorId, new KontributorAendernAnfrage("Zora", Kontributorart.Agent));
+
+        Assert.That(umbenannte, Is.EqualTo(new Kontributor(anna.KontributorId, "Zora", Kontributorart.Agent, stillgelegte.StillgelegtAm)));
+    }
+
+    private static async Task<Kontributor> SetzeStilllegung(TestWebApi webApi, long kontributorId, Stilllegung stilllegung)
+    {
+        using var antwort = await webApi.Klient.PutAsJsonAsync($"{KontributorenRoute}/{kontributorId}/stilllegung", stilllegung);
+        antwort.EnsureSuccessStatusCode();
+        var kontributor = await antwort.Content.ReadFromJsonAsync<Kontributor>();
+        Assert.That(kontributor, Is.Not.Null);
+        return kontributor;
+    }
+
     private static async Task<Kontributor> AendereKontributor(TestWebApi webApi, long kontributorId, KontributorAendernAnfrage anfrage)
     {
         using var antwort = await webApi.Klient.PutAsJsonAsync($"{KontributorenRoute}/{kontributorId}", anfrage);

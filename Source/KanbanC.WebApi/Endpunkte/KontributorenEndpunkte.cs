@@ -14,6 +14,7 @@ public static class KontributorenEndpunkte
         routen.MapPost(Basisroute, LegeKontributorAn).WithName("KontributorAnlegen");
         routen.MapGet(Basisroute, LadeAlleKontributoren).WithName("KontributorenAuflisten");
         routen.MapPut(Basisroute + "/{kontributorId:long}", AendereKontributor).WithName("KontributorAendern");
+        routen.MapPut(Basisroute + "/{kontributorId:long}/stilllegung", SetzeStilllegung).WithName("KontributorStilllegungSetzen");
     }
 
     private static IResult LegeKontributorAn(KontributorAnlegenAnfrage anfrage, KontributorenService kontributorenService)
@@ -39,6 +40,21 @@ public static class KontributorenEndpunkte
     private static IResult AendereKontributor(long kontributorId, KontributorAendernAnfrage anfrage, KontributorenService kontributorenService)
     {
         var ergebnis = kontributorenService.AendereKontributor(kontributorId, anfrage);
+        var anfrageWurdeZurueckgewiesen = !ergebnis.IstErfolg;
+        if (anfrageWurdeZurueckgewiesen)
+        {
+            return Zurueckweisungen.AlsFehlerantwort(ergebnis.Befunde);
+        }
+
+        return Results.Ok(ergebnis.Wert);
+    }
+
+    // Eine Unterressource wie /archivierung: der PUT auf die Wurzelressource gehört dem Ändern von
+    // Name und Art. Dieselbe Route holt zurück — die Richtung steht im Rumpf, damit ein Agent im
+    // JSON sieht, was er setzt.
+    private static IResult SetzeStilllegung(long kontributorId, Stilllegung stilllegung, KontributorenService kontributorenService)
+    {
+        var ergebnis = kontributorenService.SetzeStilllegung(kontributorId, stilllegung);
         var anfrageWurdeZurueckgewiesen = !ergebnis.IstErfolg;
         if (anfrageWurdeZurueckgewiesen)
         {

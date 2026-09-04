@@ -83,6 +83,11 @@ public class FehlervertragTests
             await webApi.Klient.PutAsJsonAsync($"{KontributorenRoute}/999", new KontributorAendernAnfrage("Zora", Kontributorart.Mensch))));
 
         faelle.Add(new Fehlerfall(
+            "PUT /api/kontributoren/{kontributorId:long}/stilllegung",
+            "Stilllegung schalten mit unbekannter KontributorId",
+            await webApi.Klient.PutAsJsonAsync($"{KontributorenRoute}/999/stilllegung", new Stilllegung(true))));
+
+        faelle.Add(new Fehlerfall(
             "GET /api/boards",
             "Boards auflisten mit unlesbarem Archiv-Filter",
             await webApi.Klient.GetAsync($"{BoardsRoute}?archiviert=vielleicht")));

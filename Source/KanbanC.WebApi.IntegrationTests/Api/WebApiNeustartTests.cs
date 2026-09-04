@@ -181,6 +181,32 @@ public class WebApiNeustartTests
         }));
     }
 
+    [Test]
+    public async Task Wenn_die_WebApi_nach_einer_Stilllegung_neu_startet_dann_steht_der_Stand_samt_Datum_unveraendert_da()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        DateOnly? stillgelegtAmVorNeustart;
+        using (var ersteInstanz = new TestWebApi(datenbank.Dateipfad))
+        {
+            var anna = await LegeKontributorAn(ersteInstanz, new KontributorAnlegenAnfrage("Anna", Kontributorart.Mensch));
+            await LegeKontributorAn(ersteInstanz, new KontributorAnlegenAnfrage("Bert", Kontributorart.Agent));
+            using var geschaltet = await ersteInstanz.Klient.PutAsJsonAsync($"{KontributorenRoute}/{anna.KontributorId}/stilllegung", new Stilllegung(true));
+            geschaltet.EnsureSuccessStatusCode();
+            var stillgelegte = await geschaltet.Content.ReadFromJsonAsync<Kontributor>();
+            stillgelegtAmVorNeustart = stillgelegte!.StillgelegtAm;
+            Assert.That(stillgelegtAmVorNeustart, Is.Not.Null);
+        }
+
+        using var zweiteInstanz = new TestWebApi(datenbank.Dateipfad);
+
+        var kontributoren = await zweiteInstanz.Klient.GetFromJsonAsync<List<Kontributor>>(KontributorenRoute);
+        Assert.That(kontributoren, Is.EqualTo(new[]
+        {
+            new Kontributor(2, "Bert", Kontributorart.Agent, StillgelegtAm: null),
+            new Kontributor(1, "Anna", Kontributorart.Mensch, stillgelegtAmVorNeustart),
+        }));
+    }
+
     private static async Task<Kontributor> LegeKontributorAn(TestWebApi webApi, KontributorAnlegenAnfrage anfrage)
     {
         var antwort = await webApi.Klient.PostAsJsonAsync(KontributorenRoute, anfrage);
