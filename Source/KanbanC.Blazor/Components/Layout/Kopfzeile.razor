@@ -1,5 +1,7 @@
 @implements IDisposable
+@using KanbanC.Contracts.Kontributoren
 @inject NavigationManager Navigation
+@inject KontributorenApiKlient ApiKlient
 
 <header class="kopfzeile" id="kopfzeile">
     @* Zone 1 — wo die Seite steht. Den Platz füllt sie selbst; auf dem Board steht
@@ -45,11 +47,14 @@
                     id="identitaet"
                     aria-haspopup="true"
                     aria-expanded="@Popoverstand()"
-                    @onclick="SchaltePopover">nicht gewählt<svg class="identitaets-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
+                    @onclick="SchaltePopover">@Identitaetsbeschriftung()<svg class="identitaets-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
             @if (_popoverIstOffen)
             {
                 <div class="identitaetspopover" id="identitaetspopover">
                     <p class="identitaetspopover-titel">Ich bin …</p>
+                    <Identitaetswahl Kontributoren="_kontributoren"
+                                     GewaehlteKontributorId="_gewaehlteKontributorId"
+                                     Gewaehlt="UebernimmWahl" />
                 </div>
             }
         </div>
@@ -57,13 +62,25 @@
 </header>
 
 @code {
+    private const string NichtGewaehlt = "nicht gewählt";
+
     private bool _einBoardIstOffen;
     private bool _popoverIstOffen;
+    private IReadOnlyList<Kontributor> _kontributoren = [];
+    private long? _gewaehlteKontributorId;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         UebernimmAdresse();
         Navigation.LocationChanged += AufAdresswechsel;
+        await LadeKontributoren();
+    }
+
+    // Die Liste wird je Blazor-Kreislauf einmal geholt, nicht je Seitenwechsel: die Kopfzeile
+    // steht auf jeder Seite, ein Aufruf je Navigation wäre einer zu viel.
+    private async Task LadeKontributoren()
+    {
+        await WebApiAufruf.MitAusfallmeldung(async () => _kontributoren = await ApiKlient.LadeAlle());
     }
 
     public void Dispose()
@@ -76,6 +93,11 @@
         UebernimmAdresse();
         SchliessePopover();
         StateHasChanged();
+    }
+
+    private void UebernimmAdresse()
+    {
+        _einBoardIstOffen = Boardadresse.ZeigtAufEinBoard(Navigation.Uri);
     }
 
     private void SchaltePopover()
@@ -109,8 +131,29 @@
         return "false";
     }
 
-    private void UebernimmAdresse()
+    private void UebernimmWahl(long kontributorId)
     {
-        _einBoardIstOffen = Boardadresse.ZeigtAufEinBoard(Navigation.Uri);
+        _gewaehlteKontributorId = kontributorId;
+        SchliessePopover();
+    }
+
+    // Gespeichert ist nur die KontributorId; der Name ist eine Ableitung aus der Liste, damit ein
+    // Umbenennen nachzieht und eine unbekannte Id zu „nicht gewählt" wird statt zu einem
+    // verwaisten Namen.
+    private string Identitaetsbeschriftung()
+    {
+        var gewaehlterKontributor = _kontributoren.FirstOrDefault(EntsprichtDerWahl);
+        var esGibtKeineGueltigeWahl = gewaehlterKontributor is null;
+        if (esGibtKeineGueltigeWahl)
+        {
+            return NichtGewaehlt;
+        }
+
+        return gewaehlterKontributor!.Name;
+    }
+
+    private bool EntsprichtDerWahl(Kontributor kontributor)
+    {
+        return kontributor.KontributorId == _gewaehlteKontributorId;
     }
 }

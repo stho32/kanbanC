@@ -31,6 +31,17 @@ public sealed class Rahmen
 
     public ILocator Identitaetspopover => _seite.Locator("#identitaetspopover");
 
+    public ILocator IdentitaetWaehlbareZeilen => _seite.Locator("#identitaetsliste .identitaetszeile");
+
+    public ILocator IdentitaetWaehlbareZeile(long kontributorId)
+    {
+        return _seite.Locator($"#identitaet-waehlen-{kontributorId}");
+    }
+
+    public ILocator IdentitaetsHaken => _seite.Locator("#identitaetsliste .identitaetshaken");
+
+    public ILocator IdentitaetFusszeile => _seite.Locator("#identitaet-anlegen");
+
     public ILocator Seitenleiste => _seite.Locator(".sidebar");
 
     public async Task OeffneIdentitaetswahl()

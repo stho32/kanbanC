@@ -1,0 +1,83 @@
+/* Die Zeilenform des Popovers nach dem Artboard (D0002.dc.html:355-386): Kürzel, Name, rechts
+   der Haken. Alle Werte kommen aus gestaltung.css. */
+.identitaetsliste {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.identitaetszeile {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    padding: var(--space-1) var(--space-2);
+    font: inherit;
+    font-size: 13px;
+    line-height: 1.2;
+    color: var(--color-text);
+    text-align: left;
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
+}
+
+.identitaetszeile:hover {
+    background: var(--color-bg);
+}
+
+.identitaetsname {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.identitaetshaken {
+    display: inline-flex;
+    margin-left: auto;
+    color: var(--color-accent);
+}
+
+/* Die Initialen tragen die Farbe der Art — daran ist sie auch ohne Plakette erkennbar. Im
+   Popover stehen sie kleiner als in der Liste auf /kontributoren: dieselbe Form, nicht
+   dieselbe Größe. */
+.kuerzel {
+    display: inline-flex;
+    flex: 0 0 20px;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    font-size: 9px;
+    letter-spacing: 0.02em;
+    border-radius: 999px;
+}
+
+.kuerzel-mensch {
+    background: var(--color-accent-2-200);
+    color: var(--color-accent-2-800);
+}
+
+.identitaetstrenner {
+    width: 100%;
+    height: 1px;
+    margin: var(--space-1) 0;
+    border: 0;
+    background: var(--color-divider);
+}
+
+.identitaetsfusszeile {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding-inline: var(--space-1);
+    font-family: var(--font-heading);
+    font-weight: var(--font-heading-weight);
+    font-size: 13px;
+    color: var(--color-accent);
+    text-decoration: none;
+}

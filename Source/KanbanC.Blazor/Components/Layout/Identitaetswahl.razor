@@ -1,0 +1,53 @@
+@using KanbanC.Contracts.Kontributoren
+
+<ul class="identitaetsliste" id="identitaetsliste">
+    @foreach (var mensch in _waehlbare)
+    {
+        <li>
+            <button type="button"
+                    class="identitaetszeile"
+                    id="identitaet-waehlen-@mensch.KontributorId"
+                    @onclick="() => Gewaehlt.InvokeAsync(mensch.KontributorId)">
+                <span class="kuerzel @Kontributorartform.Kuerzelklasse(mensch.Art)">@Kontributorartform.Kuerzel(mensch.Name)</span>
+                <span class="identitaetsname">@mensch.Name</span>
+                @if (IstGewaehlt(mensch))
+                {
+                    <span class="identitaetshaken" title="gewählt">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg>
+                    </span>
+                }
+            </button>
+        </li>
+    }
+</ul>
+
+<hr class="identitaetstrenner" id="identitaet-fusstrenner" />
+
+@* Steht kein Mensch zur Wahl, ist diese Fußzeile der Weg, der weiterhilft — nicht eine leere Fläche. *@
+<a class="identitaetsfusszeile" id="identitaet-anlegen" href="kontributoren">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Kontributor anlegen
+</a>
+
+@code {
+    private IReadOnlyList<Kontributor> _waehlbare = [];
+
+    [Parameter]
+    [EditorRequired]
+    public IReadOnlyList<Kontributor> Kontributoren { get; set; } = [];
+
+    [Parameter]
+    public long? GewaehlteKontributorId { get; set; }
+
+    [Parameter]
+    public EventCallback<long> Gewaehlt { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _waehlbare = Identitaetsliste.Waehlbare(Kontributoren);
+    }
+
+    private bool IstGewaehlt(Kontributor kontributor)
+    {
+        return kontributor.KontributorId == GewaehlteKontributorId;
+    }
+}
