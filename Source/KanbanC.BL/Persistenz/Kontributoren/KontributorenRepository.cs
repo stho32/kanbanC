@@ -49,7 +49,10 @@ public sealed class KontributorenRepository : IKontributorenRepository
     }
 
     // Die Reihenfolge gehört der Abfrage, nicht der Oberfläche: eine zweite Sortierung wäre eine
-    // zweite Wahrheit. Die KontributorId entscheidet, wenn zwei gleich heißen.
+    // zweite Wahrheit. Die KontributorId entscheidet, wenn zwei gleich heißen. Stillgelegte
+    // stehen als Gruppe am Ende — die Gruppenzeile der Liste setzt genau diese Folge voraus.
+    // Sortiert wird nach dem Vorhandensein der Stilllegung, nicht nach ihrem Datum: die Gruppe
+    // ist alphabetisch geordnet wie die aktive davor.
     public IReadOnlyList<Kontributor> LadeAlle()
     {
         using var verbindung = _verbindungsfabrik.Oeffne();
@@ -58,7 +61,9 @@ public sealed class KontributorenRepository : IKontributorenRepository
               FROM Kontributor k
                    LEFT JOIN Kontributorstilllegung s
                           ON s.Kontributor = k.KontributorId
-             ORDER BY k.Name COLLATE NOCASE, k.KontributorId");
+             ORDER BY CASE WHEN s.Kontributor IS NULL THEN 0 ELSE 1 END,
+                      k.Name COLLATE NOCASE,
+                      k.KontributorId");
         return zeilen.Select(AlsKontributor).ToList();
     }
 

@@ -184,11 +184,11 @@ public class KontributorenRepositoryTests
 
         FuegeStilllegungEin(datenbank, anna.KontributorId, "2026-08-12");
 
-        Assert.That(repository.LadeAlle(), Is.EqualTo(new[]
+        Assert.That(repository.LadeAlle(), Is.EquivalentTo(new[]
         {
             new Kontributor(1, "Anna", Kontributorart.Mensch, new DateOnly(2026, 8, 12)),
             new Kontributor(2, "Bert", Kontributorart.Agent, StillgelegtAm: null),
-        }));
+        }), "Die Reihenfolge prüft der Sortiertest; hier zählt allein, wer welches Datum trägt.");
     }
 
     [Test]
@@ -202,6 +202,44 @@ public class KontributorenRepositoryTests
         var geaenderter = repository.Aendere(bert.KontributorId, new KontributorAendernAnfrage("Zora", Kontributorart.Mensch));
 
         Assert.That(geaenderter, Is.EqualTo(new Kontributor(1, "Zora", Kontributorart.Mensch, new DateOnly(2026, 8, 12))));
+    }
+
+    [Test]
+    public void Wenn_ein_Kontributor_stillgelegt_ist_dann_steht_er_am_Ende_der_Liste()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KontributorenRepository(datenbank.Verbindungsfabrik);
+        var anna = repository.LegeAn(new KontributorAnlegenAnfrage("Anna", Kontributorart.Mensch));
+        repository.LegeAn(new KontributorAnlegenAnfrage("Bert", Kontributorart.Agent));
+        repository.LegeAn(new KontributorAnlegenAnfrage("Cem", Kontributorart.Abgebildet));
+        Assert.That(Namensfolge(repository), Is.EqualTo(new[] { "Anna", "Bert", "Cem" }));
+
+        FuegeStilllegungEin(datenbank, anna.KontributorId, "2026-08-12");
+
+        Assert.That(Namensfolge(repository), Is.EqualTo(new[] { "Bert", "Cem", "Anna" }));
+    }
+
+    [Test]
+    public void Wenn_mehrere_stillgelegt_sind_dann_stehen_sie_untereinander_nach_derselben_Regel_wie_die_aktiven()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KontributorenRepository(datenbank.Verbindungsfabrik);
+        var zora = repository.LegeAn(new KontributorAnlegenAnfrage("zora", Kontributorart.Mensch));
+        repository.LegeAn(new KontributorAnlegenAnfrage("Bert", Kontributorart.Agent));
+        var anna = repository.LegeAn(new KontributorAnlegenAnfrage("Anna", Kontributorart.Mensch));
+        var annaZweite = repository.LegeAn(new KontributorAnlegenAnfrage("anna", Kontributorart.Agent));
+
+        FuegeStilllegungEin(datenbank, zora.KontributorId, "2026-08-12");
+        FuegeStilllegungEin(datenbank, anna.KontributorId, "2026-08-13");
+        FuegeStilllegungEin(datenbank, annaZweite.KontributorId, "2026-08-14");
+
+        Assert.That(Namensfolge(repository), Is.EqualTo(new[] { "Bert", "Anna", "anna", "zora" }));
+        Assert.That(repository.LadeAlle().Select(kontributor => kontributor.KontributorId), Is.EqualTo(new[] { 2L, 3L, 4L, 1L }));
+    }
+
+    private static string[] Namensfolge(KontributorenRepository repository)
+    {
+        return repository.LadeAlle().Select(kontributor => kontributor.Name).ToArray();
     }
 
     // Das Datum steht als ISO-Text in der Spalte: Dapper nimmt ein DateOnly nicht als
