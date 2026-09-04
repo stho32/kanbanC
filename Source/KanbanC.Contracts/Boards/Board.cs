@@ -7,4 +7,5 @@ public record Board(
     DateOnly? Starttermin,
     DateOnly? Zieltermin,
     IReadOnlyList<Spalte> Spalten,
-    bool ZeigtKartenzahl);
+    bool ZeigtKartenzahl,
+    bool IstArchiviert);

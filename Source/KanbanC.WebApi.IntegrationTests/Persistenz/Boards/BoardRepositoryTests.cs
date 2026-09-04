@@ -449,6 +449,83 @@ public class BoardRepositoryTests
         Assert.That(repository.Lade(angelegt.BoardId)!.Name, Is.EqualTo("Entwicklung"));
     }
 
+    [Test]
+    public void Wenn_ein_Board_neu_angelegt_ist_dann_ist_es_aktiv_und_traegt_keine_Archivzeile()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+
+        var angelegt = repository.LegeAn(new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+
+        var geladen = repository.Lade(angelegt.BoardId);
+        Assert.That(geladen, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(angelegt.IstArchiviert, Is.False);
+            Assert.That(geladen.IstArchiviert, Is.False);
+            Assert.That(GespeicherteArchivanzahl(datenbank), Is.EqualTo(0));
+        });
+    }
+
+    [Test]
+    public void Wenn_ein_Board_eine_Archivzeile_traegt_dann_liefert_Lade_es_vollstaendig_und_als_archiviert()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        var archiviertes = repository.LegeAn(new BoardAnlegenAnfrage("KanbanC — Release 1", BoardArt.Projekt, new DateOnly(2026, 9, 1), new DateOnly(2026, 12, 31)), StandardspaltenVorlage.FuerNeuesBoard());
+        var aktives = repository.LegeAn(new BoardAnlegenAnfrage("Vertrieb", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+        FuegeKarteEin(datenbank, archiviertes.Spalten[0].SpalteId, "Migration schreiben", 1);
+
+        FuegeArchivzeileEin(datenbank, archiviertes.BoardId);
+
+        var geladen = repository.Lade(archiviertes.BoardId);
+        Assert.That(geladen, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(geladen.IstArchiviert, Is.True);
+            Assert.That(geladen.Name, Is.EqualTo("KanbanC — Release 1"));
+            Assert.That(geladen.Zieltermin, Is.EqualTo(new DateOnly(2026, 12, 31)));
+            Assert.That(geladen.Spalten.Select(spalte => spalte.SpalteId), Is.EqualTo(archiviertes.Spalten.Select(spalte => spalte.SpalteId)));
+            Assert.That(geladen.Spalten[0].Karten.Select(karte => karte.Titel), Is.EqualTo(new[] { "Migration schreiben" }));
+            Assert.That(repository.Lade(aktives.BoardId)!.IstArchiviert, Is.False);
+        });
+    }
+
+    [Test]
+    public void Wenn_ein_archiviertes_Board_zugleich_die_Kartenzahl_zeigt_dann_traegt_es_beide_Staende()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        var board = repository.LegeAn(new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+        repository.SetzeKartenzahlanzeige(board.BoardId, new Kartenzahlanzeige(true));
+
+        FuegeArchivzeileEin(datenbank, board.BoardId);
+
+        var geladen = repository.Lade(board.BoardId);
+        Assert.That(geladen, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(geladen.IstArchiviert, Is.True);
+            Assert.That(geladen.ZeigtKartenzahl, Is.True);
+        });
+    }
+
+    private static void FuegeArchivzeileEin(TemporaereDatenbank datenbank, long boardId)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Boardarchivierung (Board)
+            VALUES (@Board)", new { Board = boardId });
+    }
+
+    private static long GespeicherteArchivanzahl(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.ExecuteScalar<long>(@"
+            SELECT COUNT(*)
+              FROM Boardarchivierung");
+    }
+
     private static void FuegeBoardeinstellungEin(TemporaereDatenbank datenbank, long boardId, bool zeigtKartenzahl)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();

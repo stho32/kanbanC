@@ -35,9 +35,9 @@ public sealed class BoardRepository : IBoardRepository
         }
 
         transaktion.Commit();
-        // Ein neues Board bekommt keine Einstellungszeile: die Abwesenheit der Zeile ist die
-        // Voreinstellung, und die heißt aus.
-        return new Board(boardId, anfrage.Name, anfrage.Art, anfrage.Starttermin, anfrage.Zieltermin, spalten, false);
+        // Ein neues Board bekommt weder Einstellungs- noch Archivzeile: die Abwesenheit der Zeile
+        // ist die Voreinstellung, und die heißt aus beziehungsweise aktiv.
+        return new Board(boardId, anfrage.Name, anfrage.Art, anfrage.Starttermin, anfrage.Zieltermin, spalten, false, false);
     }
 
     public IReadOnlyList<BoardUebersicht> LadeAlle()
@@ -124,14 +124,17 @@ public sealed class BoardRepository : IBoardRepository
         return AlsBoard(boardZeile, spalten);
     }
 
-    // Fehlt die Einstellungszeile, gilt die Voreinstellung aus.
+    // Fehlt die Einstellungszeile, gilt die Voreinstellung aus; fehlt die Archivzeile, ist das
+    // Board aktiv.
     private static BoardZeile? LiesBoardzeile(IDbConnection verbindung, IDbTransaction? transaktion, long boardId)
     {
         return verbindung.QuerySingleOrDefault<BoardZeile>(@"
             SELECT b.BoardId, b.Name, b.Art, b.Starttermin, b.Zieltermin,
-                   COALESCE(e.ZeigtKartenzahl, 0) AS ZeigtKartenzahl
+                   COALESCE(e.ZeigtKartenzahl, 0) AS ZeigtKartenzahl,
+                   CASE WHEN a.Board IS NULL THEN 0 ELSE 1 END AS IstArchiviert
               FROM Board b
               LEFT JOIN Boardeinstellung e ON e.Board = b.BoardId
+              LEFT JOIN Boardarchivierung a ON a.Board = b.BoardId
              WHERE b.BoardId = @BoardId", new { BoardId = boardId }, transaktion);
     }
 
@@ -192,11 +195,12 @@ public sealed class BoardRepository : IBoardRepository
 
     private sealed record BoardUebersichtZeile(long BoardId, string Name, string Art, string? Starttermin, string? Zieltermin);
 
-    private sealed record BoardZeile(long BoardId, string Name, string Art, string? Starttermin, string? Zieltermin, long ZeigtKartenzahl);
+    private sealed record BoardZeile(long BoardId, string Name, string Art, string? Starttermin, string? Zieltermin, long ZeigtKartenzahl, long IstArchiviert);
 
     private static Board AlsBoard(BoardZeile zeile, IReadOnlyList<Spalte> spalten)
     {
         var zeigtKartenzahl = zeile.ZeigtKartenzahl != 0;
-        return new Board(zeile.BoardId, zeile.Name, Enum.Parse<BoardArt>(zeile.Art), AlsTermin(zeile.Starttermin), AlsTermin(zeile.Zieltermin), spalten, zeigtKartenzahl);
+        var istArchiviert = zeile.IstArchiviert != 0;
+        return new Board(zeile.BoardId, zeile.Name, Enum.Parse<BoardArt>(zeile.Art), AlsTermin(zeile.Starttermin), AlsTermin(zeile.Zieltermin), spalten, zeigtKartenzahl, istArchiviert);
     }
 }
