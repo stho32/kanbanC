@@ -159,6 +159,38 @@ public class MigrationslaeuferTests
         });
     }
 
+    [Test]
+    public void Wenn_die_Migration_gelaufen_ist_dann_traegt_das_Schema_die_Tabelle_Boardeinstellung_mit_dem_Board_als_Schluessel()
+    {
+        using var datenbank = new TemporaereDatenbank();
+
+        new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Tabellennamen(datenbank), Does.Contain("Boardeinstellung"));
+            Assert.That(Spaltennamen(datenbank, "Boardeinstellung"), Is.EqualTo(new[] { "Board", "ZeigtKartenzahl" }));
+            Assert.That(Schluesselspalten(datenbank, "Boardeinstellung"), Is.EqualTo(new[] { "Board" }));
+        });
+    }
+
+    [Test]
+    public void Wenn_FuehreAus_auf_einer_Datei_mit_eingeschalteter_Kartenzahl_ein_zweites_Mal_laeuft_dann_bleibt_sie_eingeschaltet()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        SchalteKartenzahlEin(datenbank, boardId);
+        var schemaVorher = SchemaDefinitionen(datenbank);
+
+        Assert.That(() => new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus(), Throws.Nothing);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(SchemaDefinitionen(datenbank), Is.EqualTo(schemaVorher));
+            Assert.That(Boardeinstellungen(datenbank), Is.EqualTo(new[] { (boardId, 1L) }));
+        });
+    }
+
     private static long LegeBoardAn(TemporaereDatenbank datenbank)
     {
         var repository = new BoardRepository(datenbank.Verbindungsfabrik);
@@ -208,6 +240,34 @@ public class MigrationslaeuferTests
               FROM Karte
              WHERE Spalte = @Spalte
              ORDER BY Position", new { Spalte = spalteId }).ToArray();
+    }
+
+    private static void SchalteKartenzahlEin(TemporaereDatenbank datenbank, long boardId)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Boardeinstellung (Board, ZeigtKartenzahl)
+            VALUES (@Board, 1)", new { Board = boardId });
+    }
+
+    private static (long Board, long ZeigtKartenzahl)[] Boardeinstellungen(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        var zeilen = verbindung.Query<(long Board, long ZeigtKartenzahl)>(@"
+            SELECT Board, ZeigtKartenzahl
+              FROM Boardeinstellung
+             ORDER BY Board");
+        return zeilen.ToArray();
+    }
+
+    private static string[] Schluesselspalten(TemporaereDatenbank datenbank, string tabelle)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.Query<string>($@"
+            SELECT name
+              FROM pragma_table_info('{tabelle}')
+             WHERE pk > 0
+             ORDER BY pk").ToArray();
     }
 
     private static string[] Spaltennamen(TemporaereDatenbank datenbank, string tabelle)
