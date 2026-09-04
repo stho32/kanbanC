@@ -92,7 +92,8 @@ public class IdentitaetslisteTests
         var waehlbare = Identitaetsliste.Waehlbare(kontributoren);
         var gesperrte = Identitaetsliste.Gesperrte(kontributoren);
 
-        var beideTeile = waehlbare.Concat(gesperrte).Select(kontributor => kontributor.KontributorId).ToList();
-        Assert.That(beideTeile, Is.EquivalentTo(new long[] { 1, 2, 3 }));
+        var beideTeile = waehlbare.Concat(gesperrte).ToList();
+        var eingeteilteKontributorIds = beideTeile.Select(kontributor => kontributor.KontributorId).ToList();
+        Assert.That(eingeteilteKontributorIds, Is.EquivalentTo(new long[] { 1, 2, 3 }));
     }
 }
