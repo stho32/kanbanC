@@ -7,6 +7,7 @@ namespace KanbanC.BL.Tests.Integrations.Boards;
 public class BoardServiceTests
 {
     private static readonly Archivierung Aktive = new(false);
+    private static readonly Archivierung Archivierte = new(true);
 
     [Test]
     public void Wenn_ein_Board_angelegt_wird_dann_erhaelt_das_Repository_die_Anfrage_und_die_drei_Standardspalten()
@@ -70,7 +71,7 @@ public class BoardServiceTests
         repository.Speichere(new Board(2, "KanbanC 1.0", BoardArt.Projekt, null, null, [], false, false));
         var service = new BoardService(repository);
 
-        var boards = service.LadeAlleBoards();
+        var boards = service.LadeAlleBoards(Aktive);
 
         Assert.That(boards.Select(b => b.Name), Is.EqualTo(new[] { "Entwicklung", "KanbanC 1.0" }));
     }
@@ -204,6 +205,63 @@ public class BoardServiceTests
         {
             Assert.That(repository.GeschriebeneAnzeige, Is.Null);
             Assert.That(service.LadeBoard(1)!.ZeigtKartenzahl, Is.False);
+        });
+    }
+
+    [Test]
+    public void Wenn_ein_Board_archiviert_wird_dann_fehlt_es_in_der_Standardliste_und_steht_in_der_archivierten()
+    {
+        var repository = new TestBoardRepository();
+        repository.Speichere(new Board(1, "Entwicklung", BoardArt.Linie, null, null, [], false, false));
+        repository.Speichere(new Board(2, "KanbanC — Release 1", BoardArt.Projekt, null, null, [], false, false));
+        var service = new BoardService(repository);
+
+        var archiviert = service.SchalteArchivierung(2, Archivierte);
+
+        Assert.That(archiviert, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(archiviert.IstArchiviert, Is.True);
+            Assert.That(repository.GeschriebeneArchivierung, Is.EqualTo(Archivierte));
+            Assert.That(service.LadeAlleBoards(Aktive).Select(b => b.BoardId), Is.EqualTo(new long[] { 1 }));
+            Assert.That(service.LadeAlleBoards(Archivierte).Select(b => b.BoardId), Is.EqualTo(new long[] { 2 }));
+            Assert.That(service.LadeBoard(2)!.IstArchiviert, Is.True);
+        });
+    }
+
+    [Test]
+    public void Wenn_ein_archiviertes_Board_zurueckgeholt_wird_dann_steht_es_wieder_in_der_Standardliste()
+    {
+        var repository = new TestBoardRepository();
+        repository.Speichere(new Board(2, "KanbanC — Release 1", BoardArt.Projekt, null, null, [], false, false));
+        var service = new BoardService(repository);
+        service.SchalteArchivierung(2, Archivierte);
+
+        var zurueckgeholt = service.SchalteArchivierung(2, Aktive);
+
+        Assert.That(zurueckgeholt, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckgeholt.IstArchiviert, Is.False);
+            Assert.That(service.LadeAlleBoards(Aktive).Select(b => b.BoardId), Is.EqualTo(new long[] { 2 }));
+            Assert.That(service.LadeAlleBoards(Archivierte), Is.Empty);
+        });
+    }
+
+    [Test]
+    public void Wenn_die_BoardId_beim_Archivieren_unbekannt_ist_dann_schreibt_der_Service_nichts_und_liefert_null()
+    {
+        var repository = new TestBoardRepository();
+        repository.Speichere(new Board(1, "Entwicklung", BoardArt.Linie, null, null, [], false, false));
+        var service = new BoardService(repository);
+
+        var archiviert = service.SchalteArchivierung(99, Archivierte);
+
+        Assert.That(archiviert, Is.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(repository.GeschriebeneArchivierung, Is.Null);
+            Assert.That(service.LadeAlleBoards(Aktive), Has.Count.EqualTo(1));
         });
     }
 

@@ -29,9 +29,9 @@ public sealed class BoardService
         return Ergebnis<Board>.Erfolg(board);
     }
 
-    public IReadOnlyList<BoardUebersicht> LadeAlleBoards()
+    public IReadOnlyList<BoardUebersicht> LadeAlleBoards(Archivierung archivstand)
     {
-        return _repository.LadeAlle(new Archivierung(false));
+        return _repository.LadeAlle(archivstand);
     }
 
     public Board? LadeBoard(long boardId)
@@ -64,5 +64,12 @@ public sealed class BoardService
     public Board? SchalteKartenzahl(long boardId, Kartenzahlanzeige anzeige)
     {
         return _repository.SetzeKartenzahlanzeige(boardId, anzeige);
+    }
+
+    // Kein Validator: ein Wahrheitswert hat keinen ungültigen Fall, zu prüfen ist nur, ob es das
+    // Board gibt. null heißt deshalb dasselbe wie beim Schalten der Kartenzahl.
+    public Board? SchalteArchivierung(long boardId, Archivierung archivierung)
+    {
+        return _repository.SetzeArchivierung(boardId, archivierung);
     }
 }

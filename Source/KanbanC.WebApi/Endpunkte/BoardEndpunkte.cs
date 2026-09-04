@@ -32,7 +32,7 @@ public static class BoardEndpunkte
 
     private static IResult LadeAlleBoards(BoardService boardService)
     {
-        var boards = boardService.LadeAlleBoards();
+        var boards = boardService.LadeAlleBoards(new Archivierung(false));
         return Results.Ok(boards);
     }
 
