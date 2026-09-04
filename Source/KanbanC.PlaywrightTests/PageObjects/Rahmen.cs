@@ -29,5 +29,13 @@ public sealed class Rahmen
 
     public ILocator Identitaetsplatz => _seite.Locator("#identitaet");
 
+    public ILocator Identitaetspopover => _seite.Locator("#identitaetspopover");
+
     public ILocator Seitenleiste => _seite.Locator(".sidebar");
+
+    public async Task OeffneIdentitaetswahl()
+    {
+        await Identitaetsplatz.ClickAsync();
+        await Assertions.Expect(Identitaetspopover).ToBeVisibleAsync();
+    }
 }

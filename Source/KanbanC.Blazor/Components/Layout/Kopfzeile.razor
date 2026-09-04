@@ -35,12 +35,30 @@
     @* Zone 3 — Werkzeuge und Identität, rechtsbündig. *@
     <div class="kopfzeile-werkzeuge">
         <SectionOutlet SectionName="kopfzeile-bedienung" />
-        <span class="kopfzeile-identitaet" id="identitaet">nicht gewählt</span>
+        <div class="identitaetsplatz" @onkeydown="AufTaste">
+            @if (_popoverIstOffen)
+            {
+                <div class="identitaets-auffangflaeche" id="identitaet-auffangflaeche" @onclick="SchliessePopover"></div>
+            }
+            <button type="button"
+                    class="kopfzeile-identitaet"
+                    id="identitaet"
+                    aria-haspopup="true"
+                    aria-expanded="@Popoverstand()"
+                    @onclick="SchaltePopover">nicht gewählt<svg class="identitaets-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
+            @if (_popoverIstOffen)
+            {
+                <div class="identitaetspopover" id="identitaetspopover">
+                    <p class="identitaetspopover-titel">Ich bin …</p>
+                </div>
+            }
+        </div>
     </div>
 </header>
 
 @code {
     private bool _einBoardIstOffen;
+    private bool _popoverIstOffen;
 
     protected override void OnInitialized()
     {
@@ -56,7 +74,39 @@
     private void AufAdresswechsel(object? absender, LocationChangedEventArgs ereignis)
     {
         UebernimmAdresse();
+        SchliessePopover();
         StateHasChanged();
+    }
+
+    private void SchaltePopover()
+    {
+        _popoverIstOffen = !_popoverIstOffen;
+    }
+
+    private void SchliessePopover()
+    {
+        _popoverIstOffen = false;
+    }
+
+    private void AufTaste(KeyboardEventArgs taste)
+    {
+        var dieTasteSchliesstDieWahl = taste.Key == "Escape";
+        if (!dieTasteSchliesstDieWahl)
+        {
+            return;
+        }
+
+        SchliessePopover();
+    }
+
+    private string Popoverstand()
+    {
+        if (_popoverIstOffen)
+        {
+            return "true";
+        }
+
+        return "false";
     }
 
     private void UebernimmAdresse()

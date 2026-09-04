@@ -9,14 +9,14 @@
     gap: var(--space-4);
     min-height: var(--space-8);
     padding: 0 var(--space-4);
-    /* Die Zeile trägt die Kopfdaten der Seite — sie darf davon nicht breiter
-       werden als das Fenster, sonst scrollt die ganze Seite waagerecht. */
-    overflow: hidden;
     background: var(--color-surface);
     border-bottom: 1px solid var(--color-divider);
 }
 
 /* — Zone 1: die Anwendung — */
+/* Die Zeile trägt die Kopfdaten der Seite — sie darf davon nicht breiter werden als das
+   Fenster, sonst scrollt die ganze Seite waagerecht. Beschnitten wird in den beiden Zonen, die
+   wachsen können; die Zone der Werkzeuge bleibt offen, weil das Popover aus ihr heraushängt. */
 .kopfzeile-anwendung {
     display: flex;
     flex: 1;
@@ -24,6 +24,7 @@
     gap: var(--space-4);
     min-width: 0;
     padding-left: var(--space-4);
+    overflow: hidden;
     border-left: 1px solid var(--color-divider);
 }
 
@@ -72,6 +73,7 @@
     gap: var(--space-2);
     min-width: 0;
     max-width: 45%;
+    overflow: hidden;
 }
 
 /* Der Titel der Seite steht, wo sonst eine Wortmarke stünde, und trägt deren Gewicht. */
@@ -97,11 +99,81 @@
     gap: var(--space-2);
 }
 
-.kopfzeile-identitaet {
+/* Der Identitätsplatz ist der Anker des Popovers: es hängt an seiner Unterkante und ist
+   rechtsbündig, wie im Artboard (D0002.dc.html:355-386). */
+.identitaetsplatz {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-left: var(--space-2);
     padding-left: var(--space-2);
-    font-size: 13px;
-    color: color-mix(in srgb, var(--color-text) 55%, transparent);
     border-left: 1px solid var(--color-divider);
+}
+
+/* Die Pille bleibt so schmal, dass sie die Höhe der Zeile nicht verändert — der Seitentitel und
+   der Identitätsplatz stehen weiterhin auf einer waagerechten Zeile. */
+.kopfzeile-identitaet {
+    position: relative;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px var(--space-2);
+    font: inherit;
+    font-size: 13px;
+    line-height: 1.2;
+    color: var(--color-accent);
+    cursor: pointer;
+    background: transparent;
+    border: 1px solid var(--color-accent);
+    border-radius: 999px;
+}
+
+.kopfzeile-identitaet:hover {
+    background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+}
+
+.identitaets-chevron {
+    display: block;
+}
+
+.kopfzeile-identitaet[aria-expanded="true"] {
+    background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+}
+
+.kopfzeile-identitaet[aria-expanded="true"] .identitaets-chevron {
+    transform: rotate(180deg);
+}
+
+.identitaetspopover {
+    position: absolute;
+    top: calc(100% + var(--space-1));
+    right: 0;
+    z-index: 2;
+    width: 268px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-3);
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+}
+
+.identitaetspopover-titel {
+    margin: 0;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+}
+
+/* Ein Klick daneben schließt die Wahl: die Fläche liegt über der Seite und unter der Pille,
+   damit ein zweiter Klick auf den Platz weiterhin ihn selbst trifft. */
+.identitaets-auffangflaeche {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
 }
 
 /* — was die Seite in Zone 2 stellt — */
