@@ -49,7 +49,8 @@ public sealed class BoardRepository : IBoardRepository
             SELECT b.BoardId, b.Name, b.Art, b.Starttermin, b.Zieltermin
               FROM Board b
               LEFT JOIN Boardarchivierung a ON a.Board = b.BoardId
-             WHERE CASE WHEN a.Board IS NULL THEN 0 ELSE 1 END = @IstArchiviert
+             WHERE (@IstArchiviert = 0 AND a.Board IS NULL)
+                OR (@IstArchiviert = 1 AND a.Board IS NOT NULL)
              ORDER BY b.Name COLLATE NOCASE, b.BoardId", new { archivstand.IstArchiviert });
         return zeilen.Select(AlsUebersicht).ToList();
     }
