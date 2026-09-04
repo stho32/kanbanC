@@ -10,7 +10,7 @@ public class KontributorenEndpunkteTests
     private const string KontributorenRoute = "/api/kontributoren";
 
     [Test]
-    public async Task Wenn_ein_Kontributor_per_POST_angelegt_wird_dann_antwortet_die_API_mit_201_Location_und_KontributorId_1()
+    public async Task Wenn_ein_Kontributor_per_POST_angelegt_wird_dann_zeigt_der_Location_Kopf_auf_seine_eigene_Adresse()
     {
         using var datenbank = new TemporaereDatenbank();
         using var webApi = new TestWebApi(datenbank.Dateipfad);
@@ -22,7 +22,7 @@ public class KontributorenEndpunkteTests
         Assert.That(kontributor, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(antwort.Headers.Location?.ToString(), Is.EqualTo(KontributorenRoute));
+            Assert.That(antwort.Headers.Location?.ToString(), Is.EqualTo($"{KontributorenRoute}/1"));
             Assert.That(kontributor.KontributorId, Is.EqualTo(1));
             Assert.That(kontributor.Name, Is.EqualTo("Stefan"));
             Assert.That(kontributor.Art, Is.EqualTo(Kontributorart.Mensch));
@@ -141,6 +141,69 @@ public class KontributorenEndpunkteTests
         var listeNachher = await webApi.Klient.GetFromJsonAsync<List<Kontributor>>(KontributorenRoute);
         Assert.That(listeNachher, Is.EqualTo(listeVorher));
         Assert.That(listeNachher, Has.Count.EqualTo(1));
+    }
+
+    [Test]
+    public async Task Wenn_ein_Kontributor_per_PUT_geaendert_wird_dann_antwortet_die_API_mit_200_und_dem_neuen_Stand()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var bert = await LegeKontributorAn(webApi, new KontributorAnlegenAnfrage("Bert", Kontributorart.Agent));
+
+        using var antwort = await webApi.Klient.PutAsJsonAsync($"{KontributorenRoute}/{bert.KontributorId}", new KontributorAendernAnfrage("Zora", Kontributorart.Mensch));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var geaenderter = await antwort.Content.ReadFromJsonAsync<Kontributor>();
+        Assert.That(geaenderter, Is.EqualTo(new Kontributor(bert.KontributorId, "Zora", Kontributorart.Mensch)));
+    }
+
+    [Test]
+    public async Task Wenn_ein_Kontributor_geaendert_wurde_dann_liefert_GET_ihn_an_seiner_neuen_alphabetischen_Stelle_und_die_uebrigen_unveraendert()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        await LegeKontributorAn(webApi, new KontributorAnlegenAnfrage("Anna", Kontributorart.Mensch));
+        var bert = await LegeKontributorAn(webApi, new KontributorAnlegenAnfrage("Bert", Kontributorart.Agent));
+        await LegeKontributorAn(webApi, new KontributorAnlegenAnfrage("Cara", Kontributorart.Abgebildet));
+
+        using var geaendert = await webApi.Klient.PutAsJsonAsync($"{KontributorenRoute}/{bert.KontributorId}", new KontributorAendernAnfrage("Zora", Kontributorart.Mensch));
+
+        geaendert.EnsureSuccessStatusCode();
+        var kontributoren = await webApi.Klient.GetFromJsonAsync<List<Kontributor>>(KontributorenRoute);
+        Assert.That(kontributoren, Is.EqualTo(new[]
+        {
+            new Kontributor(1, "Anna", Kontributorart.Mensch),
+            new Kontributor(3, "Cara", Kontributorart.Abgebildet),
+            new Kontributor(2, "Zora", Kontributorart.Mensch),
+        }));
+    }
+
+    [Test]
+    public async Task Wenn_alle_drei_Arten_als_Ziel_gewaehlt_werden_dann_uebernimmt_die_API_jede_von_ihnen()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var kontributor = await LegeKontributorAn(webApi, new KontributorAnlegenAnfrage("Bert", Kontributorart.Mensch));
+
+        var zumAgenten = await AendereKontributor(webApi, kontributor.KontributorId, new KontributorAendernAnfrage("Bert", Kontributorart.Agent));
+        var zumAbgebildeten = await AendereKontributor(webApi, kontributor.KontributorId, new KontributorAendernAnfrage("Bert", Kontributorart.Abgebildet));
+        var zumMenschen = await AendereKontributor(webApi, kontributor.KontributorId, new KontributorAendernAnfrage("Bert", Kontributorart.Mensch));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(zumAgenten.Art, Is.EqualTo(Kontributorart.Agent));
+            Assert.That(zumAbgebildeten.Art, Is.EqualTo(Kontributorart.Abgebildet));
+            Assert.That(zumMenschen.Art, Is.EqualTo(Kontributorart.Mensch));
+        });
+    }
+
+    private static async Task<Kontributor> AendereKontributor(TestWebApi webApi, long kontributorId, KontributorAendernAnfrage anfrage)
+    {
+        using var antwort = await webApi.Klient.PutAsJsonAsync($"{KontributorenRoute}/{kontributorId}", anfrage);
+        antwort.EnsureSuccessStatusCode();
+        var kontributor = await antwort.Content.ReadFromJsonAsync<Kontributor>();
+        Assert.That(kontributor, Is.Not.Null);
+        return kontributor;
     }
 
     private static async Task<Kontributor> LegeAusRohemJson(TestWebApi webApi, string rumpf)

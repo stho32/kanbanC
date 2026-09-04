@@ -13,10 +13,9 @@ public static class KontributorenEndpunkte
     {
         routen.MapPost(Basisroute, LegeKontributorAn).WithName("KontributorAnlegen");
         routen.MapGet(Basisroute, LadeAlleKontributoren).WithName("KontributorenAuflisten");
+        routen.MapPut(Basisroute + "/{kontributorId:long}", AendereKontributor).WithName("KontributorAendern");
     }
 
-    // Der Location-Kopf zeigt auf die Wurzelressource: eine Adresse des einzelnen Kontributors
-    // gibt es noch nicht.
     private static IResult LegeKontributorAn(KontributorAnlegenAnfrage anfrage, KontributorenService kontributorenService)
     {
         var ergebnis = kontributorenService.LegeKontributorAn(anfrage);
@@ -26,11 +25,26 @@ public static class KontributorenEndpunkte
             return Zurueckweisungen.AlsFehlerantwort(ergebnis.Befunde);
         }
 
-        return Results.Created(Basisroute, ergebnis.Wert);
+        var kontributor = ergebnis.Wert;
+        return Results.Created($"{Basisroute}/{kontributor.KontributorId}", kontributor);
     }
 
     private static IResult LadeAlleKontributoren(KontributorenService kontributorenService)
     {
         return Results.Ok(kontributorenService.LadeAlleKontributoren());
+    }
+
+    // Name und Art werden zusammen gesichert: die Bearbeitungszeile hat einen Schalter „sichern“,
+    // zwei Unterressourcen wären zwei Aufrufe für einen Vorgang.
+    private static IResult AendereKontributor(long kontributorId, KontributorAendernAnfrage anfrage, KontributorenService kontributorenService)
+    {
+        var ergebnis = kontributorenService.AendereKontributor(kontributorId, anfrage);
+        var anfrageWurdeZurueckgewiesen = !ergebnis.IstErfolg;
+        if (anfrageWurdeZurueckgewiesen)
+        {
+            return Zurueckweisungen.AlsFehlerantwort(ergebnis.Befunde);
+        }
+
+        return Results.Ok(ergebnis.Wert);
     }
 }

@@ -159,6 +159,28 @@ public class WebApiNeustartTests
         Assert.That(dritter.KontributorId, Is.EqualTo(3));
     }
 
+    [Test]
+    public async Task Wenn_die_WebApi_nach_einer_Aenderung_neu_startet_dann_steht_der_geaenderte_Kontributor_da_und_nicht_der_alte()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using (var ersteInstanz = new TestWebApi(datenbank.Dateipfad))
+        {
+            await LegeKontributorAn(ersteInstanz, new KontributorAnlegenAnfrage("Anna", Kontributorart.Mensch));
+            var bert = await LegeKontributorAn(ersteInstanz, new KontributorAnlegenAnfrage("Bert", Kontributorart.Agent));
+            var geaendert = await ersteInstanz.Klient.PutAsJsonAsync($"{KontributorenRoute}/{bert.KontributorId}", new KontributorAendernAnfrage("Zora", Kontributorart.Mensch));
+            geaendert.EnsureSuccessStatusCode();
+        }
+
+        using var zweiteInstanz = new TestWebApi(datenbank.Dateipfad);
+
+        var kontributoren = await zweiteInstanz.Klient.GetFromJsonAsync<List<Kontributor>>(KontributorenRoute);
+        Assert.That(kontributoren, Is.EqualTo(new[]
+        {
+            new Kontributor(1, "Anna", Kontributorart.Mensch),
+            new Kontributor(2, "Zora", Kontributorart.Mensch),
+        }));
+    }
+
     private static async Task<Kontributor> LegeKontributorAn(TestWebApi webApi, KontributorAnlegenAnfrage anfrage)
     {
         var antwort = await webApi.Klient.PostAsJsonAsync(KontributorenRoute, anfrage);
