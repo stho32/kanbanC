@@ -113,4 +113,26 @@ public class KontributorenApiKlientTests
 
         Assert.That(kontributoren, Is.Empty);
     }
+
+    [Test]
+    public void Wenn_die_WebApi_auf_das_Anlegen_einen_leeren_Kontributor_liefert_dann_faellt_das_auf()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.Created, "null", JsonTyp);
+        var klient = new KontributorenApiKlient(fabrik);
+
+        Assert.That(
+            async () => await klient.LegeAn(new KontributorAnlegenAnfrage("Stefan", Kontributorart.Mensch)),
+            Throws.InvalidOperationException.With.Message.Contains("keinen Kontributor"));
+    }
+
+    [Test]
+    public void Wenn_die_WebApi_beim_Anlegen_mit_einem_Serverfehler_antwortet_dann_schlaegt_der_Aufruf_durch()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwortOhneRumpf(HttpStatusCode.InternalServerError);
+        var klient = new KontributorenApiKlient(fabrik);
+
+        Assert.That(
+            async () => await klient.LegeAn(new KontributorAnlegenAnfrage("Stefan", Kontributorart.Mensch)),
+            Throws.InstanceOf<HttpRequestException>());
+    }
 }
