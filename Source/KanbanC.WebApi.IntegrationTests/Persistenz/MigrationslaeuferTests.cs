@@ -224,6 +224,60 @@ public class MigrationslaeuferTests
         });
     }
 
+    [Test]
+    public void Wenn_die_Migration_gelaufen_ist_dann_traegt_das_Schema_die_Tabelle_Kontributor_mit_Name_und_Kontributorart()
+    {
+        using var datenbank = new TemporaereDatenbank();
+
+        new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Tabellennamen(datenbank), Does.Contain("Kontributor"));
+            Assert.That(Spaltennamen(datenbank, "Kontributor"), Is.EqualTo(new[] { "KontributorId", "Name", "Kontributorart" }));
+            Assert.That(Schluesselspalten(datenbank, "Kontributor"), Is.EqualTo(new[] { "KontributorId" }));
+        });
+    }
+
+    [Test]
+    public void Wenn_FuehreAus_auf_einer_Datei_mit_Kontributoren_ein_zweites_Mal_laeuft_dann_bleiben_Schema_und_Kontributoren_unveraendert()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        FuegeKontributorEin(datenbank, "Stefan", "Mensch");
+        FuegeKontributorEin(datenbank, "Codex-Agent", "Agent");
+        var schemaVorher = SchemaDefinitionen(datenbank);
+
+        Assert.That(() => new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus(), Throws.Nothing);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(SchemaDefinitionen(datenbank), Is.EqualTo(schemaVorher));
+            Assert.That(Kontributorenzeilen(datenbank), Is.EqualTo(new[]
+            {
+                (1L, "Stefan", "Mensch"),
+                (2L, "Codex-Agent", "Agent"),
+            }));
+        });
+    }
+
+    private static void FuegeKontributorEin(TemporaereDatenbank datenbank, string name, string kontributorart)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Kontributor (Name, Kontributorart)
+            VALUES (@Name, @Kontributorart)", new { Name = name, Kontributorart = kontributorart });
+    }
+
+    private static (long KontributorId, string Name, string Kontributorart)[] Kontributorenzeilen(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        var zeilen = verbindung.Query<(long KontributorId, string Name, string Kontributorart)>(@"
+            SELECT KontributorId, Name, Kontributorart
+              FROM Kontributor
+             ORDER BY KontributorId");
+        return zeilen.ToArray();
+    }
+
     private static void ArchiviereBoard(TemporaereDatenbank datenbank, long boardId)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
