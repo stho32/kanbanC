@@ -38,6 +38,36 @@ public sealed class TestKontributorenRepository : IKontributorenRepository
         return geaenderter;
     }
 
+    public Stilllegung? ErhalteneStilllegung { get; private set; }
+
+    // Das Test-Repository hält denselben Vertrag wie das echte: null heißt „diese KontributorId
+    // gibt es nicht“, das Datum wird beim Stilllegen gesetzt und beim Zurückholen gelöscht, und
+    // ein zweites Stilllegen lässt es stehen.
+    public Kontributor? SetzeStilllegung(long kontributorId, Stilllegung stilllegung)
+    {
+        ErhalteneStilllegung = stilllegung;
+        var stelle = _kontributoren.FindIndex(kontributor => kontributor.KontributorId == kontributorId);
+        var denKontributorGibtEsNicht = stelle < 0;
+        if (denKontributorGibtEsNicht)
+        {
+            return null;
+        }
+
+        var geschaltete = _kontributoren[stelle] with { StillgelegtAm = NeuerStand(_kontributoren[stelle], stilllegung) };
+        _kontributoren[stelle] = geschaltete;
+        return geschaltete;
+    }
+
+    private static DateOnly? NeuerStand(Kontributor kontributor, Stilllegung stilllegung)
+    {
+        if (!stilllegung.IstStillgelegt)
+        {
+            return null;
+        }
+
+        return kontributor.StillgelegtAm ?? DateOnly.FromDateTime(DateTime.Today);
+    }
+
     // Die Reihenfolge der Liste ist die des Repositories: das Test-Repository sortiert bewusst
     // nicht, damit auffiele, wenn der Service ein zweites Mal sortierte.
     public IReadOnlyList<Kontributor> LadeAlle()

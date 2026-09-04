@@ -214,4 +214,58 @@ public class KontributorenServiceTests
             Assert.That(repository.ErhalteneAenderung, Is.Null);
         });
     }
+
+    [Test]
+    public void Wenn_ein_Kontributor_stillgelegt_wird_dann_erhaelt_das_Repository_die_Stilllegung_und_der_neue_Stand_kommt_zurueck()
+    {
+        var repository = new TestKontributorenRepository();
+        var service = new KontributorenService(repository);
+        var anna = repository.LegeAn(new KontributorAnlegenAnfrage("Anna", Kontributorart.Mensch));
+        Assert.That(anna.StillgelegtAm, Is.Null);
+
+        var ergebnis = service.SetzeStilllegung(anna.KontributorId, new Stilllegung(true));
+
+        Assert.That(ergebnis.IstErfolg, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(repository.ErhalteneStilllegung, Is.EqualTo(new Stilllegung(true)));
+            Assert.That(ergebnis.Wert.StillgelegtAm, Is.EqualTo(DateOnly.FromDateTime(DateTime.Today)));
+            Assert.That(service.LadeAlleKontributoren()[0].StillgelegtAm, Is.EqualTo(DateOnly.FromDateTime(DateTime.Today)));
+        });
+    }
+
+    [Test]
+    public void Wenn_ein_stillgelegter_Kontributor_zurueckgeholt_wird_dann_ist_sein_Datum_wieder_null()
+    {
+        var repository = new TestKontributorenRepository();
+        var service = new KontributorenService(repository);
+        var anna = repository.LegeAn(new KontributorAnlegenAnfrage("Anna", Kontributorart.Mensch));
+        service.SetzeStilllegung(anna.KontributorId, new Stilllegung(true));
+
+        var ergebnis = service.SetzeStilllegung(anna.KontributorId, new Stilllegung(false));
+
+        Assert.That(ergebnis.IstErfolg, Is.True);
+        Assert.That(ergebnis.Wert.StillgelegtAm, Is.Null);
+        Assert.That(service.LadeAlleKontributoren()[0].StillgelegtAm, Is.Null);
+    }
+
+    [Test]
+    public void Wenn_die_KontributorId_unbekannt_ist_dann_wird_die_Stilllegung_mit_dem_Nichtgefunden_Befund_zurueckgewiesen()
+    {
+        var repository = new TestKontributorenRepository();
+        var service = new KontributorenService(repository);
+        repository.LegeAn(new KontributorAnlegenAnfrage("Anna", Kontributorart.Mensch));
+
+        var ergebnis = service.SetzeStilllegung(4711, new Stilllegung(true));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde.BefundAnzahl, Is.EqualTo(1));
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("kontributor-unbekannt"));
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("4711"));
+            Assert.That(ergebnis.Befunde[0].Kompensation, Does.Contain("GET /api/kontributoren"));
+            Assert.That(service.LadeAlleKontributoren()[0].StillgelegtAm, Is.Null);
+        });
+    }
 }

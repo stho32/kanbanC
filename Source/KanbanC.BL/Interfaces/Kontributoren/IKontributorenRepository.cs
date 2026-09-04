@@ -9,5 +9,8 @@ public interface IKontributorenRepository
     // null heißt: diese KontributorId gibt es nicht.
     Kontributor? Aendere(long kontributorId, KontributorAendernAnfrage anfrage);
 
+    // null heißt: diese KontributorId gibt es nicht.
+    Kontributor? SetzeStilllegung(long kontributorId, Stilllegung stilllegung);
+
     IReadOnlyList<Kontributor> LadeAlle();
 }

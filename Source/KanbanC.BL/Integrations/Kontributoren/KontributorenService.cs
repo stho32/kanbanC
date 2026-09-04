@@ -50,6 +50,19 @@ public sealed class KontributorenService
         return Ergebnis<Kontributor>.Erfolg(kontributor);
     }
 
+    // Kein Validator: ein Wahrheitswert hat keinen ungültigen Fall. Geprüft wird allein, ob es
+    // den Kontributor gibt — Muster BoardService.SchalteKartenzahl.
+    public Ergebnis<Kontributor> SetzeStilllegung(long kontributorId, Stilllegung stilllegung)
+    {
+        var kontributor = _repository.SetzeStilllegung(kontributorId, stilllegung);
+        if (kontributor is null)
+        {
+            return Ergebnis<Kontributor>.Zurueckgewiesen(new Pruefbefunde([Nichtgefunden.Kontributor(kontributorId)]));
+        }
+
+        return Ergebnis<Kontributor>.Erfolg(kontributor);
+    }
+
     public IReadOnlyList<Kontributor> LadeAlleKontributoren()
     {
         return _repository.LadeAlle();
