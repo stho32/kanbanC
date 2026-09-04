@@ -1,0 +1,719 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@300..900&display=swap">
+  <style>
+    /* D0001 „Boards fuehren" — Werte exakt aus dem gebauten Stand uebernommen, nichts gerundet:
+       Source/KanbanC.Blazor/wwwroot/gestaltung.css und oberflaeche.css (Tokens und Formen),
+       Components/Layout/Kopfzeile.razor(.css) und MainLayout.razor(.css) (Navigationszeile, Rahmen),
+       Components/Pages/Boards.razor(.css) (Seitenkopf, Anlegeformular, Zurueckweisung),
+       Components/Boards/Boardband.razor(.css) und Boardkachel.razor(.css) (Baender und Kacheln),
+       Components/Pages/Board.razor(.css) (Layout-Schalter in Zone 3, Kopfdaten),
+       Components/Spalten/Spaltenbahnen.razor(.css) und Spaltenpflege.razor(.css) (Layout-Modus).
+       Stand des Codes: 2026-09-04, gezeichnet mit /wireframe verfeinern D0001. */
+    :root {
+      --color-bg: #f5ead8;
+      --color-surface: #ebddc5;
+      --color-text: #201e1d;
+      --color-accent: #c67139;
+      --color-accent-2: #7a8a5e;
+      --color-divider: color-mix(in srgb, #201e1d 16%, transparent);
+
+      --color-neutral-100: #f9f4ed;
+      --color-neutral-200: #eee7db;
+      --color-neutral-300: #dcd3c4;
+      --color-neutral-800: #474238;
+
+      --color-accent-100: #fff2eb;
+      --color-accent-200: #ffe1d0;
+      --color-accent-600: #b2622d;
+      --color-accent-700: #8c491a;
+      --color-accent-800: #643312;
+
+      --color-accent-2-100: #f0fae1;
+      --color-accent-2-600: #728157;
+      --color-accent-2-800: #3d472b;
+
+      --font-heading: "Caprasimo", system-ui, sans-serif;
+      --font-heading-weight: 400;
+      --font-body: "Figtree", system-ui, sans-serif;
+
+      --space-1: 4.4px;
+      --space-2: 8.8px;
+      --space-3: 13.2px;
+      --space-4: 17.6px;
+      --space-6: 26.4px;
+      --space-8: 35.2px;
+
+      --radius-xs: 4px;
+      --radius-sm: 8px;
+      --radius-md: 16px;
+      --radius-lg: 28px;
+
+      --shadow-sm: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent);
+      --shadow-md: 0 3px 10px color-mix(in srgb, #2e2b25 16%, transparent);
+      --shadow-lg: 0 12px 32px color-mix(in srgb, #2e2b25 22%, transparent);
+
+      --leise: color-mix(in srgb, #201e1d 55%, transparent);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-family: var(--font-body);
+      font-size: 15px;
+      line-height: 1.55;
+      font-weight: 400;
+    }
+    h1, h2, h3, h4 {
+      font-family: var(--font-heading);
+      font-weight: var(--font-heading-weight);
+      line-height: 1.12;
+      letter-spacing: -0.015em;
+      margin: 0;
+    }
+    a { color: var(--color-accent); text-underline-offset: 3px; text-decoration: none; }
+    a:hover { color: #8c491a; }
+    svg { display: block; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #ebddc5; display: flex; flex-direction: column">
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 1 — Board-Übersicht, der Hauptzustand des Dialogs
+     Sichtbar: I0002 Bänder und Kacheln · I0001 Einstieg ins Anlegen ·
+     I0005 und I0038 im ⋯-Menü der Kachel · I0039 im Fuß · I0041 der Rahmen
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 17.6px 26.4px 8.8px">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 1 · Hauptzustand des Dialogs · /boards · Fenster 1440 × 900</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty"><span style="color: #201e1d">I0002</span> Boards auflisten und öffnen · <span style="color: #201e1d">I0001</span> Einstieg ins Anlegen · <span style="color: #201e1d">I0005</span> umbenennen und archivieren, <span style="color: #201e1d">I0038</span> exportieren im ⋯-Menü der Kachel · <span style="color: #201e1d">I0039</span> importieren im Fuß · <span style="color: #201e1d">I0041</span> der Rahmen selbst. Gebaut sind Kopfzeile, Seitenkopf, Bänder und Kacheln; ⋯-Menü, Filter und Import sind Zielform.</p>
+</div>
+
+<div style="position: relative; width: 1440px; height: 900px; background: #f5ead8; overflow: hidden; display: flex; flex-direction: column">
+
+  <!-- ══ Navigationszeile — Layout/Kopfzeile.razor(.css), min-height 35.2px ═════
+       Drei Zonen. Auf /boards füllt die Seite Zone 1 mit ihrem Titel; Zone 3
+       trägt nur die Identität, weil die Übersicht kein Werkzeug stellt. ══════ -->
+  <header style="display: flex; align-items: stretch; gap: 17.6px; min-height: 35.2px; padding: 0 17.6px; overflow: hidden; background: #ebddc5; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent); flex: 0 0 auto">
+
+    <!-- Zone 1 · die offene Seite — .kopfzeile-kontext, gefüllt von Boards.razor -->
+    <div style="display: flex; flex: none; align-items: center; gap: 8.8px; min-width: 0; max-width: 45%">
+      <h1 style="margin: 0; flex-shrink: 1; min-width: 35.2px; font-size: 17px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Boards</h1>
+    </div>
+
+    <!-- Zone 2 · die Hauptnavigation — .kopfzeile-anwendung mit Trennlinie links.
+         „Boards" steht hier, weil kein Board offen ist, und trägt die aktive Marke. -->
+    <div style="display: flex; flex: 1; align-items: center; gap: 17.6px; min-width: 0; padding-left: 17.6px; border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+      <nav style="display: flex; align-self: stretch; align-items: stretch; gap: 13.2px">
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: #201e1d; border-bottom: 2px solid #c67139">Boards</span>
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: color-mix(in srgb, #201e1d 35%, transparent); border-bottom: 2px solid transparent">Auswertungen</span>
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: color-mix(in srgb, #201e1d 35%, transparent); border-bottom: 2px solid transparent">Kontributoren</span>
+      </nav>
+    </div>
+
+    <!-- Zone 3 · Werkzeuge und Identität — .kopfzeile-werkzeuge -->
+    <div style="display: flex; flex: none; align-items: center; gap: 8.8px">
+      <span style="padding-left: 8.8px; font-size: 13px; color: color-mix(in srgb, #201e1d 55%, transparent); border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">nicht gewählt</span>
+    </div>
+  </header>
+
+  <!-- ══ Inhalt — .inhalt aus MainLayout.razor.css: padding 13.2px 17.6px ══════ -->
+  <main style="display: flex; flex: 1; flex-direction: column; min-width: 0; min-height: 0; padding: 13.2px 17.6px; overflow: hidden">
+
+    <!-- ── Seitenkopf — oberflaeche.css .seitenkopf. Die Überschrift „Boards" steht
+         in Zone 1; hier bleibt sie nur für Vorlesewerkzeuge und ist unsichtbar. ── -->
+    <div style="display: flex; align-items: center; gap: 13.2px; margin-bottom: 17.6px; flex: 0 0 auto">
+      <span style="margin-left: auto; display: flex; align-items: center; gap: 8.8px">
+        <span style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #f5ead8; background: #c67139; border: 1px solid transparent; padding: 8.8px 15.84px; border-radius: 999px">+ Board anlegen</span>
+      </span>
+    </div>
+
+    <!-- ── Band 1 · Linienboards — Boardband.razor(.css) ──────────────────────
+         Alphabetisch (B0016: ORDER BY Name COLLATE NOCASE, BoardId). ──────── -->
+    <section style="margin-bottom: 26.4px; flex: 0 0 auto">
+      <h2 style="font-size: 20px; margin-bottom: 13.2px">Linienboards — laufen ohne Ende</h2>
+      <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 13.2px">
+
+        <article style="display: flex; flex-direction: column; gap: 4.4px; padding: 13.2px; border-radius: 32.2px; background: #ebddc5; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+          <span style="font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Linienboard</span>
+          <h3 style="font-size: 17px; line-height: 1.2; margin: 0">Beschaffung</h3>
+          <p style="margin: 0; min-height: 1.2em; display: flex; align-items: center; gap: 6px; font-size: 11px; color: color-mix(in srgb, #201e1d 50%, transparent)"></p>
+        </article>
+
+        <article style="display: flex; flex-direction: column; gap: 4.4px; padding: 13.2px; border-radius: 32.2px; background: #ebddc5; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+          <span style="font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Linienboard</span>
+          <h3 style="font-size: 17px; line-height: 1.2; margin: 0">Betrieb &amp; Wartung</h3>
+          <p style="margin: 0; min-height: 1.2em; display: flex; align-items: center; gap: 6px; font-size: 11px; color: color-mix(in srgb, #201e1d 50%, transparent)"></p>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- ── Band 2 · Projektboards, eine Kachel mit offenem ⋯-Menü ─────────────
+         Der Fuß nennt beim Projektboard den Zieltermin, beim Linienboard bleibt
+         die Stelle leer (Boardkachel.FusszeileVon). ─────────────────────────── -->
+    <section style="margin-bottom: 26.4px; flex: 0 0 auto">
+      <h2 style="font-size: 20px; margin-bottom: 13.2px">Projektboards — laufen mit dem Vorhaben aus</h2>
+      <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 13.2px">
+
+        <div style="position: relative">
+          <article style="display: flex; flex-direction: column; gap: 4.4px; padding: 13.2px; border-radius: 32.2px; background: #ebddc5; box-shadow: 0 3px 10px color-mix(in srgb, #2e2b25 16%, transparent)">
+            <div style="display: flex; align-items: center; gap: 8.8px">
+              <span style="font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Projektboard</span>
+              <span style="margin-left: auto; display: inline-flex; color: #c67139"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></span>
+            </div>
+            <h3 style="font-size: 17px; line-height: 1.2; margin: 0">KanbanC — Release 2</h3>
+            <p style="margin: 0; min-height: 1.2em; display: flex; align-items: center; gap: 6px; font-size: 11px; color: color-mix(in srgb, #201e1d 50%, transparent)">bis 2026-09-30</p>
+          </article>
+          <div style="position: absolute; right: 8.8px; top: 92px; z-index: 4; min-width: 210px; padding: 4.4px; background: #f9f4ed; border-radius: 4px; box-shadow: 0 12px 32px color-mix(in srgb, #2e2b25 22%, transparent)">
+            <span style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px; font-size: 13px; border-radius: 4px; color: #201e1d"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3"/></svg>Umbenennen</span>
+            <span style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px; font-size: 13px; border-radius: 4px; color: #201e1d"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1.5"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/><path d="M10 12h4"/></svg>Archivieren</span>
+            <span style="display: block; padding: 2px 13.2px 4.4px; font-size: 10px; line-height: 1.35; color: color-mix(in srgb, #201e1d 55%, transparent)">verschwindet aus der Standardliste, bleibt über Filter und API abrufbar</span>
+            <span style="display: block; height: 1px; margin: 4.4px 13.2px; background: color-mix(in srgb, #201e1d 16%, transparent)"></span>
+            <span style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px; font-size: 13px; border-radius: 4px; color: #201e1d"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M8 11l4 4 4-4"/><path d="M4 19h16"/></svg>Exportieren</span>
+            <span style="display: block; padding: 2px 13.2px 4.4px; font-size: 10px; line-height: 1.35; color: color-mix(in srgb, #201e1d 55%, transparent)">I0005 · I0038 — Zielform, noch nicht gebaut</span>
+          </div>
+        </div>
+
+        <article style="display: flex; flex-direction: column; gap: 4.4px; padding: 13.2px; border-radius: 32.2px; background: #ebddc5; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+          <span style="font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Projektboard</span>
+          <h3 style="font-size: 17px; line-height: 1.2; margin: 0">WBS-Experiment</h3>
+          <p style="margin: 0; min-height: 1.2em; display: flex; align-items: center; gap: 6px; font-size: 11px; color: color-mix(in srgb, #201e1d 50%, transparent)">bis 2026-09-30</p>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- ── Fuß der Übersicht — Filter und Import ──────────────────────────────
+         Aus „Start A" des älteren Satzes; im Code noch nicht vorhanden. ────── -->
+    <div style="margin-top: auto; flex: 0 0 auto; display: flex; align-items: center; gap: 13.2px; padding-top: 13.2px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+      <span style="font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">Anzeigen</span>
+      <span style="display: inline-flex; overflow: hidden; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px">
+        <span style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; font-size: 13px; background: #c67139; color: #f5ead8">aktive</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; font-size: 13px; border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">archivierte</span>
+      </span>
+      <span style="font-size: 10px; color: color-mix(in srgb, #201e1d 55%, transparent)">I0005 — Zielform</span>
+      <span style="margin-left: auto; display: flex; align-items: center; gap: 8.8px">
+        <span style="font-size: 10px; color: color-mix(in srgb, #201e1d 55%, transparent)">I0039 — Zielform</span>
+        <span style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #201e1d; background: transparent; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); padding: 8.8px 15.84px; border-radius: 999px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4"/><path d="M8 8l4-4 4 4"/><path d="M4 19h16"/></svg>Board importieren</span>
+      </span>
+    </div>
+
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 2 — Board anlegen (I0001). Das Formular öffnet als Patch in der
+     Liste, kein eigener Schirm. Gezeichnet mit gewählter Art „Projektboard",
+     damit die Terminfelder sichtbar sind — bei „Linienboard" fehlen sie.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 17.6px 26.4px 8.8px">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 2 · Board anlegen · Ausschnitt derselben Seite</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty"><span style="color: #201e1d">I0001</span> vollständig gebaut. Art „Projektboard" gewählt, damit die Terminfelder mitzeichnen; darunter der Rand: die Zurückweisung mit den Wortlauten aus <span style="color: #201e1d">BoardAnlegenValidator</span>.</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; overflow: hidden; display: flex; flex-direction: column">
+  <header style="display: flex; align-items: stretch; gap: 17.6px; min-height: 35.2px; padding: 0 17.6px; overflow: hidden; background: #ebddc5; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent); flex: 0 0 auto">
+    <div style="display: flex; flex: none; align-items: center; gap: 8.8px; min-width: 0; max-width: 45%">
+      <h1 style="margin: 0; font-size: 17px; line-height: 1.2; white-space: nowrap">Boards</h1>
+    </div>
+    <div style="display: flex; flex: 1; align-items: center; gap: 17.6px; min-width: 0; padding-left: 17.6px; border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+      <nav style="display: flex; align-self: stretch; align-items: stretch; gap: 13.2px">
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: #201e1d; border-bottom: 2px solid #c67139">Boards</span>
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: color-mix(in srgb, #201e1d 35%, transparent); border-bottom: 2px solid transparent">Auswertungen</span>
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: color-mix(in srgb, #201e1d 35%, transparent); border-bottom: 2px solid transparent">Kontributoren</span>
+      </nav>
+    </div>
+    <div style="display: flex; flex: none; align-items: center; gap: 8.8px">
+      <span style="padding-left: 8.8px; font-size: 13px; color: color-mix(in srgb, #201e1d 55%, transparent); border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">nicht gewählt</span>
+    </div>
+  </header>
+
+  <main style="display: flex; flex-direction: column; padding: 13.2px 17.6px 26.4px">
+
+    <div style="display: flex; align-items: center; gap: 13.2px; margin-bottom: 17.6px">
+      <span style="margin-left: auto; display: flex; align-items: center; gap: 8.8px">
+        <span style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #f5ead8; background: #c67139; border: 1px solid transparent; padding: 8.8px 15.84px; border-radius: 999px">+ Board anlegen</span>
+      </span>
+    </div>
+
+    <!-- .anlegeformular.card.elev-md — max-width 32rem = 512px -->
+    <section style="width: 512px; max-width: 512px; display: flex; flex-direction: column; gap: 8.8px; padding: 13.2px; border-radius: 32.2px; background: #ebddc5; box-shadow: 0 3px 10px color-mix(in srgb, #2e2b25 16%, transparent)">
+
+      <div style="display: flex; align-items: center; gap: 13.2px; margin-bottom: 17.6px">
+        <h2 style="font-size: 32px; margin: 0">Board anlegen</h2>
+        <span style="margin-left: auto; display: flex; align-items: center; gap: 8.8px">
+          <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #c67139; background: transparent; border: 1px solid transparent; padding: 8.8px 4.4px; border-radius: 999px">✕</span>
+        </span>
+      </div>
+
+      <!-- .field — Label 12px/70 %, Eingabe .input als Pille -->
+      <div>
+        <label style="display: block; font-size: 12px; margin-bottom: 5px; color: color-mix(in srgb, #201e1d 70%, transparent)">Name</label>
+        <div style="width: 100%; min-height: 36px; padding: 6px 14px; font-size: 14px; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px; display: flex; align-items: center">KanbanC — Release 3</div>
+      </div>
+
+      <!-- fieldset.artwahl — Legende 12px, zwei .radio nebeneinander -->
+      <fieldset style="display: flex; flex-wrap: wrap; gap: 17.6px; margin: 13.2px 0 0; padding: 0; border: 0">
+        <legend style="padding: 0; font-size: 12px; color: color-mix(in srgb, #201e1d 70%, transparent)">Art</legend>
+        <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px">
+          <span style="width: 16px; height: 16px; flex: none; border-radius: 50%; border: 1.5px solid color-mix(in srgb, #201e1d 16%, transparent)"></span>
+          Linienboard — ohne Ende
+        </span>
+        <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px">
+          <span style="width: 16px; height: 16px; flex: none; border-radius: 50%; border: 1.5px solid #c67139; background: #c67139; box-shadow: inset 0 0 0 4px #f5ead8"></span>
+          Projektboard — mit Auslauf
+        </span>
+      </fieldset>
+
+      <!-- .terminfelder — erscheinen nur bei Art = Projekt; ISO-Datum, so schreibt
+           Terminformatierer.AlsText und so liest InputDate. -->
+      <div style="display: flex; flex-wrap: wrap; gap: 13.2px; margin-top: 13.2px">
+        <div style="flex: 0 1 192px">
+          <label style="display: block; font-size: 12px; margin-bottom: 5px; color: color-mix(in srgb, #201e1d 70%, transparent)">Starttermin</label>
+          <div style="width: 100%; min-height: 36px; padding: 6px 14px; font-size: 14px; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px; display: flex; align-items: center">2026-10-01</div>
+        </div>
+        <div style="flex: 0 1 192px">
+          <label style="display: block; font-size: 12px; margin-bottom: 5px; color: color-mix(in srgb, #201e1d 70%, transparent)">Zieltermin</label>
+          <div style="width: 100%; min-height: 36px; padding: 6px 14px; font-size: 14px; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px; display: flex; align-items: center">2026-09-15</div>
+        </div>
+      </div>
+
+      <p style="margin: 17.6px 0 8.8px; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">Diese Spalten entstehen mit</p>
+      <div style="display: flex; flex-wrap: wrap; gap: 8.8px">
+        <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">Zu erledigen</span>
+        <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">In Arbeit</span>
+        <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">Erledigt</span>
+      </div>
+
+      <div style="display: flex; gap: 8.8px; margin-top: 17.6px">
+        <span style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #f5ead8; background: #c67139; border: 1px solid transparent; padding: 8.8px 15.84px; border-radius: 999px">Anlegen</span>
+        <span style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #201e1d; background: transparent; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); padding: 8.8px 15.84px; border-radius: 999px">Abbrechen</span>
+      </div>
+
+      <!-- Rand: Zurückweisung — oberflaeche.css .meldung.meldung-abweisung -->
+      <div style="margin: 13.2px 0; padding: 13.2px; border-left: 3px solid #8c491a; border-radius: 16px; background: #ebddc5">
+        <p style="margin: 0 0 4.4px; font-size: 15px">Das Board wurde nicht angelegt:</p>
+        <ul style="margin: 0; padding-left: 17.6px; font-size: 15px">
+          <li>Der Zieltermin darf nicht vor dem Starttermin liegen.</li>
+        </ul>
+      </div>
+      <p style="margin: 0; font-size: 10px; line-height: 1.35; color: color-mix(in srgb, #201e1d 55%, transparent)">Wortlaut aus <span style="color: #201e1d">BoardAnlegenValidator</span>; über die API dieselbe Zurückweisung mit Code <span style="color: #201e1d">zieltermin-vor-starttermin</span> und Kompensationsaktion — nicht als Serverfehler.</p>
+
+    </section>
+
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 3 — Layout-Modus des Boards (I0040) mit der Spaltenpflege (I0003).
+     Der Modus ist Zustand der Komponente, nicht der Adresse: ein Reload landet
+     wieder in der Arbeitsansicht (R00004).
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 17.6px 26.4px 8.8px">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 3 · Layout-Modus · /boards/2 · Ausschnitt</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty"><span style="color: #201e1d">I0040</span> der Schalter in Zone 3 — <span style="color: #201e1d">✎</span> schaltet hinein, <span style="color: #201e1d">✓</span> wieder heraus · <span style="color: #201e1d">I0003</span> je Bahn Bezeichnung, Abschlussspalte, Anzeigegrenze, Reihenfolge und Entfernen, darunter die Zeile für die neue Spalte. Beides gebaut. Die Bahnen selbst gehören D0003; hier steht nur, was der Layout-Modus an ihnen ändert.</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; overflow: hidden; display: flex; flex-direction: column">
+  <header style="display: flex; align-items: stretch; gap: 17.6px; min-height: 35.2px; padding: 0 17.6px; overflow: hidden; background: #ebddc5; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent); flex: 0 0 auto">
+    <div style="display: flex; flex: none; align-items: center; gap: 8.8px; min-width: 0; max-width: 45%">
+      <span style="display: flex; flex: none; align-items: center; justify-content: center; width: 26.4px; height: 26.4px; font-size: 15px; line-height: 1; color: color-mix(in srgb, #201e1d 60%, transparent); border-radius: 4px">←</span>
+      <h1 style="margin: 0; font-size: 17px; line-height: 1.2; white-space: nowrap">KanbanC — Release 2</h1>
+      <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #fff2eb; color: #643312">Projekt</span>
+      <span style="overflow: hidden; white-space: nowrap; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">Start 2026-08-01 · Ziel 2026-09-30</span>
+    </div>
+    <div style="display: flex; flex: 1; align-items: center; gap: 17.6px; min-width: 0; padding-left: 17.6px; border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+      <nav style="display: flex; align-self: stretch; align-items: stretch; gap: 13.2px">
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: color-mix(in srgb, #201e1d 35%, transparent); border-bottom: 2px solid transparent">Auswertungen</span>
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: color-mix(in srgb, #201e1d 35%, transparent); border-bottom: 2px solid transparent">Kontributoren</span>
+      </nav>
+    </div>
+    <div style="display: flex; flex: none; align-items: center; gap: 8.8px">
+      <!-- #layout-fertig — .btn.btn-haupt.btn-symbol, auf 26.4 px und Radius 4 px gesetzt -->
+      <span style="display: inline-flex; align-items: center; justify-content: center; width: 26.4px; height: 26.4px; padding: 0; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1; color: #f5ead8; background: #c67139; border: 1px solid transparent; border-radius: 4px">✓</span>
+      <span style="padding-left: 8.8px; font-size: 13px; color: color-mix(in srgb, #201e1d 55%, transparent); border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">nicht gewählt</span>
+    </div>
+  </header>
+
+  <main style="display: flex; flex-direction: column; padding: 13.2px 17.6px 26.4px">
+
+    <!-- .spaltenbahnen — gap 0, die Bahnen stoßen aneinander und teilen die Linie -->
+    <div style="display: flex; align-items: stretch; gap: 0">
+
+      <!-- Bahn 1 -->
+      <section style="display: flex; flex: 0 0 256px; flex-direction: column; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+        <header style="display: flex; flex-wrap: wrap; align-items: baseline; align-content: flex-start; gap: 8.8px; line-height: 26.4px; padding: 8.8px 13.2px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+          <span style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4.4px">
+            <span style="font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 15px">Rückstand</span>
+          </span>
+          <span style="margin-left: auto; min-width: 17.6px; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent); text-align: right">11</span>
+          <span style="flex-basis: 100%; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">Position 1</span>
+          <div style="flex-basis: 100%; display: flex; flex-direction: column; gap: 8.8px; margin-top: 8.8px">
+            <div style="width: 100%; min-height: 36px; padding: 6px 14px; font-size: 14px; line-height: 1.55; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px; display: flex; align-items: center">Rückstand</div>
+            <span style="display: inline-flex; align-items: center; gap: 8.8px; line-height: 1">
+              <span style="width: 16px; height: 16px; flex: none; border: 1px solid color-mix(in srgb, #201e1d 45%, transparent); border-radius: 3px; background: #f5ead8"></span>
+              <span style="font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">Abschlussspalte</span>
+            </span>
+            <div style="width: 100%; min-height: 36px; padding: 6px 14px; font-size: 14px; line-height: 1.55; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px; display: flex; align-items: center; color: color-mix(in srgb, #201e1d 45%, transparent)">0</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 4.4px; line-height: 1.2">
+              <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #201e1d; background: transparent; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); padding: 8.8px 15.84px; border-radius: 999px">Speichern</span>
+              <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #201e1d; background: transparent; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); padding: 8.8px 15.84px; border-radius: 999px">Hoch</span>
+              <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #201e1d; background: transparent; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); padding: 8.8px 15.84px; border-radius: 999px">Runter</span>
+              <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #201e1d; background: transparent; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); padding: 8.8px 15.84px; border-radius: 999px">Entfernen</span>
+            </div>
+          </div>
+        </header>
+        <div style="flex: 1; min-height: 0; padding: 8.8px; display: flex; flex-direction: column; gap: 8.8px">
+          <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+            <span style="align-self: flex-start; display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-31</span>
+            <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty">Klassen-Nummerierung über die API</p>
+          </div>
+        </div>
+        <footer style="padding: 8.8px 13.2px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #c67139; padding: 8.8px 4.4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Karte</span>
+        </footer>
+      </section>
+
+      <!-- Bahn 2 -->
+      <section style="display: flex; flex: 0 0 256px; flex-direction: column; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-left: none">
+        <header style="display: flex; flex-wrap: wrap; align-items: baseline; align-content: flex-start; gap: 8.8px; line-height: 26.4px; padding: 8.8px 13.2px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+          <span style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4.4px">
+            <span style="font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 15px">Bereit</span>
+          </span>
+          <span style="margin-left: auto; min-width: 17.6px; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent); text-align: right">6</span>
+          <span style="flex-basis: 100%; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">Position 2</span>
+          <div style="flex-basis: 100%; display: flex; flex-direction: column; gap: 8.8px; margin-top: 8.8px">
+            <div style="width: 100%; min-height: 36px; padding: 6px 14px; font-size: 14px; line-height: 1.55; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px; display: flex; align-items: center">Bereit</div>
+            <span style="display: inline-flex; align-items: center; gap: 8.8px; line-height: 1">
+              <span style="width: 16px; height: 16px; flex: none; border: 1px solid color-mix(in srgb, #201e1d 45%, transparent); border-radius: 3px; background: #f5ead8"></span>
+              <span style="font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">Abschlussspalte</span>
+            </span>
+            <div style="width: 100%; min-height: 36px; padding: 6px 14px; font-size: 14px; line-height: 1.55; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px; display: flex; align-items: center; color: color-mix(in srgb, #201e1d 45%, transparent)">0</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 4.4px; line-height: 1.2">
+              <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #201e1d; background: transparent; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); padding: 8.8px 15.84px; border-radius: 999px">Speichern</span>
+              <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #201e1d; background: transparent; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); padding: 8.8px 15.84px; border-radius: 999px">Hoch</span>
+              <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #201e1d; background: transparent; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); padding: 8.8px 15.84px; border-radius: 999px">Runter</span>
+              <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #201e1d; background: transparent; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); padding: 8.8px 15.84px; border-radius: 999px">Entfernen</span>
+            </div>
+          </div>
+        </header>
+        <div style="flex: 1; min-height: 0; padding: 8.8px; display: flex; flex-direction: column; gap: 8.8px">
+          <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+            <span style="align-self: flex-start; display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-28</span>
+            <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty">Anzeigegrenze im Spaltenkopf</p>
+          </div>
+        </div>
+        <footer style="padding: 8.8px 13.2px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #c67139; padding: 8.8px 4.4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Karte</span>
+        </footer>
+      </section>
+
+      <!-- Bahn 3 -->
+      <section style="display: flex; flex: 0 0 256px; flex-direction: column; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-left: none">
+        <header style="display: flex; flex-wrap: wrap; align-items: baseline; align-content: flex-start; gap: 8.8px; line-height: 26.4px; padding: 8.8px 13.2px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+          <span style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4.4px">
+            <span style="font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 15px">In Arbeit</span>
+          </span>
+          <span style="margin-left: auto; min-width: 17.6px; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent); text-align: right">3</span>
+          <span style="flex-basis: 100%; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">Position 3</span>
+          <div style="flex-basis: 100%; display: flex; flex-direction: column; gap: 8.8px; margin-top: 8.8px">
+            <div style="width: 100%; min-height: 36px; padding: 6px 14px; font-size: 14px; line-height: 1.55; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px; display: flex; align-items: center">In Arbeit</div>
+            <span style="display: inline-flex; align-items: center; gap: 8.8px; line-height: 1">
+              <span style="width: 16px; height: 16px; flex: none; border: 1px solid color-mix(in srgb, #201e1d 45%, transparent); border-radius: 3px; background: #f5ead8"></span>
+              <span style="font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">Abschlussspalte</span>
+            </span>
+            <div style="width: 100%; min-height: 36px; padding: 6px 14px; font-size: 14px; line-height: 1.55; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px; display: flex; align-items: center; color: color-mix(in srgb, #201e1d 45%, transparent)">0</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 4.4px; line-height: 1.2">
+              <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #201e1d; background: transparent; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); padding: 8.8px 15.84px; border-radius: 999px">Speichern</span>
+              <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #201e1d; background: transparent; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); padding: 8.8px 15.84px; border-radius: 999px">Hoch</span>
+              <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #201e1d; background: transparent; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); padding: 8.8px 15.84px; border-radius: 999px">Runter</span>
+              <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #201e1d; background: transparent; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); padding: 8.8px 15.84px; border-radius: 999px">Entfernen</span>
+            </div>
+          </div>
+        </header>
+        <div style="flex: 1; min-height: 0; padding: 8.8px; display: flex; flex-direction: column; gap: 8.8px">
+          <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+            <span style="align-self: flex-start; display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-14</span>
+            <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty">WBS-Import: Markdown-Baum in Karten überführen</p>
+          </div>
+        </div>
+        <footer style="padding: 8.8px 13.2px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #c67139; padding: 8.8px 4.4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Karte</span>
+        </footer>
+      </section>
+
+      <!-- Bahn 4 -->
+      <section style="display: flex; flex: 0 0 256px; flex-direction: column; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-left: none">
+        <header style="display: flex; flex-wrap: wrap; align-items: baseline; align-content: flex-start; gap: 8.8px; line-height: 26.4px; padding: 8.8px 13.2px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+          <span style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4.4px">
+            <span style="font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 15px">Prüfung</span>
+          </span>
+          <span style="margin-left: auto; min-width: 17.6px; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent); text-align: right">0</span>
+          <span style="flex-basis: 100%; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">Position 4</span>
+          <div style="flex-basis: 100%; display: flex; flex-direction: column; gap: 8.8px; margin-top: 8.8px">
+            <div style="width: 100%; min-height: 36px; padding: 6px 14px; font-size: 14px; line-height: 1.55; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px; display: flex; align-items: center">Prüfung</div>
+            <span style="display: inline-flex; align-items: center; gap: 8.8px; line-height: 1">
+              <span style="width: 16px; height: 16px; flex: none; border: 1px solid color-mix(in srgb, #201e1d 45%, transparent); border-radius: 3px; background: #f5ead8"></span>
+              <span style="font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">Abschlussspalte</span>
+            </span>
+            <div style="width: 100%; min-height: 36px; padding: 6px 14px; font-size: 14px; line-height: 1.55; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px; display: flex; align-items: center; color: color-mix(in srgb, #201e1d 45%, transparent)">0</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 4.4px; line-height: 1.2">
+              <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #201e1d; background: transparent; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); padding: 8.8px 15.84px; border-radius: 999px">Speichern</span>
+              <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #201e1d; background: transparent; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); padding: 8.8px 15.84px; border-radius: 999px">Hoch</span>
+              <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #201e1d; background: transparent; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); padding: 8.8px 15.84px; border-radius: 999px">Runter</span>
+              <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #201e1d; background: transparent; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); padding: 8.8px 15.84px; border-radius: 999px">Entfernen</span>
+            </div>
+          </div>
+        </header>
+        <div style="flex: 1; min-height: 0; padding: 8.8px; display: flex; flex-direction: column; align-items: center; justify-content: center">
+          <p style="margin: 0; font-size: 12px; line-height: 1.35; text-align: center; text-wrap: pretty; color: color-mix(in srgb, #201e1d 55%, transparent)">Noch keine Karte.<br>Unten eine anlegen.</p>
+        </div>
+        <footer style="padding: 8.8px 13.2px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #c67139; padding: 8.8px 4.4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Karte</span>
+        </footer>
+      </section>
+
+      <!-- Bahn 5 · Abschlussspalte — Häkchen gesetzt, Grenze 20 -->
+      <section style="display: flex; flex: 0 0 256px; flex-direction: column; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-left: none">
+        <header style="display: flex; flex-wrap: wrap; align-items: baseline; align-content: flex-start; gap: 8.8px; line-height: 26.4px; padding: 8.8px 13.2px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+          <span style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4.4px">
+            <span style="font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 15px">Fertig</span>
+            <span title="Abschlussspalte" style="color: #728157">✓</span>
+            <span style="font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">Grenze 20</span>
+          </span>
+          <span style="margin-left: auto; min-width: 17.6px; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent); text-align: right">20+</span>
+          <span style="flex-basis: 100%; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">Position 5</span>
+          <div style="flex-basis: 100%; display: flex; flex-direction: column; gap: 8.8px; margin-top: 8.8px">
+            <div style="width: 100%; min-height: 36px; padding: 6px 14px; font-size: 14px; line-height: 1.55; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px; display: flex; align-items: center">Fertig</div>
+            <span style="display: inline-flex; align-items: center; gap: 8.8px; line-height: 1">
+              <span style="width: 16px; height: 16px; flex: none; border-radius: 3px; background: #c67139; display: inline-flex; align-items: center; justify-content: center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f5ead8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span>
+              <span style="font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">Abschlussspalte</span>
+            </span>
+            <div style="width: 100%; min-height: 36px; padding: 6px 14px; font-size: 14px; line-height: 1.55; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px; display: flex; align-items: center">20</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 4.4px; line-height: 1.2">
+              <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #201e1d; background: transparent; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); padding: 8.8px 15.84px; border-radius: 999px">Speichern</span>
+              <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #201e1d; background: transparent; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); padding: 8.8px 15.84px; border-radius: 999px">Hoch</span>
+              <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #201e1d; background: transparent; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); padding: 8.8px 15.84px; border-radius: 999px">Runter</span>
+              <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #201e1d; background: transparent; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); padding: 8.8px 15.84px; border-radius: 999px">Entfernen</span>
+            </div>
+          </div>
+        </header>
+        <div style="flex: 1; min-height: 0; padding: 8.8px; display: flex; flex-direction: column; gap: 8.8px">
+          <div style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+            <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-09</span>
+            <span style="font-size: 12px">Boards anlegen</span>
+          </div>
+        </div>
+        <footer style="padding: 8.8px 13.2px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #c67139; padding: 8.8px 4.4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Karte</span>
+        </footer>
+      </section>
+
+    </div>
+
+    <!-- .spaltenpflege-neu — die Zeile für die neue Spalte, unter den Bahnen -->
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 13.2px; margin-top: 17.6px">
+      <div style="flex: 0 1 256px">
+        <label style="display: block; font-size: 12px; margin-bottom: 5px; color: color-mix(in srgb, #201e1d 70%, transparent)">Bezeichnung</label>
+        <div style="width: 100%; min-height: 36px; padding: 6px 14px; font-size: 14px; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px; display: flex; align-items: center; color: color-mix(in srgb, #201e1d 45%, transparent)">Abnahme</div>
+      </div>
+      <span style="display: inline-flex; align-items: center; gap: 8.8px; font-size: 14px; height: 36px">
+        <span style="width: 16px; height: 16px; flex: none; border: 1px solid color-mix(in srgb, #201e1d 45%, transparent); border-radius: 3px; background: #f5ead8"></span>
+        Abschlussspalte
+      </span>
+      <div style="flex: 0 1 256px">
+        <label style="display: block; font-size: 12px; margin-bottom: 5px; color: color-mix(in srgb, #201e1d 70%, transparent)">Anzeigegrenze</label>
+        <div style="width: 100%; min-height: 36px; padding: 6px 14px; font-size: 14px; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px; display: flex; align-items: center; color: color-mix(in srgb, #201e1d 45%, transparent)">0</div>
+      </div>
+      <span style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #f5ead8; background: #c67139; border: 1px solid transparent; padding: 8.8px 15.84px; border-radius: 999px">Spalte anlegen</span>
+    </div>
+
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 4 — Kartenzahl je Spalte anzeigen (I0004), der laufende Slice.
+     Der Schalter gehört D0001, weil er eine Eigenschaft des Boards ist; die
+     Zahl selbst erscheint im Bahnenkopf, den D0003 zeichnet.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 17.6px 26.4px 8.8px">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 4 · Kartenzahl je Spalte · I0004 · noch nicht gebaut</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Der Schalter sitzt in <span style="color: #201e1d">Zone 3</span> der Navigationszeile, wo schon der Layout-Schalter steht — die Stelle, an die der Boardkopf des älteren Satzes mit R00005 gewandert ist. Die Zahl erscheint im Bahnenkopf an der Stelle, die <span style="color: #201e1d">.spaltenbahn-kartenzahl</span> heute leer reserviert.</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; padding: 26.4px; display: flex; flex-direction: column; gap: 17.6px">
+
+  <!-- Der Schalter in Zone 3 — .kontrollfeld, dieselbe Form wie „Abschlussspalte" -->
+  <div style="display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; color: color-mix(in srgb, #201e1d 55%, transparent)">Der Schalter · Zone 3 der Navigationszeile</p>
+    <div style="align-self: flex-start; display: flex; align-items: center; gap: 8.8px; min-height: 35.2px; padding: 0 17.6px; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 4px">
+      <span style="display: inline-flex; align-items: center; gap: 8.8px; font-size: 14px">
+        <span style="width: 16px; height: 16px; flex: none; border-radius: 3px; background: #c67139; display: inline-flex; align-items: center; justify-content: center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f5ead8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span>
+        Kartenzahl
+      </span>
+      <span style="display: inline-flex; align-items: center; justify-content: center; width: 26.4px; height: 26.4px; font-size: 14px; line-height: 1; color: color-mix(in srgb, #201e1d 60%, transparent); border-radius: 4px">✎</span>
+      <span style="padding-left: 8.8px; font-size: 13px; color: color-mix(in srgb, #201e1d 55%, transparent); border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">nicht gewählt</span>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Ein Kontrollfeld, kein Knopf: die Kartenzahl ist eine <span style="color: #201e1d">Einstellung des Boards</span>, die stehen bleibt, keine Handlung. Die Form ist die gebaute <span style="color: #201e1d">.kontrollfeld</span> aus <span style="color: #201e1d">Spaltenpflege.razor</span>; mit 16 px Höhe sprengt sie die 35,2 px der Zeile nicht. Sie steht <span style="color: #201e1d">links</span> vom Layout-Schalter, damit die Werkzeuge in der Reihenfolge stehen, in der man sie braucht: erst ansehen, dann umbauen.</p>
+  </div>
+
+  <!-- Die Wirkung im Bahnenkopf — aus und an, nebeneinander -->
+  <div style="display: flex; gap: 26.4px; align-items: flex-start">
+
+    <div style="display: flex; flex-direction: column; gap: 8.8px">
+      <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; color: color-mix(in srgb, #201e1d 55%, transparent)">aus — der gebaute Stand</p>
+      <div style="width: 256px; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+        <header style="display: flex; flex-wrap: wrap; align-items: baseline; align-content: flex-start; gap: 8.8px; line-height: 26.4px; padding: 8.8px 13.2px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+          <span style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4.4px">
+            <span style="font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 15px">Rückstand</span>
+          </span>
+          <span style="margin-left: auto; min-width: 17.6px; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent); text-align: right"></span>
+        </header>
+      </div>
+      <p style="margin: 0; width: 256px; font-size: 11px; line-height: 1.4; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Die Stelle ist reserviert (<span style="color: #201e1d">min-width 17,6 px</span>, <span style="color: #201e1d">margin-left auto</span>) und bleibt leer — B0063.</p>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8.8px">
+      <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; color: #c67139">an — die Zielform</p>
+      <div style="width: 256px; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+        <header style="display: flex; flex-wrap: wrap; align-items: baseline; align-content: flex-start; gap: 8.8px; line-height: 26.4px; padding: 8.8px 13.2px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+          <span style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4.4px">
+            <span style="font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 15px">Rückstand</span>
+          </span>
+          <span style="margin-left: auto; min-width: 17.6px; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent); text-align: right">11</span>
+        </header>
+      </div>
+      <p style="margin: 0; width: 256px; font-size: 11px; line-height: 1.4; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">12 px, 55 % Deckkraft, rechtsbündig — die Form, die <span style="color: #201e1d">D0003.dc.html</span> bereits zeichnet.</p>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8.8px">
+      <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; color: #c67139">an — Abschlussspalte</p>
+      <div style="width: 256px; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+        <header style="display: flex; flex-wrap: wrap; align-items: baseline; align-content: flex-start; gap: 8.8px; line-height: 26.4px; padding: 8.8px 13.2px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+          <span style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4.4px">
+            <span style="font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 15px">Fertig</span>
+            <span title="Abschlussspalte" style="color: #728157">✓</span>
+            <span style="font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">Grenze 20</span>
+          </span>
+          <span style="margin-left: auto; min-width: 17.6px; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent); text-align: right">20+</span>
+        </header>
+      </div>
+      <p style="margin: 0; width: 256px; font-size: 11px; line-height: 1.4; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Die Abschlussspalte zeigt, was sie hält: <span style="color: #201e1d">20+</span> statt einer genauen Zahl, weil die Bahn nur bis zur Grenze lädt (I0013).</p>
+    </div>
+
+    <div style="flex: 1; min-width: 0; align-self: stretch; display: flex; flex-direction: column; gap: 4.4px; padding: 13.2px; border-radius: 16px; background: #ebddc5">
+      <p style="margin: 0; font-size: 12px; line-height: 1.45; text-wrap: pretty"><span style="color: #201e1d">Ohne Reload</span> — das Fertig-Kriterium verlangt, dass die Zahl Änderungen folgt. Sie zählt, was in der Bahn steht: eine angelegte Karte (I0011) und eine abgelegte Karte (I0012) ändern sie unmittelbar. Ein zweiter Ort, an dem eine Zahl gepflegt werden müsste, entsteht dabei nicht.</p>
+      <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty"><span style="color: #8c491a">Offen und nicht hier entschieden</span> — ob der Schalter nur die Ansicht dieses Browsers ändert oder als Eigenschaft des Boards für alle gilt. Das Fertig-Kriterium sagt „je Board einschaltbar", was für die Board-Eigenschaft spricht; entschieden wird es in der Anforderung zu I0004, nicht am Bild.</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 5 — Board pflegen: umbenennen und archivieren (I0005),
+     exportieren und importieren (I0038, I0039). Alle vier ungebaut.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 17.6px 26.4px 8.8px">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 5 · Board pflegen · I0005 · I0038 · I0039 · noch nicht gebaut</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Die Einstiege stehen im ⋯-Menü der Kachel und im Fuß der Übersicht (Zustand 1). Hier steht, was danach zu sehen ist — und wo der ältere Satz nichts hergibt.</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; padding: 26.4px; display: flex; gap: 26.4px; align-items: stretch">
+
+  <!-- Umbenennen — in der Kachel, wie D0002 die Kontributorzeile aufklappt -->
+  <section style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; color: color-mix(in srgb, #201e1d 55%, transparent)">I0005 · umbenennen</p>
+    <article style="display: flex; flex-direction: column; gap: 8.8px; padding: 13.2px; border-radius: 32.2px; background: #ebddc5; box-shadow: 0 3px 10px color-mix(in srgb, #2e2b25 16%, transparent)">
+      <span style="font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Projektboard</span>
+      <div style="width: 100%; min-height: 36px; padding: 6px 14px; font-size: 14px; background: #f5ead8; border: 1px solid #c67139; border-radius: 999px; display: flex; align-items: center">KanbanC — Release 2</div>
+      <div style="display: flex; gap: 8.8px">
+        <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #201e1d; background: transparent; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); padding: 8.8px 15.84px; border-radius: 999px">Speichern</span>
+        <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #c67139; background: transparent; border: 1px solid transparent; padding: 8.8px 4.4px; border-radius: 999px">Abbrechen</span>
+      </div>
+    </article>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Umbenannt wird <span style="color: #201e1d">in der Kachel</span>, nicht auf einem zweiten Schirm — dieselbe Antwort, die D0002 für die Kontributorzeile gegeben hat. Der Name ist das einzige Änderbare; Art und Termine gehören dem Anlegen.</p>
+  </section>
+
+  <!-- Archiv — die Ansicht hinter dem Filter -->
+  <section style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; color: color-mix(in srgb, #201e1d 55%, transparent)">I0005 · archivierte Ansicht</p>
+    <div style="display: flex; flex-direction: column; gap: 13.2px; padding: 13.2px; border-radius: 16px; background: #ebddc5">
+      <span style="align-self: flex-start; display: inline-flex; overflow: hidden; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px; background: #f5ead8">
+        <span style="display: inline-flex; align-items: center; padding: 7px 12px; font-size: 13px">aktive</span>
+        <span style="display: inline-flex; align-items: center; padding: 7px 12px; font-size: 13px; border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent); background: #c67139; color: #f5ead8">archivierte</span>
+      </span>
+      <article style="display: flex; flex-direction: column; gap: 4.4px; padding: 13.2px; border-radius: 32.2px; background: #f5ead8; border: 1px dashed color-mix(in srgb, #201e1d 30%, transparent)">
+        <span style="font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">Projektboard · archiviert</span>
+        <h3 style="font-size: 17px; line-height: 1.2; margin: 0; color: color-mix(in srgb, #201e1d 70%, transparent)">KanbanC — Release 1</h3>
+        <p style="margin: 0; display: flex; align-items: center; gap: 6px; font-size: 11px; color: color-mix(in srgb, #201e1d 50%, transparent)">bis 2026-06-30</p>
+        <span style="align-self: flex-start; margin-top: 4.4px; display: inline-flex; align-items: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #c67139; padding: 8.8px 4.4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h11a5 5 0 1 1 0 10H9"/><path d="M8 5L4 9l4 4"/></svg>zurückholen</span>
+      </article>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Gestrichelter Rand und gedämpfte Schrift statt einer eigenen Farbe: archiviert ist kein Zustand mit eigener Bedeutung, sondern das Fehlen aus der Standardliste. Das Wort <span style="color: #201e1d">zurückholen</span> ist dasselbe wie in D0002 — nicht „reaktivieren".</p>
+  </section>
+
+  <!-- Export und Import — markierte Lücke -->
+  <section style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; color: color-mix(in srgb, #201e1d 55%, transparent)">I0038 · I0039 · Ablauf nicht gezeichnet</p>
+    <div style="flex: 1; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 8.8px; padding: 17.6px; border: 2px dashed #c67139; border-radius: 16px; background: color-mix(in srgb, #c67139 6%, transparent)">
+      <p style="margin: 0; font-size: 14px"><span style="color: #8c491a">Lücke</span> — Dateiwahl, Vorschau und Bericht fehlen.</p>
+      <p style="margin: 0; font-size: 12px; line-height: 1.45; text-wrap: pretty">Der ältere Satz zeigt von I0038 und I0039 nur den <span style="color: #201e1d">Einstiegsknopf</span>; Dateiwahl, Vorschau und Ergebnis sind nirgends gezeichnet (Index, „Zuordnung Schirm → Dialog", Spalte <span style="color: #201e1d">Ohne Deckung</span>).</p>
+      <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Hier wird nichts erfunden und nichts vom WBS-Import (D0008) abgeschrieben: dessen drei Schritte lösen eine andere Aufgabe — Knoten in Karten überführen, nicht ein Board als Ganzes wiederherstellen. Der Entwurf gehört in den Lauf, der I0038 und I0039 baut.</p>
+    </div>
+  </section>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     RÄNDER — die Zustände, die beim Bauen unweigerlich auftreten
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 17.6px 26.4px 8.8px">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Ränder · gebaut</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; padding: 0 26.4px 26.4px; display: flex; gap: 26.4px; align-items: flex-start">
+
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; color: color-mix(in srgb, #201e1d 55%, transparent)">leere Liste · I0002</p>
+    <p style="margin: 0; font-size: 15px">Noch kein Board vorhanden.</p>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent)">Ein Satz ohne Kasten — die Bänder erscheinen erst, wenn es Boards gibt. Der Knopf „+ Board anlegen" bleibt stehen.</p>
+  </div>
+
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; color: color-mix(in srgb, #201e1d 55%, transparent)">WebApi nicht erreichbar · I0002</p>
+    <div style="margin: 0; padding: 13.2px; border-left: 3px solid #c67139; border-radius: 16px; background: #ebddc5">
+      <p style="margin: 0; font-size: 15px">Die WebApi ist nicht erreichbar. Bitte später erneut versuchen.</p>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent)">Lesbare Meldung statt Ausnahmeseite — <span style="color: #201e1d">WebApiAusfall.Meldung</span>, derselbe Satz auf allen Seiten.</p>
+  </div>
+
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; color: color-mix(in srgb, #201e1d 55%, transparent)">Board ohne Spalte · I0003</p>
+    <p style="margin: 0; font-size: 15px">Dieses Board hat keine Spalte.</p>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent)">Im Layout-Modus, wenn die letzte Spalte entfernt wurde. Die Zeile „neue Spalte" darunter bleibt der Weg zurück.</p>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     Lesehilfe — gehört zum Wireframe, nicht zum Schirm
+     ══════════════════════════════════════════════════════════════════════ -->
+<footer style="display: flex; flex-direction: column; gap: 4.4px; padding: 17.6px 26.4px; background: #ebddc5; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent); font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent)">
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">D0001 zeigt hier:</span> <span style="color: #8c491a">I0001</span> Anlegen als Patch in der Liste, Projektboard mit Terminfeldern, Vorschau der Standardspalten, Zurückweisung · <span style="color: #8c491a">I0002</span> zwei Bänder nach Art, Kacheln alphabetisch, die ganze Kachel als Weg ins Board · <span style="color: #8c491a">I0003</span> Spaltenpflege je Bahn samt Zeile für die neue Spalte · <span style="color: #8c491a">I0004</span> Schalter in Zone 3 und die Zahl im Bahnenkopf, aus und an · <span style="color: #8c491a">I0005</span> ⋯-Menü der Kachel, Umbenennen in der Kachel, Filter und archivierte Ansicht mit „zurückholen" · <span style="color: #8c491a">I0038</span>/<span style="color: #8c491a">I0039</span> Einstiege gezeichnet, Ablauf als markierte Lücke · <span style="color: #8c491a">I0040</span> ✎ und ✓ in Zone 3 · <span style="color: #8c491a">I0041</span> der Rahmen selbst — Kopfzeile in drei Zonen, Token-Sheet, keine Wortmarke.</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Gebaut und nachgezeichnet</span> sind Zustand 1 (ohne ⋯-Menü, Filter und Import), Zustand 2 ganz, Zustand 3 ganz und die Ränder. <span style="color: #201e1d">Zielform, noch nicht gebaut</span> sind I0004, I0005, I0038 und I0039 — sie tragen an Ort und Stelle einen Vermerk. Beispieldaten stammen aus <span style="color: #201e1d">wireframes.js</span> (S.start, S.board) und aus <span style="color: #201e1d">D0003.dc.html</span>; die Standardspalten <span style="color: #201e1d">Zu erledigen · In Arbeit · Erledigt</span> kommen aus <span style="color: #201e1d">Boards.razor</span>, nicht aus dem älteren Satz. Termine stehen im ISO-Format, weil <span style="color: #201e1d">Terminformatierer.AlsText</span> so schreibt.</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Nicht gezeichnet und bewusst so:</span> die Kachel-Zusatzangaben des älteren Satzes (offene/gesamte Karten, beteiligte Kontributoren) — sie gehören D0003 und D0002 und stehen nicht im Fertig-Kriterium von I0002; der Zwei-Spalten-Aufbau „Start B" mit Timer-Banner und Live-Punkt — er setzt D0006 und D0007 voraus; der Klassenfilter aus dem Boardkopf des älteren Satzes — er gehört I0022 in D0005.</p>
+</footer>
+
+</div>
+</x-dc>
+</body>
+</html>

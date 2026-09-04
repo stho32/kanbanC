@@ -34,3 +34,4 @@ appsettings.*.local.json
 
 ## Playwright-MCP-Artefakte (Snapshots, Konsolenlogs)
 .playwright-mcp/
+.claude/anwendung/*.md

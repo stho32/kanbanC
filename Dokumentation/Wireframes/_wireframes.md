@@ -1,32 +1,34 @@
 ---
 application: kanbanc
 wbs: Dokumentation/Planung/kanbanc.md
+betrieb: lokal
 canvas: https://claude.ai/code/artifact/b61e3007-056d-44e0-9cf5-7350c22f858a
 seed: .claude/wireframes/kanbanc.html
 art: mockup
 richtung: aus dem Bestand — gestaltung.css (Caprasimo/Figtree, warmes Sandklima, runde Formen)
-stand: 2026-09-03
+stand: 2026-09-04
 zurueckgeholt: 2026-09-03
 ---
 
 # Wireframes — KanbanC
 
-Der Canvas trägt drei Artboards: `Main.dc.html`, den Screen-Flow über alle neun
-Dialogs, sowie `D0002.dc.html` und `D0003.dc.html`, die beiden ausdetaillierten
-Bildschirme. Die übrigen Dialogs bleiben Kästen im Flow; ihr Detail-Artboard
-entsteht mit `/wireframe verfeinern <dialog>`, wenn der Dialog dran ist
-(Rolling Wave). Woraus ein solcher Lauf schöpft, sagt die
+Der Canvas trägt vier Artboards: `Main.dc.html`, den Screen-Flow über alle neun
+Dialogs, sowie `D0001.dc.html`, `D0002.dc.html` und `D0003.dc.html`, die drei
+ausdetaillierten Bildschirme. Die übrigen Dialogs bleiben Kästen im Flow; ihr
+Detail-Artboard entsteht mit `/wireframe verfeinern <dialog>`, wenn der Dialog dran
+ist (Rolling Wave). Woraus ein solcher Lauf schöpft, sagt die
 [Zuordnung Schirm → Dialog](#zuordnung-schirm--dialog).
 
-Reife je Dialog wird aus dem Dateibestand gerechnet: `D0002` und `D0003` stehen auf
-`wireframe`, die sieben übrigen auf `flow`.
+Reife je Dialog wird aus dem Dateibestand gerechnet: `D0001`, `D0002` und `D0003`
+stehen auf `wireframe`, die sechs übrigen auf `flow`.
 
 | Datei | Was |
 | --- | --- |
 | `Main.dc.html` | Screen-Flow: neun Dialog-Kästen, dreizehn beschriftete Übergänge, Ampel je Dialog |
+| `D0001.dc.html` | **Boards führen**, Rahmen 1440×3800 (gemessen 3625,3) — fünf Zustände untereinander: Board-Übersicht als echtes Fenster 1440×900, Anlegeformular, Layout-Modus, Kartenzahl-Schalter (I0004, der laufende Slice) und Board pflegen (I0005, I0038, I0039), dazu drei Ränder. Gebaut sind Übersicht, Anlegen, Layout-Modus und die Ränder; I0004, I0005, I0038 und I0039 sind Zielform und tragen an Ort und Stelle einen Vermerk |
 | `D0002.dc.html` | **Kontributoren führen**, 1440×1560 — die Liste mit den drei Arten als Hauptzustand (I0006, I0007, I0009); darunter die Identitätswahl I0008 als **zwei nebeneinander gestellte Alternativen** B und C, damit die Entscheidung am Bild fällt |
 | `D0003.dc.html` | **Board bedienen**, Fenster 1440×900, Rahmen 1100 (die Lesehilfe steht unter dem Fenster) — gefüllte Spaltenbahnen mit der Kartenform; die fünf Interactions I0010–I0014 als Zustände im selben Schirm, dazu drei Randfälle. **Am 2026-09-02 auf den gebauten Stand nachgezogen** |
-| `canvas.json` | Layout des Canvas: der Flow oben, D0003 und D0002 in der Reihe darunter, Start in der Canvas-Ansicht |
+| `canvas.json` | Layout des Canvas: der Flow oben, D0003, D0002 und D0001 in der Reihe darunter, Start in der Canvas-Ansicht |
 | `kanbanc-wireframes.html`, `wireframes.js`, `styles.css`, `README.md` | **älterer Satz, unangetastet** — acht gezeichnete Schirme mit Varianten, aus denen `verfeinern` schöpft; siehe Offene Fragen |
 
 ## Richtung
@@ -83,6 +85,13 @@ statt im kühlen Werkzeugton.
 Der Lauf fand keinen Menschen vor. Alle Entscheidungen sind nach der Regel
 „entscheiden statt raten, Annahme benennen" getroffen und stehen hier zur
 Widerrede.
+
+**Zur Betriebsart.** Der Wechsel von `canvas` nach `lokal` wurde mit dem Import am
+2026-09-03 vollzogen — die Artboards liegen seither versioniert im Ordner, geändert
+wird auf Ansage. Nur das Feld `betrieb:` blieb dabei liegen; es ist am 2026-09-04
+auf `lokal` nachgetragen worden. Damit ist `zurueckholen` gegenstandslos und der
+Canvas wird nicht mehr angefasst; die Adresse in `canvas:` bleibt als
+Herkunftsnachweis stehen.
 
 **Zur Richtung des Nachführens.** Für den älteren Wireframe-Satz gilt die Regel aus
 seiner [README.md](README.md): *„Diese Dateien werden nicht nachgefuehrt, wenn der
@@ -146,6 +155,13 @@ gehört in eine Anforderung, nicht ins Bild.
 | 2026-09-02 | Kartenzahl im Bahnenkopf: gefüllt lassen, obwohl der Code die Stelle leer reserviert? | **gefüllt** | `R00005` stellt I0004 ausdrücklich out of scope („die Bahnen bekommen nur die Stellen"); das Artboard zeigt aber die Zielform, wie schon bei den vier Kartenelementen fremder Dialogs. Die Lesehilfe benennt es jetzt ausdrücklich als später gebaut. Eine leere Stelle zu zeichnen hieße, die Zielform zu verschweigen. |
 | 2026-09-02 | Fuß der Abschlussspalte: `+ Karte` oder „Ältere nachladen"? | **beides** — `+ Karte` im Fuß, „Ältere nachladen" ans Ende der Bahnenfläche | Der gebaute Fuß trägt in **jeder** Bahn die Kartenanlage; ihn in der Abschlussspalte durch etwas anderes zu ersetzen wäre eine erfundene Ausnahme. Das Bedienelement für I0013 bleibt trotzdem sichtbar, wie der Kontrakt es verlangt — es sitzt unter dem Nachlade-Hinweis, wo es hingehört. |
 | 2026-09-02 | Radius des `⋯`-Menüs, das der Code nicht kennt | `--radius-xs` 4 px | Karten sind jetzt fast eckig. Ein 16-px-Menü unmittelbar auf einer 4-px-Karte läse sich als zweites Formensystem. Die Zurückweisung dagegen behält 16 px, weil `.meldung` in `oberflaeche.css` gebaut ist — dort wird nichts angeglichen, was der Code festlegt. |
+| 2026-09-04 | **D0001** — wo sitzt der Kartenzahl-Schalter (I0004)? | **Zone 3 der Navigationszeile**, links vom Layout-Schalter | Der ältere Satz zeichnet ihn im **Boardkopf** („Board A": Knopf „Kartenzahl anzeigen"); mit `R00005` ist der Boardkopf als eigene Zeile entfallen und seine Bedienelemente sind nach Zone 3 gewandert (`kopfzeile-bedienung`, heute der Layout-Schalter). Der Schalter folgt seinem Platz. Die zweite Fundstelle des alten Satzes — „Gestalten B", Zeile *Board*: „Kartenzahl im Spaltenkopf: an / aus" — versteckt eine Ansichtsfrage im Layout-Modus, den man zum Umschalten erst betreten müsste. Links vom Layout-Schalter, weil man erst ansieht und dann umbaut. |
+| 2026-09-04 | Welche Form für den Schalter? | **`.kontrollfeld`** (Häkchenkasten mit Beschriftung „Kartenzahl"), nicht Knopf und nicht `.seg` | Die Kartenzahl ist eine **Einstellung, die stehen bleibt**, keine Handlung — ein Knopf sagt das Falsche. `.kontrollfeld` ist gebaut (`oberflaeche.css`, benutzt in `Spaltenpflege.razor` für „Abschlussspalte") und mit 16 px Höhe sprengt es die 35,2 px der Navigationszeile nicht; ein `.seg` mit „an / aus" misst 36,2 px und würde die gebaute Zeilenhöhe verändern. |
+| 2026-09-04 | Wie kommen neun Interactions in ein Artboard? | **fünf Zustände untereinander plus eine Randzeile**, nur Zustand 1 als echtes Fenster 1440×900 | Der Kontrakt verbietet ein zweites Artboard für Zustände desselben Dialogs. Ein Fenster in voller Höhe je Zustand hätte den Rahmen auf über 5000 px getrieben, ohne mehr zu zeigen: Anlegen, Layout-Modus und Kartenzahl brauchen keinen leeren Seitenfuß. Der Hauptzustand bleibt maßstäblich, die übrigen sind Ausschnitte und sagen das in ihrer Beschriftung. |
+| 2026-09-04 | Bedienelement für I0005 und I0038 auf der Übersicht | **⋯-Menü auf der Kachel** mit Umbenennen, Archivieren, Exportieren | Dieselbe Antwort wie in D0003 für I0014 — eine Kachel hat sonst keine Stelle für Kartenaktionen, und drei Knöpfe je Kachel erdrücken eine Übersicht, die auf fünf Spalten dicht steht. Das Umbenennen selbst passiert **in der Kachel**, wie D0002 die Kontributorzeile aufklappt, statt auf einem Schirm, den die WBS nicht kennt. |
+| 2026-09-04 | I0038 / I0039 — Ablauf zeichnen oder Lücke markieren? | **Lücke markieren** | Der ältere Satz zeigt nur den Einstiegsknopf (Zuordnung, Spalte „Ohne Deckung"). Den Ablauf vom WBS-Import (D0008) abzuschreiben wäre falsch: dessen drei Schritte überführen Knoten in Karten, während I0039 ein Board als Ganzes wiederherstellt. Ein gestrichelter Kasten mit Grund ist ehrlicher als eine erfundene Vorschau, die die Umsetzung dann erbt. |
+| 2026-09-04 | Termine im Artboard: `30.09.2026` wie in D0003 oder `2026-09-30`? | **ISO**, `2026-09-30` | `Terminformatierer.AlsText` schreibt `yyyy-MM-dd`, und `InputDate` liest es so. D0003 zeigt an dieser Stelle das deutsche Format — ein Befund, der in Offene Frage 12 steht; D0001 wiederholt ihn nicht. |
+| 2026-09-04 | Standardspalten in der Vorschau des Anlegeformulars | **Zu erledigen · In Arbeit · Erledigt** | So stehen sie in `Boards.razor` (`Standardspalten`). Der ältere Satz nennt „Rückstand · In Arbeit · Fertig ✓" — das sind die Beispielspalten des Boards „KanbanC — Release 2", nicht die Vorlage, die der Endpunkt anlegt. |
 | 2026-09-02 | Eingabefeld der Kartenanlage steht auf der Bahn in derselben Farbe wie die Bahn | **so gezeichnet**, nicht korrigiert | `.input` trägt `background: var(--color-surface)`, und die Bahn ist `--color-surface`: das Feld zeigt sich nur als umrandete Pille. `.karte` und `.meldung` sind für diesen Fall auf `--color-bg` gedreht worden, `.input` nicht. Ob das Absicht ist, entscheidet nicht das Artboard — es zeigt, was gebaut ist. Als Befund unter Offene Fragen 11. |
 
 ## Zuordnung Schirm → Dialog
@@ -164,7 +180,7 @@ Auffüllen.
 
 | Dialog | Speisende Schirme (alt) | Variante | Ohne Deckung |
 | --- | --- | --- | --- |
-| **D0001** Boards führen | „Start / Board-Übersicht" (ganz) · „Board anlegen & gestalten" (ganz) · „Board" (nur der Boardkopf: Kartenzahl-Schalter, Klassenfilter) | Start **A** · Anlegen **A**, Layout-Modus **B** | **I0038 / I0039** — Export und Import stehen nur als Knopf im Fuß von „Start A" und im Board-Abschnitt von „Gestalten B". Dateiwahl, Vorschau und Ergebnis sind nirgends gezeichnet. |
+| **D0001** Boards führen | „Start / Board-Übersicht" (ganz) · „Board anlegen & gestalten" (ganz) · „Board" (nur der Boardkopf: Kartenzahl-Schalter, Klassenfilter) | Start **A** · Anlegen **A**, Layout-Modus **B** | **I0038 / I0039** — Export und Import stehen nur als Knopf im Fuß von „Start A" und im Board-Abschnitt von „Gestalten B". Dateiwahl, Vorschau und Ergebnis sind nirgends gezeichnet. Seit 2026-09-04 als `D0001.dc.html` gezeichnet; die Lücke steht dort als **markierter Kasten**, nicht als erfundener Ablauf. |
 | **D0002** Kontributoren führen | „Kontributoren & Identität" (ganz) | Liste **A** gesetzt · Identitätswahl **B oder C offen** (Frage 4) | — vollständig; seit 2026-08-31 als `D0002.dc.html` gezeichnet |
 | **D0003** Board bedienen | „Board" (Bahnen, Karten, Abschlussspalte) | Bahnen **A/B** — dort deckungsgleich; **C** wäre eine spätere Zweitansicht | **I0014** Karte archivieren — der alte Satz kennt nur *Board* archivieren (I0005). Im Artboard als ⋯-Menü ergänzt, siehe Frage 6. |
 | **D0004** Karteninhalt pflegen | „Kartendetail" (ganz) | **offen** — A, B oder C, Wahl bei I0015–I0019 | — |
@@ -307,3 +323,31 @@ Die Gegenrichtung, Schirm → Dialogs, in Kurzform:
     Bahn derselben Farbe, während `.karte` und `.meldung` für genau diesen Fall
     auf `--color-bg` gedreht wurden. Fällt beim Bauen von `R00006` auf oder nie.
 
+
+12. **`D0003.dc.html` zeigt zwei Werte, die der Code anders schreibt.** Gefunden
+    beim Zeichnen von D0001, belegt am Quelltext:
+    `Source/KanbanC.Blazor/Services/Terminformatierer.cs` formatiert mit
+    `yyyy-MM-dd`, das Artboard zeigt in der Kopfzeile aber
+    „Start 01.08.2026 · Ziel 30.09.2026" (`D0003.dc.html:100`); und
+    `Components/Pages/Board.razor` rendert `@_board.Art`, also den Enum-Namen
+    **`Projekt`**, während das Artboard **„Projektboard"** zeigt (dieselbe Zeile).
+    `D0001.dc.html` folgt dem Code. Nachgezogen wird D0003 hier **nicht**: der
+    Beleg für eine Nachführung ist eine Anforderung, die die Abweichung trägt
+    (Regel vom 2026-09-02), und die gibt es für diese zwei Werte nicht. Ob das
+    ISO-Datum in der Oberfläche bleiben soll, ist ohnehin eine fachliche Frage
+    und gehört in eine Anforderung, nicht ins Bild.
+
+13. **Gilt der Kartenzahl-Schalter (I0004) für den Browser oder für das Board?**
+    Das Fertig-Kriterium sagt „je Board einschaltbar" — das spricht für eine
+    Eigenschaft des Boards, die alle sehen. Dagegen spricht nichts Zwingendes:
+    eine Ansichtseinstellung im `localStorage` wäre billiger und träfe niemanden
+    sonst. `D0001.dc.html` zeichnet den Schalter, ohne die Frage zu beantworten;
+    entschieden wird sie in der Anforderung zu I0004.
+
+14. **Das ⋯-Menü der Boardkachel liegt unter der Verweisfläche.**
+    `Boardkachel.razor.css` legt mit `.board-verweis::after { inset: 0 }` den
+    Verweis über die **ganze** Kachel — ein Bedienelement darauf wäre nicht
+    anklickbar. Das ist kein Befund am Artboard, sondern die erste Frage, die
+    beim Bauen von I0005 auftritt: entweder das Menü bekommt einen
+    Stapelkontext über der Verweisfläche, oder die Verweisfläche endet vor dem
+    Menü. Gehört in die Anforderung zu I0005, nicht ins Bild.

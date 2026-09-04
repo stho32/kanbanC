@@ -4,7 +4,7 @@ system: KanbanC
 vision: Anforderungen/R00000-vision.md
 wireframes: Dokumentation/Wireframes/
 sprache: de
-zuletzt: 2026-09-03
+zuletzt: 2026-09-04
 ---
 
 # WBS — KanbanC
@@ -69,7 +69,19 @@ zuletzt: 2026-09-03
 | B0038 | Bubble | F0009 | Spalte loeschen und verdichten | gruen | Test gruen | boardId + spalteId → SpaltenRepository.Entferne → geloescht, verbleibende Positionen 1..n | 0,4 |  |  |  | Provider, eine Transaktion; belegt |
 | B0039 | Bubble | F0009 | Entfernen ueber die API | gruen | Test gruen | HTTP DELETE → SpaltenService + SpaltenEndpunkte → 204 / 404 | 2 |  |  |  | Integration |
 | B0040 | Bubble | F0009 | Entfernen in der Oberflaeche | gruen | Test gruen | Entfernen → Spaltenpflege.razor + SpaltenApiKlient → Spalte verschwindet; E2E US-4, US-5 | 2 |  |  |  | UI |
-| I0004 | Interaction | D0001 | Kartenzahl je Spalte anzeigen | rot | Je Board einschaltbar, dass die Zahl der enthaltenen Karten in der Spaltenkopfzeile steht; sie folgt Änderungen ohne Reload | | | | I0003, I0011 | | |
+| I0004 | Interaction | D0001 | Kartenzahl je Spalte anzeigen | rot | Je Board einschaltbar, dass die Zahl der enthaltenen Karten in der Spaltenkopfzeile steht; sie folgt Änderungen ohne Reload | | | | I0003, I0011 | R00009 | Angenommen im stillen Lauf: der Schalter ist eine Eigenschaft des Boards, persistiert und für jeden Betrachter gleich — „je Board einschaltbar“ im Fertig-Kriterium und die Vision „was ein Mensch klicken kann, kann ein Agent aufrufen“ lassen einen reinen Browserzustand nicht zu, der ohne Endpunkt bliebe. Die Form 20+ des Artboards setzt die Kürzung der Abschlussspalte voraus (I0013) und wird dort mitgebaut; solange die Bahn alle Karten hält, ist die genaue Zahl richtig |
+| F0023 | Feature | I0004 | Kartenzahl je Board schalten | rot | Ein Board merkt sich, ob es die Kartenzahl zeigt; die Einstellung ist über die API und über den Schalter in Zone 3 setzbar, gilt für jeden Betrachter und überlebt einen Neustart; ein unbekanntes Board wird mit Befund zurückgewiesen | | | | I0003, I0011 | R00009 | Voreinstellung aus — bestehende Boards sehen unverändert aus |
+| B0108 | Bubble | F0023 | Einstellung des Boards ablegen | rot | Test gruen | bestehende Datei → Migration 004-boardeinstellung.sql → Tabelle Boardeinstellung mit ZeigtKartenzahl, zweiter Lauf unverändert | 0,4 | | | | Provider; eigene Tabelle statt ALTER TABLE: der Migrationslaeufer führt jedes Skript bei jedem Start aus, ADD COLUMN ist nicht idempotent; Aufwand belegt (B0002 in _ist-zeiten) |
+| B0109 | Bubble | F0023 | Board trägt seine Kartenzahlanzeige | rot | Test gruen | boardId → BoardRepository.Lade mit LEFT JOIN Boardeinstellung → Board mit ZeigtKartenzahl | 0,4 | | | | Provider; das Contracts-DTO Board wächst um ZeigtKartenzahl, fehlende Zeile heißt aus; Aufwand belegt (B0004 in _ist-zeiten) |
+| B0110 | Bubble | F0023 | Anzeige umschalten speichern | rot | Test gruen | boardId + Kartenzahlanzeige → BoardRepository.SetzeKartenzahlanzeige → gespeicherte Einstellung oder null bei unbekanntem Board | 0,4 | | | | Provider, UPSERT auf Boardeinstellung, eine Transaktion; Aufwand belegt (B0028 in _ist-zeiten) |
+| B0111 | Bubble | F0023 | Umschalten verdrahten | rot | Test gruen | boardId + Kartenzahlanzeige → BoardService.SchalteKartenzahl → Ergebnis<Board> oder Nichtgefunden.Board | 0,4 | | | | Integration, Test-Repository; kein Validator nötig — ein Wahrheitswert hat keinen ungültigen Fall, geprüft wird nur, ob es das Board gibt; Aufwand belegt (B0029 in _ist-zeiten) |
+| B0112 | Bubble | F0023 | Endpunkt der Kartenzahlanzeige | rot | Test gruen | HTTP PUT /api/boards/{boardId}/kartenzahl → BoardEndpunkte → 200 mit Board / 404 mit Fehlerbefund | 2 | | | | Integration; eigene Unterressource wie lage und reihenfolge, damit I0005 den Board-PUT frei behält; der Fehlervertragstest aus B0102 nimmt die neue Route sofort auf; kein Messwert für Endpunkt-Bubbles |
+| B0113 | Bubble | F0023 | API-Klient der Kartenzahlanzeige | rot | Test gruen | Kartenzahlanzeige → BoardApiKlient.SchalteKartenzahl → ApiErgebnis<Board> | 2 | | | | Integration; Fehlerpfade in KanbanC.Blazor.Tests |
+| B0114 | Bubble | F0023 | Schalter in Zone 3 | rot | Test gruen | Klick auf das Kontrollfeld Kartenzahl → Board.razor in SectionContent kopfzeile-bedienung → Einstellung umgeschaltet, Board neu geladen, Ausfallmeldung über WebApiAufruf.MitAusfallmeldung | 2 | | | | UI; .kontrollfeld links vom Layout-Schalter, Form wie Abschlussspalte in Spaltenpflege.razor (Artboard D0001, Zustand 4) |
+| B0115 | Bubble | F0023 | E2E Kartenzahl schalten | rot | Test gruen | beide Prozesse auf freien Ports → Playwright → Schalter an, Reload, zweite Sitzung sieht denselben Stand | 2 | | | | E2E; die zweite Sitzung belegt, dass die Einstellung am Board hängt und nicht am Browser |
+| F0024 | Feature | I0004 | Zahl im Bahnenkopf | rot | Bei eingeschaltetem Board steht in jeder Bahnenkopfzeile die Zahl der enthaltenen Karten; sie folgt dem Anlegen und Ablegen einer Karte ohne Reload, bei ausgeschaltetem Board bleibt die Stelle leer | | | | F0023 | R00009 | die Stelle .spaltenbahn-kartenzahl steht seit B0063 leer bereit |
+| B0116 | Bubble | F0024 | Zahl in der Kopfzeile | rot | Test gruen | Spalte.Karten.Count + ZeigtKartenzahl → Spaltenbahnen.razor → Zahl in .spaltenbahn-kartenzahl, leer wenn aus | 0,4 | | | | UI; die Zahl wird gerechnet, nicht gespeichert — es entsteht kein zweiter Ort, der gepflegt werden müsste; Aufwand wie die kleinen UI-Bubbles derselben Komponente (B0064, B0072), nicht gemessen |
+| B0117 | Bubble | F0024 | E2E Zahl folgt Änderungen | rot | Test gruen | Board mit Karten in zwei Bahnen → Playwright → Zahl an und aus, nach Anlegen und nach Ablegen neu, ohne Reload | 2 | | | | E2E; deckt den Teil „ohne Reload“ des Fertig-Kriteriums ab |
 | I0005 | Interaction | D0001 | Board umbenennen und archivieren | rot | Ein Board lässt sich umbenennen und archivieren; das archivierte ist aus der Standardliste verschwunden, bleibt aber abrufbar | | | | I0001 | | |
 | I0038 | Interaction | D0001 | Board exportieren | rot | Ein einzelnes Board wird als eigenstaendige Datei herausgeschrieben; sie enthaelt Board, Spalten, Karten, Klassenzuordnungen und Zeiteintraege vollstaendig und ist ohne die Anwendung lesbar | | | | I0011, I0021, I0024 | | Ersetzt die Portabilitaet, die eine Datei je Board gebracht haette |
 | I0039 | Interaction | D0001 | Board importieren | rot | Eine exportierte Board-Datei wird eingelesen; das Board erscheint mit seinem Inhalt in der Liste, ohne bestehende Boards zu veraendern | | | | I0038 | | |
@@ -198,6 +210,10 @@ zuletzt: 2026-09-03
 
 - ~~`B0019`: Verhalten des Blazor-Routers bei `/boards/abc`~~ — beantwortet in R00003: der `:long`-Constraint greift nicht, die Anfrage endet über `UseStatusCodePagesWithReExecute` auf der `NotFound`-Seite. Kein Absturz, kein Standardwert. Belegt durch `BoardFehlerpfadeE2ETests`.
 - ~~`B0022`: Umfang des Testumzugs~~ — gemessen: zwei E2E-Tests aus `R00001` und vier Locator in `BoardsSeite`; der Umzug lag am unteren Ende der Bandbreite.
+- `I0004`: Board-Eigenschaft statt Browser-Zustand — im stillen Lauf entschieden (Fertig-Kriterium „je Board einschaltbar“, Vision „Eine API auf Augenhöhe mit der Oberfläche“). Ein Browser-Zustand hätte keinen Endpunkt und wäre für Agenten unsichtbar. Die Anforderung zu I0004 bestätigt oder verwirft die Annahme.
+- `B0108`: Eigene Tabelle `Boardeinstellung` statt `ALTER TABLE Board ADD COLUMN` — der `Migrationslaeufer` führt jedes Skript bei jedem Start aus und kennt kein Journal, `ADD COLUMN` scheitert damit beim zweiten Lauf. Die Alternative wäre ein Journal im Migrationslaeufer; das ist ein eigener Slice, keine Nebenwirkung dieses.
+- `F0023`: Voreinstellung `aus` angenommen — bestehende Boards ändern ihr Aussehen nicht von selbst. Nicht geprüft, ob der Mensch die Zahl lieber überall gleich an hätte.
+- `F0024`: Die Form `20+` des Artboards gilt erst mit der Kürzung der Abschlussspalte (`I0013`) und ist hier nicht geplant; bis dahin hält die Bahn alle Karten und die genaue Zahl stimmt.
 
 ## Notizen / Quellen
 
