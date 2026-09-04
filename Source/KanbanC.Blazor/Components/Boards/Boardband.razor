@@ -11,7 +11,7 @@
         <div class="boardband-kacheln">
             @foreach (var board in Boards)
             {
-                <Boardkachel Board="board" />
+                <Boardkachel Board="board" Geaendert="Geaendert" />
             }
         </div>
     }
@@ -29,4 +29,7 @@
     [Parameter]
     [EditorRequired]
     public IReadOnlyList<BoardUebersicht> Boards { get; set; } = [];
+
+    [Parameter]
+    public EventCallback Geaendert { get; set; }
 }

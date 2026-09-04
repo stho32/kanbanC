@@ -1,5 +1,7 @@
 @using KanbanC.Blazor.Services
 @using KanbanC.Contracts.Boards
+@using KanbanC.Contracts.Fehler
+@inject BoardApiKlient ApiKlient
 
 <article class="board-kachel card elev-sm" data-board-id="@Board.BoardId">
     <div class="board-kachel-kopf">
@@ -13,26 +15,61 @@
             @if (_menueIstOffen)
             {
                 <div class="board-kachel-menueliste">
-                    <button type="button" class="board-kachel-menuepunkt board-kachel-menuepunkt-umbenennen" @onclick="SchliesseMenue">Umbenennen</button>
+                    <button type="button" class="board-kachel-menuepunkt board-kachel-menuepunkt-umbenennen" @onclick="OeffneNamensfeld">Umbenennen</button>
                 </div>
             }
         </div>
     </div>
-    <h3 class="card-title board-kachel-name">
-        <a class="board-verweis" href="@($"/boards/{Board.BoardId}")">@Board.Name</a>
-    </h3>
+
+    @if (_namensfeldIstOffen)
+    {
+        <div class="board-kachel-namensfeld">
+            <input class="input board-kachel-name-eingabe" aria-label="Name des Boards" @bind="_name" @bind:event="oninput" />
+            <div class="board-kachel-knoepfe">
+                <button type="button" class="btn btn-neben board-kachel-speichern" @onclick="SpeichereNamen">Speichern</button>
+                <button type="button" class="btn btn-schlicht board-kachel-abbrechen" @onclick="SchliesseNamensfeld">Abbrechen</button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <h3 class="card-title board-kachel-name">
+            <a class="board-verweis" href="@($"/boards/{Board.BoardId}")">@Board.Name</a>
+        </h3>
+    }
+
     <p class="card-meta board-kachel-fuss">@_fusszeile</p>
+
+    @if (_meldungen.Count > 0)
+    {
+        <div class="meldung meldung-abweisung board-kachel-meldung" role="alert">
+            <ul>
+                @foreach (var meldung in _meldungen)
+                {
+                    <li>@meldung</li>
+                }
+            </ul>
+        </div>
+    }
 </article>
 
 @code {
+    private readonly List<string> _meldungen = [];
     private string _artbezeichnung = "";
     private string _fusszeile = "";
+    private string _name = "";
     private bool _menueIstOffen;
+    private bool _namensfeldIstOffen;
     private string _menuezustand = "false";
 
     [Parameter]
     [EditorRequired]
     public BoardUebersicht Board { get; set; } = default!;
+
+    // Die Kachel meldet den neuen Stand nach oben, statt selbst eine zweite Liste zu führen:
+    // die geladene Liste in Boards.razor bleibt die eine Quelle.
+    [Parameter]
+    public EventCallback Geaendert { get; set; }
 
     protected override void OnParametersSet()
     {
@@ -46,9 +83,50 @@
         SetzeMenue(!_menueIstOffen);
     }
 
-    private void SchliesseMenue()
+    private void OeffneNamensfeld()
     {
         SetzeMenue(false);
+        _meldungen.Clear();
+        _name = Board.Name;
+        _namensfeldIstOffen = true;
+    }
+
+    private void SchliesseNamensfeld()
+    {
+        _namensfeldIstOffen = false;
+        _meldungen.Clear();
+    }
+
+    private async Task SpeichereNamen()
+    {
+        _meldungen.Clear();
+        var ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(SendeNeuenNamen);
+        if (ausfallmeldung is not null)
+        {
+            _meldungen.Add(ausfallmeldung);
+        }
+    }
+
+    private async Task SendeNeuenNamen()
+    {
+        var ergebnis = await ApiKlient.BenenneUm(Board.BoardId, new BoardUmbenennenAnfrage(_name));
+        if (ergebnis.WurdeZurueckgewiesen)
+        {
+            // Das Namensfeld bleibt offen, damit der Name nachgetragen werden kann.
+            UebernehmeBefunde(ergebnis.Zurueckweisung);
+            return;
+        }
+
+        _namensfeldIstOffen = false;
+        await Geaendert.InvokeAsync();
+    }
+
+    private void UebernehmeBefunde(Zurueckweisung zurueckweisung)
+    {
+        foreach (var befund in zurueckweisung.Befunde)
+        {
+            _meldungen.Add(befund.Meldung);
+        }
     }
 
     private void SetzeMenue(bool istOffen)

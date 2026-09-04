@@ -157,4 +157,38 @@ public sealed class BoardsSeite
         await SchalteMenue(boardId);
         await Assertions.Expect(Menueliste(boardId)).ToBeVisibleAsync();
     }
+
+    public ILocator Namenseingabe(long boardId)
+    {
+        return Boardzeile(boardId).Locator(".board-kachel-name-eingabe");
+    }
+
+    public ILocator Kachelmeldung(long boardId)
+    {
+        return Boardzeile(boardId).Locator(".board-kachel-meldung");
+    }
+
+    public async Task OeffneNamensfeld(long boardId)
+    {
+        await OeffneMenue(boardId);
+        await Menuepunkt(boardId, "umbenennen").ClickAsync();
+        await Assertions.Expect(Namenseingabe(boardId)).ToBeVisibleAsync();
+    }
+
+    public async Task BenenneUm(long boardId, string neuerName)
+    {
+        await OeffneNamensfeld(boardId);
+        await Namenseingabe(boardId).FillAsync(neuerName);
+        await SpeichereNamen(boardId);
+    }
+
+    public async Task SpeichereNamen(long boardId)
+    {
+        await Boardzeile(boardId).Locator(".board-kachel-speichern").ClickAsync();
+    }
+
+    public async Task BrichUmbenennenAb(long boardId)
+    {
+        await Boardzeile(boardId).Locator(".board-kachel-abbrechen").ClickAsync();
+    }
 }

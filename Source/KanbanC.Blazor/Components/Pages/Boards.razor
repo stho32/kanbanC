@@ -111,10 +111,12 @@ else
     <div id="board-liste">
         <Boardband Kennung="band-linienboards"
                    Ueberschrift="Linienboards — laufen ohne Ende"
-                   Boards="baender.Linienboards" />
+                   Boards="baender.Linienboards"
+                   Geaendert="LadeListeNeu" />
         <Boardband Kennung="band-projektboards"
                    Ueberschrift="Projektboards — laufen mit dem Vorhaben aus"
-                   Boards="baender.Projektboards" />
+                   Boards="baender.Projektboards"
+                   Geaendert="LadeListeNeu" />
     </div>
 }
 
@@ -163,6 +165,12 @@ else
             _formularIstOffen = false;
             _boards = await ApiKlient.LadeAlleBoards();
         });
+    }
+
+    // Eine Kachel hat ihr Board geändert; die geladene Liste ist die eine Quelle und wird neu geholt.
+    private async Task LadeListeNeu()
+    {
+        await MitErreichbarerWebApi(async () => _boards = await ApiKlient.LadeAlleBoards());
     }
 
     private async Task MitErreichbarerWebApi(Func<Task> aufruf)

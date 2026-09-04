@@ -34,6 +34,7 @@ public class BoardkachelMenueE2ETests : PageTest
 
         await Expect(Page).ToHaveURLAsync($"{Testumgebung.Aktuelle.BlazorAdresse}/boards");
 
+        await seite.BrichUmbenennenAb(1);
         await seite.OeffneBoard(1);
 
         await Expect(Page).ToHaveURLAsync($"{Testumgebung.Aktuelle.BlazorAdresse}/boards/1");

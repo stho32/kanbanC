@@ -78,6 +78,23 @@
     background: color-mix(in srgb, var(--color-text) 7%, transparent);
 }
 
+.board-kachel-namensfeld {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.board-kachel-knoepfe {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.board-kachel-meldung {
+    margin: var(--space-2) 0 0;
+    padding: var(--space-2);
+    font-size: 13px;
+}
+
 .board-kachel-fuss {
     margin: 0;
     min-height: 1.2em;
