@@ -56,11 +56,13 @@
     color: color-mix(in srgb, var(--color-text) 55%, transparent);
 }
 
-/* Platz für die Kartenzahl (I0004) — bis dahin leer, aber schon reserviert. */
+/* Die Kartenzahl steht rechts im Bahnenkopf; ist die Anzeige aus, hält die Stelle ihren Platz,
+   damit die Köpfe der Bahnen beim Umschalten nicht springen. */
 .spaltenbahn-kartenzahl {
     margin-left: auto;
     min-width: var(--space-4);
     font-size: 12px;
+    text-align: right;
     color: color-mix(in srgb, var(--color-text) 55%, transparent);
 }
 

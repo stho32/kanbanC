@@ -16,8 +16,17 @@
                         <span class="spaltenbahn-vermerk">Grenze @spalte.Anzeigegrenze</span>
                     }
                 </span>
-                @* Die Kartenzahl bleibt leer, bis I0004 sie füllt. *@
-                <span class="spaltenbahn-kartenzahl" aria-hidden="true"></span>
+                @* Die Zahl wird aus der gelieferten Kartenliste gerechnet: es gibt keinen zweiten
+                   Ort, der gepflegt werden müsste und veralten könnte. Ist die Anzeige aus, bleibt
+                   die Stelle leer — keine 0, kein Platzhalter. *@
+                @if (ZeigtKartenzahl)
+                {
+                    <span class="spaltenbahn-kartenzahl">@spalte.Karten.Count</span>
+                }
+                else
+                {
+                    <span class="spaltenbahn-kartenzahl" aria-hidden="true"></span>
+                }
                 @if (IstBearbeitbar)
                 {
                     <span class="spaltenbahn-position">Position @spalte.Position</span>
@@ -103,6 +112,9 @@
     [Parameter]
     [EditorRequired]
     public IReadOnlyList<Spalte> Spalten { get; set; } = [];
+
+    [Parameter]
+    public bool ZeigtKartenzahl { get; set; }
 
     [Parameter]
     public EventCallback KarteWurdeAngelegt { get; set; }
