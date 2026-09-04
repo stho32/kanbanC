@@ -42,6 +42,15 @@ public sealed class BoardSeite
 
     public ILocator Kartenzahlstellen => _seite.Locator("#spaltenbahnen .spaltenbahn-kartenzahl");
 
+    public ILocator Kartenzahlschalter => _seite.Locator("#kartenzahl-schalter");
+
+    public ILocator KartenzahlFehlermeldung => _seite.Locator("#kartenzahl-fehlermeldung");
+
+    public async Task SchalteKartenzahl(bool eingeschaltet)
+    {
+        await Kartenzahlschalter.SetCheckedAsync(eingeschaltet);
+    }
+
     public ILocator Kartenstellen => _seite.Locator("#spaltenbahnen .spaltenbahn-kartenstelle");
 
     public ILocator Karten => _seite.Locator("#spaltenbahnen .karte");

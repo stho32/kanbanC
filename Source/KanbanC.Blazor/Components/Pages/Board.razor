@@ -1,6 +1,7 @@
 @page "/boards/{BoardId:long}"
 @using KanbanC.Blazor.Components.Karten
 @using KanbanC.Blazor.Services
+@using KanbanC.Contracts.Boards
 @using KanbanC.Contracts.Fehler
 @using KanbanC.Contracts.Karten
 @inject BoardApiKlient ApiKlient
@@ -40,6 +41,15 @@ else
     </SectionContent>
 
     <SectionContent SectionName="kopfzeile-bedienung">
+        @* Ein Kontrollfeld, kein Knopf: die Kartenzahl ist ein Zustand des Boards, der stehen
+           bleibt, keine Handlung. Es steht links vom Layout-Schalter — erst ansehen, dann umbauen. *@
+        <label class="kontrollfeld" for="kartenzahl-schalter">
+            <input id="kartenzahl-schalter"
+                   type="checkbox"
+                   checked="@_kartenzahlIstEingeschaltet"
+                   @onchange="SchalteKartenzahl" />
+            Kartenzahl
+        </label>
         @if (_layoutModusIstAktiv)
         {
             <button type="button" class="btn btn-haupt btn-symbol" id="layout-fertig" title="Layout fertig" @onclick="VerlasseLayoutModus">✓</button>
@@ -51,6 +61,10 @@ else
     </SectionContent>
 
     <div class="boardflaeche">
+        @if (_kartenzahlFehlermeldung is not null)
+        {
+            <div class="meldung" role="alert" id="kartenzahl-fehlermeldung">@_kartenzahlFehlermeldung</div>
+        }
         @if (_zugFehlermeldung is not null)
         {
             <div class="meldung" role="alert" id="karte-fehlermeldung">@_zugFehlermeldung</div>
@@ -91,6 +105,12 @@ else
     private bool _layoutModusIstAktiv;
     private Zurueckweisung? _zugZurueckweisung;
     private string? _zugFehlermeldung;
+
+    // Der Zustand des Kontrollfelds wird mitgeführt, statt am Board abgelesen zu werden: nur so
+    // steht es nach einem gescheiterten Umschalten wieder auf dem Stand des Boards. Der Browser
+    // hat das Häkchen dann schon umgelegt, und ein unveränderter Wert erzeugt keinen Diff.
+    private bool _kartenzahlIstEingeschaltet;
+    private string? _kartenzahlFehlermeldung;
 
     [Parameter]
     public long BoardId { get; set; }
@@ -145,8 +165,27 @@ else
         await LadeBoard();
     }
 
+    private async Task SchalteKartenzahl(ChangeEventArgs ereignis)
+    {
+        var gewuenschterWert = ereignis.Value is true;
+        _kartenzahlIstEingeschaltet = gewuenschterWert;
+        _kartenzahlFehlermeldung = await WebApiAufruf.MitAusfallmeldung(() => SetzeKartenzahl(gewuenschterWert));
+        var dieWebApiWarNichtErreichbar = _kartenzahlFehlermeldung is not null;
+        if (dieWebApiWarNichtErreichbar)
+        {
+            _kartenzahlIstEingeschaltet = _board is not null && _board.ZeigtKartenzahl;
+        }
+    }
+
+    private async Task SetzeKartenzahl(bool zeigtKartenzahl)
+    {
+        await ApiKlient.SchalteKartenzahl(BoardId, new Kartenzahlanzeige(zeigtKartenzahl));
+        await LadeBoard();
+    }
+
     private async Task LadeBoard()
     {
         _board = await ApiKlient.LadeBoard(BoardId);
+        _kartenzahlIstEingeschaltet = _board is not null && _board.ZeigtKartenzahl;
     }
 }
