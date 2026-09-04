@@ -5,11 +5,11 @@
 }
 
 .spalte-name {
-    width: 55%;
+    width: 50%;
 }
 
 .spalte-art {
-    width: 30%;
+    width: 28%;
 }
 
 .kontributor-name {
@@ -83,10 +83,10 @@
     border: 1px dashed var(--color-accent);
 }
 
-/* Gepflegt wird in der Zeile: die Spalte trägt den Stift rechtsbündig, damit die Namen den
-   Platz behalten. */
+/* Gepflegt wird in der Zeile: die Spalte trägt Stift und Pausensymbol rechtsbündig, damit die
+   Namen den Platz behalten. Zwei Schalter statt einem — die Breite ist entsprechend bemessen. */
 .spalte-pflege {
-    width: 15%;
+    width: 22%;
     text-align: right;
 }
 
@@ -94,8 +94,25 @@
     text-align: right;
 }
 
+.pflegeschalter {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-1);
+}
+
 .kontributor-stift {
     color: var(--color-accent);
+}
+
+/* Das Stilllegen tritt hinter das Bearbeiten zurück: derselbe Schalter, aber in der
+   zurückgenommenen Textfarbe des Token-Sheets statt im Akzent. */
+.kontributor-stilllegen {
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.kontributor-stilllegen:hover {
+    background: color-mix(in srgb, var(--color-text) 8%, transparent);
 }
 
 /* Die aufgeklappte Zeile ersetzt die Anzeigezeile ihres Kontributors und steht an deren Stelle;

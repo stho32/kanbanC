@@ -123,6 +123,19 @@ public sealed class WebApiKlient : IDisposable
         return kontributor;
     }
 
+    public async Task<Kontributor> SetzeStilllegung(long kontributorId, bool istStillgelegt)
+    {
+        var antwort = await _klient.PutAsJsonAsync($"{KontributorenRoute}/{kontributorId}/stilllegung", new Stilllegung(istStillgelegt));
+        antwort.EnsureSuccessStatusCode();
+        var kontributor = await antwort.Content.ReadFromJsonAsync<Kontributor>();
+        if (kontributor is null)
+        {
+            throw new InvalidOperationException("Die WebApi hat keinen Kontributor zurückgegeben.");
+        }
+
+        return kontributor;
+    }
+
     public async Task<IReadOnlyList<Kontributor>> LadeAlleKontributoren()
     {
         var kontributoren = await _klient.GetFromJsonAsync<List<Kontributor>>(KontributorenRoute);

@@ -74,14 +74,27 @@
                         <span class="artplakette tag @Kontributorartform.Plakettenklasse(kontributor.Art)">@Kontributorartform.Beschriftung(kontributor.Art)</span>
                     </td>
                     <td class="zelle-pflege">
-                        <button type="button"
-                                class="btn btn-schlicht btn-symbol kontributor-stift"
-                                id="kontributor-bearbeiten-@kontributor.KontributorId"
-                                title="bearbeiten"
-                                aria-label="@kontributor.Name bearbeiten"
-                                @onclick="() => OeffneBearbeitung(kontributor)">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4l10-10-4-4L4 16z"></path><path d="m14 6 4 4"></path></svg>
-                        </button>
+                        <span class="pflegeschalter">
+                            @if (IstAktiv(kontributor))
+                            {
+                            <button type="button"
+                                    class="btn btn-schlicht btn-symbol kontributor-stift"
+                                    id="kontributor-bearbeiten-@kontributor.KontributorId"
+                                    title="bearbeiten"
+                                    aria-label="@kontributor.Name bearbeiten"
+                                    @onclick="() => OeffneBearbeitung(kontributor)">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4l10-10-4-4L4 16z"></path><path d="m14 6 4 4"></path></svg>
+                            </button>
+                            <button type="button"
+                                    class="btn btn-schlicht btn-symbol kontributor-stilllegen"
+                                    id="kontributor-stilllegen-@kontributor.KontributorId"
+                                    title="stilllegen"
+                                    aria-label="@kontributor.Name stilllegen"
+                                    @onclick="() => SetzeStilllegung(kontributor, true)">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 5v14M15 5v14"></path></svg>
+                            </button>
+                            }
+                        </span>
                     </td>
                 </tr>
             }
@@ -137,6 +150,13 @@
         await LadeListeNeu();
     }
 
+    // Aktiv heißt: es liegt keine Stilllegung vor. Der Wahrheitswert steht nicht im DTO, weil er
+    // aus dem Datum ableitbar ist — hier ist die eine Stelle, die ihn ausspricht.
+    private static bool IstAktiv(Kontributor kontributor)
+    {
+        return kontributor.StillgelegtAm is null;
+    }
+
     private bool IstInBearbeitung(Kontributor kontributor)
     {
         return _bearbeitung is not null && _bearbeitung.KontributorId == kontributor.KontributorId;
@@ -167,6 +187,26 @@
             if (ergebnis.WurdeZurueckgewiesen)
             {
                 _zurueckweisungsmeldung = Kontributorenmeldung.AusAenderung(ergebnis.Zurueckweisung);
+                return;
+            }
+
+            _zurueckweisungsmeldung = null;
+            _bearbeitung = null;
+            _kontributoren = await ApiKlient.LadeAlle();
+        });
+    }
+
+    // Nach dem Schalten wird die ganze Liste neu geholt, statt die Zeile lokal umzuhängen: die
+    // Reihenfolge gehört der Abfrage. Eine offene Bearbeitungszeile wird geschlossen — ihr Stand
+    // gehörte zu einer Liste, die es so nicht mehr gibt.
+    private async Task SetzeStilllegung(Kontributor kontributor, bool istStillgelegt)
+    {
+        await MitErreichbarerWebApi(async () =>
+        {
+            var ergebnis = await ApiKlient.SetzeStilllegung(kontributor.KontributorId, new Stilllegung(istStillgelegt));
+            if (ergebnis.WurdeZurueckgewiesen)
+            {
+                _zurueckweisungsmeldung = Kontributorenmeldung.AusStilllegung(ergebnis.Zurueckweisung);
                 return;
             }
 

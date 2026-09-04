@@ -20,6 +20,14 @@ public static class Kontributorenmeldung
         return Aus(zurueckweisung, "Ohne Namen bleibt der Kontributor, wie er war.");
     }
 
+    // Beim Stilllegen gibt es keinen Fall, den ein Mensch in der Zeile auslösen kann: es gibt
+    // keinen Rumpf, den er falsch ausfüllen könnte. Bleibt die eine Lage „diesen Kontributor gibt
+    // es nicht mehr“ — sie kommt so, wie die WebApi sie meldet.
+    public static string AusStilllegung(Zurueckweisung zurueckweisung)
+    {
+        return AlleMeldungen(zurueckweisung);
+    }
+
     private static string Aus(Zurueckweisung zurueckweisung, string satzZumLeerenNamen)
     {
         var derNameFehlt = zurueckweisung.Befunde.Any(befund => befund.Code == LeererNameCode);
@@ -28,6 +36,11 @@ public static class Kontributorenmeldung
             return satzZumLeerenNamen;
         }
 
+        return AlleMeldungen(zurueckweisung);
+    }
+
+    private static string AlleMeldungen(Zurueckweisung zurueckweisung)
+    {
         var meldungen = zurueckweisung.Befunde.Select(befund => befund.Meldung);
         return string.Join(" ", meldungen);
     }
