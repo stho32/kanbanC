@@ -28,6 +28,18 @@ public sealed class KontributorenRepository : IKontributorenRepository
         return kontributor;
     }
 
+    // Die Reihenfolge gehört der Abfrage, nicht der Oberfläche: eine zweite Sortierung wäre eine
+    // zweite Wahrheit. Die KontributorId entscheidet, wenn zwei gleich heißen.
+    public IReadOnlyList<Kontributor> LadeAlle()
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+        var zeilen = verbindung.Query<KontributorZeile>(@"
+            SELECT KontributorId, Name, Kontributorart
+              FROM Kontributor
+             ORDER BY Name COLLATE NOCASE, KontributorId");
+        return zeilen.Select(AlsKontributor).ToList();
+    }
+
     private static long FuegeKontributorEin(IDbConnection verbindung, IDbTransaction transaktion, KontributorAnlegenAnfrage anfrage)
     {
         var parameter = new { anfrage.Name, Kontributorart = anfrage.Art.ToString() };

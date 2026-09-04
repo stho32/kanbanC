@@ -66,6 +66,50 @@ public class KontributorenRepositoryTests
         Assert.That(Gespeicherte(datenbank)[0].Name, Is.EqualTo("  Stefan  "));
     }
 
+    [Test]
+    public void Wenn_noch_kein_Kontributor_angelegt_ist_dann_liefert_LadeAlle_eine_leere_Liste()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KontributorenRepository(datenbank.Verbindungsfabrik);
+
+        var kontributoren = repository.LadeAlle();
+
+        Assert.That(kontributoren, Is.Empty);
+    }
+
+    [Test]
+    public void Wenn_gemischt_geschriebene_Namen_angelegt_sind_dann_liefert_LadeAlle_sie_alphabetisch_ohne_Ruecksicht_auf_die_Schreibweise()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KontributorenRepository(datenbank.Verbindungsfabrik);
+        repository.LegeAn(new KontributorAnlegenAnfrage("stefan", Kontributorart.Mensch));
+        repository.LegeAn(new KontributorAnlegenAnfrage("Codex-Agent", Kontributorart.Agent));
+        repository.LegeAn(new KontributorAnlegenAnfrage("Nina Barth", Kontributorart.Abgebildet));
+
+        var kontributoren = repository.LadeAlle();
+
+        Assert.That(kontributoren, Is.EqualTo(new[]
+        {
+            new Kontributor(2, "Codex-Agent", Kontributorart.Agent),
+            new Kontributor(3, "Nina Barth", Kontributorart.Abgebildet),
+            new Kontributor(1, "stefan", Kontributorart.Mensch),
+        }));
+    }
+
+    [Test]
+    public void Wenn_zwei_Kontributoren_gleich_heissen_dann_entscheidet_die_KontributorId_ueber_ihre_Reihenfolge()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KontributorenRepository(datenbank.Verbindungsfabrik);
+        repository.LegeAn(new KontributorAnlegenAnfrage("Stefan", Kontributorart.Mensch));
+        repository.LegeAn(new KontributorAnlegenAnfrage("Anna", Kontributorart.Mensch));
+        repository.LegeAn(new KontributorAnlegenAnfrage("stefan", Kontributorart.Agent));
+
+        var kontributoren = repository.LadeAlle();
+
+        Assert.That(kontributoren.Select(kontributor => kontributor.KontributorId), Is.EqualTo(new[] { 2L, 1L, 3L }));
+    }
+
     private static (long KontributorId, string Name, string Kontributorart)[] Gespeicherte(TemporaereDatenbank datenbank)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
