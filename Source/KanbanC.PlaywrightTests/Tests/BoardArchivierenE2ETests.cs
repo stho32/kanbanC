@@ -7,6 +7,8 @@ namespace KanbanC.PlaywrightTests.Tests;
 [TestFixture]
 public class BoardArchivierenE2ETests : PageTest
 {
+    private const string Ausfallmeldung = "Die WebApi ist nicht erreichbar.";
+
     [Test]
     [Category("US-4")]
     public async Task Wenn_ein_Board_ueber_das_Menue_archiviert_wird_dann_verschwindet_es_ohne_Reload_aus_der_Standardliste()
@@ -157,6 +159,41 @@ public class BoardArchivierenE2ETests : PageTest
         await seite.OeffneMenue(2);
         await Expect(seite.Menuepunkt(2, "archivieren")).ToHaveCountAsync(0);
         await Expect(seite.Menuepunkt(2, "umbenennen")).ToBeVisibleAsync();
+    }
+
+    [Test]
+    [Category("US-6")]
+    public async Task Wenn_ein_archiviertes_Board_geoeffnet_wird_dann_stehen_seine_Bahnen_und_Karten_unveraendert_da()
+    {
+        var seite = await UebersichtMitDreiBoards();
+        using var webApi = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        var vorher = await webApi.LadeBoard(2);
+        await webApi.LegeKarteAn(2, vorher.Spalten[0].SpalteId, "Migration schreiben");
+        await seite.Oeffne();
+        await seite.OeffneMenue(2);
+        await seite.Menuepunkt(2, "archivieren").ClickAsync();
+        await Expect(seite.Boardzeilen).ToHaveCountAsync(2);
+
+        var board = new BoardSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await board.Oeffne(2);
+
+        await Expect(board.Name).ToHaveTextAsync("KanbanC — Release 1");
+        await Expect(board.Spaltenbahnen).ToHaveCountAsync(3);
+        await Expect(board.Kartentitel).ToHaveTextAsync(new[] { "Migration schreiben" });
+    }
+
+    [Test]
+    [Category("US-4")]
+    public async Task Wenn_die_WebApi_beim_Archivieren_fehlt_dann_meldet_die_Kachel_den_Ausfall_und_die_Liste_bleibt_stehen()
+    {
+        var seite = await UebersichtMitDreiBoards();
+        await seite.OeffneMenue(2);
+        Testumgebung.Aktuelle.HalteWebApiAn();
+
+        await seite.Menuepunkt(2, "archivieren").ClickAsync();
+
+        await Expect(seite.Kachelmeldung(2)).ToContainTextAsync(Ausfallmeldung);
+        await Expect(seite.Boardzeilen).ToHaveCountAsync(3);
     }
 
     private async Task<BoardsSeite> UebersichtMitDreiBoards()
