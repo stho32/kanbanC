@@ -71,6 +71,16 @@ public class FehlervertragTests
             await webApi.Klient.GetAsync($"{BoardsRoute}/999")));
 
         faelle.Add(new Fehlerfall(
+            "PUT /api/boards/{boardId:long}",
+            "Board umbenennen ohne Name",
+            await webApi.Klient.PutAsJsonAsync($"{BoardsRoute}/{board.BoardId}", new BoardUmbenennenAnfrage(""))));
+
+        faelle.Add(new Fehlerfall(
+            "PUT /api/boards/{boardId:long}",
+            "Board umbenennen mit unbekannter BoardId",
+            await webApi.Klient.PutAsJsonAsync($"{BoardsRoute}/999", new BoardUmbenennenAnfrage("Betrieb"))));
+
+        faelle.Add(new Fehlerfall(
             "PUT /api/boards/{boardId:long}/kartenzahl",
             "Kartenzahl schalten an unbekanntem Board",
             await webApi.Klient.PutAsJsonAsync($"{BoardsRoute}/999/kartenzahl", new Kartenzahlanzeige(true))));

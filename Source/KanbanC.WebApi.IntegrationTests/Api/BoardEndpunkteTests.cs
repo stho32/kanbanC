@@ -339,6 +339,86 @@ public class BoardEndpunkteTests
         });
     }
 
+    [Test]
+    public async Task Wenn_ein_Board_per_PUT_umbenannt_wird_dann_antwortet_die_API_mit_200_und_GET_liefert_den_neuen_Namen()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi, new BoardAnlegenAnfrage("KanbanC — Release 1", BoardArt.Projekt, new DateOnly(2026, 9, 1), new DateOnly(2026, 12, 31)));
+
+        var antwort = await webApi.Klient.PutAsJsonAsync($"{BoardsRoute}/{board.BoardId}", new BoardUmbenennenAnfrage("KanbanC — Release 2"));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var umbenannt = await antwort.Content.ReadFromJsonAsync<Board>();
+        var geladen = await webApi.Klient.GetFromJsonAsync<Board>($"{BoardsRoute}/{board.BoardId}");
+        Assert.Multiple(() =>
+        {
+            Assert.That(umbenannt!.Name, Is.EqualTo("KanbanC — Release 2"));
+            Assert.That(geladen!.Name, Is.EqualTo("KanbanC — Release 2"));
+            Assert.That(geladen.Art, Is.EqualTo(BoardArt.Projekt));
+            Assert.That(geladen.Starttermin, Is.EqualTo(new DateOnly(2026, 9, 1)));
+            Assert.That(geladen.Zieltermin, Is.EqualTo(new DateOnly(2026, 12, 31)));
+            Assert.That(geladen.Spalten.Select(spalte => spalte.SpalteId), Is.EqualTo(board.Spalten.Select(spalte => spalte.SpalteId)));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_ein_Board_umbenannt_ist_dann_steht_es_in_der_Liste_an_seiner_neuen_alphabetischen_Stelle()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        await LegeBoardAn(webApi, new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null));
+        var zweites = await LegeBoardAn(webApi, new BoardAnlegenAnfrage("Vertrieb", BoardArt.Linie, null, null));
+        var vorher = await webApi.Klient.GetFromJsonAsync<List<BoardUebersicht>>(BoardsRoute);
+        Assert.That(vorher!.Select(b => b.Name), Is.EqualTo(new[] { "Entwicklung", "Vertrieb" }));
+
+        await webApi.Klient.PutAsJsonAsync($"{BoardsRoute}/{zweites.BoardId}", new BoardUmbenennenAnfrage("Beschaffung"));
+
+        var nachher = await webApi.Klient.GetFromJsonAsync<List<BoardUebersicht>>(BoardsRoute);
+        Assert.That(nachher!.Select(b => b.Name), Is.EqualTo(new[] { "Beschaffung", "Entwicklung" }));
+    }
+
+    [Test]
+    public async Task Wenn_der_neue_Name_leer_ist_dann_antwortet_die_API_mit_400_einem_Befund_und_dem_alten_Namen()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi, new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null));
+
+        var antwort = await webApi.Klient.PutAsJsonAsync($"{BoardsRoute}/{board.BoardId}", new BoardUmbenennenAnfrage("   "));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Board umbenennen ohne Name");
+        var geladen = await webApi.Klient.GetFromJsonAsync<Board>($"{BoardsRoute}/{board.BoardId}");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("board-name-leer"));
+            Assert.That(zurueckweisung.Befunde[0].Kompensation, Does.Contain("PUT /api/boards/{boardId}"));
+            Assert.That(zurueckweisung.Befunde[0].Kompensation, Does.Not.Contain("POST /api/boards"));
+            Assert.That(geladen!.Name, Is.EqualTo("Entwicklung"));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_eine_unbekannte_BoardId_umbenannt_wird_dann_antwortet_die_API_mit_404_und_einem_Rumpf()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi, new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null));
+
+        var antwort = await webApi.Klient.PutAsJsonAsync($"{BoardsRoute}/999", new BoardUmbenennenAnfrage("Betrieb"));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Board umbenennen mit unbekannter BoardId");
+        var geladen = await webApi.Klient.GetFromJsonAsync<Board>($"{BoardsRoute}/{board.BoardId}");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("board-unbekannt"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain("999"));
+            Assert.That(geladen!.Name, Is.EqualTo("Entwicklung"));
+        });
+    }
+
     private static async Task LegeKarteAn(TestWebApi webApi, long boardId, long spalteId, string titel)
     {
         var antwort = await webApi.Klient.PostAsJsonAsync($"{BoardsRoute}/{boardId}/spalten/{spalteId}/karten", new KarteAnlegenAnfrage(titel));

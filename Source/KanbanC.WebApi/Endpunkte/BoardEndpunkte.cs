@@ -13,6 +13,7 @@ public static class BoardEndpunkte
         routen.MapPost(Basisroute, LegeBoardAn).WithName("BoardAnlegen");
         routen.MapGet(Basisroute, LadeAlleBoards).WithName("BoardsAuflisten");
         routen.MapGet(Basisroute + "/{boardId:long}", LadeBoard).WithName("BoardLesen");
+        routen.MapPut(Basisroute + "/{boardId:long}", BenenneBoardUm).WithName("BoardUmbenennen");
         routen.MapPut(Basisroute + "/{boardId:long}/kartenzahl", SchalteKartenzahl).WithName("KartenzahlSchalten");
     }
 
@@ -44,6 +45,18 @@ public static class BoardEndpunkte
         }
 
         return Results.Ok(board);
+    }
+
+    private static IResult BenenneBoardUm(long boardId, BoardUmbenennenAnfrage anfrage, BoardService boardService)
+    {
+        var ergebnis = boardService.BenenneBoardUm(boardId, anfrage);
+        var anfrageWurdeZurueckgewiesen = !ergebnis.IstErfolg;
+        if (anfrageWurdeZurueckgewiesen)
+        {
+            return Zurueckweisungen.AlsFehlerantwort(ergebnis.Befunde);
+        }
+
+        return Results.Ok(ergebnis.Wert);
     }
 
     private static IResult SchalteKartenzahl(long boardId, Kartenzahlanzeige anzeige, BoardService boardService)
