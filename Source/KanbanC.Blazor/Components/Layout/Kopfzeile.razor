@@ -158,10 +158,14 @@
 
     // Gespeichert ist nur die KontributorId; der Name ist eine Ableitung aus der Liste, damit ein
     // Umbenennen nachzieht und eine unbekannte Id zu „nicht gewählt" wird statt zu einem
-    // verwaisten Namen.
+    // verwaisten Namen. Aufgelöst wird über die Wählbaren, nicht über die volle Liste: ein
+    // inzwischen Stillgelegter gilt wie unbekannt — sonst arbeitete jemand weiter unter einer
+    // Identität, die gerade aus der Wahl verschwunden ist. Der Identitätsspeicher wird dabei
+    // nicht angefasst; die Id bleibt liegen und trägt wieder, sobald zurückgeholt wird.
     private string Identitaetsbeschriftung()
     {
-        var gewaehlterKontributor = _kontributoren.FirstOrDefault(EntsprichtDerWahl);
+        var waehlbare = Identitaetsliste.Waehlbare(_kontributoren);
+        var gewaehlterKontributor = waehlbare.FirstOrDefault(EntsprichtDerWahl);
         var esGibtKeineGueltigeWahl = gewaehlterKontributor is null;
         if (esGibtKeineGueltigeWahl)
         {
