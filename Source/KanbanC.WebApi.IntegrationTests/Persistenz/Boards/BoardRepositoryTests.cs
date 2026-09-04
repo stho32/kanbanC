@@ -550,6 +550,111 @@ public class BoardRepositoryTests
         Assert.That(repository.LadeAlle(Aktive), Is.Empty);
     }
 
+    [Test]
+    public void Wenn_ein_Board_archiviert_wird_dann_traegt_das_gelieferte_Board_den_Stand_und_die_Datei_eine_Zeile()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        var board = repository.LegeAn(new BoardAnlegenAnfrage("KanbanC — Release 1", BoardArt.Projekt, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+
+        var archiviert = repository.SetzeArchivierung(board.BoardId, Archivierte);
+
+        Assert.That(archiviert, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(archiviert.IstArchiviert, Is.True);
+            Assert.That(archiviert.Spalten, Is.EqualTo(board.Spalten));
+            Assert.That(repository.Lade(board.BoardId)!.IstArchiviert, Is.True);
+            Assert.That(GespeicherteArchivanzahl(datenbank), Is.EqualTo(1));
+        });
+    }
+
+    [Test]
+    public void Wenn_zweimal_hintereinander_archiviert_wird_dann_bleibt_es_bei_einer_Zeile()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        var board = repository.LegeAn(new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+        repository.SetzeArchivierung(board.BoardId, Archivierte);
+
+        var zweitesArchivieren = repository.SetzeArchivierung(board.BoardId, Archivierte);
+
+        Assert.That(zweitesArchivieren, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(zweitesArchivieren.IstArchiviert, Is.True);
+            Assert.That(GespeicherteArchivanzahl(datenbank), Is.EqualTo(1));
+        });
+    }
+
+    [Test]
+    public void Wenn_ein_archiviertes_Board_zurueckgeholt_wird_dann_ist_es_wieder_aktiv_und_die_Zeile_ist_fort()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        var board = repository.LegeAn(new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+        repository.SetzeArchivierung(board.BoardId, Archivierte);
+        Assert.That(repository.Lade(board.BoardId)!.IstArchiviert, Is.True);
+
+        var zurueckgeholt = repository.SetzeArchivierung(board.BoardId, Aktive);
+
+        Assert.That(zurueckgeholt, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckgeholt.IstArchiviert, Is.False);
+            Assert.That(repository.Lade(board.BoardId)!.IstArchiviert, Is.False);
+            Assert.That(GespeicherteArchivanzahl(datenbank), Is.EqualTo(0));
+            Assert.That(repository.LadeAlle(Aktive).Select(b => b.BoardId), Is.EqualTo(new[] { board.BoardId }));
+        });
+    }
+
+    [Test]
+    public void Wenn_ein_nie_archiviertes_Board_zurueckgeholt_wird_dann_aendert_sich_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        var board = repository.LegeAn(new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+
+        var zurueckgeholt = repository.SetzeArchivierung(board.BoardId, Aktive);
+
+        Assert.That(zurueckgeholt, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckgeholt.IstArchiviert, Is.False);
+            Assert.That(GespeicherteArchivanzahl(datenbank), Is.EqualTo(0));
+        });
+    }
+
+    [Test]
+    public void Wenn_die_BoardId_unbekannt_ist_dann_liefert_SetzeArchivierung_null_und_schreibt_keine_Zeile()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        repository.LegeAn(new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+
+        var archiviert = repository.SetzeArchivierung(99, Archivierte);
+
+        Assert.That(archiviert, Is.Null);
+        Assert.That(GespeicherteArchivanzahl(datenbank), Is.EqualTo(0));
+    }
+
+    [Test]
+    public void Wenn_ein_Board_archiviert_wird_dann_bleibt_das_andere_aktiv()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        var erstes = repository.LegeAn(new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+        var zweites = repository.LegeAn(new BoardAnlegenAnfrage("Vertrieb", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+
+        repository.SetzeArchivierung(erstes.BoardId, Archivierte);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(repository.Lade(erstes.BoardId)!.IstArchiviert, Is.True);
+            Assert.That(repository.Lade(zweites.BoardId)!.IstArchiviert, Is.False);
+        });
+    }
+
     private static void FuegeArchivzeileEin(TemporaereDatenbank datenbank, long boardId)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();

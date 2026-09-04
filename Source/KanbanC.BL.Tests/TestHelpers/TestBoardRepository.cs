@@ -57,6 +57,23 @@ public sealed class TestBoardRepository : IBoardRepository
         return umbenannt;
     }
 
+    public Archivierung? GeschriebeneArchivierung { get; private set; }
+
+    public Board? SetzeArchivierung(long boardId, Archivierung archivierung)
+    {
+        var stelle = _boards.FindIndex(b => b.BoardId == boardId);
+        var boardIstUnbekannt = stelle < 0;
+        if (boardIstUnbekannt)
+        {
+            return null;
+        }
+
+        GeschriebeneArchivierung = archivierung;
+        var geschaltet = _boards[stelle] with { IstArchiviert = archivierung.IstArchiviert };
+        _boards[stelle] = geschaltet;
+        return geschaltet;
+    }
+
     public Kartenzahlanzeige? GeschriebeneAnzeige { get; private set; }
 
     public Board? SetzeKartenzahlanzeige(long boardId, Kartenzahlanzeige anzeige)

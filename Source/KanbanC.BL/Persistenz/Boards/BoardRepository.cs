@@ -97,6 +97,45 @@ public sealed class BoardRepository : IBoardRepository
         return board;
     }
 
+    public Board? SetzeArchivierung(long boardId, Archivierung archivierung)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+        using var transaktion = verbindung.BeginTransaction();
+
+        // Wie beim Schalten der Kartenzahl wird das Board in der Transaktion gelesen, bevor
+        // geschrieben wird: SQLite erzwingt den Fremdschluessel nicht, und eine Ausnahme waere an
+        // der API eine Antwort ohne Befund.
+        var boardIstUnbekannt = LiesBoardzeile(verbindung, transaktion, boardId) is null;
+        if (boardIstUnbekannt)
+        {
+            return null;
+        }
+
+        SchreibeArchivierung(verbindung, transaktion, boardId, archivierung);
+        var board = LiesBoard(verbindung, transaktion, boardId);
+        transaktion.Commit();
+        return board;
+    }
+
+    // Die Zeile selbst ist die Aussage: archivieren legt sie an, zurueckholen entfernt sie. Beides
+    // laesst sich beliebig oft wiederholen, ohne dass sich etwas aendert.
+    private static void SchreibeArchivierung(IDbConnection verbindung, IDbTransaction transaktion, long boardId, Archivierung archivierung)
+    {
+        var parameter = new { Board = boardId };
+        if (archivierung.IstArchiviert)
+        {
+            verbindung.Execute(@"
+                INSERT INTO Boardarchivierung (Board)
+                VALUES (@Board)
+                ON CONFLICT (Board) DO NOTHING", parameter, transaktion);
+            return;
+        }
+
+        verbindung.Execute(@"
+            DELETE FROM Boardarchivierung
+             WHERE Board = @Board", parameter, transaktion);
+    }
+
     private static void SchreibeNamen(IDbConnection verbindung, IDbTransaction transaktion, long boardId, string name)
     {
         var parameter = new { BoardId = boardId, Name = name };

@@ -15,4 +15,6 @@ public interface IBoardRepository
 
     // null heißt an beiden Schreibzugriffen: dieses Board gibt es nicht.
     Board? BenenneUm(long boardId, BoardUmbenennenAnfrage anfrage);
+
+    Board? SetzeArchivierung(long boardId, Archivierung archivierung);
 }
