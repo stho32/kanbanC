@@ -1,11 +1,14 @@
 using KanbanC.BL.Integrations.Boards;
 using KanbanC.BL.Integrations.Karten;
+using KanbanC.BL.Integrations.Kontributoren;
 using KanbanC.BL.Interfaces.Boards;
 using KanbanC.BL.Interfaces.Karten;
+using KanbanC.BL.Interfaces.Kontributoren;
 using KanbanC.BL.Interfaces.Persistenz;
 using KanbanC.BL.Persistenz;
 using KanbanC.BL.Persistenz.Boards;
 using KanbanC.BL.Persistenz.Karten;
+using KanbanC.BL.Persistenz.Kontributoren;
 using KanbanC.BL.Persistenz.Migrationen;
 using KanbanC.WebApi.Endpunkte;
 
@@ -24,9 +27,11 @@ builder.Services.AddSingleton<Migrationslaeufer>();
 builder.Services.AddSingleton<IBoardRepository, BoardRepository>();
 builder.Services.AddSingleton<ISpaltenRepository, SpaltenRepository>();
 builder.Services.AddSingleton<IKartenRepository, KartenRepository>();
+builder.Services.AddSingleton<IKontributorenRepository, KontributorenRepository>();
 builder.Services.AddSingleton<BoardService>();
 builder.Services.AddSingleton<SpaltenService>();
 builder.Services.AddSingleton<KartenService>();
+builder.Services.AddSingleton<KontributorenService>();
 
 var app = builder.Build();
 
@@ -43,6 +48,7 @@ app.MapGet("/api/zustand", () => Results.Ok(new { dienst = "KanbanC.WebApi", ber
 BoardEndpunkte.Registriere(app);
 SpaltenEndpunkte.Registriere(app);
 KartenEndpunkte.Registriere(app);
+KontributorenEndpunkte.Registriere(app);
 
 app.Run();
 

@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
+using KanbanC.Contracts.Kontributoren;
 using KanbanC.WebApi.IntegrationTests.Infrastructure;
 
 namespace KanbanC.WebApi.IntegrationTests.Api;
@@ -8,6 +9,7 @@ namespace KanbanC.WebApi.IntegrationTests.Api;
 public class WebApiNeustartTests
 {
     private const string BoardsRoute = "/api/boards";
+    private const string KontributorenRoute = "/api/kontributoren";
 
     [Test]
     public async Task Wenn_die_WebApi_auf_derselben_Datei_neu_startet_dann_bleiben_beide_Boards_und_das_dritte_bekommt_BoardId_3()
@@ -133,6 +135,41 @@ public class WebApiNeustartTests
             Assert.That(abgelegtesNachNeustart!.IstArchiviert, Is.True);
             Assert.That(abgelegtesNachNeustart.Spalten, Has.Count.EqualTo(3));
         });
+    }
+
+    [Test]
+    public async Task Wenn_die_WebApi_neu_startet_dann_stehen_die_Kontributoren_unveraendert_da_und_der_naechste_bekommt_KontributorId_3()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using (var ersteInstanz = new TestWebApi(datenbank.Dateipfad))
+        {
+            await LegeKontributorAn(ersteInstanz, new KontributorAnlegenAnfrage("stefan", Kontributorart.Mensch));
+            await LegeKontributorAn(ersteInstanz, new KontributorAnlegenAnfrage("Codex-Agent", Kontributorart.Agent));
+        }
+
+        using var zweiteInstanz = new TestWebApi(datenbank.Dateipfad);
+
+        var kontributoren = await zweiteInstanz.Klient.GetFromJsonAsync<List<Kontributor>>(KontributorenRoute);
+        Assert.That(kontributoren, Is.EqualTo(new[]
+        {
+            new Kontributor(2, "Codex-Agent", Kontributorart.Agent),
+            new Kontributor(1, "stefan", Kontributorart.Mensch),
+        }));
+        var dritter = await LegeKontributorAn(zweiteInstanz, new KontributorAnlegenAnfrage("Nina Barth", Kontributorart.Abgebildet));
+        Assert.That(dritter.KontributorId, Is.EqualTo(3));
+    }
+
+    private static async Task<Kontributor> LegeKontributorAn(TestWebApi webApi, KontributorAnlegenAnfrage anfrage)
+    {
+        var antwort = await webApi.Klient.PostAsJsonAsync(KontributorenRoute, anfrage);
+        antwort.EnsureSuccessStatusCode();
+        var kontributor = await antwort.Content.ReadFromJsonAsync<Kontributor>();
+        if (kontributor is null)
+        {
+            throw new InvalidOperationException("Die API hat keinen Kontributor zurückgegeben.");
+        }
+
+        return kontributor;
     }
 
     private static async Task<Karte> LegeKarteAn(TestWebApi webApi, long boardId, long spalteId, string titel)

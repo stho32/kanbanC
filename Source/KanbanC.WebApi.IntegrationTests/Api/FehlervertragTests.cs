@@ -15,6 +15,8 @@ public class FehlervertragTests
     [
         "GET /openapi/{documentName}.json",
         "GET /api/zustand",
+        "GET /api/kontributoren",
+        "POST /api/kontributoren",
     ];
 
     [Test]
