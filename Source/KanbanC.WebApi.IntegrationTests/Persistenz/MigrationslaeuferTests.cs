@@ -260,6 +260,60 @@ public class MigrationslaeuferTests
         });
     }
 
+    [Test]
+    public void Wenn_die_Migration_gelaufen_ist_dann_traegt_das_Schema_die_Tabelle_Kontributorstilllegung_mit_dem_Kontributor_als_Schluessel()
+    {
+        using var datenbank = new TemporaereDatenbank();
+
+        new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Tabellennamen(datenbank), Does.Contain("Kontributorstilllegung"));
+            Assert.That(Spaltennamen(datenbank, "Kontributorstilllegung"), Is.EqualTo(new[] { "Kontributor", "StillgelegtAm" }));
+            Assert.That(Schluesselspalten(datenbank, "Kontributorstilllegung"), Is.EqualTo(new[] { "Kontributor" }));
+        });
+    }
+
+    [Test]
+    public void Wenn_FuehreAus_auf_einer_Datei_mit_stillgelegtem_Kontributor_ein_zweites_Mal_laeuft_dann_bleiben_Schema_und_Datum_unveraendert()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        FuegeKontributorEin(datenbank, "Anna", "Mensch");
+        FuegeKontributorEin(datenbank, "Bert", "Agent");
+        LegeKontributorStill(datenbank, 1, "2026-08-12");
+        var schemaVorher = SchemaDefinitionen(datenbank);
+
+        Assert.That(() => new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus(), Throws.Nothing);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(SchemaDefinitionen(datenbank), Is.EqualTo(schemaVorher));
+            Assert.That(Stilllegungszeilen(datenbank), Is.EqualTo(new[] { (1L, "2026-08-12") }));
+            Assert.That(Kontributorenzeilen(datenbank), Has.Length.EqualTo(2));
+        });
+    }
+
+    // Das Datum steht als ISO-Text in der Spalte: Dapper nimmt ein DateOnly nicht als
+    // Parameterwert an (belegt in SqliteEigenschaftenTests).
+    private static void LegeKontributorStill(TemporaereDatenbank datenbank, long kontributorId, string stillgelegtAm)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Kontributorstilllegung (Kontributor, StillgelegtAm)
+            VALUES (@Kontributor, @StillgelegtAm)", new { Kontributor = kontributorId, StillgelegtAm = stillgelegtAm });
+    }
+
+    private static (long Kontributor, string StillgelegtAm)[] Stilllegungszeilen(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        var zeilen = verbindung.Query<(long Kontributor, string StillgelegtAm)>(@"
+            SELECT Kontributor, StillgelegtAm
+              FROM Kontributorstilllegung
+             ORDER BY Kontributor");
+        return zeilen.ToArray();
+    }
+
     private static void FuegeKontributorEin(TemporaereDatenbank datenbank, string name, string kontributorart)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();

@@ -1,13 +1,15 @@
 using System.Data;
+using System.Globalization;
 using Dapper;
 using KanbanC.WebApi.IntegrationTests.Infrastructure;
 using Microsoft.Data.Sqlite;
 
 namespace KanbanC.WebApi.IntegrationTests.Persistenz;
 
-// Probe der SQLite-Eigenschaften, auf denen Migration 002 ruht: eindeutiger Index mit
+// Probe der SQLite-Eigenschaften, auf denen die Migrationen ruhen: eindeutiger Index mit
 // COLLATE NOCASE, ROW_NUMBER mit COLLATE NOCASE in der Partition und UPDATE ... FROM auf
-// eine Unterabfrage derselben Tabelle. Bleibt als Regressionsschutz stehen.
+// eine Unterabfrage derselben Tabelle (Migration 002), dazu die Rundreise eines DateOnly durch
+// eine TEXT-Spalte (Migration 007). Bleibt als Regressionsschutz stehen.
 public class SqliteEigenschaftenTests
 {
     private const int ConstraintFehlercode = 19;
@@ -83,6 +85,85 @@ public class SqliteEigenschaftenTests
                AND dubletten.Rang > 1");
 
         Assert.That(Bezeichnungen(verbindung), Is.EqualTo(new[] { "Erledigt", "erledigt (2)", "In Arbeit", "Erledigt" }));
+    }
+
+    // Probe zu Migration 007. Angenommen war, Dapper reiche ein DateOnly ohne Umweg in eine
+    // TEXT-Spalte durch — die Probe hat das widerlegt: Dapper 2.1.79 weist DateOnly als
+    // Parameterwert ab. Deshalb geht auch die Stilllegung den Weg, den BoardRepository für seine
+    // Termine geht (BoardRepository.cs:216-237): geschrieben und gelesen wird ISO-Text, umgerechnet
+    // wird in C#. Die drei Tests halten die drei Befunde fest, auf denen das ruht.
+    [Test]
+    public void Wenn_ein_DateOnly_als_Parameterwert_uebergeben_wird_dann_weist_Dapper_es_ab()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        LegeDatumstabelleAn(verbindung);
+
+        var fehler = Assert.Throws<NotSupportedException>(() => verbindung.Execute(@"
+            INSERT INTO Probedatum (ProbedatumId, Datum)
+            VALUES (@ProbedatumId, @Datum)", new { ProbedatumId = 1L, Datum = new DateOnly(2026, 8, 12) }));
+
+        Assert.That(fehler!.Message, Does.Contain("DateOnly"));
+        Assert.That(Datumstext(verbindung, 1), Is.Null, "Die abgewiesene Anweisung darf nichts geschrieben haben.");
+    }
+
+    [Test]
+    public void Wenn_ein_Datum_als_ISO_Text_geschrieben_wird_dann_ergibt_es_gelesen_wieder_dasselbe_Datum()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        LegeDatumstabelleAn(verbindung);
+
+        FuegeDatumEin(verbindung, 1, new DateOnly(2026, 8, 12));
+
+        Assert.That(Datumstext(verbindung, 1), Is.EqualTo("2026-08-12"));
+        Assert.That(AlsDatum(Datumstext(verbindung, 1)), Is.EqualTo(new DateOnly(2026, 8, 12)));
+    }
+
+    // Fehlerprobe: ein Text, der kein ISO-Datum ist, darf nicht still als irgendein Datum
+    // durchgehen — sonst wäre eine verdorbene Zeile von einer gültigen nicht zu unterscheiden.
+    [Test]
+    public void Wenn_der_gespeicherte_Text_kein_ISO_Datum_ist_dann_scheitert_die_Umrechnung_sichtbar()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        LegeDatumstabelleAn(verbindung);
+        verbindung.Execute(@"
+            INSERT INTO Probedatum (ProbedatumId, Datum)
+            VALUES (1, 'irgendwann')");
+
+        Assert.That(() => AlsDatum(Datumstext(verbindung, 1)), Throws.TypeOf<FormatException>());
+    }
+
+    private static void LegeDatumstabelleAn(IDbConnection verbindung)
+    {
+        verbindung.Execute(@"
+            CREATE TABLE Probedatum
+            (
+                ProbedatumId INTEGER PRIMARY KEY,
+                Datum        TEXT NULL
+            )");
+    }
+
+    private static void FuegeDatumEin(IDbConnection verbindung, long probedatumId, DateOnly datum)
+    {
+        var parameter = new { ProbedatumId = probedatumId, Datum = datum.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) };
+        verbindung.Execute(@"
+            INSERT INTO Probedatum (ProbedatumId, Datum)
+            VALUES (@ProbedatumId, @Datum)", parameter);
+    }
+
+    private static string? Datumstext(IDbConnection verbindung, long probedatumId)
+    {
+        return verbindung.QuerySingleOrDefault<string?>(@"
+            SELECT Datum
+              FROM Probedatum
+             WHERE ProbedatumId = @ProbedatumId", new { ProbedatumId = probedatumId });
+    }
+
+    private static DateOnly AlsDatum(string? isoText)
+    {
+        return DateOnly.ParseExact(isoText!, "yyyy-MM-dd", CultureInfo.InvariantCulture);
     }
 
     private static void LegeProbetabelleAn(IDbConnection verbindung)
