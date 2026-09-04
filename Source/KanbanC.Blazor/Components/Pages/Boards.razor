@@ -126,6 +126,8 @@ else
     // sagt vorher an, was der Endpunkt anlegen wird.
     private static readonly string[] Standardspalten = ["Zu erledigen", "In Arbeit", "Erledigt"];
 
+    private static readonly Archivierung Aktive = new(false);
+
     private readonly BoardFormular _formular = new();
     private IReadOnlyList<BoardUebersicht>? _boards;
     private Zurueckweisung? _zurueckweisung;
@@ -134,7 +136,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        await MitErreichbarerWebApi(async () => _boards = await ApiKlient.LadeAlleBoards());
+        await MitErreichbarerWebApi(async () => _boards = await ApiKlient.LadeAlleBoards(Aktive));
     }
 
     private void OeffneAnlegeformular()
@@ -163,14 +165,14 @@ else
             _zurueckweisung = null;
             _formular.Leere();
             _formularIstOffen = false;
-            _boards = await ApiKlient.LadeAlleBoards();
+            _boards = await ApiKlient.LadeAlleBoards(Aktive);
         });
     }
 
     // Eine Kachel hat ihr Board geändert; die geladene Liste ist die eine Quelle und wird neu geholt.
     private async Task LadeListeNeu()
     {
-        await MitErreichbarerWebApi(async () => _boards = await ApiKlient.LadeAlleBoards());
+        await MitErreichbarerWebApi(async () => _boards = await ApiKlient.LadeAlleBoards(Aktive));
     }
 
     private async Task MitErreichbarerWebApi(Func<Task> aufruf)

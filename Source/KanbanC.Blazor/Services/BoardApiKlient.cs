@@ -14,16 +14,28 @@ public sealed class BoardApiKlient
         _klientFabrik = klientFabrik;
     }
 
-    public async Task<IReadOnlyList<BoardUebersicht>> LadeAlleBoards()
+    public async Task<IReadOnlyList<BoardUebersicht>> LadeAlleBoards(Archivierung archivstand)
     {
         using var klient = _klientFabrik.CreateClient(KlientName);
-        var boards = await klient.GetFromJsonAsync<List<BoardUebersicht>>(BoardsRoute);
+        var boards = await klient.GetFromJsonAsync<List<BoardUebersicht>>(Listenadresse(archivstand));
         if (boards is null)
         {
             return [];
         }
 
         return boards;
+    }
+
+    // Ohne Parameter liefert die WebApi die aktiven Boards; die Standardliste bleibt damit die
+    // Standardadresse.
+    private static string Listenadresse(Archivierung archivstand)
+    {
+        if (archivstand.IstArchiviert)
+        {
+            return $"{BoardsRoute}?archiviert=true";
+        }
+
+        return BoardsRoute;
     }
 
     public async Task<Board?> LadeBoard(long boardId)
@@ -52,6 +64,13 @@ public sealed class BoardApiKlient
 
         antwort.EnsureSuccessStatusCode();
         return await antwort.Content.ReadFromJsonAsync<Board>();
+    }
+
+    public async Task<ApiErgebnis<Board>> SchalteArchivierung(long boardId, Archivierung archivierung)
+    {
+        using var klient = _klientFabrik.CreateClient(KlientName);
+        using var antwort = await klient.PutAsJsonAsync($"{BoardsRoute}/{boardId}/archivierung", archivierung);
+        return await ApiAntwortleser.AlsErgebnis<Board>(antwort);
     }
 
     // 400 und 404 tragen beide eine Zurueckweisung mit Befund und laufen denselben Weg — die

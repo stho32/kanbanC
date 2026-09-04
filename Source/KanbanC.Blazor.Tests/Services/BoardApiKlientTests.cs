@@ -9,6 +9,8 @@ public class BoardApiKlientTests
 {
     private const string JsonTyp = "application/json";
     private static readonly BoardAnlegenAnfrage Anfrage = new("Entwicklung", BoardArt.Linie, null, null);
+    private static readonly Archivierung Aktive = new(false);
+    private static readonly Archivierung Archivierte = new(true);
 
     [Test]
     public async Task Wenn_die_WebApi_Befunde_meldet_dann_stehen_sie_im_Ergebnis()
@@ -121,7 +123,7 @@ public class BoardApiKlientTests
             JsonTyp);
         var klient = new BoardApiKlient(fabrik);
 
-        var boards = await klient.LadeAlleBoards();
+        var boards = await klient.LadeAlleBoards(Aktive);
 
         Assert.That(boards, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -138,7 +140,7 @@ public class BoardApiKlientTests
         using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, "null", JsonTyp);
         var klient = new BoardApiKlient(fabrik);
 
-        var boards = await klient.LadeAlleBoards();
+        var boards = await klient.LadeAlleBoards(Aktive);
 
         Assert.That(boards, Is.Empty);
     }
@@ -276,7 +278,7 @@ public class BoardApiKlientTests
     {
         var klient = new BoardApiKlient(new NichtErreichbareKlientFabrik());
 
-        Assert.That(async () => await klient.LadeAlleBoards(), Throws.InstanceOf<HttpRequestException>());
+        Assert.That(async () => await klient.LadeAlleBoards(Aktive), Throws.InstanceOf<HttpRequestException>());
     }
 
     [Test]
@@ -345,6 +347,100 @@ public class BoardApiKlientTests
 
         Assert.That(
             async () => await klient.BenenneUm(1, new BoardUmbenennenAnfrage("Betrieb")),
+            Throws.InstanceOf<HttpRequestException>());
+    }
+
+    [Test]
+    public async Task Wenn_die_aktiven_Boards_geladen_werden_dann_geht_der_Aufruf_ohne_Abfrageparameter_an_die_Standardadresse()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, "[]", JsonTyp);
+        var klient = new BoardApiKlient(fabrik);
+
+        await klient.LadeAlleBoards(Aktive);
+
+        Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("GET http://webapi.test/api/boards"));
+    }
+
+    [Test]
+    public async Task Wenn_die_archivierten_Boards_geladen_werden_dann_traegt_der_Aufruf_den_Abfrageparameter()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(
+            HttpStatusCode.OK,
+            """[{"boardId":2,"name":"KanbanC — Release 1","art":"Projekt","starttermin":null,"zieltermin":null}]""",
+            JsonTyp);
+        var klient = new BoardApiKlient(fabrik);
+
+        var boards = await klient.LadeAlleBoards(Archivierte);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("GET http://webapi.test/api/boards?archiviert=true"));
+            Assert.That(boards.Select(board => board.BoardId), Is.EqualTo(new long[] { 2 }));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_ein_Board_archiviert_wird_dann_geht_ein_PUT_auf_die_Unterressource_und_das_Board_ist_archiviert()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(
+            HttpStatusCode.OK,
+            """{"boardId":3,"name":"Entwicklung","art":"Linie","starttermin":null,"zieltermin":null,"spalten":[],"zeigtKartenzahl":false,"istArchiviert":true}""",
+            JsonTyp);
+        var klient = new BoardApiKlient(fabrik);
+
+        var ergebnis = await klient.SchalteArchivierung(3, Archivierte);
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Wert.IstArchiviert, Is.True);
+            Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("PUT http://webapi.test/api/boards/3/archivierung"));
+            Assert.That(fabrik.GesendeterRumpf, Is.EqualTo("""{"istArchiviert":true}"""));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_ein_Board_zurueckgeholt_wird_dann_schickt_der_Klient_den_gewuenschten_Stand_an_dieselbe_Adresse()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(
+            HttpStatusCode.OK,
+            """{"boardId":3,"name":"Entwicklung","art":"Linie","starttermin":null,"zieltermin":null,"spalten":[],"zeigtKartenzahl":false,"istArchiviert":false}""",
+            JsonTyp);
+        var klient = new BoardApiKlient(fabrik);
+
+        var ergebnis = await klient.SchalteArchivierung(3, Aktive);
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Wert.IstArchiviert, Is.False);
+            Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("PUT http://webapi.test/api/boards/3/archivierung"));
+            Assert.That(fabrik.GesendeterRumpf, Is.EqualTo("""{"istArchiviert":false}"""));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_das_Board_beim_Archivieren_unbekannt_ist_dann_traegt_das_Ergebnis_eine_lesbare_Zurueckweisung()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(
+            HttpStatusCode.NotFound,
+            """{"befunde":[{"code":"board-unbekannt","meldung":"Ein Board mit der Nummer 999 gibt es nicht.","kompensation":"`GET /api/boards` abrufen."}]}""",
+            JsonTyp);
+        var klient = new BoardApiKlient(fabrik);
+
+        var ergebnis = await klient.SchalteArchivierung(999, Archivierte);
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Is.Not.Empty);
+    }
+
+    [Test]
+    public void Wenn_die_WebApi_beim_Archivieren_nicht_erreichbar_ist_dann_meldet_der_Klient_eine_HttpRequestException()
+    {
+        var klient = new BoardApiKlient(new NichtErreichbareKlientFabrik());
+
+        Assert.That(
+            async () => await klient.SchalteArchivierung(1, Archivierte),
             Throws.InstanceOf<HttpRequestException>());
     }
 
