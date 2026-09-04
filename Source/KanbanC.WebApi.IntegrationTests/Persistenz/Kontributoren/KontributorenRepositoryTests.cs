@@ -110,6 +110,69 @@ public class KontributorenRepositoryTests
         Assert.That(kontributoren.Select(kontributor => kontributor.KontributorId), Is.EqualTo(new[] { 2L, 1L, 3L }));
     }
 
+    [Test]
+    public void Wenn_ein_Kontributor_geaendert_wird_dann_stehen_neuer_Name_und_neue_Art_in_der_Datei()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KontributorenRepository(datenbank.Verbindungsfabrik);
+        var angelegter = repository.LegeAn(new KontributorAnlegenAnfrage("Bert", Kontributorart.Agent));
+
+        var geaenderter = repository.Aendere(angelegter.KontributorId, new KontributorAendernAnfrage("Zora", Kontributorart.Mensch));
+
+        Assert.That(geaenderter, Is.EqualTo(new Kontributor(1, "Zora", Kontributorart.Mensch)));
+        Assert.That(Gespeicherte(datenbank), Is.EqualTo(new[] { (1L, "Zora", "Mensch") }));
+    }
+
+    [Test]
+    public void Wenn_ein_Kontributor_geaendert_wird_dann_bleibt_ein_zweiter_unberuehrt()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KontributorenRepository(datenbank.Verbindungsfabrik);
+        repository.LegeAn(new KontributorAnlegenAnfrage("Anna", Kontributorart.Mensch));
+        var bert = repository.LegeAn(new KontributorAnlegenAnfrage("Bert", Kontributorart.Agent));
+
+        repository.Aendere(bert.KontributorId, new KontributorAendernAnfrage("Zora", Kontributorart.Mensch));
+
+        Assert.That(Gespeicherte(datenbank), Is.EqualTo(new[]
+        {
+            (1L, "Anna", "Mensch"),
+            (2L, "Zora", "Mensch"),
+        }));
+    }
+
+    [Test]
+    public void Wenn_alle_drei_Arten_als_Ziel_gewaehlt_werden_dann_steht_jede_von_ihnen_danach_in_der_Datei()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KontributorenRepository(datenbank.Verbindungsfabrik);
+        var kontributor = repository.LegeAn(new KontributorAnlegenAnfrage("Bert", Kontributorart.Mensch));
+
+        var zumAgenten = repository.Aendere(kontributor.KontributorId, new KontributorAendernAnfrage("Bert", Kontributorart.Agent));
+        var zumAbgebildeten = repository.Aendere(kontributor.KontributorId, new KontributorAendernAnfrage("Bert", Kontributorart.Abgebildet));
+        var zumMenschen = repository.Aendere(kontributor.KontributorId, new KontributorAendernAnfrage("Bert", Kontributorart.Mensch));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(zumAgenten!.Art, Is.EqualTo(Kontributorart.Agent));
+            Assert.That(zumAbgebildeten!.Art, Is.EqualTo(Kontributorart.Abgebildet));
+            Assert.That(zumMenschen!.Art, Is.EqualTo(Kontributorart.Mensch));
+        });
+        Assert.That(Gespeicherte(datenbank), Is.EqualTo(new[] { (1L, "Bert", "Mensch") }));
+    }
+
+    [Test]
+    public void Wenn_die_KontributorId_unbekannt_ist_dann_liefert_Aendere_null_und_die_Datei_bleibt_wie_sie_war()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KontributorenRepository(datenbank.Verbindungsfabrik);
+        repository.LegeAn(new KontributorAnlegenAnfrage("Bert", Kontributorart.Agent));
+
+        var geaenderter = repository.Aendere(999, new KontributorAendernAnfrage("Zora", Kontributorart.Mensch));
+
+        Assert.That(geaenderter, Is.Null);
+        Assert.That(Gespeicherte(datenbank), Is.EqualTo(new[] { (1L, "Bert", "Agent") }));
+    }
+
     private static (long KontributorId, string Name, string Kontributorart)[] Gespeicherte(TemporaereDatenbank datenbank)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
