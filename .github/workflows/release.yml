@@ -1,0 +1,187 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version bump type"
+        required: false
+        default: "patch"
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+
+env:
+  DOTNET_NOLOGO: "true"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
+
+jobs:
+  # Kein Release ohne gruene Pyramide: dasselbe Gate, das /implementierung abschluss
+  # lokal vor jedem Push faehrt — Build warnungsfrei, alle vier Testebenen.
+  pruefen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: NuGet-Pakete aus dem Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/Directory.Build.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Bauen
+        run: dotnet build KanbanC.sln --configuration Debug -warnaserror
+
+      # Die E2E-Tests starten beide Prozesse selbst aus bin/Debug/net10.0 und fahren sie
+      # mit einem echten Chromium. Ohne diesen Schritt fehlt der Browser im Runner.
+      - name: Browser fuer die E2E-Tests
+        run: pwsh Source/KanbanC.PlaywrightTests/bin/Debug/net10.0/playwright.ps1 install --with-deps chromium
+
+      - name: Alle Testebenen
+        run: dotnet test KanbanC.sln --configuration Debug --no-build --logger "console;verbosity=normal"
+
+  vorbereiten:
+    needs: pruefen
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.naechste.outputs.version }}
+      tag: ${{ steps.naechste.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Naechste Version bestimmen
+        id: naechste
+        run: |
+          set -euo pipefail
+          letzter=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-version:refname | head -n1)
+          if [ -z "$letzter" ]; then
+            version="1.0.0"
+          else
+            IFS=. read -r major minor patch <<<"${letzter#v}"
+            case "${{ github.event.inputs.bump || 'patch' }}" in
+              major) major=$((major + 1)); minor=0; patch=0 ;;
+              minor) minor=$((minor + 1)); patch=0 ;;
+              *)     patch=$((patch + 1)) ;;
+            esac
+            version="${major}.${minor}.${patch}"
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${version}" >> "$GITHUB_OUTPUT"
+          echo "Naechste Version: ${version} (vorher: ${letzter:-keine})"
+
+  bauen-und-veroeffentlichen:
+    needs: vorbereiten
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: linux-x64
+            archiv: tar.gz
+          - rid: win-x64
+            archiv: zip
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: NuGet-Pakete aus dem Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/Directory.Build.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      # Beide Prozesse gehoeren in dasselbe Archiv: KanbanC laeuft nur, wenn beide laufen.
+      # Die Version wird zur Buildzeit gesetzt; im Repository steht keine.
+      - name: WebApi und Oberflaeche veroeffentlichen
+        env:
+          VERSION: ${{ needs.vorbereiten.outputs.version }}
+          RID: ${{ matrix.rid }}
+        run: |
+          set -euo pipefail
+          ziel="ausgabe/kanbanc-${VERSION}-${RID}"
+          for projekt in WebApi Blazor; do
+            dotnet publish "Source/KanbanC.${projekt}/KanbanC.${projekt}.csproj" \
+              --configuration Release \
+              --runtime "${RID}" \
+              --self-contained true \
+              -p:Version="${VERSION}" \
+              -p:PublishSingleFile=false \
+              --output "${ziel}/$(echo "${projekt}" | tr '[:upper:]' '[:lower:]')"
+          done
+
+      - name: Startanleitung beilegen
+        env:
+          VERSION: ${{ needs.vorbereiten.outputs.version }}
+          RID: ${{ matrix.rid }}
+        run: |
+          set -euo pipefail
+          ziel="ausgabe/kanbanc-${VERSION}-${RID}"
+          if [ "${RID}" = "win-x64" ]; then
+            api="webapi\\KanbanC.WebApi.exe"; ui="blazor\\KanbanC.Blazor.exe"
+          else
+            api="./webapi/KanbanC.WebApi"; ui="./blazor/KanbanC.Blazor"
+          fi
+          cat > "${ziel}/START.md" <<ANLEITUNG
+          # KanbanC ${VERSION} (${RID})
+
+          Zwei Prozesse, beide werden gebraucht. Die WebApi zuerst — die Oberflaeche
+          spricht ausschliesslich ueber sie mit den Daten.
+
+              ${api}
+              ${ui}
+
+          Danach im Browser: http://localhost:5180
+
+          | Dienst | Port | Einstellung |
+          |---|---|---|
+          | WebApi | 5280 | \`Datenhaltung:Verbindungszeichenfolge\` — Standard \`Data Source=kanbanc.db\` |
+          | Oberflaeche | 5180 | \`WebApi:BasisAdresse\` — Standard \`http://localhost:5280/\` |
+
+          Die Datenbankdatei entsteht beim ersten Start neben der WebApi; eine Migration
+          gibt es nicht. Beide Dienste lauschen auf 0.0.0.0 und sind im LAN erreichbar.
+          KanbanC kennt keine Anmeldung — wer die Seite oeffnet, darf alles.
+          ANLEITUNG
+
+      - name: Archiv packen
+        id: packen
+        env:
+          VERSION: ${{ needs.vorbereiten.outputs.version }}
+          RID: ${{ matrix.rid }}
+          ENDUNG: ${{ matrix.archiv }}
+        run: |
+          set -euo pipefail
+          name="kanbanc-${VERSION}-${RID}"
+          cd ausgabe
+          if [ "${ENDUNG}" = "zip" ]; then
+            zip -qr "${name}.zip" "${name}"
+          else
+            tar -czf "${name}.tar.gz" "${name}"
+          fi
+          echo "datei=ausgabe/${name}.${ENDUNG}" >> "$GITHUB_OUTPUT"
+
+      - name: An das Release haengen
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.vorbereiten.outputs.tag }}
+          name: ${{ needs.vorbereiten.outputs.tag }}
+          files: ${{ steps.packen.outputs.datei }}
+          fail_on_unmatched_files: true
