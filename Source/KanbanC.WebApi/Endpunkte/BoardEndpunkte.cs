@@ -1,4 +1,5 @@
 using KanbanC.BL.Integrations.Boards;
+using KanbanC.BL.Operations.Boards;
 using KanbanC.BL.Operations.Fehler;
 using KanbanC.Contracts.Boards;
 
@@ -31,9 +32,16 @@ public static class BoardEndpunkte
         return Results.Created($"{Basisroute}/{board.BoardId}", board);
     }
 
-    private static IResult LadeAlleBoards(BoardService boardService)
+    private static IResult LadeAlleBoards(string? archiviert, BoardService boardService)
     {
-        var boards = boardService.LadeAlleBoards(new Archivierung(false));
+        var archivstand = Archivfilter.Aus(archiviert);
+        var derFilterIstUnlesbar = !archivstand.IstErfolg;
+        if (derFilterIstUnlesbar)
+        {
+            return Zurueckweisungen.AlsFehlerantwort(archivstand.Befunde);
+        }
+
+        var boards = boardService.LadeAlleBoards(archivstand.Wert);
         return Results.Ok(boards);
     }
 

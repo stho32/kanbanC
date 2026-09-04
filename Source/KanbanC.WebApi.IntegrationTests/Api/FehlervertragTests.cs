@@ -15,7 +15,6 @@ public class FehlervertragTests
     [
         "GET /openapi/{documentName}.json",
         "GET /api/zustand",
-        "GET /api/boards",
     ];
 
     [Test]
@@ -64,6 +63,11 @@ public class FehlervertragTests
             "POST /api/boards",
             "Board anlegen ohne Name",
             await webApi.Klient.PostAsJsonAsync(BoardsRoute, new BoardAnlegenAnfrage("", BoardArt.Linie, null, null))));
+
+        faelle.Add(new Fehlerfall(
+            "GET /api/boards",
+            "Boards auflisten mit unlesbarem Archiv-Filter",
+            await webApi.Klient.GetAsync($"{BoardsRoute}?archiviert=vielleicht")));
 
         faelle.Add(new Fehlerfall(
             "GET /api/boards/{boardId:long}",

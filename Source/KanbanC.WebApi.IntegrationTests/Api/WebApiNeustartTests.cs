@@ -86,6 +86,55 @@ public class WebApiNeustartTests
         });
     }
 
+    [Test]
+    public async Task Wenn_die_WebApi_nach_dem_Umbenennen_neu_startet_dann_steht_der_neue_Name_unveraendert_da()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using (var ersteInstanz = new TestWebApi(datenbank.Dateipfad))
+        {
+            var board = await LegeBoardAn(ersteInstanz, new BoardAnlegenAnfrage("KanbanC — Release 1", BoardArt.Projekt, new DateOnly(2026, 9, 1), new DateOnly(2026, 12, 31)));
+            var umbenannt = await ersteInstanz.Klient.PutAsJsonAsync($"{BoardsRoute}/{board.BoardId}", new BoardUmbenennenAnfrage("KanbanC — Release 2"));
+            umbenannt.EnsureSuccessStatusCode();
+        }
+
+        using var zweiteInstanz = new TestWebApi(datenbank.Dateipfad);
+
+        var geladen = await zweiteInstanz.Klient.GetFromJsonAsync<Board>($"{BoardsRoute}/1");
+        Assert.Multiple(() =>
+        {
+            Assert.That(geladen!.Name, Is.EqualTo("KanbanC — Release 2"));
+            Assert.That(geladen.Art, Is.EqualTo(BoardArt.Projekt));
+            Assert.That(geladen.Zieltermin, Is.EqualTo(new DateOnly(2026, 12, 31)));
+            Assert.That(geladen.Spalten, Has.Count.EqualTo(3));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_WebApi_nach_dem_Archivieren_neu_startet_dann_ist_der_Archivstand_unveraendert()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using (var ersteInstanz = new TestWebApi(datenbank.Dateipfad))
+        {
+            var abgelegtes = await LegeBoardAn(ersteInstanz, new BoardAnlegenAnfrage("KanbanC — Release 1", BoardArt.Projekt, null, null));
+            await LegeBoardAn(ersteInstanz, new BoardAnlegenAnfrage("Vertrieb", BoardArt.Linie, null, null));
+            var archiviert = await ersteInstanz.Klient.PutAsJsonAsync($"{BoardsRoute}/{abgelegtes.BoardId}/archivierung", new Archivierung(true));
+            archiviert.EnsureSuccessStatusCode();
+        }
+
+        using var zweiteInstanz = new TestWebApi(datenbank.Dateipfad);
+
+        var standardliste = await zweiteInstanz.Klient.GetFromJsonAsync<List<BoardUebersicht>>(BoardsRoute);
+        var archivierte = await zweiteInstanz.Klient.GetFromJsonAsync<List<BoardUebersicht>>($"{BoardsRoute}?archiviert=true");
+        var abgelegtesNachNeustart = await zweiteInstanz.Klient.GetFromJsonAsync<Board>($"{BoardsRoute}/1");
+        Assert.Multiple(() =>
+        {
+            Assert.That(standardliste!.Select(b => b.Name), Is.EqualTo(new[] { "Vertrieb" }));
+            Assert.That(archivierte!.Select(b => b.Name), Is.EqualTo(new[] { "KanbanC — Release 1" }));
+            Assert.That(abgelegtesNachNeustart!.IstArchiviert, Is.True);
+            Assert.That(abgelegtesNachNeustart.Spalten, Has.Count.EqualTo(3));
+        });
+    }
+
     private static async Task<Karte> LegeKarteAn(TestWebApi webApi, long boardId, long spalteId, string titel)
     {
         var antwort = await webApi.Klient.PostAsJsonAsync($"{BoardsRoute}/{boardId}/spalten/{spalteId}/karten", new KarteAnlegenAnfrage(titel));

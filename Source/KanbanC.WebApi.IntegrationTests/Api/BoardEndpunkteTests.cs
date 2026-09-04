@@ -506,6 +506,83 @@ public class BoardEndpunkteTests
         });
     }
 
+    [Test]
+    public async Task Wenn_von_drei_Boards_eines_archiviert_ist_dann_hat_die_Standardliste_zwei_und_die_archivierte_Liste_einen_Eintrag()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        await LegeBoardAn(webApi, new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null));
+        var abgelegtes = await LegeBoardAn(webApi, new BoardAnlegenAnfrage("KanbanC — Release 1", BoardArt.Projekt, null, null));
+        await LegeBoardAn(webApi, new BoardAnlegenAnfrage("Vertrieb", BoardArt.Linie, null, null));
+
+        await SchalteArchivierung(webApi, abgelegtes.BoardId, true);
+
+        var standardliste = await webApi.Klient.GetFromJsonAsync<List<BoardUebersicht>>(BoardsRoute);
+        var archivierte = await webApi.Klient.GetFromJsonAsync<List<BoardUebersicht>>($"{BoardsRoute}?archiviert=true");
+        Assert.Multiple(() =>
+        {
+            Assert.That(standardliste!.Select(b => b.Name), Is.EqualTo(new[] { "Entwicklung", "Vertrieb" }));
+            Assert.That(archivierte!.Select(b => b.Name), Is.EqualTo(new[] { "KanbanC — Release 1" }));
+            Assert.That(standardliste!.Count + archivierte!.Count, Is.EqualTo(3));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_Liste_ohne_Parameter_und_mit_archiviert_false_abgerufen_wird_dann_ist_sie_beide_Male_dieselbe()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        await LegeBoardAn(webApi, new BoardAnlegenAnfrage("Wartung", BoardArt.Linie, null, null));
+        await LegeBoardAn(webApi, new BoardAnlegenAnfrage("beschaffung", BoardArt.Linie, null, null));
+        var abgelegtes = await LegeBoardAn(webApi, new BoardAnlegenAnfrage("KanbanC", BoardArt.Projekt, null, null));
+        await SchalteArchivierung(webApi, abgelegtes.BoardId, true);
+
+        var ohneParameter = await webApi.Klient.GetFromJsonAsync<List<BoardUebersicht>>(BoardsRoute);
+        var mitFalse = await webApi.Klient.GetFromJsonAsync<List<BoardUebersicht>>($"{BoardsRoute}?archiviert=false");
+
+        Assert.That(mitFalse, Is.EqualTo(ohneParameter));
+        Assert.That(ohneParameter!.Select(b => b.Name), Is.EqualTo(new[] { "beschaffung", "Wartung" }));
+    }
+
+    [Test]
+    public async Task Wenn_ein_zurueckgeholtes_Board_abgerufen_wird_dann_steht_es_wieder_in_der_Standardliste_und_fehlt_in_der_archivierten()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi, new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null));
+        await SchalteArchivierung(webApi, board.BoardId, true);
+        var standardlisteVorher = await webApi.Klient.GetFromJsonAsync<List<BoardUebersicht>>(BoardsRoute);
+        Assert.That(standardlisteVorher, Is.Empty);
+
+        await SchalteArchivierung(webApi, board.BoardId, false);
+
+        var standardliste = await webApi.Klient.GetFromJsonAsync<List<BoardUebersicht>>(BoardsRoute);
+        var archivierte = await webApi.Klient.GetFromJsonAsync<List<BoardUebersicht>>($"{BoardsRoute}?archiviert=true");
+        Assert.Multiple(() =>
+        {
+            Assert.That(standardliste!.Select(b => b.BoardId), Is.EqualTo(new[] { board.BoardId }));
+            Assert.That(archivierte, Is.Empty);
+        });
+    }
+
+    [Test]
+    public async Task Wenn_der_Archiv_Filter_einen_unlesbaren_Wert_traegt_dann_antwortet_die_API_mit_400_und_einem_Befund_statt_der_Standardliste()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        await LegeBoardAn(webApi, new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null));
+
+        var antwort = await webApi.Klient.GetAsync($"{BoardsRoute}?archiviert=vielleicht");
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Boards auflisten mit unlesbarem Archiv-Filter");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("archiv-filter-unlesbar"));
+            Assert.That(zurueckweisung.Befunde[0].Kompensation, Does.Contain("archiviert=true"));
+        });
+    }
+
     private static string ArchivierungsRoute(long boardId)
     {
         return $"{BoardsRoute}/{boardId}/archivierung";
