@@ -2,6 +2,7 @@
 @using KanbanC.Contracts.Kontributoren
 @inject NavigationManager Navigation
 @inject KontributorenApiKlient ApiKlient
+@inject Identitaetsspeicher Identitaetsspeicher
 
 <header class="kopfzeile" id="kopfzeile">
     @* Zone 1 — wo die Seite steht. Den Platz füllt sie selbst; auf dem Board steht
@@ -73,6 +74,9 @@
     {
         UebernimmAdresse();
         Navigation.LocationChanged += AufAdresswechsel;
+        // App.razor rendert mit prerender: false — der Kreislauf steht hier schon, ein
+        // Interop-Aufruf trägt (belegt in SessionStorageProbeE2ETests).
+        _gewaehlteKontributorId = await Identitaetsspeicher.Lies();
         await LadeKontributoren();
     }
 
@@ -131,10 +135,11 @@
         return "false";
     }
 
-    private void UebernimmWahl(long kontributorId)
+    private async Task UebernimmWahl(long kontributorId)
     {
         _gewaehlteKontributorId = kontributorId;
         SchliessePopover();
+        await Identitaetsspeicher.Merke(kontributorId);
     }
 
     // Gespeichert ist nur die KontributorId; der Name ist eine Ableitung aus der Liste, damit ein

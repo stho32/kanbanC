@@ -9,6 +9,7 @@ namespace KanbanC.PlaywrightTests.Tests;
 public class IdentitaetWaehlenE2ETests : PageTest
 {
     private const string NichtGewaehlt = "nicht gewählt";
+    private const string Speicherschluessel = "kanbanc.identitaet";
 
     [Test]
     [Category("US-1")]
@@ -209,5 +210,88 @@ public class IdentitaetWaehlenE2ETests : PageTest
         await Expect(kontributoren.Liste).ToBeVisibleAsync();
         await Expect(rahmen.Seitentitel).ToHaveTextAsync("Kontributoren");
         await Expect(rahmen.Identitaetspopover).ToHaveCountAsync(0);
+    }
+
+    [Test]
+    [Category("US-2")]
+    public async Task Wenn_die_Seite_nach_der_Wahl_neu_geladen_wird_dann_traegt_der_Platz_weiterhin_den_Namen()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        using var agent = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        var stefan = await agent.LegeKontributorAn("Stefan", Kontributorart.Mensch);
+        var liste = new BoardsSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        var rahmen = new Rahmen(Page);
+        await liste.Oeffne();
+        await rahmen.OeffneIdentitaetswahl();
+        await rahmen.IdentitaetWaehlbareZeile(stefan.KontributorId).ClickAsync();
+        await Expect(rahmen.Identitaetsplatz).ToHaveTextAsync("Stefan");
+
+        await Page.ReloadAsync();
+
+        await Expect(rahmen.Identitaetsplatz).ToHaveTextAsync("Stefan");
+        await rahmen.OeffneIdentitaetswahl();
+        await Expect(rahmen.IdentitaetWaehlbareZeile(stefan.KontributorId).Locator(".identitaetshaken")).ToHaveCountAsync(1);
+    }
+
+    [Test]
+    [Category("US-2")]
+    public async Task Wenn_nach_der_Wahl_auf_eine_andere_Seite_gewechselt_wird_dann_traegt_der_Platz_dort_ebenfalls_den_Namen()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        using var agent = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        var stefan = await agent.LegeKontributorAn("Stefan", Kontributorart.Mensch);
+        var liste = new BoardsSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        var rahmen = new Rahmen(Page);
+        var kontributoren = new KontributorenSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await liste.Oeffne();
+        await rahmen.OeffneIdentitaetswahl();
+        await rahmen.IdentitaetWaehlbareZeile(stefan.KontributorId).ClickAsync();
+        await Expect(rahmen.Identitaetsplatz).ToHaveTextAsync("Stefan");
+
+        await rahmen.PunktKontributoren.ClickAsync();
+
+        await Expect(kontributoren.Liste).ToBeVisibleAsync();
+        await Expect(rahmen.Identitaetsplatz).ToHaveTextAsync("Stefan");
+    }
+
+    [Test]
+    [Category("US-3")]
+    public async Task Wenn_der_gewaehlte_Kontributor_umbenannt_wird_dann_traegt_der_Platz_nach_dem_Laden_den_neuen_Namen()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        using var agent = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        var stefan = await agent.LegeKontributorAn("Stefn", Kontributorart.Mensch);
+        var liste = new BoardsSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        var rahmen = new Rahmen(Page);
+        await liste.Oeffne();
+        await rahmen.OeffneIdentitaetswahl();
+        await rahmen.IdentitaetWaehlbareZeile(stefan.KontributorId).ClickAsync();
+        await Expect(rahmen.Identitaetsplatz).ToHaveTextAsync("Stefn");
+
+        await agent.AendereKontributor(stefan.KontributorId, "Stefan", Kontributorart.Mensch);
+        await Page.ReloadAsync();
+
+        await Expect(rahmen.Identitaetsplatz).ToHaveTextAsync("Stefan");
+    }
+
+    [Test]
+    [Category("US-3")]
+    public async Task Wenn_eine_KontributorId_gemerkt_ist_die_die_WebApi_nicht_mehr_liefert_dann_steht_dort_nicht_gewaehlt()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        using var agent = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        var stefan = await agent.LegeKontributorAn("Stefan", Kontributorart.Mensch);
+        var liste = new BoardsSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        var rahmen = new Rahmen(Page);
+        await liste.Oeffne();
+        await rahmen.OeffneIdentitaetswahl();
+        await rahmen.IdentitaetWaehlbareZeile(stefan.KontributorId).ClickAsync();
+        await Expect(rahmen.Identitaetsplatz).ToHaveTextAsync("Stefan");
+
+        await Page.EvaluateAsync($"() => sessionStorage.setItem('{Speicherschluessel}', '9999')");
+        await Page.ReloadAsync();
+
+        await Expect(rahmen.Identitaetsplatz).ToHaveTextAsync(NichtGewaehlt);
+        await Expect(Page.Locator("#blazor-error-ui")).Not.ToBeVisibleAsync();
     }
 }
