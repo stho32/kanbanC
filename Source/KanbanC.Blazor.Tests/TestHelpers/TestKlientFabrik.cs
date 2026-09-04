@@ -31,6 +31,10 @@ public sealed class TestKlientFabrik : IHttpClientFactory, IDisposable
         return new HttpClient(_handler, disposeHandler: false) { BaseAddress = Basisadresse };
     }
 
+    // Methode und Adresse des abgesetzten Aufrufs: über den Browser ist nicht prüfbar, ob ein
+    // Klient die vereinbarte Route trifft.
+    public string? AbgesetzterAufruf => _handler.AbgesetzterAufruf;
+
     public void Dispose()
     {
         _handler.Dispose();
@@ -45,8 +49,11 @@ public sealed class TestKlientFabrik : IHttpClientFactory, IDisposable
             _antwort = antwort;
         }
 
+        public string? AbgesetzterAufruf { get; private set; }
+
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage anfrage, CancellationToken abbruch)
         {
+            AbgesetzterAufruf = $"{anfrage.Method} {anfrage.RequestUri}";
             return Task.FromResult(_antwort);
         }
 

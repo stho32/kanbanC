@@ -176,6 +176,62 @@ public class BoardApiKlientTests
     }
 
     [Test]
+    public async Task Wenn_die_Kartenzahl_geschaltet_wird_dann_geht_ein_PUT_auf_die_Unterressource_und_das_Board_traegt_den_neuen_Wert()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(
+            HttpStatusCode.OK,
+            """{"boardId":3,"name":"Entwicklung","art":"Linie","starttermin":null,"zieltermin":null,"spalten":[],"zeigtKartenzahl":true}""",
+            JsonTyp);
+        var klient = new BoardApiKlient(fabrik);
+
+        var board = await klient.SchalteKartenzahl(3, new Kartenzahlanzeige(true));
+
+        Assert.That(board, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(board.ZeigtKartenzahl, Is.True);
+            Assert.That(board.BoardId, Is.EqualTo(3));
+            Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("PUT http://webapi.test/api/boards/3/kartenzahl"));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_das_Board_beim_Schalten_unbekannt_ist_dann_liefert_der_Klient_null()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(
+            HttpStatusCode.NotFound,
+            """{"befunde":[{"code":"board-unbekannt","meldung":"Ein Board mit der Nummer 999 gibt es nicht.","kompensation":"`GET /api/boards` abrufen."}]}""",
+            JsonTyp);
+        var klient = new BoardApiKlient(fabrik);
+
+        var board = await klient.SchalteKartenzahl(999, new Kartenzahlanzeige(true));
+
+        Assert.That(board, Is.Null);
+        Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("PUT http://webapi.test/api/boards/999/kartenzahl"));
+    }
+
+    [Test]
+    public void Wenn_die_WebApi_beim_Schalten_einen_Serverfehler_meldet_dann_bleibt_der_Fehler_sichtbar()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwortOhneRumpf(HttpStatusCode.InternalServerError);
+        var klient = new BoardApiKlient(fabrik);
+
+        Assert.That(
+            async () => await klient.SchalteKartenzahl(1, new Kartenzahlanzeige(true)),
+            Throws.InstanceOf<HttpRequestException>());
+    }
+
+    [Test]
+    public void Wenn_die_WebApi_beim_Schalten_nicht_erreichbar_ist_dann_meldet_der_Klient_eine_HttpRequestException()
+    {
+        var klient = new BoardApiKlient(new NichtErreichbareKlientFabrik());
+
+        Assert.That(
+            async () => await klient.SchalteKartenzahl(1, new Kartenzahlanzeige(true)),
+            Throws.InstanceOf<HttpRequestException>());
+    }
+
+    [Test]
     public void Wenn_die_WebApi_einen_Serverfehler_meldet_dann_bleibt_der_Fehler_sichtbar()
     {
         using var fabrik = TestKlientFabrik.MitAntwortOhneRumpf(HttpStatusCode.InternalServerError);
