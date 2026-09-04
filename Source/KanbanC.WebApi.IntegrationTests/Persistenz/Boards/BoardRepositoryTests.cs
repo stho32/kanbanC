@@ -292,6 +292,93 @@ public class BoardRepositoryTests
         Assert.That(geladen.ZeigtKartenzahl, Is.False);
     }
 
+    [Test]
+    public void Wenn_die_Kartenzahlanzeige_eingeschaltet_wird_dann_traegt_das_gelieferte_Board_sie_und_die_Datei_eine_Zeile()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        var board = repository.LegeAn(new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+
+        var geschaltet = repository.SetzeKartenzahlanzeige(board.BoardId, new Kartenzahlanzeige(true));
+
+        Assert.That(geschaltet, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(geschaltet.ZeigtKartenzahl, Is.True);
+            Assert.That(geschaltet.Spalten, Is.EqualTo(board.Spalten));
+            Assert.That(repository.Lade(board.BoardId)!.ZeigtKartenzahl, Is.True);
+            Assert.That(GespeicherteEinstellungsanzahl(datenbank), Is.EqualTo(1));
+        });
+    }
+
+    [Test]
+    public void Wenn_zweimal_hintereinander_eingeschaltet_wird_dann_bleibt_es_bei_einer_Zeile()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        var board = repository.LegeAn(new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+        repository.SetzeKartenzahlanzeige(board.BoardId, new Kartenzahlanzeige(true));
+
+        var zweitesEinschalten = repository.SetzeKartenzahlanzeige(board.BoardId, new Kartenzahlanzeige(true));
+
+        Assert.That(zweitesEinschalten, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(zweitesEinschalten.ZeigtKartenzahl, Is.True);
+            Assert.That(GespeicherteEinstellungsanzahl(datenbank), Is.EqualTo(1));
+        });
+    }
+
+    [Test]
+    public void Wenn_nach_dem_Einschalten_ausgeschaltet_wird_dann_liefert_Lade_wieder_falsch()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        var board = repository.LegeAn(new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+        repository.SetzeKartenzahlanzeige(board.BoardId, new Kartenzahlanzeige(true));
+        Assert.That(repository.Lade(board.BoardId)!.ZeigtKartenzahl, Is.True);
+
+        var ausgeschaltet = repository.SetzeKartenzahlanzeige(board.BoardId, new Kartenzahlanzeige(false));
+
+        Assert.That(ausgeschaltet, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ausgeschaltet.ZeigtKartenzahl, Is.False);
+            Assert.That(repository.Lade(board.BoardId)!.ZeigtKartenzahl, Is.False);
+            Assert.That(GespeicherteEinstellungsanzahl(datenbank), Is.EqualTo(1));
+        });
+    }
+
+    [Test]
+    public void Wenn_die_BoardId_unbekannt_ist_dann_liefert_SetzeKartenzahlanzeige_null_und_schreibt_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        repository.LegeAn(new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+
+        var geschaltet = repository.SetzeKartenzahlanzeige(99, new Kartenzahlanzeige(true));
+
+        Assert.That(geschaltet, Is.Null);
+        Assert.That(GespeicherteEinstellungsanzahl(datenbank), Is.EqualTo(0));
+    }
+
+    [Test]
+    public void Wenn_ein_Board_geschaltet_wird_dann_bleibt_das_andere_unberuehrt()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        var erstes = repository.LegeAn(new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+        var zweites = repository.LegeAn(new BoardAnlegenAnfrage("Vertrieb", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+
+        repository.SetzeKartenzahlanzeige(erstes.BoardId, new Kartenzahlanzeige(true));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(repository.Lade(erstes.BoardId)!.ZeigtKartenzahl, Is.True);
+            Assert.That(repository.Lade(zweites.BoardId)!.ZeigtKartenzahl, Is.False);
+        });
+    }
+
     private static void FuegeBoardeinstellungEin(TemporaereDatenbank datenbank, long boardId, bool zeigtKartenzahl)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();

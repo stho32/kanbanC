@@ -53,14 +53,50 @@ public sealed class BoardRepository : IBoardRepository
     public Board? Lade(long boardId)
     {
         using var verbindung = _verbindungsfabrik.Oeffne();
-        var boardZeile = LiesBoardzeile(verbindung, null, boardId);
+        return LiesBoard(verbindung, null, boardId);
+    }
+
+    public Board? SetzeKartenzahlanzeige(long boardId, Kartenzahlanzeige anzeige)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+        using var transaktion = verbindung.BeginTransaction();
+
+        // Das Board wird in der Transaktion gelesen, bevor geschrieben wird: ein unbekanntes
+        // bekommt keine Einstellungszeile. Der Fremdschlüssel würde es zwar ebenfalls abweisen,
+        // aber mit einer Ausnahme — und die wäre an der API eine Antwort ohne Befund.
+        var boardIstUnbekannt = LiesBoardzeile(verbindung, transaktion, boardId) is null;
+        if (boardIstUnbekannt)
+        {
+            return null;
+        }
+
+        SchreibeKartenzahlanzeige(verbindung, transaktion, boardId, anzeige);
+        var board = LiesBoard(verbindung, transaktion, boardId);
+        transaktion.Commit();
+        return board;
+    }
+
+    // Eine Zeile je Board: das zweite Einschalten schreibt denselben Wert auf dieselbe Zeile,
+    // statt eine zweite anzulegen.
+    private static void SchreibeKartenzahlanzeige(IDbConnection verbindung, IDbTransaction transaktion, long boardId, Kartenzahlanzeige anzeige)
+    {
+        var parameter = new { Board = boardId, anzeige.ZeigtKartenzahl };
+        verbindung.Execute(@"
+            INSERT INTO Boardeinstellung (Board, ZeigtKartenzahl)
+            VALUES (@Board, @ZeigtKartenzahl)
+            ON CONFLICT (Board) DO UPDATE SET ZeigtKartenzahl = excluded.ZeigtKartenzahl", parameter, transaktion);
+    }
+
+    private static Board? LiesBoard(IDbConnection verbindung, IDbTransaction? transaktion, long boardId)
+    {
+        var boardZeile = LiesBoardzeile(verbindung, transaktion, boardId);
         if (boardZeile is null)
         {
             return null;
         }
 
-        var kartenJeSpalte = Kartenleser.LiesKartenNachPosition(verbindung, null, boardId);
-        var spalten = Spaltenleser.LiesSpaltenNachPosition(verbindung, null, boardId, kartenJeSpalte);
+        var kartenJeSpalte = Kartenleser.LiesKartenNachPosition(verbindung, transaktion, boardId);
+        var spalten = Spaltenleser.LiesSpaltenNachPosition(verbindung, transaktion, boardId, kartenJeSpalte);
         return AlsBoard(boardZeile, spalten);
     }
 
