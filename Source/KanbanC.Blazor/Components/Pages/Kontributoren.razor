@@ -12,6 +12,10 @@
 <div class="seitenkopf">
     <h1 class="nur-fuer-screenreader">Kontributoren</h1>
     <span class="tag tag-neutral">Full-Trust · keine Anmeldung</span>
+    @* Gezählt wird die geladene Liste, nicht eine zweite Abfrage: die Oberfläche hat sie ohnehin.
+       „aktiv“ und nicht „wählbar“ — wählbar ist eine Regel der Identitätswahl (Mensch und nicht
+       stillgelegt) und zählte hier etwas anderes. *@
+    <span class="seitenkopf-rechts kontributorenzaehlung" id="kontributoren-zaehlung">@AnzahlAktiver() aktiv · @AnzahlStillgelegter() stillgelegt</span>
 </div>
 
 @if (_fehlermeldung is not null)
@@ -197,6 +201,11 @@
     {
         var ersterStillgelegter = _kontributoren.FirstOrDefault(kandidat => !IstAktiv(kandidat));
         return ersterStillgelegter is not null && ersterStillgelegter.KontributorId == kontributor.KontributorId;
+    }
+
+    private int AnzahlAktiver()
+    {
+        return _kontributoren.Count(IstAktiv);
     }
 
     private int AnzahlStillgelegter()

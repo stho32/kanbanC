@@ -30,6 +30,8 @@ public sealed class KontributorenSeite
 
     public ILocator Pausensymbole => _seite.Locator("#kontributoren-liste .kontributor-stilllegen");
 
+    public ILocator Zaehlzeile => _seite.Locator("#kontributoren-zaehlung");
+
     public ILocator Gruppenzeile => _seite.Locator("#kontributor-gruppe-stillgelegt");
 
     public ILocator StillgelegteZeilen => _seite.Locator("#kontributoren-liste .kontributorzeile-stillgelegt");

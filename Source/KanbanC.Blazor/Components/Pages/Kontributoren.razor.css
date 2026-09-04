@@ -1,3 +1,10 @@
+/* Rechtsbündig stellt seitenkopf-rechts aus oberflaeche.css; hier kommt nur die
+   zurückgenommene Schrift dazu. */
+.kontributorenzaehlung {
+    font-size: 12px;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
 /* Die Liste bekommt den Platz: Name breit, Art schmal daneben. Alle Werte kommen aus
    gestaltung.css. */
 .kontributorenliste {

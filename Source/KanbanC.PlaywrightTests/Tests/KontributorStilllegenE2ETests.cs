@@ -153,4 +153,46 @@ public class KontributorStilllegenE2ETests : PageTest
         await Expect(seite.Gruppenzeile).ToHaveTextAsync("stillgelegt · 2");
         await Expect(seite.Kontributorzeilen).ToContainTextAsync(["Cem", "Anna", "Bert"]);
     }
+
+    // Das Rechenbeispiel des Akzeptanzkriteriums: vier Angelegte, einer stillgelegt.
+    [Test]
+    [Category("US-1")]
+    public async Task Wenn_einer_von_vier_stillgelegt_wird_dann_zaehlt_der_Seitenkopf_drei_aktiv_und_einen_stillgelegt()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        using var agent = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        await agent.LegeKontributorAn("Anna", Kontributorart.Mensch);
+        await agent.LegeKontributorAn("Bert", Kontributorart.Agent);
+        await agent.LegeKontributorAn("Cem", Kontributorart.Abgebildet);
+        var dora = await agent.LegeKontributorAn("Dora", Kontributorart.Mensch);
+        var seite = new KontributorenSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await seite.Oeffne();
+        await Expect(seite.Zaehlzeile).ToHaveTextAsync("4 aktiv · 0 stillgelegt");
+
+        await seite.LegeStill(dora.KontributorId);
+
+        await Expect(seite.Zaehlzeile).ToHaveTextAsync("3 aktiv · 1 stillgelegt");
+    }
+
+    [Test]
+    [Category("US-2")]
+    public async Task Wenn_die_Seite_nach_dem_Stilllegen_neu_geladen_wird_dann_stehen_Zeile_Datum_und_Zaehlung_unveraendert_da()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        using var agent = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        var anna = await agent.LegeKontributorAn("Anna", Kontributorart.Mensch);
+        await agent.LegeKontributorAn("Bert", Kontributorart.Agent);
+        await agent.LegeKontributorAn("Cem", Kontributorart.Abgebildet);
+        var seite = new KontributorenSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await seite.Oeffne();
+        await seite.LegeStill(anna.KontributorId);
+        await Expect(seite.Zaehlzeile).ToHaveTextAsync("2 aktiv · 1 stillgelegt");
+
+        await seite.Oeffne();
+
+        await Expect(seite.Kontributorzeilen).ToContainTextAsync(["Bert", "Cem", "Anna"]);
+        await Expect(seite.Gruppenzeile).ToHaveTextAsync("stillgelegt · 1");
+        await Expect(seite.StillgelegteZeilen).ToContainTextAsync($"stillgelegt seit {DateOnly.FromDateTime(DateTime.Today):yyyy-MM-dd}");
+        await Expect(seite.Zaehlzeile).ToHaveTextAsync("2 aktiv · 1 stillgelegt");
+    }
 }
