@@ -23,6 +23,7 @@ builder.Services.AddScoped<BoardApiKlient>();
 builder.Services.AddScoped<SpaltenApiKlient>();
 builder.Services.AddScoped<KartenApiKlient>();
 builder.Services.AddScoped<KontributorenApiKlient>();
+builder.Services.AddScoped<Identitaetsspeicher>();
 
 var app = builder.Build();
 
