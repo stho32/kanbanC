@@ -76,6 +76,32 @@ public sealed class BoardRepository : IBoardRepository
         return board;
     }
 
+    public Board? BenenneUm(long boardId, BoardUmbenennenAnfrage anfrage)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+        using var transaktion = verbindung.BeginTransaction();
+
+        var boardIstUnbekannt = LiesBoardzeile(verbindung, transaktion, boardId) is null;
+        if (boardIstUnbekannt)
+        {
+            return null;
+        }
+
+        SchreibeNamen(verbindung, transaktion, boardId, anfrage.Name);
+        var board = LiesBoard(verbindung, transaktion, boardId);
+        transaktion.Commit();
+        return board;
+    }
+
+    private static void SchreibeNamen(IDbConnection verbindung, IDbTransaction transaktion, long boardId, string name)
+    {
+        var parameter = new { BoardId = boardId, Name = name };
+        verbindung.Execute(@"
+            UPDATE Board
+               SET Name = @Name
+             WHERE BoardId = @BoardId", parameter, transaktion);
+    }
+
     private static void SchreibeKartenzahlanzeige(IDbConnection verbindung, IDbTransaction transaktion, long boardId, Kartenzahlanzeige anzeige)
     {
         var parameter = new { Board = boardId, anzeige.ZeigtKartenzahl };

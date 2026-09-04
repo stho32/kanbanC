@@ -39,6 +39,23 @@ public sealed class TestBoardRepository : IBoardRepository
         return _boards.SingleOrDefault(b => b.BoardId == boardId);
     }
 
+    public BoardUmbenennenAnfrage? GeschriebeneUmbenennung { get; private set; }
+
+    public Board? BenenneUm(long boardId, BoardUmbenennenAnfrage anfrage)
+    {
+        var stelle = _boards.FindIndex(b => b.BoardId == boardId);
+        var boardIstUnbekannt = stelle < 0;
+        if (boardIstUnbekannt)
+        {
+            return null;
+        }
+
+        GeschriebeneUmbenennung = anfrage;
+        var umbenannt = _boards[stelle] with { Name = anfrage.Name };
+        _boards[stelle] = umbenannt;
+        return umbenannt;
+    }
+
     public Kartenzahlanzeige? GeschriebeneAnzeige { get; private set; }
 
     public Board? SetzeKartenzahlanzeige(long boardId, Kartenzahlanzeige anzeige)

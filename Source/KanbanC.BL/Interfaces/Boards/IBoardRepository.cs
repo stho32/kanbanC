@@ -12,4 +12,7 @@ public interface IBoardRepository
     Board? Lade(long boardId);
 
     Board? SetzeKartenzahlanzeige(long boardId, Kartenzahlanzeige anzeige);
+
+    // null heißt an beiden Schreibzugriffen: dieses Board gibt es nicht.
+    Board? BenenneUm(long boardId, BoardUmbenennenAnfrage anfrage);
 }

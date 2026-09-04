@@ -379,6 +379,76 @@ public class BoardRepositoryTests
         });
     }
 
+    [Test]
+    public void Wenn_ein_Board_umbenannt_wird_dann_traegt_es_den_neuen_Namen_und_alles_andere_bleibt_stehen()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        var anfrage = new BoardAnlegenAnfrage("KanbanC — Release 1", BoardArt.Projekt, new DateOnly(2026, 9, 1), new DateOnly(2026, 12, 31));
+        var angelegt = repository.LegeAn(anfrage, StandardspaltenVorlage.FuerNeuesBoard());
+        FuegeKarteEin(datenbank, angelegt.Spalten[0].SpalteId, "Migration schreiben", 1);
+
+        var umbenannt = repository.BenenneUm(angelegt.BoardId, new BoardUmbenennenAnfrage("KanbanC — Release 2"));
+
+        Assert.That(umbenannt, Is.Not.Null);
+        var geladen = new BoardRepository(datenbank.Verbindungsfabrik).Lade(angelegt.BoardId);
+        Assert.Multiple(() =>
+        {
+            Assert.That(umbenannt.Name, Is.EqualTo("KanbanC — Release 2"));
+            Assert.That(umbenannt.Art, Is.EqualTo(BoardArt.Projekt));
+            Assert.That(umbenannt.Starttermin, Is.EqualTo(new DateOnly(2026, 9, 1)));
+            Assert.That(umbenannt.Zieltermin, Is.EqualTo(new DateOnly(2026, 12, 31)));
+            Assert.That(umbenannt.Spalten.Select(spalte => spalte.SpalteId), Is.EqualTo(angelegt.Spalten.Select(spalte => spalte.SpalteId)));
+            Assert.That(umbenannt.Spalten[0].Karten.Select(karte => karte.Titel), Is.EqualTo(new[] { "Migration schreiben" }));
+            Assert.That(geladen!.Name, Is.EqualTo("KanbanC — Release 2"));
+        });
+    }
+
+    [Test]
+    public void Wenn_ein_Board_umbenannt_wird_dann_bleibt_das_andere_bei_seinem_Namen()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        var erstes = repository.LegeAn(new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+        var zweites = repository.LegeAn(new BoardAnlegenAnfrage("Vertrieb", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+
+        repository.BenenneUm(erstes.BoardId, new BoardUmbenennenAnfrage("Betrieb"));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(repository.Lade(erstes.BoardId)!.Name, Is.EqualTo("Betrieb"));
+            Assert.That(repository.Lade(zweites.BoardId)!.Name, Is.EqualTo("Vertrieb"));
+        });
+    }
+
+    [Test]
+    public void Wenn_auf_einen_schon_vergebenen_Namen_umbenannt_wird_dann_tragen_beide_Boards_ihn()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        var erstes = repository.LegeAn(new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+        var zweites = repository.LegeAn(new BoardAnlegenAnfrage("Vertrieb", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+
+        var umbenannt = repository.BenenneUm(zweites.BoardId, new BoardUmbenennenAnfrage("Entwicklung"));
+
+        Assert.That(umbenannt, Is.Not.Null);
+        Assert.That(repository.Lade(erstes.BoardId)!.Name, Is.EqualTo("Entwicklung"));
+        Assert.That(repository.Lade(zweites.BoardId)!.Name, Is.EqualTo("Entwicklung"));
+    }
+
+    [Test]
+    public void Wenn_die_BoardId_unbekannt_ist_dann_liefert_BenenneUm_null_und_laesst_die_Namen_stehen()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        var angelegt = repository.LegeAn(new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+
+        var umbenannt = repository.BenenneUm(99, new BoardUmbenennenAnfrage("Betrieb"));
+
+        Assert.That(umbenannt, Is.Null);
+        Assert.That(repository.Lade(angelegt.BoardId)!.Name, Is.EqualTo("Entwicklung"));
+    }
+
     private static void FuegeBoardeinstellungEin(TemporaereDatenbank datenbank, long boardId, bool zeigtKartenzahl)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
