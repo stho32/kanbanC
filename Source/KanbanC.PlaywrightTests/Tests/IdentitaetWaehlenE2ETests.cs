@@ -426,4 +426,40 @@ public class IdentitaetWaehlenE2ETests : PageTest
         await Expect(rahmen.Kopfzeile).ToBeVisibleAsync();
         await Expect(Page.Locator("#blazor-error-ui")).Not.ToBeVisibleAsync();
     }
+
+    [Test]
+    [Category("US-1")]
+    public async Task Wenn_im_offenen_Popover_auf_einen_Text_geklickt_wurde_dann_schliesst_Escape_es_trotzdem()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        var liste = new BoardsSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        var rahmen = new Rahmen(Page);
+        await liste.Oeffne();
+        await rahmen.OeffneIdentitaetswahl();
+
+        await Page.Locator("#identitaetspopover .identitaetspopover-titel").ClickAsync();
+        await Page.Keyboard.PressAsync("Escape");
+
+        await Expect(rahmen.Identitaetspopover).ToHaveCountAsync(0);
+    }
+
+    [Test]
+    [Category("US-1")]
+    public async Task Wenn_bei_offenem_Popover_in_die_Kopfzeile_geklickt_wird_dann_schliesst_es_ebenfalls()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        var liste = new BoardsSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        var rahmen = new Rahmen(Page);
+        await liste.Oeffne();
+        await rahmen.OeffneIdentitaetswahl();
+
+        // Auf die Stelle geklickt, nicht auf das Element: für die Maus liegt dort die
+        // Auffangfläche, und genau das ist der Weg eines Menschen.
+        var titel = await rahmen.Seitentitel.BoundingBoxAsync();
+        Assert.That(titel, Is.Not.Null);
+        await Page.Mouse.ClickAsync(titel!.X + (titel.Width / 2), titel.Y + (titel.Height / 2));
+
+        await Expect(rahmen.Identitaetspopover).ToHaveCountAsync(0);
+        await Expect(rahmen.Seitentitel).ToHaveTextAsync("Boards");
+    }
 }

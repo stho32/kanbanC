@@ -11,7 +11,6 @@
 
 .kopfzeile {
     position: relative;
-    z-index: 2;
     display: flex;
     align-items: stretch;
     gap: var(--space-4);
@@ -103,7 +102,11 @@
     gap: var(--space-2);
 }
 
+/* Über der Auffangfläche, damit ein zweiter Klick auf den Platz weiterhin ihn selbst trifft
+   und die Wahl schließt, statt nur daneben zu klicken. */
 .identitaetsplatz {
+    position: relative;
+    z-index: 3;
     display: flex;
     align-items: center;
     margin-left: var(--space-2);
@@ -150,7 +153,7 @@
     position: absolute;
     top: 100%;
     right: var(--space-4);
-    z-index: 2;
+    z-index: 3;
     width: 268px;
     margin-top: var(--space-1);
     display: flex;
@@ -170,12 +173,12 @@
     color: var(--color-accent);
 }
 
-/* Ein Klick daneben schließt die Wahl: die Fläche liegt über der Seite und unter der Kopfzeile,
-   damit ein zweiter Klick auf den Platz weiterhin ihn selbst trifft. */
+/* Ein Klick daneben schließt die Wahl. Die Fläche liegt über allem außer dem Identitätsplatz
+   selbst — auch über der Kopfzeile, damit „daneben" wirklich überall heißt. */
 .identitaets-auffangflaeche {
     position: fixed;
     inset: 0;
-    z-index: 1;
+    z-index: 2;
 }
 
 /* — was die Seite in Zone 2 stellt — */

@@ -55,7 +55,9 @@
     @if (_popoverIstOffen)
     {
         <div class="identitaets-auffangflaeche" id="identitaet-auffangflaeche" @onclick="SchliessePopover"></div>
-        <div class="identitaetspopover" id="identitaetspopover">
+        @* tabindex="-1": ein Klick auf einen Text im Popover setzt den Fokus damit auf das
+           Popover statt auf den Rumpf — sonst liefe Escape danach ins Leere. *@
+        <div class="identitaetspopover" id="identitaetspopover" tabindex="-1">
             <p class="identitaetspopover-titel">Ich bin …</p>
             <Identitaetswahl Kontributoren="_kontributoren"
                              GewaehlteKontributorId="_gewaehlteKontributorId"

@@ -58,7 +58,9 @@ public class SessionStorageProbeE2ETests : PageTest
 
         var geerbterTab = await Page.RunAndWaitForPopupAsync(async () =>
         {
-            await Page.EvaluateAsync($"() => window.open('{Testumgebung.Aktuelle.BlazorAdresse}')");
+            // Ohne geschweifte Klammern gäbe der Ausdruck das Window zurück, das Playwright nicht
+            // serialisieren kann — der Aufruf hinge gelegentlich statt zu öffnen.
+            await Page.EvaluateAsync($"() => {{ window.open('{Testumgebung.Aktuelle.BlazorAdresse}'); }}");
         });
         await geerbterTab.WaitForLoadStateAsync();
 
