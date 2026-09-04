@@ -10,4 +10,6 @@ public interface IBoardRepository
     IReadOnlyList<BoardUebersicht> LadeAlle();
 
     Board? Lade(long boardId);
+
+    Board? SetzeKartenzahlanzeige(long boardId, Kartenzahlanzeige anzeige);
 }

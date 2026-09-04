@@ -38,4 +38,21 @@ public sealed class TestBoardRepository : IBoardRepository
         ErfragteBoardId = boardId;
         return _boards.SingleOrDefault(b => b.BoardId == boardId);
     }
+
+    public Kartenzahlanzeige? GeschriebeneAnzeige { get; private set; }
+
+    public Board? SetzeKartenzahlanzeige(long boardId, Kartenzahlanzeige anzeige)
+    {
+        var stelle = _boards.FindIndex(b => b.BoardId == boardId);
+        var boardIstUnbekannt = stelle < 0;
+        if (boardIstUnbekannt)
+        {
+            return null;
+        }
+
+        GeschriebeneAnzeige = anzeige;
+        var geschaltet = _boards[stelle] with { ZeigtKartenzahl = anzeige.ZeigtKartenzahl };
+        _boards[stelle] = geschaltet;
+        return geschaltet;
+    }
 }

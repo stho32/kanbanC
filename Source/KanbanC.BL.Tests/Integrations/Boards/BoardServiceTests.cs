@@ -87,6 +87,56 @@ public class BoardServiceTests
     }
 
     [Test]
+    public void Wenn_die_Kartenzahl_geschaltet_wird_dann_traegt_das_gelieferte_Board_den_gewuenschten_Wert()
+    {
+        var repository = new TestBoardRepository();
+        repository.Speichere(new Board(7, "Entwicklung", BoardArt.Linie, null, null, [], false));
+        var service = new BoardService(repository);
+
+        var geschaltet = service.SchalteKartenzahl(7, new Kartenzahlanzeige(true));
+
+        Assert.That(geschaltet, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(geschaltet.ZeigtKartenzahl, Is.True);
+            Assert.That(repository.GeschriebeneAnzeige, Is.EqualTo(new Kartenzahlanzeige(true)));
+            Assert.That(service.LadeBoard(7)!.ZeigtKartenzahl, Is.True);
+        });
+    }
+
+    [Test]
+    public void Wenn_die_Kartenzahl_wieder_ausgeschaltet_wird_dann_steht_das_Board_wieder_ohne_sie_da()
+    {
+        var repository = new TestBoardRepository();
+        repository.Speichere(new Board(7, "Entwicklung", BoardArt.Linie, null, null, [], false));
+        var service = new BoardService(repository);
+        service.SchalteKartenzahl(7, new Kartenzahlanzeige(true));
+
+        var ausgeschaltet = service.SchalteKartenzahl(7, new Kartenzahlanzeige(false));
+
+        Assert.That(ausgeschaltet, Is.Not.Null);
+        Assert.That(ausgeschaltet.ZeigtKartenzahl, Is.False);
+        Assert.That(service.LadeBoard(7)!.ZeigtKartenzahl, Is.False);
+    }
+
+    [Test]
+    public void Wenn_die_BoardId_unbekannt_ist_dann_schaltet_der_Service_nichts_und_liefert_null()
+    {
+        var repository = new TestBoardRepository();
+        repository.Speichere(new Board(1, "Entwicklung", BoardArt.Linie, null, null, [], false));
+        var service = new BoardService(repository);
+
+        var geschaltet = service.SchalteKartenzahl(2, new Kartenzahlanzeige(true));
+
+        Assert.That(geschaltet, Is.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(repository.GeschriebeneAnzeige, Is.Null);
+            Assert.That(service.LadeBoard(1)!.ZeigtKartenzahl, Is.False);
+        });
+    }
+
+    [Test]
     public void Wenn_die_BoardId_unbekannt_ist_dann_liefert_LadeBoard_null()
     {
         var repository = new TestBoardRepository();
