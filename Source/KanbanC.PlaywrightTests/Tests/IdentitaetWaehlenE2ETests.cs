@@ -1,6 +1,7 @@
 using KanbanC.Contracts.Kontributoren;
 using KanbanC.PlaywrightTests.Infrastructure;
 using KanbanC.PlaywrightTests.PageObjects;
+using Microsoft.Playwright;
 using Microsoft.Playwright.NUnit;
 
 namespace KanbanC.PlaywrightTests.Tests;
@@ -9,7 +10,7 @@ namespace KanbanC.PlaywrightTests.Tests;
 public class IdentitaetWaehlenE2ETests : PageTest
 {
     private const string NichtGewaehlt = "nicht gewählt";
-    private const string Speicherschluessel = "kanbanc.identitaet";
+    private const string Speicherschluessel = Browserspeicher.Identitaetsschluessel;
 
     [Test]
     [Category("US-1")]
@@ -342,5 +343,87 @@ public class IdentitaetWaehlenE2ETests : PageTest
         await rahmen.OeffneIdentitaetswahl();
         await Expect(rahmen.IdentitaetWaehlbareZeilen).ToHaveCountAsync(1);
         await Expect(rahmen.IdentitaetWaehlbareZeilen).ToContainTextAsync(["Stefan"]);
+    }
+
+    // Die bewusste Abweichung von der Vision: die Wahl liegt im sessionStorage, nicht im
+    // localStorage. Jeder Tab trägt damit seine eigene — ein Rechner, mehrere Menschen.
+    [Test]
+    [Category("US-2")]
+    public async Task Wenn_ein_unabhaengiger_zweiter_Tab_dieselbe_Adresse_oeffnet_dann_beginnt_er_bei_nicht_gewaehlt()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        using var agent = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        var stefan = await agent.LegeKontributorAn("Stefan", Kontributorart.Mensch);
+        var liste = new BoardsSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        var rahmen = new Rahmen(Page);
+        await liste.Oeffne();
+        await rahmen.OeffneIdentitaetswahl();
+        await rahmen.IdentitaetWaehlbareZeile(stefan.KontributorId).ClickAsync();
+        await Expect(rahmen.Identitaetsplatz).ToHaveTextAsync("Stefan");
+
+        // Über den Kontext geöffnet, nicht aus der Seite heraus: B0161 hat belegt, dass nur so
+        // geöffnete Tabs den sessionStorage des ersten nicht erben.
+        var zweiterTab = await Context.NewPageAsync();
+        var zweiteListe = new BoardsSeite(zweiterTab, Testumgebung.Aktuelle.BlazorAdresse);
+        var rahmenImZweitenTab = new Rahmen(zweiterTab);
+        await zweiteListe.Oeffne();
+
+        await Assertions.Expect(rahmenImZweitenTab.Identitaetsplatz).ToHaveTextAsync(NichtGewaehlt);
+        await Expect(rahmen.Identitaetsplatz).ToHaveTextAsync("Stefan");
+        await zweiterTab.CloseAsync();
+    }
+
+    [Test]
+    [Category("US-2")]
+    public async Task Wenn_eine_Identitaet_gewaehlt_ist_dann_steht_im_Browser_nur_die_KontributorId()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        using var agent = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        var stefan = await agent.LegeKontributorAn("Stefan", Kontributorart.Mensch);
+        var liste = new BoardsSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        var rahmen = new Rahmen(Page);
+        await liste.Oeffne();
+        await rahmen.OeffneIdentitaetswahl();
+
+        await rahmen.IdentitaetWaehlbareZeile(stefan.KontributorId).ClickAsync();
+        await Expect(rahmen.Identitaetsplatz).ToHaveTextAsync("Stefan");
+
+        var gemerkterWert = await Page.EvaluateAsync<string?>($"() => sessionStorage.getItem('{Speicherschluessel}')");
+        var ganzerBrowserspeicher = await Page.EvaluateAsync<string>("() => JSON.stringify(sessionStorage)");
+        Assert.Multiple(() =>
+        {
+            Assert.That(gemerkterWert, Is.EqualTo($"{stefan.KontributorId}"));
+            Assert.That(ganzerBrowserspeicher, Does.Not.Contain("Stefan"));
+            Assert.That(ganzerBrowserspeicher, Does.Not.Contain("Mensch"));
+        });
+    }
+
+    // Der Rahmen steht auf jeder Seite: ein gesperrter Browser-Speicher darf ihn so wenig reißen
+    // wie ein Ausfall der WebApi. Die Wahl gilt dann für diese Sitzung, überlebt aber den Reload
+    // nicht — das ist die Folge, nicht ein Fehler.
+    [Test]
+    [Category("US-2")]
+    public async Task Wenn_der_Browser_Speicher_gesperrt_ist_dann_bleibt_der_Identitaetsplatz_bedienbar()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        using var agent = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        var stefan = await agent.LegeKontributorAn("Stefan", Kontributorart.Mensch);
+        await Page.AddInitScriptAsync(Browserspeicher.Sperre);
+        var liste = new BoardsSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        var rahmen = new Rahmen(Page);
+
+        await liste.Oeffne();
+
+        await Expect(rahmen.Identitaetsplatz).ToHaveTextAsync(NichtGewaehlt);
+        await rahmen.OeffneIdentitaetswahl();
+        await rahmen.IdentitaetWaehlbareZeile(stefan.KontributorId).ClickAsync();
+        await Expect(rahmen.Identitaetsplatz).ToHaveTextAsync("Stefan");
+        await Expect(Page.Locator("#blazor-error-ui")).Not.ToBeVisibleAsync();
+
+        await Page.ReloadAsync();
+
+        await Expect(rahmen.Identitaetsplatz).ToHaveTextAsync(NichtGewaehlt);
+        await Expect(rahmen.Kopfzeile).ToBeVisibleAsync();
+        await Expect(Page.Locator("#blazor-error-ui")).Not.ToBeVisibleAsync();
     }
 }

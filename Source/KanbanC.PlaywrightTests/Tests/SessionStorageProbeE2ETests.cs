@@ -1,3 +1,4 @@
+using KanbanC.PlaywrightTests.Infrastructure;
 using Microsoft.Playwright;
 using Microsoft.Playwright.NUnit;
 
@@ -11,20 +12,8 @@ namespace KanbanC.PlaywrightTests.Tests;
 [TestFixture]
 public class SessionStorageProbeE2ETests : PageTest
 {
-    private const string Probeschluessel = "kanbanc.probe";
+    private const string Probeschluessel = Browserspeicher.Probeschluessel;
     private const string Probewert = "erste Sitzung";
-
-    // Die Gegenprobe zum gesperrten Speicher: nur der eigene Schlüssel wirft, damit die Probe die
-    // Anwendung prüft und nicht das Gerüst von Blazor.
-    private const string GesperrterSpeicher = """
-        const echterLeser = Storage.prototype.getItem;
-        Storage.prototype.getItem = function (schluessel) {
-          if (schluessel.startsWith('kanbanc.')) {
-            throw new DOMException('Der Browser-Speicher ist gesperrt.', 'SecurityError');
-          }
-          return echterLeser.call(this, schluessel);
-        };
-        """;
 
     [Test]
     public async Task Wenn_derselbe_Tab_neu_geladen_wird_dann_steht_der_Wert_im_sessionStorage_noch()
@@ -107,7 +96,7 @@ public class SessionStorageProbeE2ETests : PageTest
     public async Task Wenn_der_Browser_Speicher_gesperrt_ist_dann_wirft_er_beim_Lesen_und_die_Kopfzeile_steht_trotzdem()
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
-        await Page.AddInitScriptAsync(GesperrterSpeicher);
+        await Page.AddInitScriptAsync(Browserspeicher.Sperre);
 
         await Page.GotoAsync(Testumgebung.Aktuelle.BlazorAdresse + "/boards");
 
