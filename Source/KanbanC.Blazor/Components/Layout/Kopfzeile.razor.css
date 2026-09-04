@@ -1,22 +1,28 @@
 /* Drei Zonen: links die Anwendung, in der Mitte die geöffnete Seite, rechts die
    Werkzeuge. Ein dünner Trenner zeigt, wo die Anwendung aufhört und die Seite anfängt. */
-.kopfzeile {
+/* Das Band trägt die Zeile und alles, was aus ihr herausklappt. Die Zeile selbst beschneidet
+   ihren Inhalt — sie darf die Seite nicht breiter machen als das Fenster, sonst scrollt die
+   ganze Seite waagerecht; das Popover hängt darunter am Band und bleibt davon unberührt. */
+.kopfzeilenband {
     position: sticky;
     top: 0;
     z-index: 1;
+}
+
+.kopfzeile {
+    position: relative;
+    z-index: 2;
     display: flex;
     align-items: stretch;
     gap: var(--space-4);
     min-height: var(--space-8);
     padding: 0 var(--space-4);
+    overflow: hidden;
     background: var(--color-surface);
     border-bottom: 1px solid var(--color-divider);
 }
 
 /* — Zone 1: die Anwendung — */
-/* Die Zeile trägt die Kopfdaten der Seite — sie darf davon nicht breiter werden als das
-   Fenster, sonst scrollt die ganze Seite waagerecht. Beschnitten wird in den beiden Zonen, die
-   wachsen können; die Zone der Werkzeuge bleibt offen, weil das Popover aus ihr heraushängt. */
 .kopfzeile-anwendung {
     display: flex;
     flex: 1;
@@ -24,7 +30,6 @@
     gap: var(--space-4);
     min-width: 0;
     padding-left: var(--space-4);
-    overflow: hidden;
     border-left: 1px solid var(--color-divider);
 }
 
@@ -73,7 +78,6 @@
     gap: var(--space-2);
     min-width: 0;
     max-width: 45%;
-    overflow: hidden;
 }
 
 /* Der Titel der Seite steht, wo sonst eine Wortmarke stünde, und trägt deren Gewicht. */
@@ -99,10 +103,7 @@
     gap: var(--space-2);
 }
 
-/* Der Identitätsplatz ist der Anker des Popovers: es hängt an seiner Unterkante und ist
-   rechtsbündig, wie im Artboard (D0002.dc.html:355-386). */
 .identitaetsplatz {
-    position: relative;
     display: flex;
     align-items: center;
     margin-left: var(--space-2);
@@ -113,8 +114,6 @@
 /* Die Pille bleibt so schmal, dass sie die Höhe der Zeile nicht verändert — der Seitentitel und
    der Identitätsplatz stehen weiterhin auf einer waagerechten Zeile. */
 .kopfzeile-identitaet {
-    position: relative;
-    z-index: 2;
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -145,12 +144,15 @@
     transform: rotate(180deg);
 }
 
+/* Rechtsbündig unter der Pille, wie im Artboard (D0002.dc.html:355-386): der rechte Rand des
+   Bandes ist derselbe Innenabstand, den die Zeile trägt. */
 .identitaetspopover {
     position: absolute;
-    top: calc(100% + var(--space-1));
-    right: 0;
+    top: 100%;
+    right: var(--space-4);
     z-index: 2;
     width: 268px;
+    margin-top: var(--space-1);
     display: flex;
     flex-direction: column;
     gap: var(--space-1);
@@ -168,7 +170,7 @@
     color: var(--color-accent);
 }
 
-/* Ein Klick daneben schließt die Wahl: die Fläche liegt über der Seite und unter der Pille,
+/* Ein Klick daneben schließt die Wahl: die Fläche liegt über der Seite und unter der Kopfzeile,
    damit ein zweiter Klick auf den Platz weiterhin ihn selbst trifft. */
 .identitaets-auffangflaeche {
     position: fixed;

@@ -4,63 +4,65 @@
 @inject KontributorenApiKlient ApiKlient
 @inject Identitaetsspeicher Identitaetsspeicher
 
-<header class="kopfzeile" id="kopfzeile">
-    @* Zone 1 — wo die Seite steht. Den Platz füllt sie selbst; auf dem Board steht
-       hier sein Name, auf der Übersicht deren Titel. Eine Wortmarke gibt es nicht:
-       wer die Anwendung offen hat, weiß, welche es ist — der Platz gehört dem Inhalt. *@
-    <div class="kopfzeile-kontext">
-        <SectionOutlet SectionName="kopfzeile-kontext" />
-    </div>
+<div class="kopfzeilenband" @onkeydown="AufTaste">
+    <header class="kopfzeile" id="kopfzeile">
+        @* Zone 1 — wo die Seite steht. Den Platz füllt sie selbst; auf dem Board steht
+           hier sein Name, auf der Übersicht deren Titel. Eine Wortmarke gibt es nicht:
+           wer die Anwendung offen hat, weiß, welche es ist — der Platz gehört dem Inhalt. *@
+        <div class="kopfzeile-kontext">
+            <SectionOutlet SectionName="kopfzeile-kontext" />
+        </div>
 
-    @* Zone 2 — die Hauptnavigation. *@
-    <div class="kopfzeile-anwendung">
-        <nav class="kopfzeile-navigation" id="hauptnavigation" aria-label="Hauptnavigation">
-            @* Steht ein Board offen, führt der Rückweg in seiner Kopfzeile schon dorthin —
-               der Punkt wäre dieselbe Verknüpfung ein zweites Mal. *@
-            @if (!_einBoardIstOffen)
-            {
+        @* Zone 2 — die Hauptnavigation. *@
+        <div class="kopfzeile-anwendung">
+            <nav class="kopfzeile-navigation" id="hauptnavigation" aria-label="Hauptnavigation">
+                @* Steht ein Board offen, führt der Rückweg in seiner Kopfzeile schon dorthin —
+                   der Punkt wäre dieselbe Verknüpfung ein zweites Mal. *@
+                @if (!_einBoardIstOffen)
+                {
+                    <NavLink class="navigationspunkt"
+                             ActiveClass="navigationspunkt-aktiv"
+                             id="navigation-boards"
+                             href="boards">Boards</NavLink>
+                }
+                <span class="navigationspunkt navigationspunkt-gesperrt"
+                      id="navigation-auswertungen"
+                      aria-disabled="true"
+                      title="Noch nicht verfügbar">Auswertungen</span>
                 <NavLink class="navigationspunkt"
                          ActiveClass="navigationspunkt-aktiv"
-                         id="navigation-boards"
-                         href="boards">Boards</NavLink>
-            }
-            <span class="navigationspunkt navigationspunkt-gesperrt"
-                  id="navigation-auswertungen"
-                  aria-disabled="true"
-                  title="Noch nicht verfügbar">Auswertungen</span>
-            <NavLink class="navigationspunkt"
-                     ActiveClass="navigationspunkt-aktiv"
-                     id="navigation-kontributoren"
-                     href="kontributoren">Kontributoren</NavLink>
-        </nav>
-    </div>
-
-    @* Zone 3 — Werkzeuge und Identität, rechtsbündig. *@
-    <div class="kopfzeile-werkzeuge">
-        <SectionOutlet SectionName="kopfzeile-bedienung" />
-        <div class="identitaetsplatz" @onkeydown="AufTaste">
-            @if (_popoverIstOffen)
-            {
-                <div class="identitaets-auffangflaeche" id="identitaet-auffangflaeche" @onclick="SchliessePopover"></div>
-            }
-            <button type="button"
-                    class="kopfzeile-identitaet"
-                    id="identitaet"
-                    aria-haspopup="true"
-                    aria-expanded="@Popoverstand()"
-                    @onclick="SchaltePopover">@Identitaetsbeschriftung()<svg class="identitaets-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
-            @if (_popoverIstOffen)
-            {
-                <div class="identitaetspopover" id="identitaetspopover">
-                    <p class="identitaetspopover-titel">Ich bin …</p>
-                    <Identitaetswahl Kontributoren="_kontributoren"
-                                     GewaehlteKontributorId="_gewaehlteKontributorId"
-                                     Gewaehlt="UebernimmWahl" />
-                </div>
-            }
+                         id="navigation-kontributoren"
+                         href="kontributoren">Kontributoren</NavLink>
+            </nav>
         </div>
-    </div>
-</header>
+
+        @* Zone 3 — Werkzeuge und Identität, rechtsbündig. *@
+        <div class="kopfzeile-werkzeuge">
+            <SectionOutlet SectionName="kopfzeile-bedienung" />
+            <div class="identitaetsplatz">
+                <button type="button"
+                        class="kopfzeile-identitaet"
+                        id="identitaet"
+                        aria-haspopup="true"
+                        aria-expanded="@Popoverstand()"
+                        @onclick="SchaltePopover">@Identitaetsbeschriftung()<svg class="identitaets-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
+            </div>
+        </div>
+    </header>
+
+    @* Die Wahl hängt am Band, nicht in der Zeile: die Zeile beschneidet ihren Inhalt, damit sie die
+       Seite nicht breiter macht als das Fenster, und würde das Popover mit abschneiden. *@
+    @if (_popoverIstOffen)
+    {
+        <div class="identitaets-auffangflaeche" id="identitaet-auffangflaeche" @onclick="SchliessePopover"></div>
+        <div class="identitaetspopover" id="identitaetspopover">
+            <p class="identitaetspopover-titel">Ich bin …</p>
+            <Identitaetswahl Kontributoren="_kontributoren"
+                             GewaehlteKontributorId="_gewaehlteKontributorId"
+                             Gewaehlt="UebernimmWahl" />
+        </div>
+    }
+</div>
 
 @code {
     private const string NichtGewaehlt = "nicht gewählt";
