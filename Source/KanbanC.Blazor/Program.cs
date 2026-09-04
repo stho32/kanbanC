@@ -22,6 +22,7 @@ builder.Services.AddHttpClient("KanbanC", client =>
 builder.Services.AddScoped<BoardApiKlient>();
 builder.Services.AddScoped<SpaltenApiKlient>();
 builder.Services.AddScoped<KartenApiKlient>();
+builder.Services.AddScoped<KontributorenApiKlient>();
 
 var app = builder.Build();
 
