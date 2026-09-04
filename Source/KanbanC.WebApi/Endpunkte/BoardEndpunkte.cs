@@ -79,7 +79,7 @@ public static class BoardEndpunkte
         return Results.Ok(board);
     }
 
-    // Dieselbe Route holt zurueck: der gewuenschte Zustand steht im Rumpf, nicht in der Methode.
+    // Dieselbe Route holt zurück: der gewünschte Zustand steht im Rumpf, nicht in der Methode.
     private static IResult SchalteArchivierung(long boardId, Archivierung archivierung, BoardService boardService)
     {
         var board = boardService.SchalteArchivierung(boardId, archivierung);

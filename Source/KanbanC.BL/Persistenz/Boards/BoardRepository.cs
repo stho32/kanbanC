@@ -103,7 +103,7 @@ public sealed class BoardRepository : IBoardRepository
         using var transaktion = verbindung.BeginTransaction();
 
         // Wie beim Schalten der Kartenzahl wird das Board in der Transaktion gelesen, bevor
-        // geschrieben wird: SQLite erzwingt den Fremdschluessel nicht, und eine Ausnahme waere an
+        // geschrieben wird: SQLite erzwingt den Fremdschlüssel nicht, und eine Ausnahme wäre an
         // der API eine Antwort ohne Befund.
         var boardIstUnbekannt = LiesBoardzeile(verbindung, transaktion, boardId) is null;
         if (boardIstUnbekannt)
@@ -117,8 +117,8 @@ public sealed class BoardRepository : IBoardRepository
         return board;
     }
 
-    // Die Zeile selbst ist die Aussage: archivieren legt sie an, zurueckholen entfernt sie. Beides
-    // laesst sich beliebig oft wiederholen, ohne dass sich etwas aendert.
+    // Die Zeile selbst ist die Aussage: archivieren legt sie an, zurückholen entfernt sie. Beides
+    // lässt sich beliebig oft wiederholen, ohne dass sich etwas ändert.
     private static void SchreibeArchivierung(IDbConnection verbindung, IDbTransaction transaktion, long boardId, Archivierung archivierung)
     {
         var parameter = new { Board = boardId };

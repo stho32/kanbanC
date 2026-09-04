@@ -7,7 +7,7 @@
     box-shadow: var(--shadow-md);
 }
 
-/* Gestrichelter Rand und gedaempfte Schrift statt einer eigenen Farbe: archiviert ist kein
+/* Gestrichelter Rand und gedämpfte Schrift statt einer eigenen Farbe: archiviert ist kein
    Zustand mit eigener Bedeutung, sondern das Fehlen aus der Standardliste. */
 .board-kachel-archiviert {
     background: var(--color-bg);
@@ -51,8 +51,8 @@
     border-radius: inherit;
 }
 
-/* Das Menue liegt ueber der Verweisflaeche: ein Klick auf einen Menuepunkt oeffnet nicht das
-   Board, waehrend die uebrige Kachelflaeche der Weg ins Board bleibt. */
+/* Das Menü liegt über der Verweisfläche: ein Klick auf einen Menüpunkt öffnet nicht das
+   Board, während die übrige Kachelfläche der Weg ins Board bleibt. */
 .board-kachel-menue {
     position: relative;
     z-index: 1;
@@ -119,8 +119,8 @@
     font-size: 13px;
 }
 
-/* Wie das Menue liegt „zurueckholen" ueber der Verweisflaeche der Kachel; ohne das faengt
-   .board-verweis::after den Klick ab und das Board wuerde geoeffnet. */
+/* Wie das Menü liegt „zurückholen“ über der Verweisfläche der Kachel; ohne das fängt
+   .board-verweis::after den Klick ab und das Board würde geöffnet. */
 .board-kachel-zurueckholen {
     position: relative;
     z-index: 1;

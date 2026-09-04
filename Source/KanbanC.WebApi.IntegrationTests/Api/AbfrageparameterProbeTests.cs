@@ -29,7 +29,7 @@ public class AbfrageparameterProbeTests
     [Test]
     public async Task Wenn_ein_string_Parameter_denselben_Wert_bekommt_dann_erreicht_er_den_Handler_unveraendert()
     {
-        using var probe = new Probeanwendung(routen => routen.MapGet(Route, (string? archiviert) => Results.Text(archiviert ?? "fehlt")));
+        using var probe = new Probeanwendung(routen => routen.MapGet(Route, (string? archiviert) => Results.Text(AlsText(archiviert))));
 
         using var antwort = await probe.Klient.GetAsync($"{Route}?archiviert=vielleicht");
 
@@ -40,7 +40,7 @@ public class AbfrageparameterProbeTests
     [Test]
     public async Task Wenn_der_string_Parameter_fehlt_dann_kommt_er_als_null_beim_Handler_an()
     {
-        using var probe = new Probeanwendung(routen => routen.MapGet(Route, (string? archiviert) => Results.Text(archiviert ?? "fehlt")));
+        using var probe = new Probeanwendung(routen => routen.MapGet(Route, (string? archiviert) => Results.Text(AlsText(archiviert))));
 
         using var antwort = await probe.Klient.GetAsync(Route);
 
@@ -51,13 +51,24 @@ public class AbfrageparameterProbeTests
     [Test]
     public async Task Wenn_der_string_Parameter_true_oder_false_traegt_dann_kommt_der_Text_unveraendert_beim_Handler_an()
     {
-        using var probe = new Probeanwendung(routen => routen.MapGet(Route, (string? archiviert) => Results.Text(archiviert ?? "fehlt")));
+        using var probe = new Probeanwendung(routen => routen.MapGet(Route, (string? archiviert) => Results.Text(AlsText(archiviert))));
 
         using var wahr = await probe.Klient.GetAsync($"{Route}?archiviert=true");
         using var falsch = await probe.Klient.GetAsync($"{Route}?archiviert=FALSE");
 
         Assert.That(await wahr.Content.ReadAsStringAsync(), Is.EqualTo("true"));
         Assert.That(await falsch.Content.ReadAsStringAsync(), Is.EqualTo("FALSE"));
+    }
+
+    // Der Probe-Handler soll zeigen, was ankommt — auch die Abwesenheit des Parameters.
+    private static string AlsText(string? abfragewert)
+    {
+        if (abfragewert is null)
+        {
+            return "fehlt";
+        }
+
+        return abfragewert;
     }
 
     private sealed class Probeanwendung : IDisposable
