@@ -95,4 +95,31 @@ public class KontributorenmeldungTests
 
         Assert.That(meldung, Is.EqualTo("Einen Kontributor mit der Nummer 999 gibt es nicht."));
     }
+
+    [Test]
+    public void Wenn_beim_Stilllegen_der_Kontributor_unbekannt_ist_dann_steht_die_Meldung_der_WebApi_da()
+    {
+        var zurueckweisung = new Zurueckweisung([
+            new Fehlerbefund("kontributor-unbekannt", "Einen Kontributor mit der Nummer 4711 gibt es nicht.", "`GET /api/kontributoren` abrufen."),
+        ]);
+
+        var meldung = Kontributorenmeldung.AusStilllegung(zurueckweisung);
+
+        Assert.That(meldung, Is.EqualTo("Einen Kontributor mit der Nummer 4711 gibt es nicht."));
+    }
+
+    // Anders als beim Anlegen und Ändern gibt es beim Stilllegen keinen Satz für den leeren
+    // Namen: der Vorgang hat kein Namensfeld. Auch dieser Befund käme so, wie die WebApi ihn meldet.
+    [Test]
+    public void Wenn_beim_Stilllegen_mehrere_Befunde_kommen_dann_stehen_ihre_Meldungen_hintereinander()
+    {
+        var zurueckweisung = new Zurueckweisung([
+            new Fehlerbefund("kontributor-unbekannt", "Einen Kontributor mit der Nummer 4711 gibt es nicht.", "abrufen."),
+            new Fehlerbefund("kontributor-name-leer", "Der Name darf nicht leer sein.", "wiederholen"),
+        ]);
+
+        var meldung = Kontributorenmeldung.AusStilllegung(zurueckweisung);
+
+        Assert.That(meldung, Is.EqualTo("Einen Kontributor mit der Nummer 4711 gibt es nicht. Der Name darf nicht leer sein."));
+    }
 }
