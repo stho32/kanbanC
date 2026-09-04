@@ -76,8 +76,6 @@ public sealed class BoardRepository : IBoardRepository
         return board;
     }
 
-    // Eine Zeile je Board: das zweite Einschalten schreibt denselben Wert auf dieselbe Zeile,
-    // statt eine zweite anzulegen.
     private static void SchreibeKartenzahlanzeige(IDbConnection verbindung, IDbTransaction transaktion, long boardId, Kartenzahlanzeige anzeige)
     {
         var parameter = new { Board = boardId, anzeige.ZeigtKartenzahl };
@@ -100,8 +98,7 @@ public sealed class BoardRepository : IBoardRepository
         return AlsBoard(boardZeile, spalten);
     }
 
-    // Der LEFT JOIN liefert für ein Board ohne Einstellungszeile NULL — COALESCE macht daraus
-    // die Voreinstellung aus.
+    // Fehlt die Einstellungszeile, gilt die Voreinstellung aus.
     private static BoardZeile? LiesBoardzeile(IDbConnection verbindung, IDbTransaction? transaktion, long boardId)
     {
         return verbindung.QuerySingleOrDefault<BoardZeile>(@"

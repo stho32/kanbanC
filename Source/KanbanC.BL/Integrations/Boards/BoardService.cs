@@ -38,8 +38,7 @@ public sealed class BoardService
         return _repository.Lade(boardId);
     }
 
-    // Ohne Validator: ein Wahrheitswert hat keinen ungültigen Fall. Zu prüfen ist nur, ob es das
-    // Board gibt, und das weiß allein der Bestand — null heißt „dieses Board gibt es nicht“.
+    // null heißt: dieses Board gibt es nicht.
     public Board? SchalteKartenzahl(long boardId, Kartenzahlanzeige anzeige)
     {
         return _repository.SetzeKartenzahlanzeige(boardId, anzeige);

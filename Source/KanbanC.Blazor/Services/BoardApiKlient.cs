@@ -40,8 +40,6 @@ public sealed class BoardApiKlient
         return await antwort.Content.ReadFromJsonAsync<Board>();
     }
 
-    // Kein ApiErgebnis: die Unterressource kennt keine Zurückweisung — ein Wahrheitswert hat
-    // keinen ungültigen Fall. Ein verschwundenes Board wird wie beim Laden zu null.
     public async Task<Board?> SchalteKartenzahl(long boardId, Kartenzahlanzeige anzeige)
     {
         using var klient = _klientFabrik.CreateClient(KlientName);

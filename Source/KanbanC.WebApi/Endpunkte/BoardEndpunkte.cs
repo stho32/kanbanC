@@ -46,8 +46,6 @@ public static class BoardEndpunkte
         return Results.Ok(board);
     }
 
-    // Eine eigene Unterressource wie spalten/reihenfolge und karten/{karteId}/lage: der Board-PUT
-    // bleibt damit für das Umbenennen und Archivieren frei.
     private static IResult SchalteKartenzahl(long boardId, Kartenzahlanzeige anzeige, BoardService boardService)
     {
         var board = boardService.SchalteKartenzahl(boardId, anzeige);

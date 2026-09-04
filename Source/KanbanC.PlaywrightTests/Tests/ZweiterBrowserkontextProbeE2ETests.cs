@@ -5,11 +5,9 @@ using Microsoft.Playwright.NUnit;
 
 namespace KanbanC.PlaywrightTests.Tests;
 
-// Probe nach dem Skill dependency-probe: B0115 soll belegen, dass die Kartenzahl am Board hängt
-// und nicht am Browser. Das trägt nur, wenn eine zweite Sitzung wirklich unabhängig ist — die
-// Testumgebung startet die Prozesse je Lauf, sieht aber keinen zweiten Browser-Kontext vor.
-// Geprüft wird deshalb hier: was ein zweiter Kontext teilt, was er nicht teilt, und dass eine
-// Blazor-Seite in ihm ihren eigenen Kreislauf bekommt. Bleibt als Regressionsschutz stehen.
+// Probe der Eigenschaften, auf denen der Nachweis „die Einstellung hängt am Board, nicht am
+// Browser“ ruht: ein zweiter Browser-Kontext teilt den Browserzustand des ersten nicht, bekommt
+// seinen eigenen Blazor-Kreislauf und holt den Stand vom Server. Bleibt als Regressionsschutz stehen.
 [TestFixture]
 public class ZweiterBrowserkontextProbeE2ETests : PageTest
 {
