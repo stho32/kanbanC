@@ -2,8 +2,8 @@ using KanbanC.Contracts.Fehler;
 
 namespace KanbanC.BL.Operations.Fehler;
 
-// Die eine Stelle, an der aus „das Ding gibt es nicht“ ein Befund wird. Sechs Endpunkte
-// beantworten dieselbe Lage; sechs handgeschriebene Varianten liefen auseinander.
+// Die eine Stelle, an der aus „das Ding gibt es nicht“ ein Befund wird. Viele Endpunkte
+// beantworten dieselbe Lage; ebenso viele handgeschriebene Varianten liefen auseinander.
 public static class Nichtgefunden
 {
     private const string BoardUnbekannt = "board-unbekannt";
@@ -11,7 +11,8 @@ public static class Nichtgefunden
     private const string KarteFremd = "karte-fremd";
     private const string SpalteUnbekannt = "spalte-unbekannt";
     private const string SpalteFremd = "spalte-fremd";
-    private static readonly string[] AlleCodes = [BoardUnbekannt, KarteUnbekannt, KarteFremd, SpalteUnbekannt, SpalteFremd];
+    private const string KontributorUnbekannt = "kontributor-unbekannt";
+    private static readonly string[] AlleCodes = [BoardUnbekannt, KarteUnbekannt, KarteFremd, SpalteUnbekannt, SpalteFremd, KontributorUnbekannt];
 
     public static Fehlerbefund Board(long boardId)
     {
@@ -51,6 +52,14 @@ public static class Nichtgefunden
             SpalteFremd,
             $"Die Spalte {spalteId} gehört zum Board {boardIdDerSpalte}, nicht zum Board {boardId}.",
             $"`GET /api/boards/{boardId}` abrufen und den Aufruf mit einer SpalteId dieses Boards wiederholen.");
+    }
+
+    public static Fehlerbefund Kontributor(long kontributorId)
+    {
+        return new Fehlerbefund(
+            KontributorUnbekannt,
+            $"Einen Kontributor mit der Nummer {kontributorId} gibt es nicht.",
+            "`GET /api/kontributoren` abrufen und den Aufruf mit einer der gelieferten KontributorIds wiederholen.");
     }
 
     // Sagt der WebApi, ob ein Befund mit 404 statt mit 400 zu beantworten ist: es fehlte ein Ding,

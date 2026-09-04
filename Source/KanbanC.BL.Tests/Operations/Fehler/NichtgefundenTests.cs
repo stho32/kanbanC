@@ -66,6 +66,20 @@ public class NichtgefundenTests
     }
 
     [Test]
+    public void Wenn_ein_Kontributor_fehlt_dann_nennt_der_Befund_seine_Nummer_und_den_Weg_zur_Liste()
+    {
+        var befund = Nichtgefunden.Kontributor(999);
+
+        Befundpruefung.ErwarteVollstaendigenBefund(befund, "kontributor-unbekannt");
+        Assert.Multiple(() =>
+        {
+            Assert.That(befund.Meldung, Does.Contain("999"));
+            Assert.That(befund.Kompensation, Does.Contain("GET /api/kontributoren"));
+            Assert.That(befund.Kompensation, Does.Contain("KontributorId"));
+        });
+    }
+
+    [Test]
     public void Wenn_ein_Befund_ein_fehlendes_Ding_meldet_dann_erkennt_die_Pruefung_ihn_und_eine_verletzte_Regel_nicht()
     {
         var verletzteRegel = new Fehlerbefund("position-ausserhalb", "Position 5 liegt außerhalb.", "Erneut versuchen.");
@@ -77,6 +91,7 @@ public class NichtgefundenTests
             Assert.That(Nichtgefunden.MeldetEinFehlendesDing(Nichtgefunden.FremdeKarte(1, 2, 3)), Is.True);
             Assert.That(Nichtgefunden.MeldetEinFehlendesDing(Nichtgefunden.Spalte(1, 2)), Is.True);
             Assert.That(Nichtgefunden.MeldetEinFehlendesDing(Nichtgefunden.FremdeSpalte(1, 2, 3)), Is.True);
+            Assert.That(Nichtgefunden.MeldetEinFehlendesDing(Nichtgefunden.Kontributor(999)), Is.True);
             Assert.That(Nichtgefunden.MeldetEinFehlendesDing(verletzteRegel), Is.False);
         });
     }
