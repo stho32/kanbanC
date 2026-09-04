@@ -29,10 +29,18 @@ public sealed class KontributorenService
         return Ergebnis<Kontributor>.Erfolg(kontributor);
     }
 
-    // Ein Ergebnis statt null, weil zwei Lagen zu unterscheiden sind: ein unbekannter Kontributor
-    // ist ein fehlendes Ding, keine verletzte Regel.
+    // Drei Lagen: ein leerer Name ist eine verletzte Regel, ein unbekannter Kontributor ein
+    // fehlendes Ding. Geprüft wird vor dem Nachschlagen — wer einen untauglichen Rumpf schickt,
+    // erfährt das zuerst und nicht erst, wenn die Nummer auch noch falsch war.
     public Ergebnis<Kontributor> AendereKontributor(long kontributorId, KontributorAendernAnfrage anfrage)
     {
+        var befunde = KontributorenValidator.Pruefe(kontributorId, anfrage);
+        var anfrageIstUngueltig = !befunde.IstOhneBefund;
+        if (anfrageIstUngueltig)
+        {
+            return Ergebnis<Kontributor>.Zurueckgewiesen(befunde);
+        }
+
         var kontributor = _repository.Aendere(kontributorId, anfrage);
         if (kontributor is null)
         {

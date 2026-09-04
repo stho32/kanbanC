@@ -197,6 +197,73 @@ public class KontributorenEndpunkteTests
         });
     }
 
+    [Test]
+    public async Task Wenn_beim_Aendern_der_Name_leer_ist_dann_antwortet_die_API_mit_400_und_nennt_die_Aenderungsroute_als_naechsten_Schritt()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var bert = await LegeKontributorAn(webApi, new KontributorAnlegenAnfrage("Bert", Kontributorart.Agent));
+
+        using var antwort = await webApi.Klient.PutAsJsonAsync($"{KontributorenRoute}/{bert.KontributorId}", new KontributorAendernAnfrage("", Kontributorart.Mensch));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Kontributor ändern ohne Name");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("kontributor-name-leer"));
+            Assert.That(zurueckweisung.Befunde[0].Kompensation, Does.Contain($"PUT /api/kontributoren/{bert.KontributorId}"));
+            Assert.That(zurueckweisung.Befunde[0].Kompensation, Does.Not.Contain("POST"));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_beim_Aendern_der_Name_nur_aus_Leerzeichen_besteht_dann_kommt_dieselbe_Antwort_und_nichts_ist_geschrieben()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var bert = await LegeKontributorAn(webApi, new KontributorAnlegenAnfrage("Bert", Kontributorart.Agent));
+
+        using var antwort = await webApi.Klient.PutAsJsonAsync($"{KontributorenRoute}/{bert.KontributorId}", new KontributorAendernAnfrage("   ", Kontributorart.Abgebildet));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "kontributor-name-leer");
+        var kontributoren = await webApi.Klient.GetFromJsonAsync<List<Kontributor>>(KontributorenRoute);
+        Assert.That(kontributoren, Is.EqualTo(new[] { new Kontributor(bert.KontributorId, "Bert", Kontributorart.Agent) }));
+    }
+
+    [Test]
+    public async Task Wenn_die_KontributorId_unbekannt_ist_dann_antwortet_die_API_mit_404_und_einem_Befund_der_die_Nummer_nennt()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        await LegeKontributorAn(webApi, new KontributorAnlegenAnfrage("Bert", Kontributorart.Agent));
+
+        using var antwort = await webApi.Klient.PutAsJsonAsync($"{KontributorenRoute}/999", new KontributorAendernAnfrage("Zora", Kontributorart.Mensch));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Kontributor ändern mit unbekannter KontributorId");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("kontributor-unbekannt"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain("999"));
+            Assert.That(zurueckweisung.Befunde[0].Kompensation, Does.Contain("GET /api/kontributoren"));
+        });
+        var kontributoren = await webApi.Klient.GetFromJsonAsync<List<Kontributor>>(KontributorenRoute);
+        Assert.That(kontributoren, Is.EqualTo(new[] { new Kontributor(1, "Bert", Kontributorart.Agent) }));
+    }
+
+    [Test]
+    public async Task Wenn_die_KontributorId_unbekannt_und_der_Name_leer_ist_dann_antwortet_die_API_mit_400_statt_mit_einem_Serverfehler()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+
+        using var antwort = await webApi.Klient.PutAsJsonAsync($"{KontributorenRoute}/999", new KontributorAendernAnfrage("", Kontributorart.Mensch));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "kontributor-name-leer");
+    }
+
     private static async Task<Kontributor> AendereKontributor(TestWebApi webApi, long kontributorId, KontributorAendernAnfrage anfrage)
     {
         using var antwort = await webApi.Klient.PutAsJsonAsync($"{KontributorenRoute}/{kontributorId}", anfrage);

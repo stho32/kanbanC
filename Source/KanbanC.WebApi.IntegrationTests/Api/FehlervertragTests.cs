@@ -25,7 +25,7 @@ public class FehlervertragTests
     {
         using var datenbank = new TemporaereDatenbank();
         using var webApi = new TestWebApi(datenbank.Dateipfad);
-        var aufbau = await LegeBoardMitKarteAn(webApi);
+        var aufbau = await LegeAufbauAn(webApi);
 
         var faelle = await AlleFehlerantworten(webApi, aufbau);
 
@@ -43,7 +43,7 @@ public class FehlervertragTests
     {
         using var datenbank = new TemporaereDatenbank();
         using var webApi = new TestWebApi(datenbank.Dateipfad);
-        var aufbau = await LegeBoardMitKarteAn(webApi);
+        var aufbau = await LegeAufbauAn(webApi);
         var faelle = await AlleFehlerantworten(webApi, aufbau);
         foreach (var fall in faelle)
         {
@@ -71,6 +71,16 @@ public class FehlervertragTests
             "POST /api/kontributoren",
             "Kontributor anlegen ohne Name",
             await webApi.Klient.PostAsJsonAsync(KontributorenRoute, new KontributorAnlegenAnfrage("", Kontributorart.Mensch))));
+
+        faelle.Add(new Fehlerfall(
+            "PUT /api/kontributoren/{kontributorId:long}",
+            "Kontributor ändern ohne Name",
+            await webApi.Klient.PutAsJsonAsync($"{KontributorenRoute}/{aufbau.Kontributor.KontributorId}", new KontributorAendernAnfrage("", Kontributorart.Mensch))));
+
+        faelle.Add(new Fehlerfall(
+            "PUT /api/kontributoren/{kontributorId:long}",
+            "Kontributor ändern mit unbekannter KontributorId",
+            await webApi.Klient.PutAsJsonAsync($"{KontributorenRoute}/999", new KontributorAendernAnfrage("Zora", Kontributorart.Mensch))));
 
         faelle.Add(new Fehlerfall(
             "GET /api/boards",
@@ -175,7 +185,7 @@ public class FehlervertragTests
         return faelle;
     }
 
-    private static async Task<Aufbau> LegeBoardMitKarteAn(TestWebApi webApi)
+    private static async Task<Aufbau> LegeAufbauAn(TestWebApi webApi)
     {
         var antwort = await webApi.Klient.PostAsJsonAsync(BoardsRoute, new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null));
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.Created));
@@ -188,10 +198,15 @@ public class FehlervertragTests
         Assert.That(angelegt.StatusCode, Is.EqualTo(HttpStatusCode.Created));
         var karte = await angelegt.Content.ReadFromJsonAsync<Karte>();
         Assert.That(karte, Is.Not.Null);
-        return new Aufbau(board, karte!);
+
+        var eingetragen = await webApi.Klient.PostAsJsonAsync(KontributorenRoute, new KontributorAnlegenAnfrage("Bert", Kontributorart.Agent));
+        Assert.That(eingetragen.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        var kontributor = await eingetragen.Content.ReadFromJsonAsync<Kontributor>();
+        Assert.That(kontributor, Is.Not.Null);
+        return new Aufbau(board, karte!, kontributor!);
     }
 
-    private sealed record Aufbau(Board Board, Karte Karte);
+    private sealed record Aufbau(Board Board, Karte Karte, Kontributor Kontributor);
 
     private sealed record Fehlerfall(string Route, string Lage, HttpResponseMessage Antwort);
 }

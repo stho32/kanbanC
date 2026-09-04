@@ -160,4 +160,58 @@ public class KontributorenServiceTests
             Assert.That(service.LadeAlleKontributoren(), Is.EqualTo(new[] { new Kontributor(1, "Bert", Kontributorart.Agent) }));
         });
     }
+
+    [Test]
+    public void Wenn_die_Aenderung_einen_leeren_Namen_hat_dann_wird_sie_zurueckgewiesen_und_das_Repository_nicht_aufgerufen()
+    {
+        var repository = new TestKontributorenRepository();
+        var service = new KontributorenService(repository);
+        var bert = repository.LegeAn(new KontributorAnlegenAnfrage("Bert", Kontributorart.Agent));
+
+        var ergebnis = service.AendereKontributor(bert.KontributorId, new KontributorAendernAnfrage("   ", Kontributorart.Mensch));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde.BefundAnzahl, Is.EqualTo(1));
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("kontributor-name-leer"));
+            Assert.That(ergebnis.Befunde[0].Kompensation, Does.Contain($"PUT /api/kontributoren/{bert.KontributorId}"));
+            Assert.That(repository.ErhalteneAenderung, Is.Null);
+            Assert.That(service.LadeAlleKontributoren(), Is.EqualTo(new[] { new Kontributor(1, "Bert", Kontributorart.Agent) }));
+        });
+    }
+
+    [Test]
+    public void Wenn_die_Art_der_Aenderung_unbekannt_ist_dann_wird_sie_zurueckgewiesen_und_nichts_geschrieben()
+    {
+        var repository = new TestKontributorenRepository();
+        var service = new KontributorenService(repository);
+        var bert = repository.LegeAn(new KontributorAnlegenAnfrage("Bert", Kontributorart.Agent));
+
+        var ergebnis = service.AendereKontributor(bert.KontributorId, new KontributorAendernAnfrage("Zora", (Kontributorart)7));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("kontributor-art-unbekannt"));
+            Assert.That(repository.ErhalteneAenderung, Is.Null);
+        });
+    }
+
+    [Test]
+    public void Wenn_die_KontributorId_unbekannt_und_der_Name_leer_ist_dann_gewinnt_die_Pruefung_vor_dem_Datenzugriff()
+    {
+        var repository = new TestKontributorenRepository();
+        var service = new KontributorenService(repository);
+
+        var ergebnis = service.AendereKontributor(999, new KontributorAendernAnfrage("", Kontributorart.Mensch));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde.BefundAnzahl, Is.EqualTo(1));
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("kontributor-name-leer"));
+            Assert.That(repository.ErhalteneAenderung, Is.Null);
+        });
+    }
 }
