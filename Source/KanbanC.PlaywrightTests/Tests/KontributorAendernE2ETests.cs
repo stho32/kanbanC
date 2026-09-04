@@ -170,4 +170,68 @@ public class KontributorAendernE2ETests : PageTest
         await Expect(seite.BearbeitungsNamensfeld).ToHaveValueAsync("Anna");
         await Expect(Page.Locator("#bearbeiten-art-mensch input")).ToBeCheckedAsync();
     }
+
+    [Test]
+    [Category("US-5")]
+    public async Task Wenn_beim_Aendern_der_Name_geleert_wird_dann_erscheint_der_Satz_der_Bearbeitungszeile_und_die_Zeile_bleibt_offen()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        using var agent = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        var bert = await agent.LegeKontributorAn("Bert", Kontributorart.Agent);
+        var seite = new KontributorenSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await seite.Oeffne();
+        await seite.OeffneBearbeitung(bert.KontributorId);
+
+        await seite.TrageBearbeitungsnamenEin("");
+        await seite.WaehleBearbeitungsart("mensch");
+        await seite.Sichere();
+
+        await Expect(seite.Zurueckweisung).ToContainTextAsync("Ohne Namen bleibt der Kontributor, wie er war.");
+        await Expect(seite.Bearbeitungszeile).ToHaveCountAsync(1);
+        await Expect(Page.Locator("#bearbeiten-art-mensch input")).ToBeCheckedAsync();
+        var kontributoren = await agent.LadeAlleKontributoren();
+        Assert.That(kontributoren, Is.EqualTo(new[] { new Kontributor(bert.KontributorId, "Bert", Kontributorart.Agent) }));
+    }
+
+    [Test]
+    [Category("US-5")]
+    public async Task Wenn_nach_der_Zurueckweisung_ein_Name_eingetragen_wird_dann_ist_die_Aenderung_uebernommen_und_die_Meldung_verschwunden()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        using var agent = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        var bert = await agent.LegeKontributorAn("Bert", Kontributorart.Agent);
+        var seite = new KontributorenSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await seite.Oeffne();
+        await seite.OeffneBearbeitung(bert.KontributorId);
+        await seite.TrageBearbeitungsnamenEin("");
+        await seite.Sichere();
+        await Expect(seite.Zurueckweisung).ToBeVisibleAsync();
+
+        await seite.TrageBearbeitungsnamenEin("Bertram");
+        await seite.Sichere();
+
+        await Expect(seite.Zurueckweisung).ToHaveCountAsync(0);
+        await Expect(seite.Bearbeitungszeile).ToHaveCountAsync(0);
+        await Expect(seite.Kontributorzeile(bert.KontributorId)).ToContainTextAsync("Bertram");
+    }
+
+    [Test]
+    [Category("US-5")]
+    public async Task Wenn_die_WebApi_beim_Sichern_nicht_erreichbar_ist_dann_erscheint_die_Ausfallmeldung_und_die_Seite_bleibt_bedienbar()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        using var agent = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        var bert = await agent.LegeKontributorAn("Bert", Kontributorart.Agent);
+        var seite = new KontributorenSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await seite.Oeffne();
+        await seite.OeffneBearbeitung(bert.KontributorId);
+
+        Testumgebung.Aktuelle.HalteWebApiAn();
+        await seite.TrageBearbeitungsnamenEin("Zora");
+        await seite.Sichere();
+
+        await Expect(seite.Fehlermeldung).ToContainTextAsync("Die WebApi ist nicht erreichbar.");
+        await Expect(seite.Bearbeitungszeile).ToHaveCountAsync(1);
+        await Expect(seite.BearbeitungsNamensfeld).ToHaveValueAsync("Zora");
+    }
 }

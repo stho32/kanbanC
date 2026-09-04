@@ -166,7 +166,7 @@
             var ergebnis = await ApiKlient.Aendere(bearbeitung.KontributorId, bearbeitung.AlsAnfrage());
             if (ergebnis.WurdeZurueckgewiesen)
             {
-                _zurueckweisungsmeldung = Kontributorenmeldung.Aus(ergebnis.Zurueckweisung);
+                _zurueckweisungsmeldung = Kontributorenmeldung.AusAenderung(ergebnis.Zurueckweisung);
                 return;
             }
 
@@ -196,7 +196,7 @@
             var ergebnis = await ApiKlient.LegeAn(_formular.AlsAnfrage());
             if (ergebnis.WurdeZurueckgewiesen)
             {
-                _zurueckweisungsmeldung = Kontributorenmeldung.Aus(ergebnis.Zurueckweisung);
+                _zurueckweisungsmeldung = Kontributorenmeldung.AusAnlage(ergebnis.Zurueckweisung);
                 return;
             }
 
