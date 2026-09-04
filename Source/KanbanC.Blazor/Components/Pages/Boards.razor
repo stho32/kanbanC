@@ -103,7 +103,7 @@
 }
 else if (_boards.Count == 0)
 {
-    <p id="keine-boards">Noch kein Board vorhanden.</p>
+    <p id="keine-boards">@_leermeldung</p>
 }
 else
 {
@@ -112,13 +112,29 @@ else
         <Boardband Kennung="band-linienboards"
                    Ueberschrift="Linienboards — laufen ohne Ende"
                    Boards="baender.Linienboards"
-                   Geaendert="LadeListeNeu" />
+                   Geaendert="LadeListeNeu"
+                   IstArchivansicht="_zeigtArchivierte" />
         <Boardband Kennung="band-projektboards"
                    Ueberschrift="Projektboards — laufen mit dem Vorhaben aus"
                    Boards="baender.Projektboards"
-                   Geaendert="LadeListeNeu" />
+                   Geaendert="LadeListeNeu"
+                   IstArchivansicht="_zeigtArchivierte" />
     </div>
 }
+
+<div class="uebersichtsfuss">
+    <span class="text-muted uebersichtsfuss-anrede">Anzeigen</span>
+    <span class="seg" id="archivfilter">
+        <label class="seg-opt" id="filter-aktive">
+            <input type="radio" name="archivansicht" checked="@_zeigtAktive" @onchange="ZeigeAktive" />
+            aktive
+        </label>
+        <label class="seg-opt" id="filter-archivierte">
+            <input type="radio" name="archivansicht" checked="@_zeigtArchivierte" @onchange="ZeigeArchivierte" />
+            archivierte
+        </label>
+    </span>
+</div>
 
 @code {
     // Die Standardspalten entstehen in der Fachlogik (B0001). Die Oberfläche hat keine
@@ -127,6 +143,7 @@ else
     private static readonly string[] Standardspalten = ["Zu erledigen", "In Arbeit", "Erledigt"];
 
     private static readonly Archivierung Aktive = new(false);
+    private static readonly Archivierung Archivierte = new(true);
 
     private readonly BoardFormular _formular = new();
     private IReadOnlyList<BoardUebersicht>? _boards;
@@ -134,9 +151,19 @@ else
     private string? _fehlermeldung;
     private bool _formularIstOffen;
 
+    // Der Filter ist eine Ansicht, kein gespeicherter Zustand: nach einem Reload steht er wieder
+    // auf „aktive".
+    private Archivierung _archivstand = Aktive;
+    private bool _zeigtAktive = true;
+    private bool _zeigtArchivierte;
+    private string _leermeldung = LeermeldungAktive;
+
+    private const string LeermeldungAktive = "Noch kein Board vorhanden.";
+    private const string LeermeldungArchiv = "Kein archiviertes Board.";
+
     protected override async Task OnInitializedAsync()
     {
-        await MitErreichbarerWebApi(async () => _boards = await ApiKlient.LadeAlleBoards(Aktive));
+        await MitErreichbarerWebApi(async () => _boards = await ApiKlient.LadeAlleBoards(_archivstand));
     }
 
     private void OeffneAnlegeformular()
@@ -165,14 +192,43 @@ else
             _zurueckweisung = null;
             _formular.Leere();
             _formularIstOffen = false;
-            _boards = await ApiKlient.LadeAlleBoards(Aktive);
+            _boards = await ApiKlient.LadeAlleBoards(_archivstand);
         });
+    }
+
+    private async Task ZeigeAktive()
+    {
+        await WechsleAnsicht(Aktive);
+    }
+
+    private async Task ZeigeArchivierte()
+    {
+        await WechsleAnsicht(Archivierte);
+    }
+
+    private async Task WechsleAnsicht(Archivierung archivstand)
+    {
+        _archivstand = archivstand;
+        _zeigtArchivierte = archivstand.IstArchiviert;
+        _zeigtAktive = !archivstand.IstArchiviert;
+        _leermeldung = LeermeldungFuer(archivstand);
+        await LadeListeNeu();
+    }
+
+    private static string LeermeldungFuer(Archivierung archivstand)
+    {
+        if (archivstand.IstArchiviert)
+        {
+            return LeermeldungArchiv;
+        }
+
+        return LeermeldungAktive;
     }
 
     // Eine Kachel hat ihr Board geändert; die geladene Liste ist die eine Quelle und wird neu geholt.
     private async Task LadeListeNeu()
     {
-        await MitErreichbarerWebApi(async () => _boards = await ApiKlient.LadeAlleBoards(Aktive));
+        await MitErreichbarerWebApi(async () => _boards = await ApiKlient.LadeAlleBoards(_archivstand));
     }
 
     private async Task MitErreichbarerWebApi(Func<Task> aufruf)

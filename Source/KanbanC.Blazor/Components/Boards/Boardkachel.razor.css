@@ -7,6 +7,22 @@
     box-shadow: var(--shadow-md);
 }
 
+/* Gestrichelter Rand und gedaempfte Schrift statt einer eigenen Farbe: archiviert ist kein
+   Zustand mit eigener Bedeutung, sondern das Fehlen aus der Standardliste. */
+.board-kachel-archiviert {
+    background: var(--color-bg);
+    border: 1px dashed color-mix(in srgb, var(--color-text) 30%, transparent);
+    box-shadow: none;
+}
+
+.board-kachel-archiviert .board-kachel-art {
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.board-kachel-archiviert .board-verweis {
+    color: color-mix(in srgb, var(--color-text) 70%, transparent);
+}
+
 .board-kachel-kopf {
     display: flex;
     align-items: center;

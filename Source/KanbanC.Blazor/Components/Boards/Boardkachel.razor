@@ -3,7 +3,7 @@
 @using KanbanC.Contracts.Fehler
 @inject BoardApiKlient ApiKlient
 
-<article class="board-kachel card elev-sm" data-board-id="@Board.BoardId">
+<article class="board-kachel card elev-sm @_archivklasse" data-board-id="@Board.BoardId">
     <div class="board-kachel-kopf">
         <span class="card-kicker board-kachel-art">@_artbezeichnung</span>
         <div class="board-kachel-menue">
@@ -58,6 +58,7 @@
 @code {
     private readonly List<string> _meldungen = [];
     private string _artbezeichnung = "";
+    private string _archivklasse = "";
     private string _fusszeile = "";
     private string _name = "";
     private bool _menueIstOffen;
@@ -73,10 +74,36 @@
     [Parameter]
     public EventCallback Geaendert { get; set; }
 
+    // Die Kachel erfährt aus der gewählten Ansicht, ob sie ein abgelegtes Board zeigt:
+    // BoardUebersicht trägt den Archivstand nicht, weil die Liste schon gefiltert ist.
+    [Parameter]
+    public bool IstArchivansicht { get; set; }
+
     protected override void OnParametersSet()
     {
-        _artbezeichnung = ArtbezeichnungVon(Board.Art);
+        _artbezeichnung = ArtbezeichnungVon(Board.Art) + ArchivzusatzVon(IstArchivansicht);
+        _archivklasse = ArchivklasseVon(IstArchivansicht);
         _fusszeile = FusszeileVon(Board);
+    }
+
+    private static string ArchivzusatzVon(bool istArchivansicht)
+    {
+        if (istArchivansicht)
+        {
+            return " · archiviert";
+        }
+
+        return "";
+    }
+
+    private static string ArchivklasseVon(bool istArchivansicht)
+    {
+        if (istArchivansicht)
+        {
+            return "board-kachel-archiviert";
+        }
+
+        return "";
     }
 
     // Das Menü schließt über einen zweiten Klick auf ⋯, so wie das Anlegeformular über sein ✕.

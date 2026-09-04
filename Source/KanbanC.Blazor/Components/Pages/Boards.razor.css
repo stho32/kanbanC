@@ -46,6 +46,19 @@
     margin-top: var(--space-4);
 }
 
+.uebersichtsfuss {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-top: var(--space-6);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-divider);
+}
+
+.uebersichtsfuss-anrede {
+    font-size: 12px;
+}
+
 /* Der sichtbare Titel steht in der Kopfzeile. Hier bleibt er als Überschrift der Seite
    stehen, damit Vorlesewerkzeuge und der Sprungfokus eine finden. */
 .nur-fuer-screenreader {

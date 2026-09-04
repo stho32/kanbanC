@@ -132,6 +132,27 @@ public sealed class BoardsSeite
         await Boardverweis(boardId).ClickAsync();
     }
 
+    public ILocator Archivfilter => _seite.Locator("#archivfilter");
+
+    // Das Kontrollfeld selbst ist im Token-Sheet ausgeblendet; bedient wird die Beschriftung.
+    public ILocator FilterAktive => _seite.Locator("#filter-aktive input");
+
+    public ILocator FilterArchivierte => _seite.Locator("#filter-archivierte input");
+
+    public ILocator ArchivierteKacheln => _seite.Locator("#board-liste .board-kachel-archiviert");
+
+    public async Task ZeigeArchivierte()
+    {
+        await _seite.Locator("#filter-archivierte").ClickAsync();
+        await Assertions.Expect(FilterArchivierte).ToBeCheckedAsync();
+    }
+
+    public async Task ZeigeAktive()
+    {
+        await _seite.Locator("#filter-aktive").ClickAsync();
+        await Assertions.Expect(FilterAktive).ToBeCheckedAsync();
+    }
+
     public ILocator Menueschalter(long boardId)
     {
         return Boardzeile(boardId).Locator(".board-kachel-menue-schalter");
