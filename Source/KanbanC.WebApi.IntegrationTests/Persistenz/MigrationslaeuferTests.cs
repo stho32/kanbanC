@@ -191,6 +191,56 @@ public class MigrationslaeuferTests
         });
     }
 
+    [Test]
+    public void Wenn_die_Migration_gelaufen_ist_dann_traegt_das_Schema_die_Tabelle_Boardarchivierung_mit_dem_Board_als_Schluessel()
+    {
+        using var datenbank = new TemporaereDatenbank();
+
+        new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Tabellennamen(datenbank), Does.Contain("Boardarchivierung"));
+            Assert.That(Spaltennamen(datenbank, "Boardarchivierung"), Is.EqualTo(new[] { "Board" }));
+            Assert.That(Schluesselspalten(datenbank, "Boardarchivierung"), Is.EqualTo(new[] { "Board" }));
+        });
+    }
+
+    [Test]
+    public void Wenn_FuehreAus_auf_einer_Datei_mit_archiviertem_Board_ein_zweites_Mal_laeuft_dann_bleiben_Schema_und_Archivstand_unveraendert()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var archiviertes = LegeBoardAn(datenbank);
+        LegeBoardAn(datenbank);
+        ArchiviereBoard(datenbank, archiviertes);
+        var schemaVorher = SchemaDefinitionen(datenbank);
+
+        Assert.That(() => new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus(), Throws.Nothing);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(SchemaDefinitionen(datenbank), Is.EqualTo(schemaVorher));
+            Assert.That(ArchivierteBoards(datenbank), Is.EqualTo(new[] { archiviertes }));
+        });
+    }
+
+    private static void ArchiviereBoard(TemporaereDatenbank datenbank, long boardId)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Boardarchivierung (Board)
+            VALUES (@Board)", new { Board = boardId });
+    }
+
+    private static long[] ArchivierteBoards(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.Query<long>(@"
+            SELECT Board
+              FROM Boardarchivierung
+             ORDER BY Board").ToArray();
+    }
+
     private static long LegeBoardAn(TemporaereDatenbank datenbank)
     {
         var repository = new BoardRepository(datenbank.Verbindungsfabrik);
