@@ -30,6 +30,8 @@ public sealed class KontributorenSeite
 
     public ILocator Artwahl => _seite.Locator("#kontributor-artwahl .seg-opt");
 
+    public ILocator Zurueckweisung => _seite.Locator("#zurueckweisung");
+
     public ILocator Fehlermeldung => _seite.Locator("#fehlermeldung");
 
     public async Task TrageNamenEin(string name)

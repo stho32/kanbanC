@@ -182,4 +182,58 @@ public class KontributorAnlegenE2ETests : PageTest
         await Expect(seite.Kontributorzeilen).ToHaveCountAsync(1);
         await Expect(seite.Anlegezeile).ToBeVisibleAsync();
     }
+
+    [Test]
+    [Category("US-5")]
+    public async Task Wenn_ohne_Namen_angelegt_wird_dann_erscheint_der_Satz_und_die_Liste_bekommt_keinen_Eintrag_dazu()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        var seite = new KontributorenSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await seite.Oeffne();
+        await seite.TrageNamenEin("Stefan");
+        await seite.LegeAn();
+        await Expect(seite.Kontributorzeilen).ToHaveCountAsync(1);
+
+        await seite.WaehleArt("agent");
+        await seite.LegeAn();
+
+        await Expect(seite.Zurueckweisung).ToBeVisibleAsync();
+        await Expect(seite.Zurueckweisung).ToContainTextAsync("Ohne Namen entsteht kein Kontributor.");
+        await Expect(seite.Kontributorzeilen).ToHaveCountAsync(1);
+        await Expect(seite.Anlegezeile).ToBeVisibleAsync();
+        await Expect(Page.Locator("#art-agent input")).ToBeCheckedAsync();
+    }
+
+    [Test]
+    [Category("US-5")]
+    public async Task Wenn_nach_der_Zurueckweisung_ein_Name_eingetragen_wird_dann_entsteht_der_Kontributor_und_die_Meldung_verschwindet()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        var seite = new KontributorenSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await seite.Oeffne();
+        await seite.LegeAn();
+        await Expect(seite.Zurueckweisung).ToBeVisibleAsync();
+
+        await seite.TrageNamenEin("Stefan");
+        await seite.LegeAn();
+
+        await Expect(seite.Kontributorzeilen).ToHaveCountAsync(1);
+        await Expect(seite.Kontributorzeile(1)).ToContainTextAsync("Stefan");
+        await Expect(seite.Zurueckweisung).ToHaveCountAsync(0);
+    }
+
+    [Test]
+    [Category("US-5")]
+    public async Task Wenn_der_Name_nur_aus_Leerzeichen_besteht_dann_kommt_dieselbe_Meldung()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        var seite = new KontributorenSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await seite.Oeffne();
+
+        await seite.TrageNamenEin("   ");
+        await seite.LegeAn();
+
+        await Expect(seite.Zurueckweisung).ToContainTextAsync("Ohne Namen entsteht kein Kontributor.");
+        await Expect(seite.Kontributorzeilen).ToHaveCountAsync(0);
+    }
 }

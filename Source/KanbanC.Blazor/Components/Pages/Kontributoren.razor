@@ -70,12 +70,20 @@
     </tbody>
 </table>
 
+@if (_zurueckweisungsmeldung is not null)
+{
+    <div class="meldung meldung-abweisung" role="alert" id="zurueckweisung">
+        <p>@_zurueckweisungsmeldung</p>
+    </div>
+}
+
 @code {
     // Die Reihenfolge der Segmentwahl folgt dem Artboard; Mensch steht vorn und ist vorgewählt.
     private static readonly Kontributorart[] Waehlbare = [Kontributorart.Mensch, Kontributorart.Agent, Kontributorart.Abgebildet];
 
     private readonly Kontributorformular _formular = new();
     private IReadOnlyList<Kontributor> _kontributoren = [];
+    private string? _zurueckweisungsmeldung;
     private string? _fehlermeldung;
 
     protected override async Task OnInitializedAsync()
@@ -99,7 +107,14 @@
     {
         await MitErreichbarerWebApi(async () =>
         {
-            await ApiKlient.LegeAn(_formular.AlsAnfrage());
+            var ergebnis = await ApiKlient.LegeAn(_formular.AlsAnfrage());
+            if (ergebnis.WurdeZurueckgewiesen)
+            {
+                _zurueckweisungsmeldung = Kontributorenmeldung.Aus(ergebnis.Zurueckweisung);
+                return;
+            }
+
+            _zurueckweisungsmeldung = null;
             _formular.LeereNamensfeld();
             _kontributoren = await ApiKlient.LadeAlle();
         });
