@@ -104,9 +104,19 @@
         _einBoardIstOffen = Boardadresse.ZeigtAufEinBoard(Navigation.Uri);
     }
 
-    private void SchaltePopover()
+    // Wer die Wahl öffnet, will den heutigen Stand sehen: ein gerade auf /kontributoren
+    // angelegter Mensch stünde sonst erst nach einem vollen Laden darin. Je Seitenwechsel wird
+    // weiterhin nichts geholt.
+    private async Task SchaltePopover()
     {
         _popoverIstOffen = !_popoverIstOffen;
+        var dieWahlWurdeGeschlossen = !_popoverIstOffen;
+        if (dieWahlWurdeGeschlossen)
+        {
+            return;
+        }
+
+        await LadeKontributoren();
     }
 
     private void SchliessePopover()

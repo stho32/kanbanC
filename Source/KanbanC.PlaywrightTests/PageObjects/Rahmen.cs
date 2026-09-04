@@ -40,6 +40,17 @@ public sealed class Rahmen
 
     public ILocator IdentitaetsHaken => _seite.Locator("#identitaetsliste .identitaetshaken");
 
+    public ILocator IdentitaetsTrenner => _seite.Locator("#identitaet-trenner");
+
+    public ILocator IdentitaetGesperrteZeilen => _seite.Locator("#identitaetsliste-gesperrt .identitaetszeile-gesperrt");
+
+    public ILocator IdentitaetGesperrteZeile(long kontributorId)
+    {
+        return _seite.Locator($"#identitaet-gesperrt-{kontributorId}");
+    }
+
+    public ILocator IdentitaetsPlaketten => _seite.Locator("#identitaetsliste-gesperrt .identitaetsplakette");
+
     public ILocator IdentitaetFusszeile => _seite.Locator("#identitaet-anlegen");
 
     public ILocator Seitenleiste => _seite.Locator(".sidebar");
