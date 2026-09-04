@@ -104,4 +104,60 @@ public class KontributorenServiceTests
         Assert.That(ergebnis.IstErfolg, Is.True);
         Assert.That(service.LadeAlleKontributoren(), Has.Count.EqualTo(1));
     }
+
+    [Test]
+    public void Wenn_ein_Kontributor_geaendert_wird_dann_erhaelt_das_Repository_Nummer_und_Anfrage_und_der_neue_Stand_kommt_zurueck()
+    {
+        var repository = new TestKontributorenRepository();
+        var service = new KontributorenService(repository);
+        var bert = repository.LegeAn(new KontributorAnlegenAnfrage("Bert", Kontributorart.Agent));
+        var anfrage = new KontributorAendernAnfrage("Zora", Kontributorart.Mensch);
+
+        var ergebnis = service.AendereKontributor(bert.KontributorId, anfrage);
+
+        Assert.That(ergebnis.IstErfolg, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(repository.GeaenderteKontributorId, Is.EqualTo(bert.KontributorId));
+            Assert.That(repository.ErhalteneAenderung, Is.EqualTo(anfrage));
+            Assert.That(ergebnis.Wert, Is.EqualTo(new Kontributor(1, "Zora", Kontributorart.Mensch)));
+            Assert.That(service.LadeAlleKontributoren(), Is.EqualTo(new[] { new Kontributor(1, "Zora", Kontributorart.Mensch) }));
+        });
+    }
+
+    [Test]
+    public void Wenn_ein_Kontributor_geaendert_wird_dann_bleibt_ein_zweiter_unberuehrt()
+    {
+        var repository = new TestKontributorenRepository();
+        var service = new KontributorenService(repository);
+        var anna = repository.LegeAn(new KontributorAnlegenAnfrage("Anna", Kontributorart.Mensch));
+        var bert = repository.LegeAn(new KontributorAnlegenAnfrage("Bert", Kontributorart.Agent));
+
+        service.AendereKontributor(bert.KontributorId, new KontributorAendernAnfrage("Zora", Kontributorart.Mensch));
+
+        Assert.That(service.LadeAlleKontributoren(), Is.EqualTo(new[]
+        {
+            new Kontributor(anna.KontributorId, "Anna", Kontributorart.Mensch),
+            new Kontributor(bert.KontributorId, "Zora", Kontributorart.Mensch),
+        }));
+    }
+
+    [Test]
+    public void Wenn_die_KontributorId_unbekannt_ist_dann_wird_die_Aenderung_mit_dem_Nichtgefunden_Befund_zurueckgewiesen()
+    {
+        var repository = new TestKontributorenRepository();
+        var service = new KontributorenService(repository);
+        repository.LegeAn(new KontributorAnlegenAnfrage("Bert", Kontributorart.Agent));
+
+        var ergebnis = service.AendereKontributor(999, new KontributorAendernAnfrage("Zora", Kontributorart.Mensch));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde.BefundAnzahl, Is.EqualTo(1));
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("kontributor-unbekannt"));
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("999"));
+            Assert.That(service.LadeAlleKontributoren(), Is.EqualTo(new[] { new Kontributor(1, "Bert", Kontributorart.Agent) }));
+        });
+    }
 }

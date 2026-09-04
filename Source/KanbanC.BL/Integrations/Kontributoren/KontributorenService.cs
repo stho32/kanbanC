@@ -1,5 +1,6 @@
 using KanbanC.BL.Interfaces.Kontributoren;
 using KanbanC.BL.Models;
+using KanbanC.BL.Operations.Fehler;
 using KanbanC.BL.Operations.Kontributoren;
 using KanbanC.Contracts.Kontributoren;
 
@@ -25,6 +26,19 @@ public sealed class KontributorenService
         }
 
         var kontributor = _repository.LegeAn(anfrage);
+        return Ergebnis<Kontributor>.Erfolg(kontributor);
+    }
+
+    // Ein Ergebnis statt null, weil zwei Lagen zu unterscheiden sind: ein unbekannter Kontributor
+    // ist ein fehlendes Ding, keine verletzte Regel.
+    public Ergebnis<Kontributor> AendereKontributor(long kontributorId, KontributorAendernAnfrage anfrage)
+    {
+        var kontributor = _repository.Aendere(kontributorId, anfrage);
+        if (kontributor is null)
+        {
+            return Ergebnis<Kontributor>.Zurueckgewiesen(new Pruefbefunde([Nichtgefunden.Kontributor(kontributorId)]));
+        }
+
         return Ergebnis<Kontributor>.Erfolg(kontributor);
     }
 
