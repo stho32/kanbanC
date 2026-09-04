@@ -24,24 +24,49 @@
         <tr>
             <th class="spalte-name">Name</th>
             <th class="spalte-art">Art</th>
+            <th class="spalte-pflege">Pflege</th>
         </tr>
     </thead>
     <tbody>
         @foreach (var kontributor in _kontributoren)
         {
-            <tr class="kontributorzeile" id="kontributor-@kontributor.KontributorId">
-                <td>
-                    <span class="kontributor-name">
-                        <span class="kuerzel @Kontributorartform.Kuerzelklasse(kontributor.Art)">@Kontributorartform.Kuerzel(kontributor.Name)</span>@kontributor.Name
-                    </span>
-                </td>
-                <td>
-                    <span class="artplakette tag @Kontributorartform.Plakettenklasse(kontributor.Art)">@Kontributorartform.Beschriftung(kontributor.Art)</span>
-                </td>
-            </tr>
+            if (_offeneKontributorId == kontributor.KontributorId)
+            {
+                <tr class="bearbeitungszeile" id="kontributor-bearbeiten-zeile">
+                    <td colspan="3">
+                        <div class="bearbeitungsfelder">
+                            <span class="kuerzel @Kontributorartform.Kuerzelklasse(kontributor.Art)">@Kontributorartform.Kuerzel(kontributor.Name)</span>
+                            <span class="bearbeitungsname">@kontributor.Name</span>
+                        </div>
+                    </td>
+                </tr>
+            }
+            else
+            {
+                <tr class="kontributorzeile" id="kontributor-@kontributor.KontributorId">
+                    <td>
+                        <span class="kontributor-name">
+                            <span class="kuerzel @Kontributorartform.Kuerzelklasse(kontributor.Art)">@Kontributorartform.Kuerzel(kontributor.Name)</span>@kontributor.Name
+                        </span>
+                    </td>
+                    <td>
+                        <span class="artplakette tag @Kontributorartform.Plakettenklasse(kontributor.Art)">@Kontributorartform.Beschriftung(kontributor.Art)</span>
+                    </td>
+                    <td class="zelle-pflege">
+                        <button type="button"
+                                class="btn btn-schlicht btn-symbol kontributor-stift"
+                                id="kontributor-bearbeiten-@kontributor.KontributorId"
+                                title="bearbeiten"
+                                aria-label="@kontributor.Name bearbeiten"
+                                @onclick="() => OeffneBearbeitung(kontributor)">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4l10-10-4-4L4 16z"></path><path d="m14 6 4 4"></path></svg>
+                        </button>
+                    </td>
+                </tr>
+            }
         }
         <tr class="anlegezeile">
-            <td colspan="2">
+            <td colspan="3">
                 <div class="anlegefelder" id="kontributor-anlegen-zeile">
                     <span class="kuerzel kuerzel-neu" aria-hidden="true">+</span>
                     <input type="text"
@@ -82,12 +107,20 @@
 
     private readonly Kontributorformular _formular = new();
     private IReadOnlyList<Kontributor> _kontributoren = [];
+    private long? _offeneKontributorId;
     private string? _zurueckweisungsmeldung;
     private string? _fehlermeldung;
 
     protected override async Task OnInitializedAsync()
     {
         await LadeListeNeu();
+    }
+
+    // Genau eine Zeile ist offen: mehrere Formulare mit je eigenem ungespeichertem Stand waeren
+    // ein Zustand, den niemand angefordert hat.
+    private void OeffneBearbeitung(Kontributor kontributor)
+    {
+        _offeneKontributorId = kontributor.KontributorId;
     }
 
     private void WaehleArt(Kontributorart art)

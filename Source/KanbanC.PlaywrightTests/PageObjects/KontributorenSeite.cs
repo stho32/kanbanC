@@ -24,6 +24,12 @@ public sealed class KontributorenSeite
 
     public ILocator Artplaketten => _seite.Locator("#kontributoren-liste .kontributorzeile .artplakette");
 
+    public ILocator KopfzellePflege => _seite.Locator("#kontributoren-liste .spalte-pflege");
+
+    public ILocator Stifte => _seite.Locator("#kontributoren-liste .kontributor-stift");
+
+    public ILocator Bearbeitungszeile => _seite.Locator("#kontributor-bearbeiten-zeile");
+
     public ILocator Anlegezeile => _seite.Locator("#kontributor-anlegen-zeile");
 
     public ILocator Namensfeld => _seite.Locator("#kontributor-name");
@@ -33,6 +39,12 @@ public sealed class KontributorenSeite
     public ILocator Zurueckweisung => _seite.Locator("#zurueckweisung");
 
     public ILocator Fehlermeldung => _seite.Locator("#fehlermeldung");
+
+    public async Task OeffneBearbeitung(long kontributorId)
+    {
+        await _seite.Locator($"#kontributor-bearbeiten-{kontributorId}").ClickAsync();
+        await Assertions.Expect(Bearbeitungszeile).ToBeVisibleAsync();
+    }
 
     public async Task TrageNamenEin(string name)
     {

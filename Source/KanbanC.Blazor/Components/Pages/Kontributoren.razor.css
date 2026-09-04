@@ -5,11 +5,11 @@
 }
 
 .spalte-name {
-    width: 60%;
+    width: 55%;
 }
 
 .spalte-art {
-    width: 40%;
+    width: 30%;
 }
 
 .kontributor-name {
@@ -81,4 +81,36 @@
 .kuerzel-neu {
     color: var(--color-accent);
     border: 1px dashed var(--color-accent);
+}
+
+/* Gepflegt wird in der Zeile: die Spalte trägt den Stift rechtsbündig, damit die Namen den
+   Platz behalten. */
+.spalte-pflege {
+    width: 15%;
+    text-align: right;
+}
+
+.zelle-pflege {
+    text-align: right;
+}
+
+.kontributor-stift {
+    color: var(--color-accent);
+}
+
+/* Die aufgeklappte Zeile ersetzt die Anzeigezeile ihres Kontributors und steht an deren Stelle;
+   alle übrigen bleiben sichtbar. */
+.bearbeitungszeile > td {
+    padding: 0;
+}
+
+.bearbeitungsfelder {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-2);
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
 }
