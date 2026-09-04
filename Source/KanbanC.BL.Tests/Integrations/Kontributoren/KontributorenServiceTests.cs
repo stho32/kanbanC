@@ -54,4 +54,54 @@ public class KontributorenServiceTests
 
         Assert.That(kontributoren.Select(kontributor => kontributor.Name), Is.EqualTo(new[] { "stefan", "Codex-Agent" }));
     }
+
+    [Test]
+    public void Wenn_die_Anfrage_einen_leeren_Namen_hat_dann_wird_sie_zurueckgewiesen_und_das_Repository_nicht_aufgerufen()
+    {
+        var repository = new TestKontributorenRepository();
+        var service = new KontributorenService(repository);
+        var anfrage = new KontributorAnlegenAnfrage("   ", Kontributorart.Mensch);
+
+        var ergebnis = service.LegeKontributorAn(anfrage);
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde.BefundAnzahl, Is.EqualTo(1));
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("kontributor-name-leer"));
+            Assert.That(repository.ErhalteneAnfrage, Is.Null);
+            Assert.That(service.LadeAlleKontributoren(), Is.Empty);
+        });
+        Assert.That(() => ergebnis.Wert, Throws.InvalidOperationException);
+    }
+
+    [Test]
+    public void Wenn_die_Art_unbekannt_ist_dann_wird_die_Anfrage_zurueckgewiesen_und_nichts_gespeichert()
+    {
+        var repository = new TestKontributorenRepository();
+        var service = new KontributorenService(repository);
+
+        var ergebnis = service.LegeKontributorAn(new KontributorAnlegenAnfrage("Stefan", (Kontributorart)7));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("kontributor-art-unbekannt"));
+            Assert.That(repository.ErhalteneAnfrage, Is.Null);
+            Assert.That(service.LadeAlleKontributoren(), Is.Empty);
+        });
+    }
+
+    [Test]
+    public void Wenn_nach_einer_Zurueckweisung_ein_gueltiger_Name_kommt_dann_entsteht_der_Kontributor()
+    {
+        var repository = new TestKontributorenRepository();
+        var service = new KontributorenService(repository);
+        service.LegeKontributorAn(new KontributorAnlegenAnfrage("", Kontributorart.Mensch));
+
+        var ergebnis = service.LegeKontributorAn(new KontributorAnlegenAnfrage("Stefan", Kontributorart.Mensch));
+
+        Assert.That(ergebnis.IstErfolg, Is.True);
+        Assert.That(service.LadeAlleKontributoren(), Has.Count.EqualTo(1));
+    }
 }

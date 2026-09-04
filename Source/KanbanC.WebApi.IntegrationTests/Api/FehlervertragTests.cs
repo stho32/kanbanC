@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
+using KanbanC.Contracts.Kontributoren;
 using KanbanC.WebApi.IntegrationTests.Infrastructure;
 
 namespace KanbanC.WebApi.IntegrationTests.Api;
@@ -11,12 +12,12 @@ namespace KanbanC.WebApi.IntegrationTests.Api;
 public class FehlervertragTests
 {
     private const string BoardsRoute = "/api/boards";
+    private const string KontributorenRoute = "/api/kontributoren";
     private static readonly string[] RoutenOhneFehlerantwort =
     [
         "GET /openapi/{documentName}.json",
         "GET /api/zustand",
         "GET /api/kontributoren",
-        "POST /api/kontributoren",
     ];
 
     [Test]
@@ -65,6 +66,11 @@ public class FehlervertragTests
             "POST /api/boards",
             "Board anlegen ohne Name",
             await webApi.Klient.PostAsJsonAsync(BoardsRoute, new BoardAnlegenAnfrage("", BoardArt.Linie, null, null))));
+
+        faelle.Add(new Fehlerfall(
+            "POST /api/kontributoren",
+            "Kontributor anlegen ohne Name",
+            await webApi.Klient.PostAsJsonAsync(KontributorenRoute, new KontributorAnlegenAnfrage("", Kontributorart.Mensch))));
 
         faelle.Add(new Fehlerfall(
             "GET /api/boards",

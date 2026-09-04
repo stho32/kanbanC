@@ -96,6 +96,53 @@ public class KontributorenEndpunkteTests
         });
     }
 
+
+    [Test]
+    public async Task Wenn_der_Name_leer_ist_dann_antwortet_die_API_mit_400_und_einem_Befund_statt_mit_500()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+
+        using var antwort = await webApi.Klient.PostAsJsonAsync(KontributorenRoute, new KontributorAnlegenAnfrage("", Kontributorart.Mensch));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Kontributor anlegen ohne Name");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("kontributor-name-leer"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain("Name"));
+            Assert.That(zurueckweisung.Befunde[0].Kompensation, Does.Contain("POST /api/kontributoren"));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_der_Name_nur_aus_Leerzeichen_besteht_dann_kommt_dieselbe_Antwort()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+
+        using var antwort = await webApi.Klient.PostAsJsonAsync(KontributorenRoute, new KontributorAnlegenAnfrage("   ", Kontributorart.Agent));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "kontributor-name-leer");
+    }
+
+    [Test]
+    public async Task Wenn_eine_Anlage_zurueckgewiesen_wurde_dann_liefert_GET_unveraendert_die_Kontributoren_von_vorher()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        await LegeKontributorAn(webApi, new KontributorAnlegenAnfrage("Stefan", Kontributorart.Mensch));
+        var listeVorher = await webApi.Klient.GetFromJsonAsync<List<Kontributor>>(KontributorenRoute);
+
+        using var abgewiesen = await webApi.Klient.PostAsJsonAsync(KontributorenRoute, new KontributorAnlegenAnfrage("", Kontributorart.Mensch));
+
+        Assert.That(abgewiesen.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var listeNachher = await webApi.Klient.GetFromJsonAsync<List<Kontributor>>(KontributorenRoute);
+        Assert.That(listeNachher, Is.EqualTo(listeVorher));
+        Assert.That(listeNachher, Has.Count.EqualTo(1));
+    }
+
     private static async Task<Kontributor> LegeAusRohemJson(TestWebApi webApi, string rumpf)
     {
         using var inhalt = new StringContent(rumpf, System.Text.Encoding.UTF8, "application/json");

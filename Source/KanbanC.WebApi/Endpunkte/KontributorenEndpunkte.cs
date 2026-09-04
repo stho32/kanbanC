@@ -20,6 +20,12 @@ public static class KontributorenEndpunkte
     private static IResult LegeKontributorAn(KontributorAnlegenAnfrage anfrage, KontributorenService kontributorenService)
     {
         var ergebnis = kontributorenService.LegeKontributorAn(anfrage);
+        var anfrageWurdeZurueckgewiesen = !ergebnis.IstErfolg;
+        if (anfrageWurdeZurueckgewiesen)
+        {
+            return Zurueckweisungen.AlsFehlerantwort(ergebnis.Befunde);
+        }
+
         return Results.Created(Basisroute, ergebnis.Wert);
     }
 
