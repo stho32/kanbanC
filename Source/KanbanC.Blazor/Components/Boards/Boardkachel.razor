@@ -16,6 +16,8 @@
             {
                 <div class="board-kachel-menueliste">
                     <button type="button" class="board-kachel-menuepunkt board-kachel-menuepunkt-umbenennen" @onclick="OeffneNamensfeld">Umbenennen</button>
+                    <button type="button" class="board-kachel-menuepunkt board-kachel-menuepunkt-archivieren" @onclick="Archiviere">Archivieren</button>
+                    <span class="board-kachel-menuehinweis">verschwindet aus der Standardliste, bleibt über Filter und API abrufbar</span>
                 </div>
             }
         </div>
@@ -99,12 +101,7 @@
 
     private async Task SpeichereNamen()
     {
-        _meldungen.Clear();
-        var ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(SendeNeuenNamen);
-        if (ausfallmeldung is not null)
-        {
-            _meldungen.Add(ausfallmeldung);
-        }
+        await MitErreichbarerWebApi(SendeNeuenNamen);
     }
 
     private async Task SendeNeuenNamen()
@@ -119,6 +116,34 @@
 
         _namensfeldIstOffen = false;
         await Geaendert.InvokeAsync();
+    }
+
+    private async Task Archiviere()
+    {
+        SetzeMenue(false);
+        await MitErreichbarerWebApi(() => SendeArchivstand(new Archivierung(true)));
+    }
+
+    private async Task SendeArchivstand(Archivierung archivierung)
+    {
+        var ergebnis = await ApiKlient.SchalteArchivierung(Board.BoardId, archivierung);
+        if (ergebnis.WurdeZurueckgewiesen)
+        {
+            UebernehmeBefunde(ergebnis.Zurueckweisung);
+            return;
+        }
+
+        await Geaendert.InvokeAsync();
+    }
+
+    private async Task MitErreichbarerWebApi(Func<Task> aufruf)
+    {
+        _meldungen.Clear();
+        var ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(aufruf);
+        if (ausfallmeldung is not null)
+        {
+            _meldungen.Add(ausfallmeldung);
+        }
     }
 
     private void UebernehmeBefunde(Zurueckweisung zurueckweisung)

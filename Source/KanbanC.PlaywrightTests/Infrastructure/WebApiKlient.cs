@@ -26,6 +26,36 @@ public sealed class WebApiKlient : IDisposable
         return board;
     }
 
+    public async Task<IReadOnlyList<BoardUebersicht>> LadeAlleBoards(bool archiviert)
+    {
+        var adresse = BoardsRoute;
+        if (archiviert)
+        {
+            adresse = $"{BoardsRoute}?archiviert=true";
+        }
+
+        var boards = await _klient.GetFromJsonAsync<List<BoardUebersicht>>(adresse);
+        if (boards is null)
+        {
+            throw new InvalidOperationException("Die WebApi hat keine Boardliste zurückgegeben.");
+        }
+
+        return boards;
+    }
+
+    public async Task<Board> SchalteArchivierung(long boardId, bool istArchiviert)
+    {
+        var antwort = await _klient.PutAsJsonAsync($"{BoardsRoute}/{boardId}/archivierung", new Archivierung(istArchiviert));
+        antwort.EnsureSuccessStatusCode();
+        var board = await antwort.Content.ReadFromJsonAsync<Board>();
+        if (board is null)
+        {
+            throw new InvalidOperationException("Die WebApi hat kein Board zurückgegeben.");
+        }
+
+        return board;
+    }
+
     public async Task<Board> SchalteKartenzahl(long boardId, bool zeigtKartenzahl)
     {
         var antwort = await _klient.PutAsJsonAsync($"{BoardsRoute}/{boardId}/kartenzahl", new Kartenzahlanzeige(zeigtKartenzahl));

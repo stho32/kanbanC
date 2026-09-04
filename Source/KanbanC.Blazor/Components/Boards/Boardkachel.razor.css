@@ -78,6 +78,14 @@
     background: color-mix(in srgb, var(--color-text) 7%, transparent);
 }
 
+.board-kachel-menuehinweis {
+    display: block;
+    padding: 2px var(--space-3) var(--space-1);
+    font-size: 10px;
+    line-height: 1.35;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
 .board-kachel-namensfeld {
     display: flex;
     flex-direction: column;
