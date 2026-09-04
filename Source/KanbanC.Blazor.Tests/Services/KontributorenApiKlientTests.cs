@@ -237,4 +237,110 @@ public class KontributorenApiKlientTests
             async () => await klient.Aendere(2, new KontributorAendernAnfrage("Zora", Kontributorart.Mensch)),
             Throws.InstanceOf<HttpRequestException>());
     }
+
+    [Test]
+    public async Task Wenn_ein_Kontributor_stillgelegt_wird_dann_trifft_der_Aufruf_seine_Stilllegungsroute_und_traegt_die_Richtung()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(
+            HttpStatusCode.OK,
+            """{"kontributorId":2,"name":"Anna","art":"Mensch","stillgelegtAm":"2026-08-12"}""",
+            JsonTyp);
+        var klient = new KontributorenApiKlient(fabrik);
+
+        var ergebnis = await klient.SetzeStilllegung(2, new Stilllegung(true));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("PUT http://webapi.test/api/kontributoren/2/stilllegung"));
+            Assert.That(fabrik.GesendeterRumpf, Is.EqualTo("""{"istStillgelegt":true}"""));
+            Assert.That(ergebnis.Wert, Is.EqualTo(new Kontributor(2, "Anna", Kontributorart.Mensch, new DateOnly(2026, 8, 12))));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_ein_Kontributor_zurueckgeholt_wird_dann_traegt_der_Rumpf_false_und_die_Antwort_kein_Datum()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(
+            HttpStatusCode.OK,
+            """{"kontributorId":2,"name":"Anna","art":"Mensch","stillgelegtAm":null}""",
+            JsonTyp);
+        var klient = new KontributorenApiKlient(fabrik);
+
+        var ergebnis = await klient.SetzeStilllegung(2, new Stilllegung(false));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(fabrik.GesendeterRumpf, Is.EqualTo("""{"istStillgelegt":false}"""));
+            Assert.That(ergebnis.Wert, Is.EqualTo(new Kontributor(2, "Anna", Kontributorart.Mensch, StillgelegtAm: null)));
+        });
+    }
+
+    // Über den Browser nicht auslösbar: die Oberfläche schaltet nur an Zeilen, die sie gerade
+    // geladen hat. Genau dafür gibt es dieses Testprojekt.
+    [Test]
+    public async Task Wenn_die_WebApi_die_Stilllegung_mit_404_beantwortet_dann_steht_ihr_eigener_Befund_da()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(
+            HttpStatusCode.NotFound,
+            """
+            {"befunde":[
+              {"code":"kontributor-unbekannt","meldung":"Einen Kontributor mit der Nummer 4711 gibt es nicht.","kompensation":"`GET /api/kontributoren` abrufen."}
+            ]}
+            """,
+            JsonTyp);
+        var klient = new KontributorenApiKlient(fabrik);
+
+        var ergebnis = await klient.SetzeStilllegung(4711, new Stilllegung(true));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.EqualTo("kontributor-unbekannt"));
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("4711"));
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Not.Contain("Board"));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_WebApi_die_Stilllegung_mit_400_zurueckweist_dann_stehen_ihre_Befunde_im_Ergebnis()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(
+            HttpStatusCode.BadRequest,
+            """
+            {"befunde":[
+              {"code":"kontributor-stilllegung-unlesbar","meldung":"Der Rumpf war nicht lesbar.","kompensation":"`PUT /api/kontributoren/2/stilllegung` mit einem „istStillgelegt“ wiederholen."}
+            ]}
+            """,
+            JsonTyp);
+        var klient = new KontributorenApiKlient(fabrik);
+
+        var ergebnis = await klient.SetzeStilllegung(2, new Stilllegung(true));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.That(ergebnis.Zurueckweisung.Befunde[0].Kompensation, Does.Contain("/stilllegung"));
+    }
+
+    [Test]
+    public async Task Wenn_die_WebApi_bei_einer_abgewiesenen_Stilllegung_keinen_lesbaren_Rumpf_liefert_dann_traegt_das_Ergebnis_trotzdem_einen_Befund()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwortOhneRumpf(HttpStatusCode.NotFound);
+        var klient = new KontributorenApiKlient(fabrik);
+
+        var ergebnis = await klient.SetzeStilllegung(4711, new Stilllegung(true));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.That(ergebnis.Zurueckweisung.Befunde, Has.Count.EqualTo(1));
+    }
+
+    [Test]
+    public void Wenn_die_WebApi_beim_Stilllegen_mit_einem_Serverfehler_antwortet_dann_schlaegt_der_Aufruf_durch()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwortOhneRumpf(HttpStatusCode.InternalServerError);
+        var klient = new KontributorenApiKlient(fabrik);
+
+        Assert.That(
+            async () => await klient.SetzeStilllegung(2, new Stilllegung(true)),
+            Throws.InstanceOf<HttpRequestException>());
+    }
 }

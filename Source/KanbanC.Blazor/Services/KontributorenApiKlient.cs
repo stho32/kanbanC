@@ -40,14 +40,27 @@ public sealed class KontributorenApiKlient
         return await AlsErfolg(antwort);
     }
 
-    // 400 und 404 laufen denselben Weg, weil beide einen Befund der WebApi tragen. ApiAntwortleser
-    // wäre die falsche Stelle: sein 404-Zweig ersetzt jeden Befund durch eine Board-Meldung.
     public async Task<ApiErgebnis<Kontributor>> Aendere(long kontributorId, KontributorAendernAnfrage anfrage)
     {
         using var klient = _klientFabrik.CreateClient(KlientName);
         using var antwort = await klient.PutAsJsonAsync($"{KontributorenRoute}/{kontributorId}", anfrage);
-        var dieWebApiHatDieAenderungZurueckgewiesen = antwort.StatusCode == HttpStatusCode.BadRequest || antwort.StatusCode == HttpStatusCode.NotFound;
-        if (dieWebApiHatDieAenderungZurueckgewiesen)
+        return await AlsErgebnis(antwort);
+    }
+
+    // Dieselbe Route legt still und holt zurück; die Richtung steht im Rumpf.
+    public async Task<ApiErgebnis<Kontributor>> SetzeStilllegung(long kontributorId, Stilllegung stilllegung)
+    {
+        using var klient = _klientFabrik.CreateClient(KlientName);
+        using var antwort = await klient.PutAsJsonAsync($"{KontributorenRoute}/{kontributorId}/stilllegung", stilllegung);
+        return await AlsErgebnis(antwort);
+    }
+
+    // 400 und 404 laufen denselben Weg, weil beide einen Befund der WebApi tragen. ApiAntwortleser
+    // wäre die falsche Stelle: sein 404-Zweig ersetzt jeden Befund durch eine Board-Meldung.
+    private static async Task<ApiErgebnis<Kontributor>> AlsErgebnis(HttpResponseMessage antwort)
+    {
+        var dieWebApiHatDenAufrufZurueckgewiesen = antwort.StatusCode == HttpStatusCode.BadRequest || antwort.StatusCode == HttpStatusCode.NotFound;
+        if (dieWebApiHatDenAufrufZurueckgewiesen)
         {
             var zurueckweisung = await Zurueckweisungsleser.Lies(antwort);
             return ApiErgebnis<Kontributor>.Zurueckgewiesen(zurueckweisung);
