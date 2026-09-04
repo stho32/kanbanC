@@ -152,8 +152,8 @@ public class WebApiNeustartTests
         var kontributoren = await zweiteInstanz.Klient.GetFromJsonAsync<List<Kontributor>>(KontributorenRoute);
         Assert.That(kontributoren, Is.EqualTo(new[]
         {
-            new Kontributor(2, "Codex-Agent", Kontributorart.Agent),
-            new Kontributor(1, "stefan", Kontributorart.Mensch),
+            new Kontributor(2, "Codex-Agent", Kontributorart.Agent, StillgelegtAm: null),
+            new Kontributor(1, "stefan", Kontributorart.Mensch, StillgelegtAm: null),
         }));
         var dritter = await LegeKontributorAn(zweiteInstanz, new KontributorAnlegenAnfrage("Nina Barth", Kontributorart.Abgebildet));
         Assert.That(dritter.KontributorId, Is.EqualTo(3));
@@ -176,8 +176,8 @@ public class WebApiNeustartTests
         var kontributoren = await zweiteInstanz.Klient.GetFromJsonAsync<List<Kontributor>>(KontributorenRoute);
         Assert.That(kontributoren, Is.EqualTo(new[]
         {
-            new Kontributor(1, "Anna", Kontributorart.Mensch),
-            new Kontributor(2, "Zora", Kontributorart.Mensch),
+            new Kontributor(1, "Anna", Kontributorart.Mensch, StillgelegtAm: null),
+            new Kontributor(2, "Zora", Kontributorart.Mensch, StillgelegtAm: null),
         }));
     }
 

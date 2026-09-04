@@ -19,7 +19,7 @@ public class KontributorenServiceTests
         Assert.Multiple(() =>
         {
             Assert.That(repository.ErhalteneAnfrage, Is.EqualTo(anfrage));
-            Assert.That(ergebnis.Wert, Is.EqualTo(new Kontributor(1, "Stefan", Kontributorart.Mensch)));
+            Assert.That(ergebnis.Wert, Is.EqualTo(new Kontributor(1, "Stefan", Kontributorart.Mensch, StillgelegtAm: null)));
             Assert.That(service.LadeAlleKontributoren(), Has.Count.EqualTo(1));
         });
     }
@@ -120,8 +120,8 @@ public class KontributorenServiceTests
         {
             Assert.That(repository.GeaenderteKontributorId, Is.EqualTo(bert.KontributorId));
             Assert.That(repository.ErhalteneAenderung, Is.EqualTo(anfrage));
-            Assert.That(ergebnis.Wert, Is.EqualTo(new Kontributor(1, "Zora", Kontributorart.Mensch)));
-            Assert.That(service.LadeAlleKontributoren(), Is.EqualTo(new[] { new Kontributor(1, "Zora", Kontributorart.Mensch) }));
+            Assert.That(ergebnis.Wert, Is.EqualTo(new Kontributor(1, "Zora", Kontributorart.Mensch, StillgelegtAm: null)));
+            Assert.That(service.LadeAlleKontributoren(), Is.EqualTo(new[] { new Kontributor(1, "Zora", Kontributorart.Mensch, StillgelegtAm: null) }));
         });
     }
 
@@ -137,8 +137,8 @@ public class KontributorenServiceTests
 
         Assert.That(service.LadeAlleKontributoren(), Is.EqualTo(new[]
         {
-            new Kontributor(anna.KontributorId, "Anna", Kontributorart.Mensch),
-            new Kontributor(bert.KontributorId, "Zora", Kontributorart.Mensch),
+            new Kontributor(anna.KontributorId, "Anna", Kontributorart.Mensch, StillgelegtAm: null),
+            new Kontributor(bert.KontributorId, "Zora", Kontributorart.Mensch, StillgelegtAm: null),
         }));
     }
 
@@ -157,7 +157,7 @@ public class KontributorenServiceTests
             Assert.That(ergebnis.Befunde.BefundAnzahl, Is.EqualTo(1));
             Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("kontributor-unbekannt"));
             Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("999"));
-            Assert.That(service.LadeAlleKontributoren(), Is.EqualTo(new[] { new Kontributor(1, "Bert", Kontributorart.Agent) }));
+            Assert.That(service.LadeAlleKontributoren(), Is.EqualTo(new[] { new Kontributor(1, "Bert", Kontributorart.Agent, StillgelegtAm: null) }));
         });
     }
 
@@ -177,7 +177,7 @@ public class KontributorenServiceTests
             Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("kontributor-name-leer"));
             Assert.That(ergebnis.Befunde[0].Kompensation, Does.Contain($"PUT /api/kontributoren/{bert.KontributorId}"));
             Assert.That(repository.ErhalteneAenderung, Is.Null);
-            Assert.That(service.LadeAlleKontributoren(), Is.EqualTo(new[] { new Kontributor(1, "Bert", Kontributorart.Agent) }));
+            Assert.That(service.LadeAlleKontributoren(), Is.EqualTo(new[] { new Kontributor(1, "Bert", Kontributorart.Agent, StillgelegtAm: null) }));
         });
     }
 

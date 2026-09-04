@@ -133,7 +133,7 @@ public class KontributorAnlegenE2ETests : PageTest
         await Expect(seite.Kontributorzeilen).ToHaveCountAsync(1);
 
         var kontributoren = await agent.LadeAlleKontributoren();
-        Assert.That(kontributoren, Is.EqualTo(new[] { new Kontributor(1, "Nina Barth", Kontributorart.Abgebildet) }));
+        Assert.That(kontributoren, Is.EqualTo(new[] { new Kontributor(1, "Nina Barth", Kontributorart.Abgebildet, StillgelegtAm: null) }));
     }
 
     [Test]

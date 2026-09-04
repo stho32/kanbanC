@@ -71,9 +71,9 @@ public class KontributorenEndpunkteTests
 
         Assert.That(kontributoren, Is.EqualTo(new[]
         {
-            new Kontributor(2, "Codex-Agent", Kontributorart.Agent),
-            new Kontributor(3, "Nina Barth", Kontributorart.Abgebildet),
-            new Kontributor(1, "stefan", Kontributorart.Mensch),
+            new Kontributor(2, "Codex-Agent", Kontributorart.Agent, StillgelegtAm: null),
+            new Kontributor(3, "Nina Barth", Kontributorart.Abgebildet, StillgelegtAm: null),
+            new Kontributor(1, "stefan", Kontributorart.Mensch, StillgelegtAm: null),
         }));
     }
 
@@ -154,7 +154,7 @@ public class KontributorenEndpunkteTests
 
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         var geaenderter = await antwort.Content.ReadFromJsonAsync<Kontributor>();
-        Assert.That(geaenderter, Is.EqualTo(new Kontributor(bert.KontributorId, "Zora", Kontributorart.Mensch)));
+        Assert.That(geaenderter, Is.EqualTo(new Kontributor(bert.KontributorId, "Zora", Kontributorart.Mensch, StillgelegtAm: null)));
     }
 
     [Test]
@@ -172,9 +172,9 @@ public class KontributorenEndpunkteTests
         var kontributoren = await webApi.Klient.GetFromJsonAsync<List<Kontributor>>(KontributorenRoute);
         Assert.That(kontributoren, Is.EqualTo(new[]
         {
-            new Kontributor(1, "Anna", Kontributorart.Mensch),
-            new Kontributor(3, "Cara", Kontributorart.Abgebildet),
-            new Kontributor(2, "Zora", Kontributorart.Mensch),
+            new Kontributor(1, "Anna", Kontributorart.Mensch, StillgelegtAm: null),
+            new Kontributor(3, "Cara", Kontributorart.Abgebildet, StillgelegtAm: null),
+            new Kontributor(2, "Zora", Kontributorart.Mensch, StillgelegtAm: null),
         }));
     }
 
@@ -228,7 +228,7 @@ public class KontributorenEndpunkteTests
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
         await Fehlerrumpf.ErwarteBefundMitCode(antwort, "kontributor-name-leer");
         var kontributoren = await webApi.Klient.GetFromJsonAsync<List<Kontributor>>(KontributorenRoute);
-        Assert.That(kontributoren, Is.EqualTo(new[] { new Kontributor(bert.KontributorId, "Bert", Kontributorart.Agent) }));
+        Assert.That(kontributoren, Is.EqualTo(new[] { new Kontributor(bert.KontributorId, "Bert", Kontributorart.Agent, StillgelegtAm: null) }));
     }
 
     [Test]
@@ -249,7 +249,7 @@ public class KontributorenEndpunkteTests
             Assert.That(zurueckweisung.Befunde[0].Kompensation, Does.Contain("GET /api/kontributoren"));
         });
         var kontributoren = await webApi.Klient.GetFromJsonAsync<List<Kontributor>>(KontributorenRoute);
-        Assert.That(kontributoren, Is.EqualTo(new[] { new Kontributor(1, "Bert", Kontributorart.Agent) }));
+        Assert.That(kontributoren, Is.EqualTo(new[] { new Kontributor(1, "Bert", Kontributorart.Agent, StillgelegtAm: null) }));
     }
 
     [Test]

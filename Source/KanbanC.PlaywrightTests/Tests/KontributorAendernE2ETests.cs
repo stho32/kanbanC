@@ -130,7 +130,7 @@ public class KontributorAendernE2ETests : PageTest
         await Expect(seite.Kontributorzeile(bert.KontributorId)).ToContainTextAsync("Bert");
         await Expect(seite.Artplaketten).ToHaveTextAsync(["Agent"]);
         var kontributoren = await agent.LadeAlleKontributoren();
-        Assert.That(kontributoren, Is.EqualTo(new[] { new Kontributor(bert.KontributorId, "Bert", Kontributorart.Agent) }));
+        Assert.That(kontributoren, Is.EqualTo(new[] { new Kontributor(bert.KontributorId, "Bert", Kontributorart.Agent, StillgelegtAm: null) }));
     }
 
     [Test]
@@ -191,7 +191,7 @@ public class KontributorAendernE2ETests : PageTest
         await Expect(seite.Bearbeitungszeile).ToHaveCountAsync(1);
         await Expect(Page.Locator("#bearbeiten-art-mensch input")).ToBeCheckedAsync();
         var kontributoren = await agent.LadeAlleKontributoren();
-        Assert.That(kontributoren, Is.EqualTo(new[] { new Kontributor(bert.KontributorId, "Bert", Kontributorart.Agent) }));
+        Assert.That(kontributoren, Is.EqualTo(new[] { new Kontributor(bert.KontributorId, "Bert", Kontributorart.Agent, StillgelegtAm: null) }));
     }
 
     [Test]
@@ -294,7 +294,7 @@ public class KontributorAendernE2ETests : PageTest
         await Expect(seite.Bearbeitungszeile).ToHaveCountAsync(0);
 
         var kontributoren = await agent.LadeAlleKontributoren();
-        Assert.That(kontributoren, Is.EqualTo(new[] { new Kontributor(bert.KontributorId, "Nina Barth", Kontributorart.Abgebildet) }));
+        Assert.That(kontributoren, Is.EqualTo(new[] { new Kontributor(bert.KontributorId, "Nina Barth", Kontributorart.Abgebildet, StillgelegtAm: null) }));
     }
 
     [Test]

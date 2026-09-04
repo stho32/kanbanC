@@ -12,7 +12,7 @@ public sealed class TestKontributorenRepository : IKontributorenRepository
     public Kontributor LegeAn(KontributorAnlegenAnfrage anfrage)
     {
         ErhalteneAnfrage = anfrage;
-        var kontributor = new Kontributor(_kontributoren.Count + 1, anfrage.Name, anfrage.Art);
+        var kontributor = new Kontributor(_kontributoren.Count + 1, anfrage.Name, anfrage.Art, StillgelegtAm: null);
         _kontributoren.Add(kontributor);
         return kontributor;
     }
@@ -33,7 +33,7 @@ public sealed class TestKontributorenRepository : IKontributorenRepository
             return null;
         }
 
-        var geaenderter = new Kontributor(kontributorId, anfrage.Name, anfrage.Art);
+        var geaenderter = new Kontributor(kontributorId, anfrage.Name, anfrage.Art, StillgelegtAm: null);
         _kontributoren[stelle] = geaenderter;
         return geaenderter;
     }

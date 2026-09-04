@@ -15,7 +15,7 @@ public class KontributorenRepositoryTests
 
         var angelegt = repository.LegeAn(new KontributorAnlegenAnfrage("Stefan", Kontributorart.Mensch));
 
-        Assert.That(angelegt, Is.EqualTo(new Kontributor(1, "Stefan", Kontributorart.Mensch)));
+        Assert.That(angelegt, Is.EqualTo(new Kontributor(1, "Stefan", Kontributorart.Mensch, StillgelegtAm: null)));
         Assert.That(Gespeicherte(datenbank), Is.EqualTo(new[] { (1L, "Stefan", "Mensch") }));
     }
 
@@ -90,9 +90,9 @@ public class KontributorenRepositoryTests
 
         Assert.That(kontributoren, Is.EqualTo(new[]
         {
-            new Kontributor(2, "Codex-Agent", Kontributorart.Agent),
-            new Kontributor(3, "Nina Barth", Kontributorart.Abgebildet),
-            new Kontributor(1, "stefan", Kontributorart.Mensch),
+            new Kontributor(2, "Codex-Agent", Kontributorart.Agent, StillgelegtAm: null),
+            new Kontributor(3, "Nina Barth", Kontributorart.Abgebildet, StillgelegtAm: null),
+            new Kontributor(1, "stefan", Kontributorart.Mensch, StillgelegtAm: null),
         }));
     }
 
@@ -119,7 +119,7 @@ public class KontributorenRepositoryTests
 
         var geaenderter = repository.Aendere(angelegter.KontributorId, new KontributorAendernAnfrage("Zora", Kontributorart.Mensch));
 
-        Assert.That(geaenderter, Is.EqualTo(new Kontributor(1, "Zora", Kontributorart.Mensch)));
+        Assert.That(geaenderter, Is.EqualTo(new Kontributor(1, "Zora", Kontributorart.Mensch, StillgelegtAm: null)));
         Assert.That(Gespeicherte(datenbank), Is.EqualTo(new[] { (1L, "Zora", "Mensch") }));
     }
 
@@ -171,6 +171,47 @@ public class KontributorenRepositoryTests
 
         Assert.That(geaenderter, Is.Null);
         Assert.That(Gespeicherte(datenbank), Is.EqualTo(new[] { (1L, "Bert", "Agent") }));
+    }
+
+    [Test]
+    public void Wenn_eine_Stilllegung_in_der_Datei_steht_dann_traegt_der_Kontributor_ihr_Datum()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KontributorenRepository(datenbank.Verbindungsfabrik);
+        var anna = repository.LegeAn(new KontributorAnlegenAnfrage("Anna", Kontributorart.Mensch));
+        repository.LegeAn(new KontributorAnlegenAnfrage("Bert", Kontributorart.Agent));
+        Assert.That(repository.LadeAlle().Select(kontributor => kontributor.StillgelegtAm), Is.All.Null);
+
+        FuegeStilllegungEin(datenbank, anna.KontributorId, "2026-08-12");
+
+        Assert.That(repository.LadeAlle(), Is.EqualTo(new[]
+        {
+            new Kontributor(1, "Anna", Kontributorart.Mensch, new DateOnly(2026, 8, 12)),
+            new Kontributor(2, "Bert", Kontributorart.Agent, StillgelegtAm: null),
+        }));
+    }
+
+    [Test]
+    public void Wenn_ein_stillgelegter_Kontributor_geaendert_wird_dann_traegt_die_Antwort_sein_Stilllegungsdatum_weiter()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KontributorenRepository(datenbank.Verbindungsfabrik);
+        var bert = repository.LegeAn(new KontributorAnlegenAnfrage("Bert", Kontributorart.Agent));
+        FuegeStilllegungEin(datenbank, bert.KontributorId, "2026-08-12");
+
+        var geaenderter = repository.Aendere(bert.KontributorId, new KontributorAendernAnfrage("Zora", Kontributorart.Mensch));
+
+        Assert.That(geaenderter, Is.EqualTo(new Kontributor(1, "Zora", Kontributorart.Mensch, new DateOnly(2026, 8, 12))));
+    }
+
+    // Das Datum steht als ISO-Text in der Spalte: Dapper nimmt ein DateOnly nicht als
+    // Parameterwert an (belegt in SqliteEigenschaftenTests).
+    private static void FuegeStilllegungEin(TemporaereDatenbank datenbank, long kontributorId, string stillgelegtAm)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Kontributorstilllegung (Kontributor, StillgelegtAm)
+            VALUES (@Kontributor, @StillgelegtAm)", new { Kontributor = kontributorId, StillgelegtAm = stillgelegtAm });
     }
 
     private static (long KontributorId, string Name, string Kontributorart)[] Gespeicherte(TemporaereDatenbank datenbank)

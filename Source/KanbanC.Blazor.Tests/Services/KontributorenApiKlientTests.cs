@@ -21,7 +21,7 @@ public class KontributorenApiKlientTests
         var ergebnis = await klient.LegeAn(new KontributorAnlegenAnfrage("Stefan", Kontributorart.Mensch));
 
         Assert.That(ergebnis.WurdeZurueckgewiesen, Is.False);
-        Assert.That(ergebnis.Wert, Is.EqualTo(new Kontributor(1, "Stefan", Kontributorart.Mensch)));
+        Assert.That(ergebnis.Wert, Is.EqualTo(new Kontributor(1, "Stefan", Kontributorart.Mensch, StillgelegtAm: null)));
     }
 
     [Test]
@@ -97,8 +97,8 @@ public class KontributorenApiKlientTests
             Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("GET http://webapi.test/api/kontributoren"));
             Assert.That(kontributoren, Is.EqualTo(new[]
             {
-                new Kontributor(2, "Codex-Agent", Kontributorart.Agent),
-                new Kontributor(1, "stefan", Kontributorart.Mensch),
+                new Kontributor(2, "Codex-Agent", Kontributorart.Agent, StillgelegtAm: null),
+                new Kontributor(1, "stefan", Kontributorart.Mensch, StillgelegtAm: null),
             }));
         });
     }
@@ -152,7 +152,7 @@ public class KontributorenApiKlientTests
         {
             Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("PUT http://webapi.test/api/kontributoren/2"));
             Assert.That(fabrik.GesendeterRumpf, Is.EqualTo("""{"name":"Zora","art":"Mensch"}"""));
-            Assert.That(ergebnis.Wert, Is.EqualTo(new Kontributor(2, "Zora", Kontributorart.Mensch)));
+            Assert.That(ergebnis.Wert, Is.EqualTo(new Kontributor(2, "Zora", Kontributorart.Mensch, StillgelegtAm: null)));
         });
     }
 

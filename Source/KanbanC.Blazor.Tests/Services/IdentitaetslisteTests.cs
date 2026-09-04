@@ -11,9 +11,9 @@ public class IdentitaetslisteTests
     {
         IReadOnlyList<Kontributor> kontributoren =
         [
-            new Kontributor(1, "Stefan", Kontributorart.Mensch),
-            new Kontributor(2, "Claude-Agent", Kontributorart.Agent),
-            new Kontributor(3, "Maria Lenz", Kontributorart.Abgebildet),
+            new Kontributor(1, "Stefan", Kontributorart.Mensch, StillgelegtAm: null),
+            new Kontributor(2, "Claude-Agent", Kontributorart.Agent, StillgelegtAm: null),
+            new Kontributor(3, "Maria Lenz", Kontributorart.Abgebildet, StillgelegtAm: null),
         ];
 
         var waehlbare = Identitaetsliste.Waehlbare(kontributoren);
@@ -26,9 +26,9 @@ public class IdentitaetslisteTests
     {
         IReadOnlyList<Kontributor> kontributoren =
         [
-            new Kontributor(1, "Nina Barth", Kontributorart.Mensch),
-            new Kontributor(2, "Claude-Agent", Kontributorart.Agent),
-            new Kontributor(3, "Stefan", Kontributorart.Mensch),
+            new Kontributor(1, "Nina Barth", Kontributorart.Mensch, StillgelegtAm: null),
+            new Kontributor(2, "Claude-Agent", Kontributorart.Agent, StillgelegtAm: null),
+            new Kontributor(3, "Stefan", Kontributorart.Mensch, StillgelegtAm: null),
         ];
 
         var waehlbare = Identitaetsliste.Waehlbare(kontributoren);
@@ -41,8 +41,8 @@ public class IdentitaetslisteTests
     {
         IReadOnlyList<Kontributor> kontributoren =
         [
-            new Kontributor(1, "Claude-Agent", Kontributorart.Agent),
-            new Kontributor(2, "Maria Lenz", Kontributorart.Abgebildet),
+            new Kontributor(1, "Claude-Agent", Kontributorart.Agent, StillgelegtAm: null),
+            new Kontributor(2, "Maria Lenz", Kontributorart.Abgebildet, StillgelegtAm: null),
         ];
 
         var waehlbare = Identitaetsliste.Waehlbare(kontributoren);
@@ -55,9 +55,9 @@ public class IdentitaetslisteTests
     {
         IReadOnlyList<Kontributor> kontributoren =
         [
-            new Kontributor(1, "Stefan", Kontributorart.Mensch),
-            new Kontributor(2, "Claude-Agent", Kontributorart.Agent),
-            new Kontributor(3, "Maria Lenz", Kontributorart.Abgebildet),
+            new Kontributor(1, "Stefan", Kontributorart.Mensch, StillgelegtAm: null),
+            new Kontributor(2, "Claude-Agent", Kontributorart.Agent, StillgelegtAm: null),
+            new Kontributor(3, "Maria Lenz", Kontributorart.Abgebildet, StillgelegtAm: null),
         ];
 
         var gesperrte = Identitaetsliste.Gesperrte(kontributoren);
@@ -70,8 +70,8 @@ public class IdentitaetslisteTests
     {
         IReadOnlyList<Kontributor> kontributoren =
         [
-            new Kontributor(1, "Stefan", Kontributorart.Mensch),
-            new Kontributor(2, "Nina Barth", Kontributorart.Mensch),
+            new Kontributor(1, "Stefan", Kontributorart.Mensch, StillgelegtAm: null),
+            new Kontributor(2, "Nina Barth", Kontributorart.Mensch, StillgelegtAm: null),
         ];
 
         var gesperrte = Identitaetsliste.Gesperrte(kontributoren);
@@ -84,9 +84,9 @@ public class IdentitaetslisteTests
     {
         IReadOnlyList<Kontributor> kontributoren =
         [
-            new Kontributor(1, "Stefan", Kontributorart.Mensch),
-            new Kontributor(2, "Claude-Agent", Kontributorart.Agent),
-            new Kontributor(3, "Maria Lenz", Kontributorart.Abgebildet),
+            new Kontributor(1, "Stefan", Kontributorart.Mensch, StillgelegtAm: null),
+            new Kontributor(2, "Claude-Agent", Kontributorart.Agent, StillgelegtAm: null),
+            new Kontributor(3, "Maria Lenz", Kontributorart.Abgebildet, StillgelegtAm: null),
         ];
 
         var waehlbare = Identitaetsliste.Waehlbare(kontributoren);

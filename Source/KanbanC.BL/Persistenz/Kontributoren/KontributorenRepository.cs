@@ -1,4 +1,5 @@
 using System.Data;
+using System.Globalization;
 using Dapper;
 using KanbanC.BL.Interfaces.Kontributoren;
 using KanbanC.BL.Interfaces.Persistenz;
@@ -8,6 +9,7 @@ namespace KanbanC.BL.Persistenz.Kontributoren;
 
 public sealed class KontributorenRepository : IKontributorenRepository
 {
+    private const string IsoDatumsformat = "yyyy-MM-dd";
     private readonly IDatenbankVerbindungsfabrik _verbindungsfabrik;
 
     public KontributorenRepository(IDatenbankVerbindungsfabrik verbindungsfabrik)
@@ -52,9 +54,11 @@ public sealed class KontributorenRepository : IKontributorenRepository
     {
         using var verbindung = _verbindungsfabrik.Oeffne();
         var zeilen = verbindung.Query<KontributorZeile>(@"
-            SELECT KontributorId, Name, Kontributorart
-              FROM Kontributor
-             ORDER BY Name COLLATE NOCASE, KontributorId");
+            SELECT k.KontributorId, k.Name, k.Kontributorart, s.StillgelegtAm
+              FROM Kontributor k
+                   LEFT JOIN Kontributorstilllegung s
+                          ON s.Kontributor = k.KontributorId
+             ORDER BY k.Name COLLATE NOCASE, k.KontributorId");
         return zeilen.Select(AlsKontributor).ToList();
     }
 
@@ -89,16 +93,32 @@ public sealed class KontributorenRepository : IKontributorenRepository
     private static Kontributor LiesKontributor(IDbConnection verbindung, IDbTransaction? transaktion, long kontributorId)
     {
         var zeile = verbindung.QuerySingle<KontributorZeile>(@"
-            SELECT KontributorId, Name, Kontributorart
-              FROM Kontributor
-             WHERE KontributorId = @KontributorId", new { KontributorId = kontributorId }, transaktion);
+            SELECT k.KontributorId, k.Name, k.Kontributorart, s.StillgelegtAm
+              FROM Kontributor k
+                   LEFT JOIN Kontributorstilllegung s
+                          ON s.Kontributor = k.KontributorId
+             WHERE k.KontributorId = @KontributorId", new { KontributorId = kontributorId }, transaktion);
         return AlsKontributor(zeile);
     }
 
+    // Eine fehlende Zeile in Kontributorstilllegung heißt aktiv.
     private static Kontributor AlsKontributor(KontributorZeile zeile)
     {
-        return new Kontributor(zeile.KontributorId, zeile.Name, Enum.Parse<Kontributorart>(zeile.Kontributorart));
+        return new Kontributor(zeile.KontributorId, zeile.Name, Enum.Parse<Kontributorart>(zeile.Kontributorart), AlsDatum(zeile.StillgelegtAm));
     }
 
-    private sealed record KontributorZeile(long KontributorId, string Name, string Kontributorart);
+    // Dapper nimmt ein DateOnly weder als Parameterwert noch verlässlich aus einer TEXT-Spalte
+    // entgegen (belegt in SqliteEigenschaftenTests); gespeichert wird ISO-Text wie bei den
+    // Terminen eines Boards, umgerechnet wird hier.
+    private static DateOnly? AlsDatum(string? isoText)
+    {
+        if (isoText is null)
+        {
+            return null;
+        }
+
+        return DateOnly.ParseExact(isoText, IsoDatumsformat, CultureInfo.InvariantCulture);
+    }
+
+    private sealed record KontributorZeile(long KontributorId, string Name, string Kontributorart, string? StillgelegtAm);
 }
