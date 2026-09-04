@@ -54,6 +54,15 @@ public sealed class BoardApiKlient
         return await antwort.Content.ReadFromJsonAsync<Board>();
     }
 
+    // 400 und 404 tragen beide eine Zurueckweisung mit Befund und laufen denselben Weg — die
+    // Oberflaeche zeigt in beiden Lagen dieselbe Meldung an der Kachel.
+    public async Task<ApiErgebnis<Board>> BenenneUm(long boardId, BoardUmbenennenAnfrage anfrage)
+    {
+        using var klient = _klientFabrik.CreateClient(KlientName);
+        using var antwort = await klient.PutAsJsonAsync($"{BoardsRoute}/{boardId}", anfrage);
+        return await ApiAntwortleser.AlsErgebnis<Board>(antwort);
+    }
+
     public async Task<ApiErgebnis<Board>> LegeBoardAn(BoardAnlegenAnfrage anfrage)
     {
         using var klient = _klientFabrik.CreateClient(KlientName);

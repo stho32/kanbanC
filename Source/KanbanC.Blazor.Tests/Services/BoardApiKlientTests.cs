@@ -279,6 +279,75 @@ public class BoardApiKlientTests
         Assert.That(async () => await klient.LadeAlleBoards(), Throws.InstanceOf<HttpRequestException>());
     }
 
+    [Test]
+    public async Task Wenn_ein_Board_umbenannt_wird_dann_geht_ein_PUT_auf_die_Board_Route_und_das_Ergebnis_traegt_den_neuen_Namen()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(
+            HttpStatusCode.OK,
+            """{"boardId":3,"name":"KanbanC — Release 2","art":"Projekt","starttermin":null,"zieltermin":null,"spalten":[],"zeigtKartenzahl":false}""",
+            JsonTyp);
+        var klient = new BoardApiKlient(fabrik);
+
+        var ergebnis = await klient.BenenneUm(3, new BoardUmbenennenAnfrage("KanbanC — Release 2"));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Wert.Name, Is.EqualTo("KanbanC — Release 2"));
+            Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("PUT http://webapi.test/api/boards/3"));
+            Assert.That(fabrik.GesendeterRumpf, Is.EqualTo("""{"name":"KanbanC \u2014 Release 2"}"""));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_WebApi_den_leeren_Namen_zurueckweist_dann_steht_der_Befund_im_Ergebnis()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(
+            HttpStatusCode.BadRequest,
+            """{"befunde":[{"code":"board-name-leer","meldung":"Der Name darf nicht leer sein.","kompensation":"`PUT /api/boards/{boardId}` mit einem nichtleeren „name“ wiederholen."}]}""",
+            JsonTyp);
+        var klient = new BoardApiKlient(fabrik);
+
+        var ergebnis = await klient.BenenneUm(3, new BoardUmbenennenAnfrage(""));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.EqualTo("board-name-leer"));
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Is.EqualTo("Der Name darf nicht leer sein."));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_das_Board_beim_Umbenennen_unbekannt_ist_dann_traegt_das_Ergebnis_eine_lesbare_Zurueckweisung()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(
+            HttpStatusCode.NotFound,
+            """{"befunde":[{"code":"board-unbekannt","meldung":"Ein Board mit der Nummer 999 gibt es nicht.","kompensation":"`GET /api/boards` abrufen."}]}""",
+            JsonTyp);
+        var klient = new BoardApiKlient(fabrik);
+
+        var ergebnis = await klient.BenenneUm(999, new BoardUmbenennenAnfrage("Betrieb"));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Zurueckweisung.Befunde, Has.Count.EqualTo(1));
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Is.Not.Empty);
+            Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("PUT http://webapi.test/api/boards/999"));
+        });
+    }
+
+    [Test]
+    public void Wenn_die_WebApi_beim_Umbenennen_nicht_erreichbar_ist_dann_meldet_der_Klient_eine_HttpRequestException()
+    {
+        var klient = new BoardApiKlient(new NichtErreichbareKlientFabrik());
+
+        Assert.That(
+            async () => await klient.BenenneUm(1, new BoardUmbenennenAnfrage("Betrieb")),
+            Throws.InstanceOf<HttpRequestException>());
+    }
+
     private sealed class NichtErreichbareKlientFabrik : IHttpClientFactory
     {
         public HttpClient CreateClient(string name)
