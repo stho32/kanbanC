@@ -40,13 +40,17 @@ public sealed class BoardRepository : IBoardRepository
         return new Board(boardId, anfrage.Name, anfrage.Art, anfrage.Starttermin, anfrage.Zieltermin, spalten, false, false);
     }
 
-    public IReadOnlyList<BoardUebersicht> LadeAlle()
+    // Die Liste zeigt entweder die aktiven oder die archivierten Boards, nie beide; die
+    // Reihenfolge bleibt in beiden Faellen dieselbe.
+    public IReadOnlyList<BoardUebersicht> LadeAlle(Archivierung archivstand)
     {
         using var verbindung = _verbindungsfabrik.Oeffne();
         var zeilen = verbindung.Query<BoardUebersichtZeile>(@"
-            SELECT BoardId, Name, Art, Starttermin, Zieltermin
-              FROM Board
-             ORDER BY Name COLLATE NOCASE, BoardId");
+            SELECT b.BoardId, b.Name, b.Art, b.Starttermin, b.Zieltermin
+              FROM Board b
+              LEFT JOIN Boardarchivierung a ON a.Board = b.BoardId
+             WHERE CASE WHEN a.Board IS NULL THEN 0 ELSE 1 END = @IstArchiviert
+             ORDER BY b.Name COLLATE NOCASE, b.BoardId", new { archivstand.IstArchiviert });
         return zeilen.Select(AlsUebersicht).ToList();
     }
 

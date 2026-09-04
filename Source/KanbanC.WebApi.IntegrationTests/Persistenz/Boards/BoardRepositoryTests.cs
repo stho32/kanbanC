@@ -8,6 +8,9 @@ namespace KanbanC.WebApi.IntegrationTests.Persistenz.Boards;
 
 public class BoardRepositoryTests
 {
+    private static readonly Archivierung Aktive = new(false);
+    private static readonly Archivierung Archivierte = new(true);
+
     [Test]
     public void Wenn_das_erste_Board_angelegt_wird_dann_hat_es_die_BoardId_1_und_drei_gespeicherte_Spalten()
     {
@@ -79,7 +82,7 @@ public class BoardRepositoryTests
         repository.LegeAn(new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
         repository.LegeAn(new BoardAnlegenAnfrage("KanbanC 1.0", BoardArt.Projekt, null, null), StandardspaltenVorlage.FuerNeuesBoard());
 
-        var boards = new BoardRepository(datenbank.Verbindungsfabrik).LadeAlle();
+        var boards = new BoardRepository(datenbank.Verbindungsfabrik).LadeAlle(Aktive);
 
         Assert.That(boards, Is.EqualTo(new[]
         {
@@ -97,7 +100,7 @@ public class BoardRepositoryTests
         repository.LegeAn(new BoardAnlegenAnfrage("beschaffung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
         repository.LegeAn(new BoardAnlegenAnfrage("KanbanC", BoardArt.Projekt, null, null), StandardspaltenVorlage.FuerNeuesBoard());
 
-        var boards = new BoardRepository(datenbank.Verbindungsfabrik).LadeAlle();
+        var boards = new BoardRepository(datenbank.Verbindungsfabrik).LadeAlle(Aktive);
 
         Assert.That(boards.Select(b => b.Name), Is.EqualTo(new[] { "beschaffung", "KanbanC", "Wartung" }));
         Assert.That(boards.Select(b => b.BoardId), Is.EqualTo(new long[] { 2, 3, 1 }));
@@ -111,7 +114,7 @@ public class BoardRepositoryTests
         FuegeBoardEin(datenbank, 2, "Wartung", BoardArt.Projekt);
         FuegeBoardEin(datenbank, 4, "Zwischenstand", BoardArt.Linie);
 
-        var boards = new BoardRepository(datenbank.Verbindungsfabrik).LadeAlle();
+        var boards = new BoardRepository(datenbank.Verbindungsfabrik).LadeAlle(Aktive);
 
         Assert.That(boards.Select(b => b.BoardId), Is.EqualTo(new long[] { 2, 5, 4 }));
     }
@@ -124,8 +127,8 @@ public class BoardRepositoryTests
         repository.LegeAn(new BoardAnlegenAnfrage("Wartung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
         repository.LegeAn(new BoardAnlegenAnfrage("beschaffung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
 
-        var ersterAbruf = repository.LadeAlle();
-        var zweiterAbruf = repository.LadeAlle();
+        var ersterAbruf = repository.LadeAlle(Aktive);
+        var zweiterAbruf = repository.LadeAlle(Aktive);
 
         Assert.That(zweiterAbruf.Select(b => b.BoardId), Is.EqualTo(ersterAbruf.Select(b => b.BoardId)));
         Assert.That(ersterAbruf.Select(b => b.Name), Is.EqualTo(new[] { "beschaffung", "Wartung" }));
@@ -136,7 +139,7 @@ public class BoardRepositoryTests
     {
         using var datenbank = new TemporaereDatenbank().MitSchema();
 
-        var boards = new BoardRepository(datenbank.Verbindungsfabrik).LadeAlle();
+        var boards = new BoardRepository(datenbank.Verbindungsfabrik).LadeAlle(Aktive);
 
         Assert.That(boards, Is.Empty);
     }
@@ -508,6 +511,43 @@ public class BoardRepositoryTests
             Assert.That(geladen.IstArchiviert, Is.True);
             Assert.That(geladen.ZeigtKartenzahl, Is.True);
         });
+    }
+
+    [Test]
+    public void Wenn_von_drei_Boards_eines_archiviert_ist_dann_hat_die_Standardliste_zwei_und_die_archivierte_einen_Eintrag()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        repository.LegeAn(new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+        var abgelegtes = repository.LegeAn(new BoardAnlegenAnfrage("KanbanC — Release 1", BoardArt.Projekt, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+        repository.LegeAn(new BoardAnlegenAnfrage("Vertrieb", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+        Assert.That(repository.LadeAlle(Aktive), Has.Count.EqualTo(3));
+
+        FuegeArchivzeileEin(datenbank, abgelegtes.BoardId);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(repository.LadeAlle(Aktive).Select(b => b.Name), Is.EqualTo(new[] { "Entwicklung", "Vertrieb" }));
+            Assert.That(repository.LadeAlle(Archivierte).Select(b => b.Name), Is.EqualTo(new[] { "KanbanC — Release 1" }));
+        });
+    }
+
+    [Test]
+    public void Wenn_die_archivierten_Boards_geladen_werden_dann_stehen_sie_in_derselben_alphabetischen_Reihenfolge_wie_zuvor()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        var wartung = repository.LegeAn(new BoardAnlegenAnfrage("Wartung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+        var beschaffung = repository.LegeAn(new BoardAnlegenAnfrage("beschaffung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+        var kanbanC = repository.LegeAn(new BoardAnlegenAnfrage("KanbanC", BoardArt.Projekt, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+        FuegeArchivzeileEin(datenbank, wartung.BoardId);
+        FuegeArchivzeileEin(datenbank, beschaffung.BoardId);
+        FuegeArchivzeileEin(datenbank, kanbanC.BoardId);
+
+        var archivierte = repository.LadeAlle(Archivierte);
+
+        Assert.That(archivierte.Select(b => b.Name), Is.EqualTo(new[] { "beschaffung", "KanbanC", "Wartung" }));
+        Assert.That(repository.LadeAlle(Aktive), Is.Empty);
     }
 
     private static void FuegeArchivzeileEin(TemporaereDatenbank datenbank, long boardId)

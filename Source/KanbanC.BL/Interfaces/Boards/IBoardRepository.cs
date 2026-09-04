@@ -7,7 +7,7 @@ public interface IBoardRepository
 {
     Board LegeAn(BoardAnlegenAnfrage anfrage, Spaltenvorlagen standardspalten);
 
-    IReadOnlyList<BoardUebersicht> LadeAlle();
+    IReadOnlyList<BoardUebersicht> LadeAlle(Archivierung archivstand);
 
     Board? Lade(long boardId);
 

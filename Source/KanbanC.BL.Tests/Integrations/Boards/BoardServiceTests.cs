@@ -6,6 +6,8 @@ namespace KanbanC.BL.Tests.Integrations.Boards;
 
 public class BoardServiceTests
 {
+    private static readonly Archivierung Aktive = new(false);
+
     [Test]
     public void Wenn_ein_Board_angelegt_wird_dann_erhaelt_das_Repository_die_Anfrage_und_die_drei_Standardspalten()
     {
@@ -23,7 +25,7 @@ public class BoardServiceTests
             Assert.That(repository.ErhalteneSpalten!.SpaltenAnzahl, Is.EqualTo(3));
             Assert.That(repository.ErhalteneSpalten[2].IstAbschlussspalte, Is.True);
             Assert.That(ergebnis.Wert.BoardId, Is.EqualTo(1));
-            Assert.That(repository.LadeAlle(), Has.Count.EqualTo(1));
+            Assert.That(repository.LadeAlle(Aktive), Has.Count.EqualTo(1));
         });
     }
 
@@ -41,7 +43,7 @@ public class BoardServiceTests
         {
             Assert.That(ergebnis.Befunde.BefundAnzahl, Is.EqualTo(1));
             Assert.That(repository.ErhalteneAnfrage, Is.Null);
-            Assert.That(repository.LadeAlle(), Is.Empty);
+            Assert.That(repository.LadeAlle(Aktive), Is.Empty);
         });
         Assert.That(() => ergebnis.Wert, Throws.InvalidOperationException);
     }
@@ -57,7 +59,7 @@ public class BoardServiceTests
 
         Assert.That(ergebnis.IstErfolg, Is.False);
         Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("Zieltermin"));
-        Assert.That(repository.LadeAlle(), Is.Empty);
+        Assert.That(repository.LadeAlle(Aktive), Is.Empty);
     }
 
     [Test]

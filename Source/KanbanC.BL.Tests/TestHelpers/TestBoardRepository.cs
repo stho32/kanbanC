@@ -28,9 +28,10 @@ public sealed class TestBoardRepository : IBoardRepository
         return Speichere(board);
     }
 
-    public IReadOnlyList<BoardUebersicht> LadeAlle()
+    public IReadOnlyList<BoardUebersicht> LadeAlle(Archivierung archivstand)
     {
-        return _boards.Select(b => new BoardUebersicht(b.BoardId, b.Name, b.Art, b.Starttermin, b.Zieltermin)).ToList();
+        var gewaehlte = _boards.Where(b => b.IstArchiviert == archivstand.IstArchiviert);
+        return gewaehlte.Select(b => new BoardUebersicht(b.BoardId, b.Name, b.Art, b.Starttermin, b.Zieltermin)).ToList();
     }
 
     public Board? Lade(long boardId)

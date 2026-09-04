@@ -31,7 +31,7 @@ public sealed class BoardService
 
     public IReadOnlyList<BoardUebersicht> LadeAlleBoards()
     {
-        return _repository.LadeAlle();
+        return _repository.LadeAlle(new Archivierung(false));
     }
 
     public Board? LadeBoard(long boardId)
