@@ -119,6 +119,16 @@
     font-size: 13px;
 }
 
+/* Wie das Menue liegt „zurueckholen" ueber der Verweisflaeche der Kachel; ohne das faengt
+   .board-verweis::after den Klick ab und das Board wuerde geoeffnet. */
+.board-kachel-zurueckholen {
+    position: relative;
+    z-index: 1;
+    align-self: flex-start;
+    margin-top: var(--space-1);
+    color: var(--color-accent);
+}
+
 .board-kachel-fuss {
     margin: 0;
     min-height: 1.2em;

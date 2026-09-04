@@ -168,6 +168,11 @@ public sealed class BoardsSeite
         return Boardzeile(boardId).Locator($".board-kachel-menuepunkt-{kennung}");
     }
 
+    public ILocator Zurueckholen(long boardId)
+    {
+        return Boardzeile(boardId).Locator(".board-kachel-zurueckholen");
+    }
+
     public async Task SchalteMenue(long boardId)
     {
         await Menueschalter(boardId).ClickAsync();

@@ -16,8 +16,11 @@
             {
                 <div class="board-kachel-menueliste">
                     <button type="button" class="board-kachel-menuepunkt board-kachel-menuepunkt-umbenennen" @onclick="OeffneNamensfeld">Umbenennen</button>
-                    <button type="button" class="board-kachel-menuepunkt board-kachel-menuepunkt-archivieren" @onclick="Archiviere">Archivieren</button>
-                    <span class="board-kachel-menuehinweis">verschwindet aus der Standardliste, bleibt über Filter und API abrufbar</span>
+                    @if (!IstArchivansicht)
+                    {
+                        <button type="button" class="board-kachel-menuepunkt board-kachel-menuepunkt-archivieren" @onclick="Archiviere">Archivieren</button>
+                        <span class="board-kachel-menuehinweis">verschwindet aus der Standardliste, bleibt über Filter und API abrufbar</span>
+                    }
                 </div>
             }
         </div>
@@ -41,6 +44,11 @@
     }
 
     <p class="card-meta board-kachel-fuss">@_fusszeile</p>
+
+    @if (IstArchivansicht)
+    {
+        <button type="button" class="btn btn-schlicht board-kachel-zurueckholen" @onclick="HoleZurueck">zurückholen</button>
+    }
 
     @if (_meldungen.Count > 0)
     {
@@ -149,6 +157,12 @@
     {
         SetzeMenue(false);
         await MitErreichbarerWebApi(() => SendeArchivstand(new Archivierung(true)));
+    }
+
+    private async Task HoleZurueck()
+    {
+        SetzeMenue(false);
+        await MitErreichbarerWebApi(() => SendeArchivstand(new Archivierung(false)));
     }
 
     private async Task SendeArchivstand(Archivierung archivierung)
