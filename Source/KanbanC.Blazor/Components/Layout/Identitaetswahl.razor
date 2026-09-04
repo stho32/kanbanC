@@ -21,6 +21,26 @@
     }
 </ul>
 
+@* Sichtbar, aber nicht wählbar: die Zeilen stehen da, damit erkennbar ist, wer sonst noch am
+   Board schreibt. Sie sind kein Schalter, tragen keinen Handler und keinen Tastaturfokus. *@
+@if (_gesperrte.Count > 0)
+{
+    <hr class="identitaetstrenner" id="identitaet-trenner" />
+
+    <ul class="identitaetsliste" id="identitaetsliste-gesperrt">
+        @foreach (var gesperrter in _gesperrte)
+        {
+            <li class="identitaetszeile identitaetszeile-gesperrt"
+                id="identitaet-gesperrt-@gesperrter.KontributorId"
+                aria-disabled="true">
+                <span class="kuerzel @Kontributorartform.Kuerzelklasse(gesperrter.Art)">@Kontributorartform.Kuerzel(gesperrter.Name)</span>
+                <span class="identitaetsname">@gesperrter.Name</span>
+                <span class="identitaetsplakette">@Kontributorartform.Sperrgrund(gesperrter.Art)</span>
+            </li>
+        }
+    </ul>
+}
+
 <hr class="identitaetstrenner" id="identitaet-fusstrenner" />
 
 @* Steht kein Mensch zur Wahl, ist diese Fußzeile der Weg, der weiterhilft — nicht eine leere Fläche. *@
@@ -30,6 +50,7 @@
 
 @code {
     private IReadOnlyList<Kontributor> _waehlbare = [];
+    private IReadOnlyList<Kontributor> _gesperrte = [];
 
     [Parameter]
     [EditorRequired]
@@ -44,6 +65,7 @@
     protected override void OnParametersSet()
     {
         _waehlbare = Identitaetsliste.Waehlbare(Kontributoren);
+        _gesperrte = Identitaetsliste.Gesperrte(Kontributoren);
     }
 
     private bool IstGewaehlt(Kontributor kontributor)

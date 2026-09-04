@@ -36,6 +36,21 @@ public static class Kontributorartform
         }
     }
 
+    // Warum eine Art nicht zur Identitätswahl steht: ein Agent arbeitet über die API, ein
+    // abgebildeter Kontributor ist kein Akteur. Ein Mensch trägt keinen Sperrgrund.
+    public static string Sperrgrund(Kontributorart art)
+    {
+        switch (art)
+        {
+            case Kontributorart.Agent:
+                return "nur API";
+            case Kontributorart.Abgebildet:
+                return "abgebildet";
+            default:
+                throw new ArgumentOutOfRangeException(nameof(art), art, "Diese Kontributorart steht zur Wahl und trägt keinen Sperrgrund.");
+        }
+    }
+
     public static string Kuerzelklasse(Kontributorart art)
     {
         switch (art)

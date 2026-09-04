@@ -86,4 +86,26 @@ public class KontributorartformTests
     {
         Assert.That(Kontributorartform.Kuerzel("   "), Is.Empty);
     }
+
+    [Test]
+    public void Wenn_ein_Agent_nicht_zur_Wahl_steht_dann_traegt_er_die_Plakette_nur_API()
+    {
+        var sperrgrund = Kontributorartform.Sperrgrund(Kontributorart.Agent);
+
+        Assert.That(sperrgrund, Is.EqualTo("nur API"));
+    }
+
+    [Test]
+    public void Wenn_ein_abgebildeter_Kontributor_nicht_zur_Wahl_steht_dann_traegt_er_die_Plakette_abgebildet()
+    {
+        var sperrgrund = Kontributorartform.Sperrgrund(Kontributorart.Abgebildet);
+
+        Assert.That(sperrgrund, Is.EqualTo("abgebildet"));
+    }
+
+    [Test]
+    public void Wenn_nach_dem_Sperrgrund_eines_Menschen_gefragt_wird_dann_gibt_es_keinen()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => Kontributorartform.Sperrgrund(Kontributorart.Mensch));
+    }
 }

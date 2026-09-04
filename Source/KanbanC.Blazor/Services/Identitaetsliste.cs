@@ -12,6 +12,16 @@ public static class Identitaetsliste
         return kontributoren.Where(IstEinMensch).ToList();
     }
 
+    public static IReadOnlyList<Kontributor> Gesperrte(IReadOnlyList<Kontributor> kontributoren)
+    {
+        return kontributoren.Where(IstKeinMensch).ToList();
+    }
+
+    private static bool IstKeinMensch(Kontributor kontributor)
+    {
+        return !IstEinMensch(kontributor);
+    }
+
     private static bool IstEinMensch(Kontributor kontributor)
     {
         return kontributor.Art == Kontributorart.Mensch;
