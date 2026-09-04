@@ -31,9 +31,11 @@ public sealed class TestKlientFabrik : IHttpClientFactory, IDisposable
         return new HttpClient(_handler, disposeHandler: false) { BaseAddress = Basisadresse };
     }
 
-    // Methode und Adresse des abgesetzten Aufrufs: über den Browser ist nicht prüfbar, ob ein
-    // Klient die vereinbarte Route trifft.
+    // Methode, Adresse und Rumpf des abgesetzten Aufrufs: über den Browser ist nicht prüfbar, ob
+    // ein Klient die vereinbarte Route trifft und den gewünschten Wert mitschickt.
     public string? AbgesetzterAufruf => _handler.AbgesetzterAufruf;
+
+    public string? GesendeterRumpf => _handler.GesendeterRumpf;
 
     public void Dispose()
     {
@@ -51,10 +53,18 @@ public sealed class TestKlientFabrik : IHttpClientFactory, IDisposable
 
         public string? AbgesetzterAufruf { get; private set; }
 
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage anfrage, CancellationToken abbruch)
+        public string? GesendeterRumpf { get; private set; }
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage anfrage, CancellationToken abbruch)
         {
             AbgesetzterAufruf = $"{anfrage.Method} {anfrage.RequestUri}";
-            return Task.FromResult(_antwort);
+            var derAufrufTraegtEinenRumpf = anfrage.Content is not null;
+            if (derAufrufTraegtEinenRumpf)
+            {
+                GesendeterRumpf = await anfrage.Content!.ReadAsStringAsync(abbruch);
+            }
+
+            return _antwort;
         }
 
         protected override void Dispose(bool aufraeumen)

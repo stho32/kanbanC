@@ -192,6 +192,26 @@ public class BoardApiKlientTests
             Assert.That(board.ZeigtKartenzahl, Is.True);
             Assert.That(board.BoardId, Is.EqualTo(3));
             Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("PUT http://webapi.test/api/boards/3/kartenzahl"));
+            Assert.That(fabrik.GesendeterRumpf, Is.EqualTo("""{"zeigtKartenzahl":true}"""));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_Kartenzahl_ausgeschaltet_wird_dann_schickt_der_Klient_den_gewuenschten_Wert_mit()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(
+            HttpStatusCode.OK,
+            """{"boardId":3,"name":"Entwicklung","art":"Linie","starttermin":null,"zieltermin":null,"spalten":[],"zeigtKartenzahl":false}""",
+            JsonTyp);
+        var klient = new BoardApiKlient(fabrik);
+
+        var board = await klient.SchalteKartenzahl(3, new Kartenzahlanzeige(false));
+
+        Assert.That(board, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(board.ZeigtKartenzahl, Is.False);
+            Assert.That(fabrik.GesendeterRumpf, Is.EqualTo("""{"zeigtKartenzahl":false}"""));
         });
     }
 
