@@ -30,6 +30,10 @@ public sealed class KontributorenSeite
 
     public ILocator Bearbeitungszeile => _seite.Locator("#kontributor-bearbeiten-zeile");
 
+    public ILocator BearbeitungsNamensfeld => _seite.Locator("#kontributor-bearbeiten-name");
+
+    public ILocator Bearbeitungsartwahl => _seite.Locator("#kontributor-bearbeiten-artwahl .seg-opt");
+
     public ILocator Anlegezeile => _seite.Locator("#kontributor-anlegen-zeile");
 
     public ILocator Namensfeld => _seite.Locator("#kontributor-name");
@@ -44,6 +48,28 @@ public sealed class KontributorenSeite
     {
         await _seite.Locator($"#kontributor-bearbeiten-{kontributorId}").ClickAsync();
         await Assertions.Expect(Bearbeitungszeile).ToBeVisibleAsync();
+    }
+
+    public async Task TrageBearbeitungsnamenEin(string name)
+    {
+        await BearbeitungsNamensfeld.FillAsync(name);
+    }
+
+    // Der Radioknopf selbst ist unsichtbar — bedient wird die Beschriftung, wie ein Mensch es tut.
+    public async Task WaehleBearbeitungsart(string art)
+    {
+        await _seite.Locator($"#bearbeiten-art-{art}").ClickAsync();
+        await Assertions.Expect(_seite.Locator($"#bearbeiten-art-{art} input")).ToBeCheckedAsync();
+    }
+
+    public async Task Sichere()
+    {
+        await _seite.Locator("#kontributor-sichern").ClickAsync();
+    }
+
+    public async Task Verwirf()
+    {
+        await _seite.Locator("#kontributor-verwerfen").ClickAsync();
     }
 
     public async Task TrageNamenEin(string name)

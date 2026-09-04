@@ -30,13 +30,34 @@
     <tbody>
         @foreach (var kontributor in _kontributoren)
         {
-            if (_offeneKontributorId == kontributor.KontributorId)
+            if (IstInBearbeitung(kontributor))
             {
                 <tr class="bearbeitungszeile" id="kontributor-bearbeiten-zeile">
                     <td colspan="3">
                         <div class="bearbeitungsfelder">
                             <span class="kuerzel @Kontributorartform.Kuerzelklasse(kontributor.Art)">@Kontributorartform.Kuerzel(kontributor.Name)</span>
-                            <span class="bearbeitungsname">@kontributor.Name</span>
+                            <input type="text"
+                                   class="input feld-name"
+                                   id="kontributor-bearbeiten-name"
+                                   placeholder="Name"
+                                   aria-label="Name"
+                                   @bind="_bearbeitung!.Name" />
+                            <span class="seg" id="kontributor-bearbeiten-artwahl">
+                                @foreach (var art in Waehlbare)
+                                {
+                                    <label class="seg-opt" id="@Bearbeitungsartwahlkennung(art)">
+                                        <input type="radio"
+                                               name="kontributorart-bearbeiten"
+                                               checked="@(_bearbeitung!.Art == art)"
+                                               @onchange="() => WaehleBearbeitungsart(art)" />
+                                        @Kontributorartform.Beschriftung(art)
+                                    </label>
+                                }
+                            </span>
+                            <span class="bearbeitungsschalter">
+                                <button type="button" class="btn btn-haupt" id="kontributor-sichern" @onclick="SichereBearbeitung">sichern</button>
+                                <button type="button" class="btn btn-schlicht" id="kontributor-verwerfen" @onclick="VerwirfBearbeitung">verwerfen</button>
+                            </span>
                         </div>
                     </td>
                 </tr>
@@ -107,7 +128,7 @@
 
     private readonly Kontributorformular _formular = new();
     private IReadOnlyList<Kontributor> _kontributoren = [];
-    private long? _offeneKontributorId;
+    private Kontributorbearbeitung? _bearbeitung;
     private string? _zurueckweisungsmeldung;
     private string? _fehlermeldung;
 
@@ -116,11 +137,49 @@
         await LadeListeNeu();
     }
 
-    // Genau eine Zeile ist offen: mehrere Formulare mit je eigenem ungespeichertem Stand waeren
-    // ein Zustand, den niemand angefordert hat.
+    private bool IstInBearbeitung(Kontributor kontributor)
+    {
+        return _bearbeitung is not null && _bearbeitung.KontributorId == kontributor.KontributorId;
+    }
+
+    // Genau eine Zeile ist offen: mehrere Formulare mit je eigenem ungespeichertem Stand wären
+    // ein Zustand, den niemand angefordert hat. Jedes Öffnen legt ein frisches Formular an, damit
+    // der Stand des zuletzt Bearbeiteten nicht stehen bleibt.
     private void OeffneBearbeitung(Kontributor kontributor)
     {
-        _offeneKontributorId = kontributor.KontributorId;
+        _bearbeitung = new Kontributorbearbeitung(kontributor);
+        _zurueckweisungsmeldung = null;
+    }
+
+    private void WaehleBearbeitungsart(Kontributorart art)
+    {
+        _bearbeitung!.Art = art;
+    }
+
+    // Nach dem Sichern wird die ganze Liste neu geholt, statt den Kontributor lokal
+    // umzusortieren: die Reihenfolge gehört der Abfrage.
+    private async Task SichereBearbeitung()
+    {
+        var bearbeitung = _bearbeitung!;
+        await MitErreichbarerWebApi(async () =>
+        {
+            var ergebnis = await ApiKlient.Aendere(bearbeitung.KontributorId, bearbeitung.AlsAnfrage());
+            if (ergebnis.WurdeZurueckgewiesen)
+            {
+                _zurueckweisungsmeldung = Kontributorenmeldung.Aus(ergebnis.Zurueckweisung);
+                return;
+            }
+
+            _zurueckweisungsmeldung = null;
+            _bearbeitung = null;
+            _kontributoren = await ApiKlient.LadeAlle();
+        });
+    }
+
+    private void VerwirfBearbeitung()
+    {
+        _bearbeitung = null;
+        _zurueckweisungsmeldung = null;
     }
 
     private void WaehleArt(Kontributorart art)
@@ -160,6 +219,35 @@
     private static string Artwahlkennung(Kontributorart art)
     {
         return $"art-{art.ToString().ToLowerInvariant()}";
+    }
+
+    private static string Bearbeitungsartwahlkennung(Kontributorart art)
+    {
+        return $"bearbeiten-art-{art.ToString().ToLowerInvariant()}";
+    }
+
+    // Adaptermodell der aufgeklappten Zeile: veränderlich, weil die Bindung es so braucht;
+    // verlässt die Seite nie. Es trägt die KontributorId mit, damit „welche Zeile ist offen“ und
+    // „was steht in ihren Feldern“ nicht zwei Wahrheiten sind.
+    private sealed class Kontributorbearbeitung
+    {
+        public Kontributorbearbeitung(Kontributor kontributor)
+        {
+            KontributorId = kontributor.KontributorId;
+            Name = kontributor.Name;
+            Art = kontributor.Art;
+        }
+
+        public long KontributorId { get; }
+
+        public string Name { get; set; }
+
+        public Kontributorart Art { get; set; }
+
+        public KontributorAendernAnfrage AlsAnfrage()
+        {
+            return new KontributorAendernAnfrage(Name, Art);
+        }
     }
 
     // Adaptermodell des Formular-Bindings: veränderlich, weil die Zeile es so braucht; verlässt
