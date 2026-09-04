@@ -294,4 +294,53 @@ public class IdentitaetWaehlenE2ETests : PageTest
         await Expect(rahmen.Identitaetsplatz).ToHaveTextAsync(NichtGewaehlt);
         await Expect(Page.Locator("#blazor-error-ui")).Not.ToBeVisibleAsync();
     }
+
+    // Der Rahmen steht auf jeder Seite: ein Ausfall der WebApi darf ihn nicht reißen. Ohne
+    // WebApiAufruf.MitAusfallmeldung liefe die HttpRequestException aus OnInitializedAsync der
+    // Kopfzeile heraus und nähme die ganze Anwendung mit.
+    [Test]
+    [Category("US-4")]
+    public async Task Wenn_die_WebApi_beim_Laden_fehlt_dann_steht_der_Identitaetsplatz_bedienbar_da_statt_einer_Ausnahmeseite()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        var liste = new BoardsSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        var rahmen = new Rahmen(Page);
+        await liste.Oeffne();
+        await Expect(rahmen.Identitaetsplatz).ToBeVisibleAsync();
+
+        Testumgebung.Aktuelle.HalteWebApiAn();
+        await liste.OeffneOhneBoardliste();
+
+        await Expect(rahmen.Kopfzeile).ToBeVisibleAsync();
+        await Expect(rahmen.Navigationspunkte).ToHaveTextAsync(["Boards", "Auswertungen", "Kontributoren"]);
+        await Expect(rahmen.Identitaetsplatz).ToHaveTextAsync(NichtGewaehlt);
+        await rahmen.OeffneIdentitaetswahl();
+        await Expect(rahmen.IdentitaetWaehlbareZeilen).ToHaveCountAsync(0);
+        await Expect(rahmen.IdentitaetFusszeile).ToBeVisibleAsync();
+        // Die Seite meldet den Ausfall einmal, nicht ein zweites Mal aus der Kopfzeile heraus.
+        await Expect(liste.Fehlermeldung).ToHaveCountAsync(1);
+        await Expect(Page.Locator("#blazor-error-ui")).Not.ToBeVisibleAsync();
+    }
+
+    [Test]
+    [Category("US-4")]
+    public async Task Wenn_die_WebApi_wieder_laeuft_dann_zeigt_das_Popover_die_Kontributoren_wie_gewohnt()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        using var agent = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        await agent.LegeKontributorAn("Stefan", Kontributorart.Mensch);
+        var liste = new BoardsSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        var rahmen = new Rahmen(Page);
+        Testumgebung.Aktuelle.HalteWebApiAn();
+        await liste.OeffneOhneBoardliste();
+        await rahmen.OeffneIdentitaetswahl();
+        await Expect(rahmen.IdentitaetWaehlbareZeilen).ToHaveCountAsync(0);
+
+        await Testumgebung.Aktuelle.StarteWebApiNeu();
+        await Page.ReloadAsync();
+
+        await rahmen.OeffneIdentitaetswahl();
+        await Expect(rahmen.IdentitaetWaehlbareZeilen).ToHaveCountAsync(1);
+        await Expect(rahmen.IdentitaetWaehlbareZeilen).ToContainTextAsync(["Stefan"]);
+    }
 }
