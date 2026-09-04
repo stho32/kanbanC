@@ -11,7 +11,7 @@
         <div class="boardband-kacheln">
             @foreach (var board in Boards)
             {
-                <Boardkachel Board="board" Geaendert="Geaendert" IstArchivansicht="IstArchivansicht" />
+                <Boardkachel @key="board.BoardId" Board="board" Geaendert="Geaendert" IstArchivansicht="IstArchivansicht" />
             }
         </div>
     }

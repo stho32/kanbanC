@@ -55,6 +55,30 @@ public class BoardkachelMenueE2ETests : PageTest
         await Expect(seite.Menueliste(2)).ToHaveCountAsync(0);
     }
 
+    [Test]
+    [Category("US-1")]
+    public async Task Wenn_ein_Board_vor_einer_Kachel_mit_offenem_Namensfeld_verschwindet_dann_bleibt_das_Feld_bei_seiner_eigenen_Kachel()
+    {
+        var seite = await UebersichtMitEinemBoard("Alpha");
+        await seite.FuelleFormular("Beta", "Linie", null, null);
+        await seite.SendeFormularAb();
+        await Expect(seite.Boardzeilen).ToHaveCountAsync(2);
+        await seite.FuelleFormular("Gamma", "Linie", null, null);
+        await seite.SendeFormularAb();
+        await Expect(seite.Boardzeilen).ToHaveCountAsync(3);
+        await seite.OeffneNamensfeld(2);
+        await seite.Namenseingabe(2).FillAsync("Beta neu");
+
+        await seite.OeffneMenue(1);
+        await seite.Menuepunkt(1, "archivieren").ClickAsync();
+
+        await Expect(seite.Boardzeilen).ToHaveCountAsync(2);
+        await Expect(seite.Namenseingabe(2)).ToBeVisibleAsync();
+        await Expect(seite.Namenseingabe(2)).ToHaveValueAsync("Beta neu");
+        await Expect(seite.Namenseingabe(3)).ToHaveCountAsync(0);
+        await Expect(seite.Boardverweis(3)).ToHaveTextAsync("Gamma");
+    }
+
     private async Task<BoardsSeite> UebersichtMitEinemBoard(string name)
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
