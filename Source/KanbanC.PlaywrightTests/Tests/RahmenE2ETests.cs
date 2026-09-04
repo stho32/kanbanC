@@ -42,7 +42,7 @@ public class RahmenE2ETests : PageTest
     }
 
     [Test]
-    public async Task Wenn_eine_Seite_offen_ist_dann_stehen_Auswertungen_und_Kontributoren_sichtbar_aber_ohne_Weg_da()
+    public async Task Wenn_eine_Seite_offen_ist_dann_steht_Auswertungen_ohne_Weg_da_und_Kontributoren_mit()
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
         var liste = new BoardsSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
@@ -53,8 +53,9 @@ public class RahmenE2ETests : PageTest
         await Expect(rahmen.PunktAuswertungen).ToBeVisibleAsync();
         await Expect(rahmen.PunktKontributoren).ToBeVisibleAsync();
         await Expect(rahmen.PunktAuswertungen).ToHaveAttributeAsync("aria-disabled", "true");
-        await Expect(rahmen.PunktKontributoren).ToHaveAttributeAsync("aria-disabled", "true");
-        await Expect(rahmen.NavigationsVerweise).ToHaveCountAsync(1);
+        await Expect(rahmen.PunktKontributoren).Not.ToHaveAttributeAsync("aria-disabled", "true");
+        await Expect(rahmen.PunktKontributoren).ToHaveAttributeAsync("href", "kontributoren");
+        await Expect(rahmen.NavigationsVerweise).ToHaveCountAsync(2);
     }
 
     [Test]

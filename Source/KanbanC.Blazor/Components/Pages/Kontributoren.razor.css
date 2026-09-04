@@ -1,0 +1,62 @@
+/* Die Liste bekommt den Platz: Name breit, Art schmal daneben. Alle Werte kommen aus
+   gestaltung.css. */
+.kontributorenliste {
+    table-layout: fixed;
+}
+
+.spalte-name {
+    width: 60%;
+}
+
+.spalte-art {
+    width: 40%;
+}
+
+.kontributor-name {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+/* Die Initialen tragen die Farbe der Art — daran ist sie auch ohne die Plakette erkennbar. */
+.kuerzel {
+    display: inline-flex;
+    flex: 0 0 var(--space-4);
+    align-items: center;
+    justify-content: center;
+    width: var(--space-4);
+    height: var(--space-4);
+    font-size: 9px;
+    letter-spacing: 0.02em;
+    border-radius: 999px;
+}
+
+.kuerzel-mensch {
+    background: var(--color-accent-2-200);
+    color: var(--color-accent-2-800);
+}
+
+.kuerzel-agent {
+    background: var(--color-accent-200);
+    color: var(--color-accent-800);
+}
+
+/* Ein abgebildeter Kontributor ist kein Akteur: kein Akzent, dafür der gestrichelte Rand. */
+.kuerzel-abgebildet {
+    background: var(--color-neutral-100);
+    color: var(--color-neutral-800);
+    border: 1px dashed var(--color-neutral-300);
+}
+
+/* Der sichtbare Titel steht in der Kopfzeile. Hier bleibt er als Überschrift der Seite
+   stehen, damit Vorlesewerkzeuge und der Sprungfokus eine finden. */
+.nur-fuer-screenreader {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}

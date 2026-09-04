@@ -1,0 +1,59 @@
+@page "/kontributoren"
+@using KanbanC.Blazor.Services
+@using KanbanC.Contracts.Kontributoren
+@inject KontributorenApiKlient ApiKlient
+
+<PageTitle>Kontributoren</PageTitle>
+
+<SectionContent SectionName="kopfzeile-kontext">
+    <h1 class="kopfzeile-titel">Kontributoren</h1>
+</SectionContent>
+
+<div class="seitenkopf">
+    <h1 class="nur-fuer-screenreader">Kontributoren</h1>
+    <span class="tag tag-neutral">Full-Trust · keine Anmeldung</span>
+</div>
+
+@if (_fehlermeldung is not null)
+{
+    <div class="meldung" role="alert" id="fehlermeldung">@_fehlermeldung</div>
+}
+
+<table class="table kontributorenliste" id="kontributoren-liste">
+    <thead>
+        <tr>
+            <th class="spalte-name">Name</th>
+            <th class="spalte-art">Art</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var kontributor in _kontributoren)
+        {
+            <tr class="kontributorzeile" id="kontributor-@kontributor.KontributorId">
+                <td>
+                    <span class="kontributor-name">
+                        <span class="kuerzel @Kontributorartform.Kuerzelklasse(kontributor.Art)">@Kontributorartform.Kuerzel(kontributor.Name)</span>@kontributor.Name
+                    </span>
+                </td>
+                <td>
+                    <span class="artplakette tag @Kontributorartform.Plakettenklasse(kontributor.Art)">@Kontributorartform.Beschriftung(kontributor.Art)</span>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private IReadOnlyList<Kontributor> _kontributoren = [];
+    private string? _fehlermeldung;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LadeListeNeu();
+    }
+
+    private async Task LadeListeNeu()
+    {
+        _fehlermeldung = await WebApiAufruf.MitAusfallmeldung(async () => _kontributoren = await ApiKlient.LadeAlle());
+    }
+}

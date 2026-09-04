@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
+using KanbanC.Contracts.Kontributoren;
 
 namespace KanbanC.PlaywrightTests.Infrastructure;
 
@@ -8,6 +9,7 @@ namespace KanbanC.PlaywrightTests.Infrastructure;
 public sealed class WebApiKlient : IDisposable
 {
     private const string BoardsRoute = "api/boards";
+    private const string KontributorenRoute = "api/kontributoren";
     private readonly HttpClient _klient;
 
     public WebApiKlient(string webApiAdresse)
@@ -93,6 +95,30 @@ public sealed class WebApiKlient : IDisposable
         }
 
         return spalten;
+    }
+
+    public async Task<Kontributor> LegeKontributorAn(string name, Kontributorart art)
+    {
+        var antwort = await _klient.PostAsJsonAsync(KontributorenRoute, new KontributorAnlegenAnfrage(name, art));
+        antwort.EnsureSuccessStatusCode();
+        var kontributor = await antwort.Content.ReadFromJsonAsync<Kontributor>();
+        if (kontributor is null)
+        {
+            throw new InvalidOperationException("Die WebApi hat keinen Kontributor zurückgegeben.");
+        }
+
+        return kontributor;
+    }
+
+    public async Task<IReadOnlyList<Kontributor>> LadeAlleKontributoren()
+    {
+        var kontributoren = await _klient.GetFromJsonAsync<List<Kontributor>>(KontributorenRoute);
+        if (kontributoren is null)
+        {
+            throw new InvalidOperationException("Die WebApi hat keine Kontributorenliste zurückgegeben.");
+        }
+
+        return kontributoren;
     }
 
     public void Dispose()
