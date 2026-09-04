@@ -64,6 +64,7 @@ public class KontributorenValidatorTests
         {
             Assert.That(befunde[0].Kompensation, Does.Contain("POST /api/kontributoren"));
             Assert.That(befunde[0].Kompensation, Does.Contain("name"));
+            Assert.That(befunde[0].Kompensation, Does.Not.Contain("PUT"));
         });
     }
 
@@ -89,5 +90,64 @@ public class KontributorenValidatorTests
         Assert.That(befunde.BefundAnzahl, Is.EqualTo(2));
         Befundpruefung.ErwarteVollstaendigenBefund(befunde[0], "kontributor-name-leer");
         Befundpruefung.ErwarteVollstaendigenBefund(befunde[1], "kontributor-art-unbekannt");
+    }
+
+    [Test]
+    public void Wenn_beim_Aendern_der_Name_leer_ist_dann_gibt_es_denselben_Befund_wie_beim_Anlegen()
+    {
+        var anfrage = new KontributorAendernAnfrage("", Kontributorart.Mensch);
+
+        var befunde = KontributorenValidator.Pruefe(7, anfrage);
+
+        Assert.That(befunde.IstOhneBefund, Is.False);
+        Assert.That(befunde.BefundAnzahl, Is.EqualTo(1));
+        Befundpruefung.ErwarteVollstaendigenBefund(befunde[0], "kontributor-name-leer");
+    }
+
+    [Test]
+    public void Wenn_beim_Aendern_der_Name_nur_aus_Leerzeichen_besteht_dann_gibt_es_denselben_Befund()
+    {
+        var befunde = KontributorenValidator.Pruefe(7, new KontributorAendernAnfrage("   ", Kontributorart.Agent));
+
+        Assert.That(befunde.BefundAnzahl, Is.EqualTo(1));
+        Assert.That(befunde[0].Code, Is.EqualTo("kontributor-name-leer"));
+    }
+
+    [Test]
+    public void Wenn_beim_Aendern_der_Name_leer_ist_dann_nennt_die_Kompensation_die_Aenderungsroute_dieses_Kontributors()
+    {
+        var befunde = KontributorenValidator.Pruefe(7, new KontributorAendernAnfrage("", Kontributorart.Mensch));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(befunde[0].Kompensation, Does.Contain("PUT /api/kontributoren/7"));
+            Assert.That(befunde[0].Kompensation, Does.Contain("name"));
+            Assert.That(befunde[0].Kompensation, Does.Not.Contain("POST"));
+        });
+    }
+
+    [Test]
+    public void Wenn_beim_Aendern_die_Art_unbekannt_ist_dann_nennt_auch_dieser_Befund_die_Aenderungsroute()
+    {
+        var befunde = KontributorenValidator.Pruefe(7, new KontributorAendernAnfrage("Zora", (Kontributorart)7));
+
+        Assert.That(befunde.BefundAnzahl, Is.EqualTo(1));
+        Befundpruefung.ErwarteVollstaendigenBefund(befunde[0], "kontributor-art-unbekannt");
+        Assert.That(befunde[0].Kompensation, Does.Contain("PUT /api/kontributoren/7"));
+    }
+
+    [Test]
+    public void Wenn_beim_Aendern_alle_drei_Arten_geprueft_werden_dann_gibt_keine_von_ihnen_einen_Befund()
+    {
+        var mensch = KontributorenValidator.Pruefe(1, new KontributorAendernAnfrage("Zora", Kontributorart.Mensch));
+        var agent = KontributorenValidator.Pruefe(1, new KontributorAendernAnfrage("Zora", Kontributorart.Agent));
+        var abgebildete = KontributorenValidator.Pruefe(1, new KontributorAendernAnfrage("Zora", Kontributorart.Abgebildet));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(mensch.IstOhneBefund, Is.True);
+            Assert.That(agent.IstOhneBefund, Is.True);
+            Assert.That(abgebildete.IstOhneBefund, Is.True);
+        });
     }
 }

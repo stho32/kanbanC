@@ -10,27 +10,39 @@ public static class KontributorenValidator
 
     public static Pruefbefunde Pruefe(KontributorAnlegenAnfrage anfrage)
     {
+        return PruefeNamenUndArt(anfrage.Name, anfrage.Art, Anlegeroute);
+    }
+
+    // Die Kompensationsaktion nennt die Route, an der der Aufrufer gerade steht, samt seiner
+    // Nummer: wer aendert, soll nicht auf die Anlegeroute geschickt werden.
+    public static Pruefbefunde Pruefe(long kontributorId, KontributorAendernAnfrage anfrage)
+    {
+        return PruefeNamenUndArt(anfrage.Name, anfrage.Art, $"PUT /api/kontributoren/{kontributorId}");
+    }
+
+    private static Pruefbefunde PruefeNamenUndArt(string name, Kontributorart art, string wiederholungsroute)
+    {
         var befunde = new List<Fehlerbefund>();
 
-        var nameIstLeer = string.IsNullOrWhiteSpace(anfrage.Name);
+        var nameIstLeer = string.IsNullOrWhiteSpace(name);
         if (nameIstLeer)
         {
             befunde.Add(new Fehlerbefund(
                 "kontributor-name-leer",
                 "Der Name darf nicht leer sein.",
-                $"`{Anlegeroute}` mit einem nichtleeren „name“ wiederholen."));
+                $"`{wiederholungsroute}` mit einem nichtleeren „name“ wiederholen."));
         }
 
         // Aus einem JSON-Rumpf ist dieser Befund nicht auslösbar: unbekannten Text weist die
         // Deserialisierung vorher ab (KontributorartProbeTests). Er greift für Aufrufer, die die
         // Aufzählung selbst füllen.
-        var artIstUnbekannt = !Enum.IsDefined(anfrage.Art);
+        var artIstUnbekannt = !Enum.IsDefined(art);
         if (artIstUnbekannt)
         {
             befunde.Add(new Fehlerbefund(
                 "kontributor-art-unbekannt",
                 "Die Kontributorart ist unbekannt; erlaubt sind Mensch, Agent und Abgebildet.",
-                $"`{Anlegeroute}` mit „art“ = „Mensch“, „Agent“ oder „Abgebildet“ wiederholen."));
+                $"`{wiederholungsroute}` mit „art“ = „Mensch“, „Agent“ oder „Abgebildet“ wiederholen."));
         }
 
         return new Pruefbefunde(befunde);
