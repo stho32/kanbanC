@@ -26,6 +26,19 @@ public sealed class WebApiKlient : IDisposable
         return board;
     }
 
+    public async Task<Board> SchalteKartenzahl(long boardId, bool zeigtKartenzahl)
+    {
+        var antwort = await _klient.PutAsJsonAsync($"{BoardsRoute}/{boardId}/kartenzahl", new Kartenzahlanzeige(zeigtKartenzahl));
+        antwort.EnsureSuccessStatusCode();
+        var board = await antwort.Content.ReadFromJsonAsync<Board>();
+        if (board is null)
+        {
+            throw new InvalidOperationException("Die WebApi hat kein Board zurückgegeben.");
+        }
+
+        return board;
+    }
+
     public async Task<Karte> LegeKarteAn(long boardId, long spalteId, string titel)
     {
         var antwort = await _klient.PostAsJsonAsync($"{BoardsRoute}/{boardId}/spalten/{spalteId}/karten", new KarteAnlegenAnfrage(titel));

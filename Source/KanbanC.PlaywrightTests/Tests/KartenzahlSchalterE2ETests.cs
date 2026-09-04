@@ -1,5 +1,6 @@
 using KanbanC.PlaywrightTests.Infrastructure;
 using KanbanC.PlaywrightTests.PageObjects;
+using Microsoft.Playwright;
 using Microsoft.Playwright.NUnit;
 
 namespace KanbanC.PlaywrightTests.Tests;
@@ -49,6 +50,74 @@ public class KartenzahlSchalterE2ETests : PageTest
 
         await Expect(seite.Kartenzahlschalter).Not.ToBeCheckedAsync();
         await Erwarte(webApi, zeigtKartenzahl: false);
+    }
+
+    [Test]
+    [Category("US-2")]
+    public async Task Wenn_die_Seite_nach_dem_Einschalten_neu_geladen_wird_dann_steht_das_Kontrollfeld_unveraendert_an()
+    {
+        var seite = await BoardMitStandardspalten();
+        await seite.SchalteKartenzahl(true);
+        using var webApi = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        await Erwarte(webApi, zeigtKartenzahl: true);
+
+        await seite.LadeNeu();
+
+        await seite.ErwarteGeoeffnet();
+        await Expect(seite.Kartenzahlschalter).ToBeCheckedAsync();
+    }
+
+    [Test]
+    [Category("US-2")]
+    public async Task Wenn_die_WebApi_neu_startet_dann_steht_das_Kontrollfeld_beim_naechsten_Oeffnen_immer_noch_an()
+    {
+        var seite = await BoardMitStandardspalten();
+        await seite.SchalteKartenzahl(true);
+        using var webApi = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        await Erwarte(webApi, zeigtKartenzahl: true);
+
+        await Testumgebung.Aktuelle.StarteWebApiNeu();
+        await seite.Oeffne(1);
+
+        await Expect(seite.Kartenzahlschalter).ToBeCheckedAsync();
+    }
+
+    // Der Beweis, dass die Einstellung am Board hängt und nicht am Browser: die zweite Sitzung
+    // hat nie etwas geschaltet und sieht denselben Stand — und was sie umlegt, kommt bei der
+    // ersten an, sobald diese neu lädt.
+    [Test]
+    [Category("US-3")]
+    public async Task Wenn_eine_zweite_Sitzung_dasselbe_Board_oeffnet_dann_sieht_sie_denselben_Stand()
+    {
+        var seite = await BoardMitStandardspalten();
+        await seite.SchalteKartenzahl(true);
+        using var webApi = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        await Erwarte(webApi, zeigtKartenzahl: true);
+
+        await using var zweiterKontext = await Browser.NewContextAsync();
+        var zweiteSeite = new BoardSeite(await zweiterKontext.NewPageAsync(), Testumgebung.Aktuelle.BlazorAdresse);
+        await zweiteSeite.Oeffne(1);
+
+        await Assertions.Expect(zweiteSeite.Kartenzahlschalter).ToBeCheckedAsync();
+        await zweiteSeite.SchalteKartenzahl(false);
+        await Erwarte(webApi, zeigtKartenzahl: false);
+        await seite.LadeNeu();
+        await seite.ErwarteGeoeffnet();
+        await Expect(seite.Kartenzahlschalter).Not.ToBeCheckedAsync();
+    }
+
+    [Test]
+    [Category("US-5")]
+    public async Task Wenn_die_Kartenzahl_ueber_die_API_eingeschaltet_wird_dann_zeigt_die_danach_geoeffnete_Oberflaeche_sie_an()
+    {
+        var seite = await BoardMitStandardspalten();
+        await Expect(seite.Kartenzahlschalter).Not.ToBeCheckedAsync();
+        using var webApi = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+
+        await webApi.SchalteKartenzahl(1, true);
+        await seite.Oeffne(1);
+
+        await Expect(seite.Kartenzahlschalter).ToBeCheckedAsync();
     }
 
     [Test]
