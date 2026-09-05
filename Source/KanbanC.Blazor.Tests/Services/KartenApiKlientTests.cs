@@ -96,6 +96,54 @@ public class KartenApiKlientTests
     }
 
     [Test]
+    public async Task Wenn_die_Etiketten_gesetzt_werden_dann_setzt_der_Klient_ein_PUT_auf_die_Unterressource_mit_der_ganzen_Liste_ab()
+    {
+        const string rumpf = """{"karte":{"karteId":14,"titel":"WBS-Import","position":2,"farbe":"Ohne"},"board":3,"boardname":"Entwicklung","spalte":5,"spaltenbezeichnung":"In Arbeit","etiketten":["Doku","Import"],"etikettvorschlaege":[{"text":"Doku","kartenzahl":2}]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.SetzeEtiketten(14, new Kartenetiketten(["Import", "Doku"]));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("PUT http://webapi.test/api/karten/14/etiketten"));
+            Assert.That(fabrik.GesendeterRumpf, Is.EqualTo("""{"etiketten":["Import","Doku"]}"""));
+            Assert.That(ergebnis.Wert.Etiketten, Is.EqualTo(new[] { "Doku", "Import" }));
+            Assert.That(ergebnis.Wert.Etikettvorschlaege[0].Kartenzahl, Is.EqualTo(2));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_eine_leere_Etikettenliste_gesetzt_wird_dann_reist_sie_als_leeres_Feld_und_nicht_als_null()
+    {
+        const string rumpf = """{"karte":{"karteId":14,"titel":"WBS-Import","position":2,"farbe":"Ohne"},"board":3,"boardname":"Entwicklung","spalte":5,"spaltenbezeichnung":"In Arbeit","etiketten":[],"etikettvorschlaege":[]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.SetzeEtiketten(14, new Kartenetiketten([]));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(fabrik.GesendeterRumpf, Is.EqualTo("""{"etiketten":[]}"""));
+            Assert.That(ergebnis.Wert.Etiketten, Is.Empty);
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_WebApi_die_Etikettenliste_zurueckweist_dann_reicht_der_Klient_ihren_Befund_durch()
+    {
+        const string rumpf = """{"befunde":[{"code":"etikett-doppelt","meldung":"Das Etikett „Import“ steht zweimal in der Liste.","kompensation":"`PUT /api/karten/14/etiketten` mit „Import“ nur einmal wiederholen."}]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.BadRequest, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.SetzeEtiketten(14, new Kartenetiketten(["Import", "Import"]));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.EqualTo("etikett-doppelt"));
+    }
+
+    [Test]
     public async Task Wenn_die_WebApi_die_Karte_anlegt_dann_liefert_der_Klient_sie_als_Erfolg()
     {
         const string rumpf = """{"karteId":7,"titel":"Migration schreiben","position":3}""";
