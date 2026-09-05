@@ -220,12 +220,12 @@ public class FehlervertragTests
         faelle.Add(new Fehlerfall(
             "PUT /api/karten/{karteId:long}",
             "Karte ändern ohne Titel",
-            await webApi.Klient.PutAsJsonAsync($"/api/karten/{aufbau.Karte.KarteId}", new KarteAendernAnfrage("", null, null, Kartenfarbe.Ohne))));
+            await webApi.Klient.PutAsJsonAsync($"/api/karten/{aufbau.Karte.KarteId}", new KarteAendernAnfrage("", null, null, Kartenfarbe.Ohne, Kontributor: null))));
 
         faelle.Add(new Fehlerfall(
             "PUT /api/karten/{karteId:long}",
             "Karte ändern mit unbekannter KarteId",
-            await webApi.Klient.PutAsJsonAsync("/api/karten/999", new KarteAendernAnfrage("Migration schreiben", null, null, Kartenfarbe.Ohne))));
+            await webApi.Klient.PutAsJsonAsync("/api/karten/999", new KarteAendernAnfrage("Migration schreiben", null, null, Kartenfarbe.Ohne, Kontributor: null))));
 
         return faelle;
     }

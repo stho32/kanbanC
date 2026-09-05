@@ -1107,7 +1107,7 @@ public class KartenEndpunkteTests
 
         using var antwort = await webApi.Klient.PutAsJsonAsync(
             Kartendetailroute(karte.KarteId),
-            new KarteAendernAnfrage("WBS-Import", "Knoten in Karten überführen", new DateOnly(2026, 9, 2), Kartenfarbe.Terrakotta));
+            new KarteAendernAnfrage("WBS-Import", "Knoten in Karten überführen", new DateOnly(2026, 9, 2), Kartenfarbe.Terrakotta, Kontributor: null));
 
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         var detail = await antwort.Content.ReadFromJsonAsync<Kartendetail>();
@@ -1131,7 +1131,7 @@ public class KartenEndpunkteTests
         using var webApi = new TestWebApi(datenbank.Dateipfad);
         var board = await LegeBoardAn(webApi);
         var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Migration schreiben");
-        await Aendere(webApi, karte.KarteId, new KarteAendernAnfrage("WBS-Import", "Knoten überführen", new DateOnly(2026, 9, 2), Kartenfarbe.Olive));
+        await Aendere(webApi, karte.KarteId, new KarteAendernAnfrage("WBS-Import", "Knoten überführen", new DateOnly(2026, 9, 2), Kartenfarbe.Olive, Kontributor: null));
 
         var geladen = await LadeBoard(webApi, board.BoardId);
 
@@ -1171,9 +1171,9 @@ public class KartenEndpunkteTests
         using var webApi = new TestWebApi(datenbank.Dateipfad);
         var board = await LegeBoardAn(webApi);
         var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Migration schreiben");
-        var vorher = await Aendere(webApi, karte.KarteId, new KarteAendernAnfrage("WBS-Import", "Knoten überführen", new DateOnly(2026, 9, 2), Kartenfarbe.Terrakotta));
+        var vorher = await Aendere(webApi, karte.KarteId, new KarteAendernAnfrage("WBS-Import", "Knoten überführen", new DateOnly(2026, 9, 2), Kartenfarbe.Terrakotta, Kontributor: null));
 
-        using var antwort = await webApi.Klient.PutAsJsonAsync(Kartendetailroute(karte.KarteId), new KarteAendernAnfrage("", null, null, Kartenfarbe.Ohne));
+        using var antwort = await webApi.Klient.PutAsJsonAsync(Kartendetailroute(karte.KarteId), new KarteAendernAnfrage("", null, null, Kartenfarbe.Ohne, Kontributor: null));
 
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
         var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Karte ändern mit geleertem Titel");
@@ -1194,7 +1194,7 @@ public class KartenEndpunkteTests
         using var webApi = new TestWebApi(datenbank.Dateipfad);
         await LegeBoardAn(webApi);
 
-        using var antwort = await webApi.Klient.PutAsJsonAsync(Kartendetailroute(9999), new KarteAendernAnfrage("WBS-Import", null, null, Kartenfarbe.Ohne));
+        using var antwort = await webApi.Klient.PutAsJsonAsync(Kartendetailroute(9999), new KarteAendernAnfrage("WBS-Import", null, null, Kartenfarbe.Ohne, Kontributor: null));
 
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
         var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Karte ändern mit unbekannter KarteId");

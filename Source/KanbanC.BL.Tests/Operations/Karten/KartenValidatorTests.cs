@@ -10,13 +10,13 @@ public class KartenValidatorTests
 
     private static KarteAendernAnfrage Aenderung(string titel)
     {
-        return new KarteAendernAnfrage(titel, Beschreibung: null, FaelligAm: null, Kartenfarbe.Ohne);
+        return new KarteAendernAnfrage(titel, Beschreibung: null, FaelligAm: null, Kartenfarbe.Ohne, Kontributor: null);
     }
 
     [Test]
     public void Wenn_die_Aenderung_einen_Titel_und_eine_bekannte_Farbe_traegt_dann_liefert_Pruefe_keinen_Befund()
     {
-        var befunde = KartenValidator.Pruefe(14, new KarteAendernAnfrage("Migration schreiben", "Knoten überführen", new DateOnly(2026, 9, 2), Kartenfarbe.Terrakotta));
+        var befunde = KartenValidator.Pruefe(14, new KarteAendernAnfrage("Migration schreiben", "Knoten überführen", new DateOnly(2026, 9, 2), Kartenfarbe.Terrakotta, Kontributor: null));
 
         Assert.That(befunde.IstOhneBefund, Is.True);
     }
@@ -71,7 +71,7 @@ public class KartenValidatorTests
     [Test]
     public void Wenn_die_Kartenfarbe_unbekannt_ist_dann_weist_Pruefe_sie_mit_einem_Befund_zurueck()
     {
-        var befunde = KartenValidator.Pruefe(14, new KarteAendernAnfrage("Migration schreiben", null, null, (Kartenfarbe)99));
+        var befunde = KartenValidator.Pruefe(14, new KarteAendernAnfrage("Migration schreiben", null, null, (Kartenfarbe)99, Kontributor: null));
 
         Befundpruefung.ErwarteVollstaendigenBefund(befunde[0], "kartenfarbe-unbekannt");
         Assert.That(befunde[0].Kompensation, Does.Contain("Terrakotta"));

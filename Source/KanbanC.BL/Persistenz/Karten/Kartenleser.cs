@@ -3,6 +3,7 @@ using System.Globalization;
 using Dapper;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
+using KanbanC.Contracts.Kontributoren;
 
 namespace KanbanC.BL.Persistenz.Karten;
 
@@ -16,7 +17,7 @@ internal static class Kartenleser
     {
         var zeilen = verbindung.Query<Kartenzeile>(@"
             SELECT k.KarteId, k.Spalte, k.Titel, k.Position, e.ErledigtAm,
-                   p.Beschreibung, p.FaelligAm, p.Farbe
+                   p.Beschreibung, p.FaelligAm, p.Farbe, p.Kontributor
               FROM Karte k
               JOIN Spalte s ON s.SpalteId = k.Spalte
               LEFT JOIN Karteerledigung e ON e.Karte = k.KarteId
@@ -42,7 +43,7 @@ internal static class Kartenleser
         var parameter = new { SpalteId = spalteId, archivstand.IstArchiviert };
         var zeilen = verbindung.Query<Kartenzeile>(@"
             SELECT k.KarteId, k.Spalte, k.Titel, k.Position, e.ErledigtAm,
-                   p.Beschreibung, p.FaelligAm, p.Farbe
+                   p.Beschreibung, p.FaelligAm, p.Farbe, p.Kontributor
               FROM Karte k
               LEFT JOIN Karteerledigung e ON e.Karte = k.KarteId
               LEFT JOIN Kartenarchivierung a ON a.Karte = k.KarteId
@@ -62,13 +63,17 @@ internal static class Kartenleser
     {
         var zeile = verbindung.QuerySingleOrDefault<Kartendetailzeile>(@"
             SELECT k.KarteId, k.Spalte, k.Titel, k.Position, e.ErledigtAm,
-                   p.Beschreibung, p.FaelligAm, p.Farbe,
-                   s.Bezeichnung AS Spaltenbezeichnung, b.BoardId AS Board, b.Name AS Boardname
+                   p.Beschreibung, p.FaelligAm, p.Farbe, p.Kontributor,
+                   s.Bezeichnung AS Spaltenbezeichnung, b.BoardId AS Board, b.Name AS Boardname,
+                   v.Name AS Verantwortlichenname, v.Kontributorart AS Verantwortlichenart,
+                   t.StillgelegtAm AS VerantwortlicherStillgelegtAm
               FROM Karte k
               JOIN Spalte s ON s.SpalteId = k.Spalte
               JOIN Board b ON b.BoardId = s.Board
               LEFT JOIN Karteerledigung e ON e.Karte = k.KarteId
               LEFT JOIN Karteneigenschaft p ON p.Karte = k.KarteId
+              LEFT JOIN Kontributor v ON v.KontributorId = p.Kontributor
+              LEFT JOIN Kontributorstilllegung t ON t.Kontributor = v.KontributorId
              WHERE k.KarteId = @KarteId", new { KarteId = karteId }, transaktion);
         if (zeile is null)
         {
@@ -83,8 +88,15 @@ internal static class Kartenleser
             zeile.ErledigtAm,
             zeile.Beschreibung,
             zeile.FaelligAm,
-            zeile.Farbe));
-        return new Kartendetail(karte, zeile.Board, zeile.Boardname, zeile.Spalte, zeile.Spaltenbezeichnung);
+            zeile.Farbe,
+            zeile.Kontributor));
+        return new Kartendetail(
+            karte,
+            zeile.Board,
+            zeile.Boardname,
+            zeile.Spalte,
+            zeile.Spaltenbezeichnung,
+            AlsVerantwortlicher(zeile));
     }
 
     private static Karte AlsKarte(Kartenzeile zeile)
@@ -96,7 +108,24 @@ internal static class Kartenleser
             AlsDatum(zeile.ErledigtAm),
             zeile.Beschreibung,
             AlsDatum(zeile.FaelligAm),
-            AlsKartenfarbe(zeile.Farbe));
+            AlsKartenfarbe(zeile.Farbe),
+            zeile.Kontributor);
+    }
+
+    // Der Verantwortliche reist als ganzer Kontributor: die Seite zeigt Name und Art, und
+    // StillgelegtAm traegt den Zusatz „stillgelegt" ohne ein zweites Feld.
+    private static Kontributor? AlsVerantwortlicher(Kartendetailzeile zeile)
+    {
+        if (zeile.Kontributor is null)
+        {
+            return null;
+        }
+
+        return new Kontributor(
+            zeile.Kontributor.Value,
+            zeile.Verantwortlichenname!,
+            Enum.Parse<Kontributorart>(zeile.Verantwortlichenart!),
+            AlsDatum(zeile.VerantwortlicherStillgelegtAm));
     }
 
     private static DateOnly? AlsDatum(string? isoText)
@@ -129,7 +158,8 @@ internal static class Kartenleser
         string? ErledigtAm,
         string? Beschreibung,
         string? FaelligAm,
-        string? Farbe);
+        string? Farbe,
+        long? Kontributor);
 
     private sealed record Kartendetailzeile(
         long KarteId,
@@ -140,7 +170,11 @@ internal static class Kartenleser
         string? Beschreibung,
         string? FaelligAm,
         string? Farbe,
+        long? Kontributor,
         string Spaltenbezeichnung,
         long Board,
-        string Boardname);
+        string Boardname,
+        string? Verantwortlichenname,
+        string? Verantwortlichenart,
+        string? VerantwortlicherStillgelegtAm);
 }

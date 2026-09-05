@@ -5,6 +5,7 @@ using KanbanC.BL.Persistenz.Boards;
 using KanbanC.BL.Persistenz.Karten;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
+using KanbanC.Contracts.Kontributoren;
 using KanbanC.WebApi.IntegrationTests.Infrastructure;
 
 namespace KanbanC.WebApi.IntegrationTests.Persistenz.Karten;
@@ -920,7 +921,7 @@ public class KartenRepositoryTests
         var board = LegeBoardAn(datenbank);
         var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Migration schreiben"));
 
-        var detail = repository.Aendere(karte!.KarteId, new KarteAendernAnfrage("WBS-Import", "Knoten in Karten überführen", new DateOnly(2026, 9, 2), Kartenfarbe.Terrakotta));
+        var detail = repository.Aendere(karte!.KarteId, new KarteAendernAnfrage("WBS-Import", "Knoten in Karten überführen", new DateOnly(2026, 9, 2), Kartenfarbe.Terrakotta, Kontributor: null));
 
         Assert.That(detail, Is.Not.Null);
         Assert.Multiple(() =>
@@ -942,7 +943,7 @@ public class KartenRepositoryTests
         var board = LegeBoardAn(datenbank);
         var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Migration schreiben"));
 
-        repository.Aendere(karte!.KarteId, new KarteAendernAnfrage("Migration schreiben", null, new DateOnly(2026, 9, 2), Kartenfarbe.Ohne));
+        repository.Aendere(karte!.KarteId, new KarteAendernAnfrage("Migration schreiben", null, new DateOnly(2026, 9, 2), Kartenfarbe.Ohne, Kontributor: null));
 
         Assert.That(FaelligkeitsText(datenbank, karte.KarteId), Is.EqualTo("2026-09-02"));
     }
@@ -954,9 +955,9 @@ public class KartenRepositoryTests
         var repository = new KartenRepository(datenbank.Verbindungsfabrik);
         var board = LegeBoardAn(datenbank);
         var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Migration schreiben"));
-        repository.Aendere(karte!.KarteId, new KarteAendernAnfrage("WBS-Import", "erste Fassung", new DateOnly(2026, 9, 2), Kartenfarbe.Terrakotta));
+        repository.Aendere(karte!.KarteId, new KarteAendernAnfrage("WBS-Import", "erste Fassung", new DateOnly(2026, 9, 2), Kartenfarbe.Terrakotta, Kontributor: null));
 
-        var detail = repository.Aendere(karte.KarteId, new KarteAendernAnfrage("WBS-Import", null, null, Kartenfarbe.Olive));
+        var detail = repository.Aendere(karte.KarteId, new KarteAendernAnfrage("WBS-Import", null, null, Kartenfarbe.Olive, Kontributor: null));
 
         Assert.That(Eigenschaftszeilen(datenbank), Is.EqualTo(1));
         Assert.Multiple(() =>
@@ -974,8 +975,82 @@ public class KartenRepositoryTests
         var repository = new KartenRepository(datenbank.Verbindungsfabrik);
         LegeBoardAn(datenbank);
 
-        Assert.That(repository.Aendere(999, new KarteAendernAnfrage("WBS-Import", "erste Fassung", null, Kartenfarbe.Olive)), Is.Null);
+        Assert.That(repository.Aendere(999, new KarteAendernAnfrage("WBS-Import", "erste Fassung", null, Kartenfarbe.Olive, Kontributor: null)), Is.Null);
         Assert.That(Eigenschaftszeilen(datenbank), Is.EqualTo(0));
+    }
+
+    [Test]
+    public void Wenn_Aendere_einen_Verantwortlichen_setzt_dann_traegt_die_Karte_seine_Nummer_und_das_Detail_seinen_Namen_und_seine_Art()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Migration schreiben"));
+        var agent = LegeKontributorAn(datenbank, "Claude-Agent", Kontributorart.Agent);
+
+        var detail = repository.Aendere(karte!.KarteId, new KarteAendernAnfrage("Migration schreiben", null, null, Kartenfarbe.Ohne, agent));
+
+        Assert.That(detail, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail.Karte.Kontributor, Is.EqualTo(agent));
+            Assert.That(detail.Verantwortlicher, Is.EqualTo(new Kontributor(agent, "Claude-Agent", Kontributorart.Agent, StillgelegtAm: null)));
+        });
+    }
+
+    // Die Einloesung der zweiten Haelfte von I0009 auf der Datenebene: der Verantwortliche bleibt
+    // an der Karte, auch nachdem er stillgelegt wurde — samt seinem Stilllegungsdatum.
+    [Test]
+    public void Wenn_der_Verantwortliche_stillgelegt_wurde_dann_steht_er_weiterhin_am_Kartendetail()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Migration schreiben"));
+        var jan = LegeKontributorAn(datenbank, "Jan R.", Kontributorart.Mensch);
+        repository.Aendere(karte!.KarteId, new KarteAendernAnfrage("Migration schreiben", null, null, Kartenfarbe.Ohne, jan));
+
+        LegeKontributorStill(datenbank, jan, "2026-08-12");
+
+        var detail = repository.LiesKartendetail(karte.KarteId);
+        Assert.That(detail!.Verantwortlicher, Is.EqualTo(new Kontributor(jan, "Jan R.", Kontributorart.Mensch, new DateOnly(2026, 8, 12))));
+    }
+
+    [Test]
+    public void Wenn_niemand_verantwortlich_ist_dann_traegt_das_Detail_keinen_Verantwortlichen()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Migration schreiben"));
+        var agent = LegeKontributorAn(datenbank, "Claude-Agent", Kontributorart.Agent);
+        repository.Aendere(karte!.KarteId, new KarteAendernAnfrage("Migration schreiben", null, null, Kartenfarbe.Ohne, agent));
+
+        var detail = repository.Aendere(karte.KarteId, new KarteAendernAnfrage("Migration schreiben", null, null, Kartenfarbe.Ohne, Kontributor: null));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail!.Karte.Kontributor, Is.Null);
+            Assert.That(detail.Verantwortlicher, Is.Null);
+        });
+    }
+
+    private static long LegeKontributorAn(TemporaereDatenbank datenbank, string name, Kontributorart art)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.ExecuteScalar<long>(@"
+            INSERT INTO Kontributor (Name, Kontributorart)
+            VALUES (@Name, @Art);
+            SELECT last_insert_rowid();", new { Name = name, Art = art.ToString() });
+    }
+
+    private static void LegeKontributorStill(TemporaereDatenbank datenbank, long kontributorId, string stillgelegtAm)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Kontributorstilllegung (Kontributor, StillgelegtAm)
+            VALUES (@Kontributor, @StillgelegtAm)",
+            new { Kontributor = kontributorId, StillgelegtAm = stillgelegtAm });
     }
 
     private static string? FaelligkeitsText(TemporaereDatenbank datenbank, long karteId)

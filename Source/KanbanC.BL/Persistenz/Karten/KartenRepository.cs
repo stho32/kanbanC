@@ -43,7 +43,7 @@ public sealed class KartenRepository : IKartenRepository
         var anlage = Erledigungsstand.NachDemZug(spalteIstAbschlussspalte, derZugBleibtInDerZielspalte: false, bisherigeErledigung: null, heute: Heute());
         SchreibeErledigung(verbindung, transaktion, karteId, anlage);
         transaktion.Commit();
-        return new Karte(karteId, titel, position, anlage.Datum, Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne);
+        return new Karte(karteId, titel, position, anlage.Datum, Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne, Kontributor: null);
     }
 
     // Ein Zug in einer Transaktion: die Karte verlässt ihre Quellspalte, die Zielspalte nimmt sie
@@ -172,13 +172,15 @@ public sealed class KartenRepository : IKartenRepository
         {
             Karte = karteId,
             anfrage.Beschreibung,
+            anfrage.Kontributor,
             FaelligAm = AlsIsoText(anfrage.FaelligAm),
             Farbe = anfrage.Farbe.ToString(),
         };
         verbindung.Execute(@"
             INSERT INTO Karteneigenschaft (Karte, Beschreibung, Kontributor, FaelligAm, Farbe)
-            VALUES (@Karte, @Beschreibung, NULL, @FaelligAm, @Farbe)
+            VALUES (@Karte, @Beschreibung, @Kontributor, @FaelligAm, @Farbe)
             ON CONFLICT (Karte) DO UPDATE SET Beschreibung = excluded.Beschreibung,
+                                              Kontributor  = excluded.Kontributor,
                                               FaelligAm    = excluded.FaelligAm,
                                               Farbe        = excluded.Farbe", parameter, transaktion);
     }

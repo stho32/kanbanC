@@ -55,7 +55,7 @@ public class KartenApiKlientTests
         using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, rumpf, "application/json");
         var klient = new KartenApiKlient(fabrik);
 
-        var ergebnis = await klient.AendereKarte(14, new KarteAendernAnfrage("WBS-Import", "Knoten", new DateOnly(2026, 9, 2), Kartenfarbe.Terrakotta));
+        var ergebnis = await klient.AendereKarte(14, new KarteAendernAnfrage("WBS-Import", "Knoten", new DateOnly(2026, 9, 2), Kartenfarbe.Terrakotta, Kontributor: null));
 
         Assert.That(ergebnis.WurdeZurueckgewiesen, Is.False);
         Assert.Multiple(() =>
@@ -77,7 +77,7 @@ public class KartenApiKlientTests
         using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, rumpf, "application/json");
         var klient = new KartenApiKlient(fabrik);
 
-        await klient.AendereKarte(14, new KarteAendernAnfrage("WBS-Import", null, null, Kartenfarbe.Ohne));
+        await klient.AendereKarte(14, new KarteAendernAnfrage("WBS-Import", null, null, Kartenfarbe.Ohne, Kontributor: null));
 
         Assert.That(fabrik.GesendeterRumpf, Does.Contain("\"faelligAm\":null"));
     }
@@ -89,7 +89,7 @@ public class KartenApiKlientTests
         using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.BadRequest, rumpf, "application/json");
         var klient = new KartenApiKlient(fabrik);
 
-        var ergebnis = await klient.AendereKarte(14, new KarteAendernAnfrage("", null, null, Kartenfarbe.Ohne));
+        var ergebnis = await klient.AendereKarte(14, new KarteAendernAnfrage("", null, null, Kartenfarbe.Ohne, Kontributor: null));
 
         Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
         Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Is.EqualTo("Der Titel darf nicht leer sein."));

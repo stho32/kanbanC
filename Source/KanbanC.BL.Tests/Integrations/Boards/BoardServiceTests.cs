@@ -106,9 +106,9 @@ public class BoardServiceTests
     {
         var repository = new TestBoardRepository();
         var abschlussbahn = new Spalte(9, "Erledigt", 1, true, 2, [
-            new Karte(1, "Vorgestern", 1, new DateOnly(2026, 9, 3), Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne),
-            new Karte(2, "Heute", 2, new DateOnly(2026, 9, 5), Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne),
-            new Karte(3, "Gestern", 3, new DateOnly(2026, 9, 4), Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne),
+            new Karte(1, "Vorgestern", 1, new DateOnly(2026, 9, 3), Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne, Kontributor: null),
+            new Karte(2, "Heute", 2, new DateOnly(2026, 9, 5), Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne, Kontributor: null),
+            new Karte(3, "Gestern", 3, new DateOnly(2026, 9, 4), Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne, Kontributor: null),
         ], Kartenzahl: 3);
         repository.Speichere(new Board(7, "Entwicklung", BoardArt.Linie, null, null, [abschlussbahn], false, false));
         var service = new BoardService(repository);

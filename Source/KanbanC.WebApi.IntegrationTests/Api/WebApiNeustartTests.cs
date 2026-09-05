@@ -77,7 +77,7 @@ public class WebApiNeustartTests
             karteId = karte.KarteId;
             var geaendert = await ersteInstanz.Klient.PutAsJsonAsync(
                 $"/api/karten/{karteId}",
-                new KarteAendernAnfrage("WBS-Import", "Knoten in Karten überführen", new DateOnly(2026, 9, 2), Kartenfarbe.Terrakotta));
+                new KarteAendernAnfrage("WBS-Import", "Knoten in Karten überführen", new DateOnly(2026, 9, 2), Kartenfarbe.Terrakotta, Kontributor: null));
             geaendert.EnsureSuccessStatusCode();
         }
 

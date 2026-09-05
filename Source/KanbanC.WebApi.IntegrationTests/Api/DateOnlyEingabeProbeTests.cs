@@ -24,7 +24,7 @@ public class DateOnlyEingabeProbeTests
 
         var anfrage = JsonSerializer.Deserialize<KarteAendernAnfrage>(rumpf, JsonSerializerOptions.Web);
 
-        Assert.That(anfrage, Is.EqualTo(new KarteAendernAnfrage("WBS-Import", null, null, Kartenfarbe.Ohne)));
+        Assert.That(anfrage, Is.EqualTo(new KarteAendernAnfrage("WBS-Import", null, null, Kartenfarbe.Ohne, Kontributor: null)));
     }
 
     [Test]

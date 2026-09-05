@@ -280,7 +280,8 @@ else
             gewuenscht.Karte.Titel,
             gewuenscht.Karte.Beschreibung,
             gewuenscht.Karte.FaelligAm,
-            gewuenscht.Karte.Farbe);
+            gewuenscht.Karte.Farbe,
+            gewuenscht.Karte.Kontributor);
         _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(() => UebernimmAenderung(anfrage));
     }
 

@@ -51,7 +51,7 @@ public sealed class TestSpaltenRepository : ISpaltenRepository
         var karten = new List<Karte>();
         for (var nummer = 1; nummer <= anzahl; nummer++)
         {
-            karten.Add(new Karte(nummer, $"Karte {nummer}", nummer, ErledigtAm: null, Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne));
+            karten.Add(new Karte(nummer, $"Karte {nummer}", nummer, ErledigtAm: null, Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne, Kontributor: null));
         }
 
         spalten[stelle] = spalten[stelle] with { Karten = karten };
@@ -79,7 +79,7 @@ public sealed class TestSpaltenRepository : ISpaltenRepository
         var spalten = _spaltenJeBoard[boardId];
         var stelle = spalten.FindIndex(spalte => spalte.SpalteId == spalteId);
         var karten = spalten[stelle].Karten.ToList();
-        karten.Add(new Karte(karteId, titel, karten.Count + 1, ErledigtAm: null, Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne));
+        karten.Add(new Karte(karteId, titel, karten.Count + 1, ErledigtAm: null, Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne, Kontributor: null));
         spalten[stelle] = spalten[stelle] with { Karten = karten };
         return this;
     }
