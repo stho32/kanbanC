@@ -249,3 +249,4 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-05 | R00017 Kartendetails bearbeiten | B0233 E2E Verantwortlicher | Standard | 2-4h | 0,0h | 0,0h | autonom |
 | 2026-09-05 | R00017 Kartendetails bearbeiten | B0234 Etikettentabelle anlegen | Standard | 0,4h | 0,0h | 0,0h | autonom |
 | 2026-09-05 | R00017 Kartendetails bearbeiten | B0235 Etiketten und Vorschlaege lesen | Standard | 0,4h | 0,1h | 0,1h | autonom |
+| 2026-09-05 | R00017 Kartendetails bearbeiten | B0236 Etikettenliste pruefen | Standard | 0,4h | 0,0h | 0,0h | autonom |
