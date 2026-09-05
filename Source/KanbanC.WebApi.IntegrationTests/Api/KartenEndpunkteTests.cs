@@ -589,6 +589,169 @@ public class KartenEndpunkteTests
         Assert.That(geladen.Spalten[0].Karten.Select(k => k.Titel), Is.EqualTo(new[] { "A", "B", "C" }));
     }
 
+    [Test]
+    public async Task Wenn_eine_Karte_per_PUT_archiviert_wird_dann_antwortet_die_API_mit_200_und_den_Spalten_ohne_sie()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var spalteId = board.Spalten[0].SpalteId;
+        await LegeKarteAn(webApi, board.BoardId, spalteId, "A");
+        var b = await LegeKarteAn(webApi, board.BoardId, spalteId, "B");
+        await LegeKarteAn(webApi, board.BoardId, spalteId, "C");
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Archivierungsroute(board.BoardId, b.KarteId), new Archivierung(true));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var spalten = await antwort.Content.ReadFromJsonAsync<IReadOnlyList<Spalte>>();
+        Assert.That(spalten, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(spalten[0].Karten.Select(karte => karte.Titel), Is.EqualTo(new[] { "A", "C" }));
+            Assert.That(spalten[0].Karten.Select(karte => karte.Position), Is.EqualTo(new[] { 1, 2 }));
+            Assert.That(spalten[0].Kartenzahl, Is.EqualTo(2));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_eine_Karte_archiviert_ist_dann_fehlt_sie_im_geladenen_Board()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var spalteId = board.Spalten[0].SpalteId;
+        await LegeKarteAn(webApi, board.BoardId, spalteId, "A");
+        var b = await LegeKarteAn(webApi, board.BoardId, spalteId, "B");
+        await LegeKarteAn(webApi, board.BoardId, spalteId, "C");
+        await Archiviere(webApi, board.BoardId, b.KarteId, true);
+
+        var geladen = await LadeBoard(webApi, board.BoardId);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(geladen.Spalten[0].Karten.Select(karte => karte.Titel), Is.EqualTo(new[] { "A", "C" }));
+            Assert.That(geladen.Spalten[0].Karten.Select(karte => karte.Position), Is.EqualTo(new[] { 1, 2 }));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_eine_archivierte_Karte_zurueckgeholt_wird_dann_steht_sie_wieder_im_Board()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var spalteId = board.Spalten[0].SpalteId;
+        await LegeKarteAn(webApi, board.BoardId, spalteId, "A");
+        var b = await LegeKarteAn(webApi, board.BoardId, spalteId, "B");
+        await Archiviere(webApi, board.BoardId, b.KarteId, true);
+
+        var spalten = await Archiviere(webApi, board.BoardId, b.KarteId, false);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(spalten[0].Karten.Select(karte => karte.Titel), Is.EqualTo(new[] { "A", "B" }));
+            Assert.That(spalten[0].Karten.Select(karte => karte.Position), Is.EqualTo(new[] { 1, 2 }));
+        });
+    }
+
+    // Die Route ist ein Umschalter auf einen Zielzustand, kein Ereignis: ein Agent darf denselben
+    // Aufruf wiederholen, ohne einen Zustand zu zerstoeren, den er nicht kennt.
+    [Test]
+    public async Task Wenn_dieselbe_Karte_zweimal_archiviert_wird_dann_ist_der_zweite_Aufruf_kein_Fehler()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var spalteId = board.Spalten[0].SpalteId;
+        await LegeKarteAn(webApi, board.BoardId, spalteId, "A");
+        var b = await LegeKarteAn(webApi, board.BoardId, spalteId, "B");
+        await Archiviere(webApi, board.BoardId, b.KarteId, true);
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Archivierungsroute(board.BoardId, b.KarteId), new Archivierung(true));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var spalten = await antwort.Content.ReadFromJsonAsync<IReadOnlyList<Spalte>>();
+        Assert.That(spalten!, Is.Not.Null);
+        Assert.That(spalten[0].Karten.Select(karte => karte.Titel), Is.EqualTo(new[] { "A" }));
+    }
+
+    [Test]
+    public async Task Wenn_die_KarteId_unbekannt_ist_dann_antwortet_die_Archivierung_mit_404_und_Befund()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Archivierungsroute(board.BoardId, 999), new Archivierung(true));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Archivierung mit unbekannter KarteId");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("karte-unbekannt"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain("999"));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_Karte_zu_einem_anderen_Board_gehoert_dann_nennt_der_Befund_der_Archivierung_dieses_Board()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var erstes = await LegeBoardAn(webApi);
+        var zweites = await LegeBoardAn(webApi);
+        var fremde = await LegeKarteAn(webApi, erstes.BoardId, erstes.Spalten[0].SpalteId, "A");
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Archivierungsroute(zweites.BoardId, fremde.KarteId), new Archivierung(true));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Archivierung mit fremder KarteId");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("karte-fremd"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain($"Board {erstes.BoardId}"));
+            Assert.That(zurueckweisung.Befunde[0].Kompensation, Does.Contain($"/api/boards/{erstes.BoardId}"));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_Archivierung_zurueckgewiesen_wird_dann_bleibt_der_Bestand_unveraendert()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var spalteId = board.Spalten[0].SpalteId;
+        await LegeKarteAn(webApi, board.BoardId, spalteId, "A");
+        await LegeKarteAn(webApi, board.BoardId, spalteId, "B");
+
+        await webApi.Klient.PutAsJsonAsync(Archivierungsroute(board.BoardId, 999), new Archivierung(true));
+
+        var geladen = await LadeBoard(webApi, board.BoardId);
+        Assert.Multiple(() =>
+        {
+            Assert.That(geladen.Spalten[0].Karten.Select(karte => karte.Titel), Is.EqualTo(new[] { "A", "B" }));
+            Assert.That(geladen.Spalten[0].Karten.Select(karte => karte.Position), Is.EqualTo(new[] { 1, 2 }));
+        });
+    }
+
+    private static async Task<IReadOnlyList<Spalte>> Archiviere(TestWebApi webApi, long boardId, long karteId, bool istArchiviert)
+    {
+        var antwort = await webApi.Klient.PutAsJsonAsync(Archivierungsroute(boardId, karteId), new Archivierung(istArchiviert));
+        antwort.EnsureSuccessStatusCode();
+        var spalten = await antwort.Content.ReadFromJsonAsync<IReadOnlyList<Spalte>>();
+        if (spalten is null)
+        {
+            throw new InvalidOperationException("Die API hat keine Spalten zurückgegeben.");
+        }
+
+        return spalten;
+    }
+
+    private static string Archivierungsroute(long boardId, long karteId)
+    {
+        return $"{BoardsRoute}/{boardId}/karten/{karteId}/archivierung";
+    }
+
     private static string Lageroute(long boardId, long karteId)
     {
         return $"{BoardsRoute}/{boardId}/karten/{karteId}/lage";

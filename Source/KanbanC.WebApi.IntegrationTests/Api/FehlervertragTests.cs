@@ -197,6 +197,16 @@ public class FehlervertragTests
             "Karte verschieben in eine unbekannte Zielspalte",
             await webApi.Klient.PutAsJsonAsync($"{BoardsRoute}/{board.BoardId}/karten/{aufbau.Karte.KarteId}/lage", new Kartenlage(999, 1))));
 
+        faelle.Add(new Fehlerfall(
+            "PUT /api/boards/{boardId:long}/karten/{karteId:long}/archivierung",
+            "Karte archivieren mit unbekannter KarteId",
+            await webApi.Klient.PutAsJsonAsync($"{BoardsRoute}/{board.BoardId}/karten/999/archivierung", new Archivierung(true))));
+
+        faelle.Add(new Fehlerfall(
+            "PUT /api/boards/{boardId:long}/karten/{karteId:long}/archivierung",
+            "Karte archivieren an unbekanntem Board",
+            await webApi.Klient.PutAsJsonAsync($"{BoardsRoute}/999/karten/{aufbau.Karte.KarteId}/archivierung", new Archivierung(true))));
+
         return faelle;
     }
 
