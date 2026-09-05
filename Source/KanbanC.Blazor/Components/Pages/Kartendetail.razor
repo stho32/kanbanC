@@ -1,11 +1,10 @@
 @page "/karten/{KarteId:long}"
 @using System.Globalization
+@using KanbanC.Blazor.Components.Karten
 @using KanbanC.Blazor.Services
 @using KanbanC.Contracts.Fehler
 @using KanbanC.Contracts.Karten
-@using KanbanC.Contracts.Kontributoren
 @inject KartenApiKlient KartenKlient
-@inject KontributorenApiKlient KontributorenKlient
 
 <PageTitle>Karte @KarteId</PageTitle>
 
@@ -110,90 +109,12 @@ else
         <aside class="eigenschaftenblatt" id="eigenschaftenblatt">
             <h3 class="blattueberschrift">Eigenschaften</h3>
 
-            @* Die Wahl hängt am Feld und schließt über eine Auffangfläche — dasselbe Muster wie
-               die Identitätswahl in der Kopfzeile. *@
-            <div class="blattfeld verantwortlichenfeld">
-                <span class="blattmarke">Verantwortlich</span>
-                <button type="button"
-                        class="blattwert"
-                        id="verantwortlich"
-                        aria-haspopup="true"
-                        aria-expanded="@AlsAttributtext(IstOffen(Verantwortlichenfeld))"
-                        @onclick="OeffneVerantwortlichenwahl">
-                    @if (_detail.Verantwortlicher is null)
-                    {
-                        <span class="kuerzel kuerzel-niemand"></span>
-                        <span class="verantwortlichenname">niemand</span>
-                    }
-                    else
-                    {
-                        <span class="kuerzel @Kontributorartform.Kuerzelklasse(_detail.Verantwortlicher.Art) @Gedaempft()">@Kontributorartform.Kuerzel(_detail.Verantwortlicher.Name)</span>
-                        <span class="verantwortlichenname @Gedaempft()" id="verantwortlichenname">@_detail.Verantwortlicher.Name</span>
-                        @if (_detail.Verantwortlicher.StillgelegtAm is null)
-                        {
-                            <span class="tag @Kontributorartform.Plakettenklasse(_detail.Verantwortlicher.Art)" id="verantwortlichenart">@Kontributorartform.Beschriftung(_detail.Verantwortlicher.Art)</span>
-                        }
-                        else
-                        {
-                            @* Die Karte zeigt ihn weiter — die zweite Hälfte des Fertig-Kriteriums
-                               von I0009. Wählbar ist er nicht mehr. *@
-                            <span class="verantwortlichenvermerk" id="verantwortlich-stillgelegt-vermerk">stillgelegt</span>
-                        }
-                    }
-                    <span class="blattchevron" aria-hidden="true">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
-                    </span>
-                </button>
-
-                @if (IstOffen(Verantwortlichenfeld))
-                {
-                    <div class="verantwortlichen-auffangflaeche" id="verantwortlichen-auffangflaeche" @onclick="SchliesseVerantwortlichenwahl"></div>
-                    <div class="verantwortlichenpopover" id="verantwortlichenpopover">
-                        <input class="input verantwortlichensuche"
-                               id="verantwortlichensuche"
-                               placeholder="Name suchen"
-                               value="@_verantwortlichensuche"
-                               @oninput="FiltereVerantwortliche" />
-
-                        <ul class="verantwortlichenliste" id="verantwortlichenliste">
-                            @foreach (var kontributor in Waehlbare)
-                            {
-                                <li>
-                                    <button type="button"
-                                            class="verantwortlichenzeile"
-                                            id="verantwortlich-waehlen-@kontributor.KontributorId"
-                                            @onclick="() => SetzeVerantwortlichen(kontributor.KontributorId)">
-                                        <span class="kuerzel @Kontributorartform.Kuerzelklasse(kontributor.Art)">@Kontributorartform.Kuerzel(kontributor.Name)</span>
-                                        <span class="verantwortlichenname">@kontributor.Name</span>
-                                        <span class="tag @Kontributorartform.Plakettenklasse(kontributor.Art)">@Kontributorartform.Beschriftung(kontributor.Art)</span>
-                                    </button>
-                                </li>
-                            }
-                        </ul>
-
-                        <hr class="verantwortlichentrenner" />
-
-                        @* „niemand" ist ein Eintrag der Liste, kein zweiter Knopf: eine Karte ohne
-                           Verantwortlichen ist der Normalfall nach dem Anlegen. *@
-                        <button type="button" class="verantwortlichenzeile verantwortlichenzeile-niemand" id="verantwortlich-niemand" @onclick="() => SetzeVerantwortlichen(null)">
-                            <span class="kuerzel kuerzel-niemand"></span>
-                            <span class="verantwortlichenname">niemand</span>
-                        </button>
-
-                        @if (StillgelegterTraeger is not null)
-                        {
-                            <p class="verantwortlichenabschnitt">stillgelegt · nicht wählbar</p>
-                            <div class="verantwortlichenzeile verantwortlichenzeile-stillgelegt"
-                                 id="verantwortlich-stillgelegt-@StillgelegterTraeger.KontributorId"
-                                 aria-disabled="true">
-                                <span class="kuerzel @Kontributorartform.Kuerzelklasse(StillgelegterTraeger.Art)">@Kontributorartform.Kuerzel(StillgelegterTraeger.Name)</span>
-                                <span class="verantwortlichenname verantwortlichenname-stillgelegt">@StillgelegterTraeger.Name</span>
-                                <span class="verantwortlichenvermerk">stillgelegt seit @Terminformatierer.AlsText(StillgelegterTraeger.StillgelegtAm)</span>
-                            </div>
-                        }
-                    </div>
-                }
-            </div>
+            @* Die Wahl steht als eigene Komponente daneben, wie die Identitätswahl neben der
+               Kopfzeile: sie führt ihren eigenen Zustand (offen, Suchtext, geladene Liste) und
+               meldet nach oben nur, wen die Karte tragen soll. *@
+            <Verantwortlichenwahl Verantwortlicher="_detail.Verantwortlicher"
+                                  Gewaehlt="SetzeVerantwortlichen"
+                                  AusfallGemeldet="MeldeAusfall" />
 
             <div class="blattfeld">
                 <label class="blattmarke" for="faellig-feld">Fällig</label>
@@ -234,9 +155,14 @@ else
                         @if (Etikettvorschlaege.Count > 0)
                         {
                             <p class="etikettenabschnitt">auf diesem Board schon vergeben</p>
+                            @* @key haelt die Elementkennung ueber die Neuaufbauten hinweg fest: die
+                               Liste wird bei jedem Tastendruck neu gerechnet, und ohne Schluessel
+                               ordnet Blazor die Knoten neu zu, sobald sich ihre Zahl aendert — ein
+                               Klick landete dann auf einem Element, das es so nicht mehr gibt. *@
                             @foreach (var vorschlag in Etikettvorschlaege)
                             {
                                 <button type="button"
+                                        @key="vorschlag.Text"
                                         class="etikettenvorschlag"
                                         data-vorschlag="@vorschlag.Text"
                                         @onclick="() => FuegeEtikettHinzu(vorschlag.Text)">
@@ -247,7 +173,7 @@ else
                         }
                         @if (EtikettentextIstNeu)
                         {
-                            <button type="button" class="etikettenvorschlag etikettenvorschlag-neu" id="etikett-neu-anlegen" @onclick="() => FuegeEtikettHinzu(_etikettentext)">
+                            <button type="button" @key="Neuanlagenschluessel" class="etikettenvorschlag etikettenvorschlag-neu" id="etikett-neu-anlegen" @onclick="() => FuegeEtikettHinzu(_etikettentext)">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
                                 „@_etikettentext.Trim()“ neu anlegen
                             </button>
@@ -280,7 +206,6 @@ else
     private const string Titelfeld = "titel";
     private const string Beschreibungsfeld = "beschreibung";
     private const string Faelligkeitsfeld = "faellig";
-    private const string Verantwortlichenfeld = "verantwortlich";
 
     // Vollqualifiziert, weil der Komponentenname Kartendetail den gleichnamigen Vertragstyp
     // verdeckt — dieselbe Lage wie bei Board.razor und Karte.razor.
@@ -292,8 +217,6 @@ else
     // dieselbe Aussage mehrfach und ließe zwei offene Felder zu.
     private string? _offenesFeld;
     private Zurueckweisung? _zurueckweisung;
-    private IReadOnlyList<Kontributor> _kontributoren = [];
-    private string _verantwortlichensuche = string.Empty;
     private string _etikettentext = string.Empty;
     private string? _ausfallmeldung;
 
@@ -316,54 +239,16 @@ else
         _ladenIstAbgeschlossen = true;
     }
 
-    // Wer die Wahl öffnet, will den heutigen Stand sehen: ein gerade stillgelegter Kontributor
-    // stünde sonst noch darin. Dieselbe Überlegung wie in der Kopfzeile.
-    private async Task OeffneVerantwortlichenwahl()
-    {
-        _verantwortlichensuche = string.Empty;
-        Oeffne(Verantwortlichenfeld);
-        _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(async () => _kontributoren = await KontributorenKlient.LadeAlle());
-    }
-
-    private void SchliesseVerantwortlichenwahl()
-    {
-        _offenesFeld = null;
-    }
-
-    private void FiltereVerantwortliche(ChangeEventArgs ereignis)
-    {
-        _verantwortlichensuche = Text(ereignis);
-    }
-
-    private IReadOnlyList<Kontributor> Waehlbare
-    {
-        get
-        {
-            return Verantwortlichenliste.Gefiltert(Verantwortlichenliste.Waehlbare(_kontributoren), _verantwortlichensuche);
-        }
-    }
-
-    private Kontributor? StillgelegterTraeger
-    {
-        get
-        {
-            return Verantwortlichenliste.StillgelegterTraeger(_kontributoren, _detail!.Verantwortlicher);
-        }
-    }
-
-    private string Gedaempft()
-    {
-        if (_detail!.Verantwortlicher?.StillgelegtAm is null)
-        {
-            return string.Empty;
-        }
-
-        return "verantwortlicher-stillgelegt";
-    }
-
     private async Task SetzeVerantwortlichen(long? kontributorId)
     {
         await Speichere(_detail! with { Karte = _detail.Karte with { Kontributor = kontributorId } });
+    }
+
+    // Die Wahl holt ihre Liste selbst; ein Ausfall dabei gehört trotzdem hierher, damit die
+    // Seite eine Meldungsstelle behält.
+    private void MeldeAusfall(string? meldung)
+    {
+        _ausfallmeldung = meldung;
     }
 
     private IReadOnlyList<Etikettvorschlag> Etikettvorschlaege
@@ -382,6 +267,10 @@ else
         }
     }
 
+    // Ein Schluessel, der sich nicht mit dem getippten Text aendert: der Eintrag „… neu anlegen"
+    // bleibt derselbe Knopf, waehrend seine Beschriftung mitwaechst.
+    private const string Neuanlagenschluessel = "etikett-neu-anlegen";
+
     private void TippeEtikett(ChangeEventArgs ereignis)
     {
         _etikettentext = Text(ereignis);
@@ -399,16 +288,12 @@ else
         await FuegeEtikettHinzu(_etikettentext);
     }
 
+    // Ein bereits getragener Text wird nicht stillschweigend geschluckt: die Liste geht so ab,
+    // wie sie getippt wurde, und der EtikettenValidator sagt mit seinem Wortlaut, dass er
+    // doppelt ist. Eine zweite Dublettenregel in der Oberfläche wäre eine zweite Wahrheit.
     private async Task FuegeEtikettHinzu(string text)
     {
-        var neuerText = text.Trim();
-        var dieKarteTraegtIhnSchon = _detail!.Etiketten.Contains(neuerText, StringComparer.Ordinal);
-        if (dieKarteTraegtIhnSchon)
-        {
-            return;
-        }
-
-        await SetzeEtiketten([.. _detail.Etiketten, neuerText]);
+        await SetzeEtiketten([.. _detail!.Etiketten, text.Trim()]);
     }
 
     private async Task EntferneEtikett(string text)
@@ -418,7 +303,6 @@ else
 
     private async Task SetzeEtiketten(IReadOnlyList<string> etiketten)
     {
-        _etikettentext = string.Empty;
         _zurueckweisung = null;
         _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(() => UebernimmEtiketten(new Kartenetiketten(etiketten)));
     }
@@ -428,10 +312,13 @@ else
         var ergebnis = await KartenKlient.SetzeEtiketten(KarteId, etiketten);
         if (ergebnis.WurdeZurueckgewiesen)
         {
+            // Der getippte Text bleibt stehen: er ist der Grund der Meldung, und die Liste
+            // bleibt, wie sie war.
             _zurueckweisung = ergebnis.Zurueckweisung;
             return;
         }
 
+        _etikettentext = string.Empty;
         _detail = ergebnis.Wert;
     }
 

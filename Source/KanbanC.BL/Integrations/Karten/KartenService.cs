@@ -149,6 +149,15 @@ public sealed class KartenService
             return Ergebnis<Kartendetail>.Zurueckgewiesen(befunde);
         }
 
+        // Erst die Karte, dann der Verantwortliche: gibt es beide nicht, meldet die Antwort sonst
+        // den Kontributor und schickt den Aufrufer damit an die falsche Kompensation. Gelesen
+        // wird dafür, statt zu schreiben — eine Zurückweisung darf nichts hinterlassen.
+        var dieKarteGibtEsNicht = _kartenRepository.LiesKartendetail(karteId) is null;
+        if (dieKarteGibtEsNicht)
+        {
+            return Zurueckgewiesen<Kartendetail>(Nichtgefunden.Karte(karteId));
+        }
+
         // Die Prüfung braucht den Kontributorenbestand und sitzt deshalb hier und nicht im
         // Validator — dieselbe Trennung wie beim Zug, wo der KartenlageValidator den Bestand
         // gereicht bekommt.
@@ -159,8 +168,8 @@ public sealed class KartenService
         }
 
         var detail = _kartenRepository.Aendere(karteId, anfrage);
-        var dieKarteGibtEsNicht = detail is null;
-        if (dieKarteGibtEsNicht)
+        var dieKarteIstInzwischenVerschwunden = detail is null;
+        if (dieKarteIstInzwischenVerschwunden)
         {
             return Zurueckgewiesen<Kartendetail>(Nichtgefunden.Karte(karteId));
         }

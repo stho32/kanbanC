@@ -32,6 +32,8 @@ public class VerantwortlicherE2ETests : PageTest
         await Expect(aufbau.Seite.VerantwortlichenzeileVon(aufbau.Maria.KontributorId)).ToBeVisibleAsync();
         await Expect(aufbau.Seite.VerantwortlichenzeileVon(aufbau.Jan.KontributorId)).ToHaveCountAsync(0);
         await Expect(aufbau.Seite.Niemand).ToBeVisibleAsync();
+        // Die Reihenfolge ist die des Kontributorenbestands: nach Namen sortiert.
+        await Expect(aufbau.Seite.Artplaketten).ToHaveTextAsync(["Agent", "abgebildet", "Mensch"]);
     }
 
     [Test]

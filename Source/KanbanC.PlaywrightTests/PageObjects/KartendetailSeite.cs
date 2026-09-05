@@ -70,6 +70,8 @@ public sealed class KartendetailSeite
 
     public ILocator Verantwortlichenzeilen => _seite.Locator("#verantwortlichenliste .verantwortlichenzeile");
 
+    public ILocator Artplaketten => _seite.Locator("#verantwortlichenliste .verantwortlichenzeile .tag");
+
     public ILocator VerantwortlichenzeileVon(long kontributorId)
     {
         return _seite.Locator($"#verantwortlich-waehlen-{kontributorId}");

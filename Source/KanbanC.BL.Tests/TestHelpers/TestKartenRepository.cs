@@ -152,6 +152,11 @@ public sealed class TestKartenRepository : IKartenRepository
     public Kartendetail? LiesKartendetail(long karteId)
     {
         GeleseneKarteId = karteId;
+        if (_karteFehltAnDieserStelle)
+        {
+            return null;
+        }
+
         return _kartendetail;
     }
 

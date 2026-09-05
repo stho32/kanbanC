@@ -55,7 +55,7 @@ public class VerantwortlichenlisteTests
     [Test]
     public void Wenn_die_Karte_einen_stillgelegten_Verantwortlichen_traegt_dann_wird_er_getrennt_ausgewiesen()
     {
-        var traeger = Verantwortlichenliste.StillgelegterTraeger([Stefan, Agent, Maria, Jan], Jan);
+        var traeger = Verantwortlichenliste.StillgelegterTraeger(Jan);
 
         Assert.That(traeger, Is.EqualTo(Jan));
         Assert.That(Verantwortlichenliste.Waehlbare([Stefan, Agent, Maria, Jan]), Does.Not.Contain(Jan));
@@ -64,12 +64,12 @@ public class VerantwortlichenlisteTests
     [Test]
     public void Wenn_der_Verantwortliche_aktiv_ist_dann_gibt_es_keinen_stillgelegten_Traeger()
     {
-        Assert.That(Verantwortlichenliste.StillgelegterTraeger([Stefan, Agent, Maria, Jan], Agent), Is.Null);
+        Assert.That(Verantwortlichenliste.StillgelegterTraeger(Agent), Is.Null);
     }
 
     [Test]
     public void Wenn_die_Karte_niemanden_traegt_dann_gibt_es_keinen_stillgelegten_Traeger()
     {
-        Assert.That(Verantwortlichenliste.StillgelegterTraeger([Stefan, Agent, Maria, Jan], null), Is.Null);
+        Assert.That(Verantwortlichenliste.StillgelegterTraeger(null), Is.Null);
     }
 }

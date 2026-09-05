@@ -1385,6 +1385,32 @@ public class KartenEndpunkteTests
         });
     }
 
+    // Die Zusage „reisen an Karte mit" gilt auch fuer die Antwort des Zugs — sie traegt die
+    // Spalten und damit dieselben Karten.
+    [Test]
+    public async Task Wenn_die_geaenderte_Karte_gezogen_wird_dann_traegt_sie_ihre_Werte_auch_in_der_Antwort_von_PUT_lage()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var zielspalteId = board.Spalten[1].SpalteId;
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Migration schreiben");
+        await Aendere(webApi, karte.KarteId, new KarteAendernAnfrage("WBS-Import", "Knoten überführen", new DateOnly(2026, 9, 2), Kartenfarbe.Olive, Kontributor: null));
+
+        using var antwort = await webApi.Klient.PutAsJsonAsync(Lageroute(board.BoardId, karte.KarteId), new Kartenlage(zielspalteId, 1));
+
+        antwort.EnsureSuccessStatusCode();
+        var spalten = await antwort.Content.ReadFromJsonAsync<IReadOnlyList<Spalte>>();
+        var gezogene = spalten!.Single(spalte => spalte.SpalteId == zielspalteId).Karten[0];
+        Assert.Multiple(() =>
+        {
+            Assert.That(gezogene.Titel, Is.EqualTo("WBS-Import"));
+            Assert.That(gezogene.Beschreibung, Is.EqualTo("Knoten überführen"));
+            Assert.That(gezogene.FaelligAm, Is.EqualTo(new DateOnly(2026, 9, 2)));
+            Assert.That(gezogene.Farbe, Is.EqualTo(Kartenfarbe.Olive));
+        });
+    }
+
     private static string Etikettenroute(long karteId)
     {
         return $"/api/karten/{karteId}/etiketten";

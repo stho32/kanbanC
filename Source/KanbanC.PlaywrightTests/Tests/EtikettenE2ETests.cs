@@ -102,6 +102,29 @@ public class EtikettenE2ETests : PageTest
         await Expect(andere.EtikettNeuAnlegen).ToBeVisibleAsync();
     }
 
+    // Das letzte Szenario von US-6: derselbe Text zweimal an dieselbe Karte bringt einen
+    // lesbaren Befund, und die Liste bleibt, wie sie war.
+    [Test]
+    [Category("US-6")]
+    public async Task Wenn_derselbe_Text_zweimal_an_dieselbe_Karte_gehaengt_wird_dann_erscheint_ein_lesbarer_Befund_und_die_Liste_bleibt()
+    {
+        var aufbau = await ZweiKartenEinesBoards();
+        await aufbau.Seite.TippeEtikett("Import");
+        await aufbau.Seite.EtikettNeuAnlegen.ClickAsync();
+        await Expect(aufbau.Seite.Etikett("Import")).ToBeVisibleAsync();
+
+        await aufbau.Seite.TippeEtikett("Import");
+        await Page.Keyboard.PressAsync("Enter");
+
+        await Expect(aufbau.Seite.BlattZurueckweisung).ToContainTextAsync("steht zweimal in der Liste");
+        await Expect(aufbau.Seite.Etiketten).ToHaveCountAsync(1);
+
+        await aufbau.Seite.LadeNeu();
+
+        await Expect(aufbau.Seite.Etiketten).ToHaveCountAsync(1);
+        await Expect(aufbau.Seite.Etikett("Import")).ToBeVisibleAsync();
+    }
+
     private async Task<Aufbau> ZweiKartenEinesBoards()
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();

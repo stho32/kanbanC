@@ -22,7 +22,7 @@ public static class Verantwortlichenliste
     // Der bereits gesetzte, inzwischen stillgelegte Verantwortliche: er steht weiter an der Karte,
     // aber nicht mehr in der Auswahl. Das ist die zweite Hälfte des Fertig-Kriteriums von I0009 —
     // „verschwindet aus der Auswahl, bleibt aber an alten Karten sichtbar".
-    public static Kontributor? StillgelegterTraeger(IReadOnlyList<Kontributor> kontributoren, Kontributor? verantwortlicher)
+    public static Kontributor? StillgelegterTraeger(Kontributor? verantwortlicher)
     {
         if (verantwortlicher is null || IstAktiv(verantwortlicher))
         {

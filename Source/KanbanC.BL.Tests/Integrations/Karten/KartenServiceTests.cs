@@ -214,6 +214,19 @@ public class KartenServiceTests
         Assert.That(ergebnis.Befunde[0].Meldung, Does.Not.Contain("Board"));
     }
 
+    // Gibt es beide nicht, muss der Befund die Karte melden: eine Kompensation, die den
+    // Kontributor nennt, schickt den Aufrufer in die falsche Richtung.
+    [Test]
+    public void Wenn_weder_die_Karte_noch_der_Kontributor_bekannt_sind_dann_meldet_AendereKarte_die_Karte()
+    {
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), TestKartenRepository.Leer().OhneDieseKarte(), new TestKontributorenRepository());
+
+        var ergebnis = service.AendereKarte(9999, new KarteAendernAnfrage("WBS-Import", null, null, Kartenfarbe.Ohne, Kontributor: 999));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Befundpruefung.ErwarteVollstaendigenBefund(ergebnis.Befunde[0], "karte-unbekannt");
+    }
+
     private static Kartendetail Kartendetail(Karte karte)
     {
         return new Kartendetail(karte, Board: 3, Boardname: "Entwicklung", Spalte: 5, Spaltenbezeichnung: "In Arbeit", Verantwortlicher: null, Etiketten: [], Etikettvorschlaege: []);
