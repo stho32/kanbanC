@@ -95,6 +95,23 @@ public class AbschlussbahnGruppiertE2ETests : PageTest
         await Expect(seite.Kartenzahlstellen).ToHaveTextAsync(["2", "0", "20+"]);
     }
 
+    // Auch ueber einer gekuerzten Bahn bleibt die Stelle leer: kein Plus, kein Platzhalter.
+    [Test]
+    [Category("US-2")]
+    public async Task Wenn_die_Kartenzahl_ausgeschaltet_ist_dann_bleibt_die_Stelle_auch_ueber_der_gekuerzten_Bahn_leer()
+    {
+        var seite = await BoardMitErledigtenKartenAusZweiTagen(heute: 3, gestern: 20);
+        var erledigt = seite.SpaltenbahnAnStelle(2);
+        await Expect(seite.KartentitelDerBahn(erledigt)).ToHaveCountAsync(Anzeigegrenze);
+
+        await Expect(seite.Kartenzahlstellen).ToHaveTextAsync(["", "", ""]);
+
+        await seite.SchalteKartenzahl(true);
+        await Expect(seite.Kartenzahlstellen).ToHaveTextAsync(["0", "0", "20+"]);
+        await seite.SchalteKartenzahl(false);
+        await Expect(seite.Kartenzahlstellen).ToHaveTextAsync(["", "", ""]);
+    }
+
     private async Task<BoardSeite> BoardMitErledigtenKartenAusZweiTagen(int heute, int gestern, int ohneDatum = 0, int imRueckstand = 0)
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();

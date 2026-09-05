@@ -207,6 +207,39 @@ public class WebApiNeustartTests
         }));
     }
 
+    [Test]
+    public async Task Wenn_die_WebApi_nach_einer_Erledigung_neu_startet_dann_steht_das_Erledigungsdatum_unveraendert_da()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        long abschlussspalteId;
+        long karteId;
+        DateOnly? erledigtAmVorNeustart;
+        using (var ersteInstanz = new TestWebApi(datenbank.Dateipfad))
+        {
+            var board = await LegeBoardAn(ersteInstanz, new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null));
+            abschlussspalteId = board.Spalten[2].SpalteId;
+            var karte = await LegeKarteAn(ersteInstanz, board.BoardId, board.Spalten[0].SpalteId, "Migration schreiben");
+            karteId = karte.KarteId;
+            using var gezogen = await ersteInstanz.Klient.PutAsJsonAsync(
+                $"{BoardsRoute}/{board.BoardId}/karten/{karteId}/lage", new Kartenlage(abschlussspalteId, 1));
+            gezogen.EnsureSuccessStatusCode();
+            var vorNeustart = await ersteInstanz.Klient.GetFromJsonAsync<Board>($"{BoardsRoute}/{board.BoardId}");
+            erledigtAmVorNeustart = vorNeustart!.Spalten[2].Karten[0].ErledigtAm;
+            Assert.That(erledigtAmVorNeustart, Is.Not.Null);
+        }
+
+        using var zweiteInstanz = new TestWebApi(datenbank.Dateipfad);
+
+        var board2 = await zweiteInstanz.Klient.GetFromJsonAsync<Board>($"{BoardsRoute}/1");
+        var erledigte = board2!.Spalten[2].Karten[0];
+        Assert.Multiple(() =>
+        {
+            Assert.That(erledigte.KarteId, Is.EqualTo(karteId));
+            Assert.That(erledigte.ErledigtAm, Is.EqualTo(erledigtAmVorNeustart));
+            Assert.That(board2.Spalten[0].Karten, Is.Empty);
+        });
+    }
+
     private static async Task<Kontributor> LegeKontributorAn(TestWebApi webApi, KontributorAnlegenAnfrage anfrage)
     {
         var antwort = await webApi.Klient.PostAsJsonAsync(KontributorenRoute, anfrage);
