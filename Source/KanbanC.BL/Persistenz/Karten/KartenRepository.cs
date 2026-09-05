@@ -128,6 +128,12 @@ public sealed class KartenRepository : IKartenRepository
              WHERE k.KarteId = @KarteId", new { KarteId = karteId });
     }
 
+    public Kartendetail? LiesKartendetail(long karteId)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+        return Kartenleser.LiesKartendetail(verbindung, null, karteId);
+    }
+
     // Ungekuerzt und in Anzeigereihenfolge: was die Oberflaeche kuerzt, bleibt hier vollstaendig.
     public IReadOnlyList<Karte>? LadeKartenDerSpalte(long boardId, long spalteId, Archivierung archivstand)
     {

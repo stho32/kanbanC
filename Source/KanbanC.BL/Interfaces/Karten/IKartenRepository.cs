@@ -16,6 +16,10 @@ public interface IKartenRepository
 
     long? BoardDerKarte(long karteId);
 
+    // null heisst: diese KarteId gibt es nicht. Ohne Board in der Signatur, weil die
+    // Kartenadresse keins traegt — das Board steht erst in der Antwort.
+    Kartendetail? LiesKartendetail(long karteId);
+
     // null heisst „diese Spalte gibt es an dieser Stelle nicht"; eine Spalte ohne Karten liefert
     // die leere Liste.
     IReadOnlyList<Karte>? LadeKartenDerSpalte(long boardId, long spalteId, Archivierung archivstand);

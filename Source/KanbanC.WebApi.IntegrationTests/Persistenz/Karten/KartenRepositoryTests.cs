@@ -816,6 +816,56 @@ public class KartenRepositoryTests
         Assert.That(archivierte![0].ErledigtAm, Is.EqualTo(DateOnly.FromDateTime(DateTime.Today)));
     }
 
+    [Test]
+    public void Wenn_die_Karte_bekannt_ist_dann_liefert_LiesKartendetail_sie_samt_Board_und_Spalte()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var spalte = board.Spalten[1];
+        var karte = repository.LegeAn(board.BoardId, spalte.SpalteId, new KarteAnlegenAnfrage("Migration schreiben"));
+
+        var detail = repository.LiesKartendetail(karte!.KarteId);
+
+        Assert.That(detail, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail.Karte.KarteId, Is.EqualTo(karte.KarteId));
+            Assert.That(detail.Karte.Titel, Is.EqualTo("Migration schreiben"));
+            Assert.That(detail.Board, Is.EqualTo(board.BoardId));
+            Assert.That(detail.Boardname, Is.EqualTo("Entwicklung"));
+            Assert.That(detail.Spalte, Is.EqualTo(spalte.SpalteId));
+            Assert.That(detail.Spaltenbezeichnung, Is.EqualTo(spalte.Bezeichnung));
+        });
+    }
+
+    [Test]
+    public void Wenn_die_KarteId_unbekannt_ist_dann_liefert_LiesKartendetail_null()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        LegeBoardAn(datenbank);
+
+        Assert.That(repository.LiesKartendetail(999), Is.Null);
+    }
+
+    // Die Zusage aus I0014: eine archivierte Karte verschwindet vom Board, behaelt aber ihre
+    // Adresse. LiesKartendetail filtert deshalb als einzige Leseabfrage nicht nach Archivstand.
+    [Test]
+    public void Wenn_die_Karte_archiviert_ist_dann_liefert_LiesKartendetail_sie_weiterhin()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Migration schreiben"));
+        repository.SetzeArchivierung(board.BoardId, karte!.KarteId, new Archivierung(true));
+
+        var detail = repository.LiesKartendetail(karte.KarteId);
+
+        Assert.That(detail, Is.Not.Null);
+        Assert.That(detail.Karte.Titel, Is.EqualTo("Migration schreiben"));
+    }
+
     private static long[] Archivstaende(TemporaereDatenbank datenbank)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();

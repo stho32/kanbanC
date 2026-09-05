@@ -50,6 +50,29 @@ internal static class Kartenleser
         return zeilen.Select(AlsKarte).ToList();
     }
 
+    // Die einzige Leseabfrage ohne Archivfilter, und das mit Absicht: eine archivierte Karte ist
+    // kein Bestand mehr, behält aber ihre Adresse — I0014 hat zugesagt, dass sie „über API und
+    // Archiv auffindbar“ bleibt. Ihr Board kennt die Karte nur über Spalte → Board, daher zwei
+    // JOINs.
+    public static Kartendetail? LiesKartendetail(IDbConnection verbindung, IDbTransaction? transaktion, long karteId)
+    {
+        var zeile = verbindung.QuerySingleOrDefault<Kartendetailzeile>(@"
+            SELECT k.KarteId, k.Spalte, k.Titel, k.Position, e.ErledigtAm,
+                   s.Bezeichnung AS Spaltenbezeichnung, b.BoardId AS Board, b.Name AS Boardname
+              FROM Karte k
+              JOIN Spalte s ON s.SpalteId = k.Spalte
+              JOIN Board b ON b.BoardId = s.Board
+              LEFT JOIN Karteerledigung e ON e.Karte = k.KarteId
+             WHERE k.KarteId = @KarteId", new { KarteId = karteId }, transaktion);
+        if (zeile is null)
+        {
+            return null; // stil-check: C25 null heisst "diese Karte gibt es nicht"
+        }
+
+        var karte = AlsKarte(new Kartenzeile(zeile.KarteId, zeile.Spalte, zeile.Titel, zeile.Position, zeile.ErledigtAm));
+        return new Kartendetail(karte, zeile.Board, zeile.Boardname, zeile.Spalte, zeile.Spaltenbezeichnung);
+    }
+
     private static Karte AlsKarte(Kartenzeile zeile)
     {
         return new Karte(zeile.KarteId, zeile.Titel, (int)zeile.Position, AlsErledigungsdatum(zeile.ErledigtAm));
@@ -66,4 +89,14 @@ internal static class Kartenleser
     }
 
     private sealed record Kartenzeile(long KarteId, long Spalte, string Titel, long Position, string? ErledigtAm);
+
+    private sealed record Kartendetailzeile(
+        long KarteId,
+        long Spalte,
+        string Titel,
+        long Position,
+        string? ErledigtAm,
+        string Spaltenbezeichnung,
+        long Board,
+        string Boardname);
 }

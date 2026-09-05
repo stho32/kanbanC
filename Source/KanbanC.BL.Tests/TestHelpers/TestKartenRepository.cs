@@ -18,6 +18,7 @@ public sealed class TestKartenRepository : IKartenRepository
     private IReadOnlyList<Spalte> _spaltenNachDerArchivierung = [];
     private bool _karteFehltAnDieserStelle;
     private long? _boardDerKarte;
+    private Kartendetail? _kartendetail;
 
     private TestKartenRepository(bool spalteIstInzwischenVerschwunden)
     {
@@ -33,6 +34,8 @@ public sealed class TestKartenRepository : IKartenRepository
     public bool WurdeArchiviert { get; private set; }
 
     public Archivierung? GelesenerArchivstand { get; private set; }
+
+    public long? GeleseneKarteId { get; private set; }
 
     public static TestKartenRepository Leer()
     {
@@ -137,6 +140,19 @@ public sealed class TestKartenRepository : IKartenRepository
     public long? BoardDerKarte(long karteId)
     {
         return _boardDerKarte;
+    }
+
+    public TestKartenRepository MitKartendetail(Kartendetail detail)
+    {
+        _kartendetail = detail;
+        return this;
+    }
+
+    // Wie das echte Repository: null heisst „diese KarteId gibt es nicht".
+    public Kartendetail? LiesKartendetail(long karteId)
+    {
+        GeleseneKarteId = karteId;
+        return _kartendetail;
     }
 
     public IReadOnlyList<Karte> Karten(long spalteId)
