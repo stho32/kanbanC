@@ -15,6 +15,8 @@ public sealed class TestKartenRepository : IKartenRepository
     private IReadOnlyList<Spalte> _spaltenNachDemZug = [];
     private bool _karteIstInzwischenVerschwunden;
     private bool _derZugWirdZurueckgewiesen;
+    private IReadOnlyList<Spalte> _spaltenNachDerArchivierung = [];
+    private bool _karteFehltAnDieserStelle;
     private long? _boardDerKarte;
 
     private TestKartenRepository(bool spalteIstInzwischenVerschwunden)
@@ -27,6 +29,8 @@ public sealed class TestKartenRepository : IKartenRepository
     public bool WurdeVerschoben { get; private set; }
 
     public bool WurdenKartenGelesen { get; private set; }
+
+    public bool WurdeArchiviert { get; private set; }
 
     public static TestKartenRepository Leer()
     {
@@ -60,6 +64,31 @@ public sealed class TestKartenRepository : IKartenRepository
     {
         _spaltenNachDemZug = spalten;
         return this;
+    }
+
+    public TestKartenRepository MitSpaltenNachDerArchivierung(IReadOnlyList<Spalte> spalten)
+    {
+        _spaltenNachDerArchivierung = spalten;
+        return this;
+    }
+
+    // Die Karte gibt es an dieser Stelle nicht — unbekannte Nummer oder fremdes Board. Die
+    // Archivierung schreibt ohne vorherige Prüfung, für sie fallen beide Fälle zusammen.
+    public TestKartenRepository OhneDieseKarte()
+    {
+        _karteFehltAnDieserStelle = true;
+        return this;
+    }
+
+    public IReadOnlyList<Spalte>? SetzeArchivierung(long boardId, long karteId, Archivierung archivierung)
+    {
+        WurdeArchiviert = true;
+        if (_karteFehltAnDieserStelle)
+        {
+            return null;
+        }
+
+        return _spaltenNachDerArchivierung;
     }
 
     public TestKartenRepository MitKarteAufBoard(long boardId)

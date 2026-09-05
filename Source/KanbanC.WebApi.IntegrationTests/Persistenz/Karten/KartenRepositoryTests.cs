@@ -626,6 +626,157 @@ public class KartenRepositoryTests
         Assert.That(GeladenePositionen(datenbank, board.BoardId, 0), Is.EqualTo(new[] { 1, 2 }));
     }
 
+    [Test]
+    public void Wenn_eine_Karte_archiviert_wird_dann_liefert_das_Repository_die_Spalten_ohne_sie_und_mit_lueckenlosen_Positionen()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var spalteId = board.Spalten[0].SpalteId;
+        repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage("A"));
+        var b = repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage("B"));
+        repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage("C"));
+
+        var spalten = repository.SetzeArchivierung(board.BoardId, b!.KarteId, new Archivierung(true));
+
+        Assert.That(spalten, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(spalten[0].Karten.Select(karte => karte.Titel), Is.EqualTo(new[] { "A", "C" }));
+            Assert.That(spalten[0].Karten.Select(karte => karte.Position), Is.EqualTo(new[] { 1, 2 }));
+            Assert.That(spalten[0].Kartenzahl, Is.EqualTo(2));
+        });
+        Assert.That(Archivstaende(datenbank), Is.EqualTo(new[] { b.KarteId }));
+    }
+
+    [Test]
+    public void Wenn_dieselbe_Karte_ein_zweites_Mal_archiviert_wird_dann_aendert_sich_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var spalteId = board.Spalten[0].SpalteId;
+        repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage("A"));
+        var b = repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage("B"));
+        repository.SetzeArchivierung(board.BoardId, b!.KarteId, new Archivierung(true));
+
+        var spalten = repository.SetzeArchivierung(board.BoardId, b.KarteId, new Archivierung(true));
+
+        Assert.That(spalten, Is.Not.Null);
+        Assert.That(spalten[0].Karten.Select(karte => karte.Titel), Is.EqualTo(new[] { "A" }));
+        Assert.That(Archivstaende(datenbank), Is.EqualTo(new[] { b.KarteId }));
+    }
+
+    [Test]
+    public void Wenn_eine_archivierte_Karte_zurueckgeholt_wird_dann_steht_sie_wieder_in_ihrer_alten_Spalte()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var spalteId = board.Spalten[0].SpalteId;
+        repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage("A"));
+        var b = repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage("B"));
+        repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage("C"));
+        repository.SetzeArchivierung(board.BoardId, b!.KarteId, new Archivierung(true));
+
+        var spalten = repository.SetzeArchivierung(board.BoardId, b.KarteId, new Archivierung(false));
+
+        Assert.That(spalten, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(spalten[0].Karten.Select(karte => karte.Titel), Is.EqualTo(new[] { "A", "B", "C" }));
+            Assert.That(spalten[0].Karten.Select(karte => karte.Position), Is.EqualTo(new[] { 1, 2, 3 }));
+        });
+        Assert.That(Archivstaende(datenbank), Is.Empty);
+    }
+
+    [Test]
+    public void Wenn_eine_nicht_archivierte_Karte_zurueckgeholt_wird_dann_aendert_sich_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var spalteId = board.Spalten[0].SpalteId;
+        repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage("A"));
+        var b = repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage("B"));
+
+        var spalten = repository.SetzeArchivierung(board.BoardId, b!.KarteId, new Archivierung(false));
+
+        Assert.That(spalten, Is.Not.Null);
+        Assert.That(spalten[0].Karten.Select(karte => karte.Titel), Is.EqualTo(new[] { "A", "B" }));
+        Assert.That(Archivstaende(datenbank), Is.Empty);
+    }
+
+    [Test]
+    public void Wenn_eine_Karte_archiviert_wird_dann_bleiben_die_Karten_anderer_Spalten_in_Spalte_und_Position()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var b = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("B"));
+        repository.LegeAn(board.BoardId, board.Spalten[1].SpalteId, new KarteAnlegenAnfrage("In Arbeit 1"));
+        repository.LegeAn(board.BoardId, board.Spalten[1].SpalteId, new KarteAnlegenAnfrage("In Arbeit 2"));
+
+        repository.SetzeArchivierung(board.BoardId, b!.KarteId, new Archivierung(true));
+
+        Assert.That(GeladeneKartentitel(datenbank, board.BoardId, 1), Is.EqualTo(new[] { "In Arbeit 1", "In Arbeit 2" }));
+        Assert.That(GeladenePositionen(datenbank, board.BoardId, 1), Is.EqualTo(new[] { 1, 2 }));
+    }
+
+    // Archivieren ist kein Austritt aus der Abschlussspalte: das Datum ist eine Aussage über die
+    // Karte, nicht über ihre Sichtbarkeit.
+    [Test]
+    public void Wenn_eine_erledigte_Karte_archiviert_wird_dann_behaelt_sie_ihr_Erledigungsdatum()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var abschlussspalteId = board.Spalten[2].SpalteId;
+        var fertig = repository.LegeAn(board.BoardId, abschlussspalteId, new KarteAnlegenAnfrage("Fertig"));
+
+        repository.SetzeArchivierung(board.BoardId, fertig!.KarteId, new Archivierung(true));
+
+        Assert.That(Erledigung(datenbank, fertig.KarteId), Is.EqualTo(HeuteAlsText));
+    }
+
+    [Test]
+    public void Wenn_die_KarteId_unbekannt_ist_dann_liefert_SetzeArchivierung_null_und_schreibt_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("A"));
+
+        Assert.That(repository.SetzeArchivierung(board.BoardId, 999, new Archivierung(true)), Is.Null);
+        Assert.That(Archivstaende(datenbank), Is.Empty);
+    }
+
+    [Test]
+    public void Wenn_die_Karte_zu_einem_anderen_Board_gehoert_dann_liefert_SetzeArchivierung_null_und_schreibt_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var erstes = LegeBoardAn(datenbank);
+        var zweites = LegeBoardAn(datenbank);
+        var fremde = repository.LegeAn(erstes.BoardId, erstes.Spalten[0].SpalteId, new KarteAnlegenAnfrage("A"));
+
+        Assert.That(repository.SetzeArchivierung(zweites.BoardId, fremde!.KarteId, new Archivierung(true)), Is.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(Archivstaende(datenbank), Is.Empty);
+            Assert.That(GeladenePositionen(datenbank, erstes.BoardId, 0), Is.EqualTo(new[] { 1 }));
+        });
+    }
+
+    private static long[] Archivstaende(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.Query<long>(@"
+            SELECT Karte
+              FROM Kartenarchivierung
+             ORDER BY Karte").ToArray();
+    }
+
     private static void ArchiviereKarte(TemporaereDatenbank datenbank, long karteId)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();

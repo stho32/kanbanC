@@ -92,6 +92,52 @@ public sealed class KartenRepository : IKartenRepository
         return Ergebnis<IReadOnlyList<Spalte>>.Erfolg(spalten);
     }
 
+    // Archivieren nimmt die Karte aus dem Bestand, ohne sie zu löschen: die Zeile in
+    // Kartenarchivierung ist die Aussage. Die Karte behält ihre Spalte; verdichtet werden die
+    // aktiven Karten, damit die Bahn keine Lücke behält. Karteerledigung bleibt unberührt —
+    // Archivieren ist kein Austritt aus der Abschlussspalte.
+    public IReadOnlyList<Spalte>? SetzeArchivierung(long boardId, long karteId, Archivierung archivierung)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+        using var transaktion = verbindung.BeginTransaction();
+
+        var spalteId = SpalteDerKarteImBoard(verbindung, transaktion, boardId, karteId);
+        var karteGehoertNichtZumBoard = spalteId is null;
+        if (karteGehoertNichtZumBoard)
+        {
+            return null; // stil-check: C25 null heisst "Karte unbekannt oder fremd" (404)
+        }
+
+        SchreibeArchivierung(verbindung, transaktion, karteId, archivierung);
+        var aktiveOrdnung = KarteIdsNachPosition(verbindung, transaktion, spalteId!.Value);
+        SchreibeOrdnung(verbindung, transaktion, spalteId.Value, aktiveOrdnung);
+
+        var kartenJeSpalte = Kartenleser.LiesKartenNachPosition(verbindung, transaktion, boardId);
+        var spalten = Spaltenleser.LiesSpaltenNachPosition(verbindung, transaktion, boardId, kartenJeSpalte);
+        transaktion.Commit();
+        return spalten;
+    }
+
+    // Die Zeile selbst ist die Aussage: archivieren legt sie an, zurückholen entfernt sie. Beides
+    // lässt sich beliebig oft wiederholen, ohne dass sich etwas ändert.
+    private static void SchreibeArchivierung(IDbConnection verbindung, IDbTransaction transaktion, long karteId, Archivierung archivierung)
+    {
+        var parameter = new { Karte = karteId };
+        if (archivierung.IstArchiviert)
+        {
+            verbindung.Execute(@"
+                INSERT INTO Kartenarchivierung (Karte)
+                VALUES (@Karte)
+                ON CONFLICT (Karte) DO NOTHING", parameter, transaktion);
+            return;
+        }
+
+        verbindung.Execute(@"
+            DELETE
+              FROM Kartenarchivierung
+             WHERE Karte = @Karte", parameter, transaktion);
+    }
+
     public long? BoardDerKarte(long karteId)
     {
         using var verbindung = _verbindungsfabrik.Oeffne();
@@ -220,6 +266,8 @@ public sealed class KartenRepository : IKartenRepository
         return KarteIdsNachPosition(verbindung, transaktion, zielspalteId);
     }
 
+    // Die KarteId entscheidet bei gleicher Position: eine zurückgeholte Karte trägt ihre alte
+    // Positionszahl und kann damit die einer aktiven Karte doppeln, bis verdichtet ist.
     private static List<long> KarteIdsNachPosition(IDbConnection verbindung, IDbTransaction transaktion, long spalteId)
     {
         var karteIds = verbindung.Query<long>(@"
@@ -228,7 +276,7 @@ public sealed class KartenRepository : IKartenRepository
               LEFT JOIN Kartenarchivierung a ON a.Karte = k.KarteId
              WHERE k.Spalte = @SpalteId
                AND a.Karte IS NULL
-             ORDER BY k.Position", new { SpalteId = spalteId }, transaktion);
+             ORDER BY k.Position, k.KarteId", new { SpalteId = spalteId }, transaktion);
         return karteIds.ToList();
     }
 
