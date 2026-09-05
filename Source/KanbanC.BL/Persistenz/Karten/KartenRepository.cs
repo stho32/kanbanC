@@ -204,6 +204,47 @@ public sealed class KartenRepository : IKartenRepository
         }
     }
 
+    // Eine Zeile mehr statt der ganzen Liste — der bewusste Gegenentwurf zu SetzeEtiketten: eine
+    // Teilaufgabe hat eine Nummer, die das Abhaken ueberlebt, und eine Listenersetzung vergaebe
+    // bei jedem Klick neue. Existenzpruefung, Schreiben und Rueckgabe des ganzen Details liegen
+    // trotzdem in **einer** Transaktion, wie dort.
+    public Kartendetail? LegeTeilaufgabeAn(long karteId, TeilaufgabeAnlegenAnfrage anfrage)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+        using var transaktion = verbindung.BeginTransaction();
+
+        var dieKarteGibtEsNicht = !GibtEsDieKarte(verbindung, transaktion, karteId);
+        if (dieKarteGibtEsNicht)
+        {
+            return null; // stil-check: C25 null heisst "diese Karte gibt es nicht" (404)
+        }
+
+        var position = NaechsteTeilaufgabenposition(verbindung, transaktion, karteId);
+        FuegeTeilaufgabeEin(verbindung, transaktion, karteId, Teilaufgabentext.Normalisiert(anfrage.Text), position);
+        var detail = Kartenleser.LiesKartendetail(verbindung, transaktion, karteId);
+        transaktion.Commit();
+        return detail;
+    }
+
+    // Angehaengt als hoechste + 1, Muster NaechstePosition und SpaltenRepository.LegeAn. **Ohne
+    // Verdichtung:** dieser Slice kennt weder Loeschen noch Umsortieren, also entsteht keine
+    // Luecke, die zu schliessen waere — SchreibeOrdnung bleibt unberuehrt.
+    private static int NaechsteTeilaufgabenposition(IDbConnection verbindung, IDbTransaction transaktion, long karteId)
+    {
+        return verbindung.ExecuteScalar<int>(@"
+            SELECT COALESCE(MAX(Position), 0) + 1
+              FROM Teilaufgabe
+             WHERE Karte = @Karte", new { Karte = karteId }, transaktion);
+    }
+
+    private static void FuegeTeilaufgabeEin(IDbConnection verbindung, IDbTransaction transaktion, long karteId, string text, int position)
+    {
+        var parameter = new { Karte = karteId, Text = text, Position = position };
+        verbindung.Execute(@"
+            INSERT INTO Teilaufgabe (Karte, Text, Position)
+            VALUES (@Karte, @Text, @Position)", parameter, transaktion);
+    }
+
     // Die Zahl der geaenderten Zeilen ist zugleich die Auskunft, ob es die Karte gibt: ein
     // zweiter Zaehlaufruf davor waere dieselbe Frage ein zweites Mal.
     private static bool SchreibeTitel(IDbConnection verbindung, IDbTransaction transaktion, long karteId, string titel)

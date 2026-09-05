@@ -28,6 +28,10 @@ public interface IKartenRepository
     // null heisst: diese KarteId gibt es nicht.
     Kartendetail? SetzeEtiketten(long karteId, Kartenetiketten etiketten);
 
+    // Legt **eine** Teilaufgabe an und haengt sie hinten an; zurueck kommt das ganze Kartendetail,
+    // damit die Seite eine Quelle behaelt. null heisst: diese KarteId gibt es nicht.
+    Kartendetail? LegeTeilaufgabeAn(long karteId, TeilaufgabeAnlegenAnfrage anfrage);
+
     // null heisst „diese Spalte gibt es an dieser Stelle nicht"; eine Spalte ohne Karten liefert
     // die leere Liste.
     IReadOnlyList<Karte>? LadeKartenDerSpalte(long boardId, long spalteId, Archivierung archivstand);

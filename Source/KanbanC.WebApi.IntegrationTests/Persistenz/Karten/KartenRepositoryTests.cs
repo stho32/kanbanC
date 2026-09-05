@@ -1255,6 +1255,109 @@ public class KartenRepositoryTests
         Assert.That(detail!.Teilaufgaben.Select(teilaufgabe => teilaufgabe.Text), Is.EqualTo(new[] { "Lizenztext lesen" }));
     }
 
+    // Das Rechenbeispiel der Anforderung: A, B, C nacheinander angelegt stehen in dieser
+    // Reihenfolge, mit den Positionen 1, 2, 3.
+    [Test]
+    public void Wenn_drei_Teilaufgaben_nacheinander_angelegt_werden_dann_tragen_sie_die_Positionen_1_2_3_in_Anlegereihenfolge()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+
+        repository.LegeTeilaufgabeAn(karte!.KarteId, new TeilaufgabeAnlegenAnfrage("A"));
+        repository.LegeTeilaufgabeAn(karte.KarteId, new TeilaufgabeAnlegenAnfrage("B"));
+        var detail = repository.LegeTeilaufgabeAn(karte.KarteId, new TeilaufgabeAnlegenAnfrage("C"));
+
+        Assert.That(detail!.Teilaufgaben.Select(teilaufgabe => teilaufgabe.Text), Is.EqualTo(new[] { "A", "B", "C" }));
+        Assert.That(detail.Teilaufgaben.Select(teilaufgabe => teilaufgabe.Position), Is.EqualTo(new[] { 1, 2, 3 }));
+    }
+
+    // Die Antwort traegt die ganze Seite und nicht die angelegte Zeile.
+    [Test]
+    public void Wenn_eine_Teilaufgabe_angelegt_wird_dann_traegt_die_Antwort_das_ganze_Kartendetail()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+
+        var detail = repository.LegeTeilaufgabeAn(karte!.KarteId, new TeilaufgabeAnlegenAnfrage("Lizenztext lesen"));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail!.Karte.Titel, Is.EqualTo("Playwright-Lizenz klären"));
+            Assert.That(detail.Board, Is.EqualTo(board.BoardId));
+            Assert.That(detail.Boardname, Is.EqualTo("Entwicklung"));
+            Assert.That(detail.Teilaufgaben[0].Abgehakt, Is.False);
+            Assert.That(detail.Teilaufgaben[0].TeilaufgabeId, Is.GreaterThan(0));
+        });
+    }
+
+    [Test]
+    public void Wenn_zweimal_derselbe_Text_angelegt_wird_dann_stehen_zwei_Zeilen_mit_verschiedenen_Nummern()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+
+        repository.LegeTeilaufgabeAn(karte!.KarteId, new TeilaufgabeAnlegenAnfrage("Nachfassen"));
+        var detail = repository.LegeTeilaufgabeAn(karte.KarteId, new TeilaufgabeAnlegenAnfrage("Nachfassen"));
+
+        Assert.That(detail!.Teilaufgaben.Select(teilaufgabe => teilaufgabe.Text), Is.EqualTo(new[] { "Nachfassen", "Nachfassen" }));
+        Assert.That(detail.Teilaufgaben[0].TeilaufgabeId, Is.Not.EqualTo(detail.Teilaufgaben[1].TeilaufgabeId));
+    }
+
+    // Die Randleerzeichen fallen beim Schreiben weg, wie beim Etikett und beim Kartentitel.
+    [Test]
+    public void Wenn_der_Text_Randleerzeichen_traegt_dann_steht_er_normalisiert_in_der_Spalte()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+
+        var detail = repository.LegeTeilaufgabeAn(karte!.KarteId, new TeilaufgabeAnlegenAnfrage("  Kaffee holen  "));
+
+        Assert.That(detail!.Teilaufgaben.Select(teilaufgabe => teilaufgabe.Text), Is.EqualTo(new[] { "Kaffee holen" }));
+    }
+
+    // Zwei Karten zaehlen getrennt: die Position ist die innerhalb ihrer Karte.
+    [Test]
+    public void Wenn_eine_andere_Karte_schon_Teilaufgaben_traegt_dann_beginnt_diese_Karte_wieder_bei_Position_1()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var spalteId = board.Spalten[0].SpalteId;
+        var fremde = repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage("Fremde"));
+        var eigene = repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage("Eigene"));
+        repository.LegeTeilaufgabeAn(fremde!.KarteId, new TeilaufgabeAnlegenAnfrage("Nur woanders"));
+        repository.LegeTeilaufgabeAn(fremde.KarteId, new TeilaufgabeAnlegenAnfrage("Auch nur woanders"));
+
+        var detail = repository.LegeTeilaufgabeAn(eigene!.KarteId, new TeilaufgabeAnlegenAnfrage("Lizenztext lesen"));
+
+        Assert.That(detail!.Teilaufgaben.Select(teilaufgabe => teilaufgabe.Position), Is.EqualTo(new[] { 1 }));
+    }
+
+    [Test]
+    public void Wenn_die_KarteId_unbekannt_ist_dann_liefert_LegeTeilaufgabeAn_null_und_schreibt_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        LegeBoardAn(datenbank);
+
+        Assert.That(repository.LegeTeilaufgabeAn(999, new TeilaufgabeAnlegenAnfrage("Lizenztext lesen")), Is.Null);
+        Assert.That(Teilaufgabenzeilen(datenbank), Is.EqualTo(0));
+    }
+
+    private static long Teilaufgabenzeilen(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.ExecuteScalar<long>("SELECT COUNT(*) FROM Teilaufgabe");
+    }
+
     private static void FuegeTeilaufgabeEin(TemporaereDatenbank datenbank, long karteId, string text, int position, bool abgehakt = false)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();

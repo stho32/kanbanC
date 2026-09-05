@@ -194,6 +194,22 @@ public sealed class TestKartenRepository : IKartenRepository
         return _kartendetail;
     }
 
+    public TeilaufgabeAnlegenAnfrage? ErhalteneTeilaufgabe { get; private set; }
+
+    // Wie das echte Repository: eine Zeile mehr statt der ganzen Liste, zurueck kommt das gelesene
+    // Detail; null heisst „diese KarteId gibt es nicht".
+    public Kartendetail? LegeTeilaufgabeAn(long karteId, TeilaufgabeAnlegenAnfrage anfrage)
+    {
+        GeaenderteKarteId = karteId;
+        ErhalteneTeilaufgabe = anfrage;
+        if (_karteFehltAnDieserStelle)
+        {
+            return null;
+        }
+
+        return _kartendetail;
+    }
+
     public IReadOnlyList<Karte> Karten(long spalteId)
     {
         if (!_kartenJeSpalte.TryGetValue(spalteId, out var karten))
