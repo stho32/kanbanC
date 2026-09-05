@@ -179,7 +179,7 @@ public sealed class TestKartenRepository : IKartenRepository
             _kartenJeSpalte[spalteId] = karten;
         }
 
-        var karte = new Karte(_naechsteKarteId, Kartentitel.Normalisiert(anfrage.Titel), karten.Count + 1, ErledigtAm: null);
+        var karte = new Karte(_naechsteKarteId, Kartentitel.Normalisiert(anfrage.Titel), karten.Count + 1, ErledigtAm: null, Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne);
         _naechsteKarteId = _naechsteKarteId + 1;
         karten.Add(karte);
         return karte;

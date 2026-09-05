@@ -31,7 +31,7 @@ public class KartenServiceTests
     public void Wenn_die_Karte_bekannt_ist_dann_reicht_LadeKartendetail_das_Detail_des_Repositories_durch()
     {
         var detail = new Kartendetail(
-            new Karte(7, "Migration schreiben", 1, ErledigtAm: null),
+            new Karte(7, "Migration schreiben", 1, ErledigtAm: null, Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne),
             Board: 3,
             Boardname: "Entwicklung",
             Spalte: 5,
@@ -372,9 +372,9 @@ public class KartenServiceTests
         {
             new(quellspalteId, "Zu erledigen", 1, false, null, [], Kartenzahl: 0),
             new(zielspalteId, "Erledigt", 2, true, 2, [
-                new Karte(5, "Endpunkt bauen", 1, new DateOnly(2026, 9, 5)),
-                new Karte(6, "Gestern fertig", 2, new DateOnly(2026, 9, 4)),
-                new Karte(7, "Bestandskarte", 3, ErledigtAm: null),
+                new Karte(5, "Endpunkt bauen", 1, new DateOnly(2026, 9, 5), Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne),
+                new Karte(6, "Gestern fertig", 2, new DateOnly(2026, 9, 4), Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne),
+                new Karte(7, "Bestandskarte", 3, ErledigtAm: null, Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne),
             ], Kartenzahl: 3),
         };
         var kartenRepository = TestKartenRepository.Leer().MitSpaltenNachDemZug(nachDemZug);
@@ -400,7 +400,7 @@ public class KartenServiceTests
         var nachDemZug = new List<Spalte>
         {
             new(quellspalteId, "Zu erledigen", 1, false, null, [], Kartenzahl: 0),
-            new(zielspalteId, "In Arbeit", 2, false, null, [new Karte(5, "Endpunkt bauen", 1, ErledigtAm: null)], Kartenzahl: 1),
+            new(zielspalteId, "In Arbeit", 2, false, null, [new Karte(5, "Endpunkt bauen", 1, ErledigtAm: null, Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne)], Kartenzahl: 1),
         };
         var kartenRepository = TestKartenRepository.Leer().MitSpaltenNachDemZug(nachDemZug);
         var service = new KartenService(spaltenRepository, kartenRepository);
@@ -507,7 +507,7 @@ public class KartenServiceTests
         var spalteId = spaltenRepository.Spalten(1)[0].SpalteId;
         var nachDerArchivierung = new List<Spalte>
         {
-            new(spalteId, "Zu erledigen", 1, false, null, [new Karte(5, "Endpunkt bauen", 1, ErledigtAm: null)], Kartenzahl: 1),
+            new(spalteId, "Zu erledigen", 1, false, null, [new Karte(5, "Endpunkt bauen", 1, ErledigtAm: null, Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne)], Kartenzahl: 1),
         };
         var kartenRepository = TestKartenRepository.Leer().MitSpaltenNachDerArchivierung(nachDerArchivierung);
         var service = new KartenService(spaltenRepository, kartenRepository);
@@ -530,9 +530,9 @@ public class KartenServiceTests
         var spalteId = spaltenRepository.Spalten(1)[0].SpalteId;
         var erledigte = new List<Karte>
         {
-            new(1, "Fertig 1", 1, new DateOnly(2026, 9, 3)),
-            new(2, "Fertig 2", 2, new DateOnly(2026, 9, 4)),
-            new(3, "Fertig 3", 3, new DateOnly(2026, 9, 5)),
+            new(1, "Fertig 1", 1, new DateOnly(2026, 9, 3), Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne),
+            new(2, "Fertig 2", 2, new DateOnly(2026, 9, 4), Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne),
+            new(3, "Fertig 3", 3, new DateOnly(2026, 9, 5), Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne),
         };
         var nachDerArchivierung = new List<Spalte>
         {

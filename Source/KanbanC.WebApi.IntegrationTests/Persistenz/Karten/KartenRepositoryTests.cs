@@ -866,6 +866,61 @@ public class KartenRepositoryTests
         Assert.That(detail.Karte.Titel, Is.EqualTo("Migration schreiben"));
     }
 
+    [Test]
+    public void Wenn_die_Karte_keine_Eigenschaftszeile_hat_dann_liest_sie_sich_ohne_Beschreibung_ohne_Faelligkeit_und_mit_Farbe_Ohne()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Migration schreiben"));
+
+        var detail = repository.LiesKartendetail(karte!.KarteId);
+
+        Assert.That(detail, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail.Karte.Beschreibung, Is.Null);
+            Assert.That(detail.Karte.FaelligAm, Is.Null);
+            Assert.That(detail.Karte.Farbe, Is.EqualTo(Kartenfarbe.Ohne));
+        });
+    }
+
+    // Die drei Werte reisen an der Karte mit und stehen damit auch in der Board- und in der
+    // Spaltenantwort — ein Agent sieht sie ohne zweiten Aufruf.
+    [Test]
+    public void Wenn_die_Karte_eine_Eigenschaftszeile_traegt_dann_stehen_ihre_drei_Werte_in_jeder_Kartenantwort()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var spalteId = board.Spalten[0].SpalteId;
+        var karte = repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage("Migration schreiben"));
+        SetzeKarteneigenschaft(datenbank, karte!.KarteId, "Knoten in Karten überführen", "2026-09-02", "Terrakotta");
+
+        var detail = repository.LiesKartendetail(karte.KarteId);
+        var ausDerSpalte = repository.LadeKartenDerSpalte(board.BoardId, spalteId, new Archivierung(false));
+        var ausDemBoard = GeladeneSpalte(datenbank, board.BoardId, 0).Karten;
+
+        Assert.That(detail, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail.Karte.Beschreibung, Is.EqualTo("Knoten in Karten überführen"));
+            Assert.That(detail.Karte.FaelligAm, Is.EqualTo(new DateOnly(2026, 9, 2)));
+            Assert.That(detail.Karte.Farbe, Is.EqualTo(Kartenfarbe.Terrakotta));
+            Assert.That(ausDerSpalte![0], Is.EqualTo(detail.Karte));
+            Assert.That(ausDemBoard[0], Is.EqualTo(detail.Karte));
+        });
+    }
+
+    private static void SetzeKarteneigenschaft(TemporaereDatenbank datenbank, long karteId, string beschreibung, string faelligAm, string farbe)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Karteneigenschaft (Karte, Beschreibung, Kontributor, FaelligAm, Farbe)
+            VALUES (@Karte, @Beschreibung, NULL, @FaelligAm, @Farbe)",
+            new { Karte = karteId, Beschreibung = beschreibung, FaelligAm = faelligAm, Farbe = farbe });
+    }
+
     private static long[] Archivstaende(TemporaereDatenbank datenbank)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();

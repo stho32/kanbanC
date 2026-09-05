@@ -64,6 +64,6 @@ public class BahnenkopfzahlTests
 
     private static IReadOnlyList<Karte> Karten(int anzahl)
     {
-        return Enumerable.Range(1, anzahl).Select(nummer => new Karte(nummer, $"K{nummer}", nummer, ErledigtAm: null)).ToList();
+        return Enumerable.Range(1, anzahl).Select(nummer => new Karte(nummer, $"K{nummer}", nummer, ErledigtAm: null, Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne)).ToList();
     }
 }

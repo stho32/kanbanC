@@ -43,7 +43,7 @@ public sealed class KartenRepository : IKartenRepository
         var anlage = Erledigungsstand.NachDemZug(spalteIstAbschlussspalte, derZugBleibtInDerZielspalte: false, bisherigeErledigung: null, heute: Heute());
         SchreibeErledigung(verbindung, transaktion, karteId, anlage);
         transaktion.Commit();
-        return new Karte(karteId, titel, position, anlage.Datum);
+        return new Karte(karteId, titel, position, anlage.Datum, Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne);
     }
 
     // Ein Zug in einer Transaktion: die Karte verlässt ihre Quellspalte, die Zielspalte nimmt sie

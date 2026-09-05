@@ -15,11 +15,13 @@ internal static class Kartenleser
     public static IReadOnlyDictionary<long, IReadOnlyList<Karte>> LiesKartenNachPosition(IDbConnection verbindung, IDbTransaction? transaktion, long boardId)
     {
         var zeilen = verbindung.Query<Kartenzeile>(@"
-            SELECT k.KarteId, k.Spalte, k.Titel, k.Position, e.ErledigtAm
+            SELECT k.KarteId, k.Spalte, k.Titel, k.Position, e.ErledigtAm,
+                   p.Beschreibung, p.FaelligAm, p.Farbe
               FROM Karte k
               JOIN Spalte s ON s.SpalteId = k.Spalte
               LEFT JOIN Karteerledigung e ON e.Karte = k.KarteId
               LEFT JOIN Kartenarchivierung a ON a.Karte = k.KarteId
+              LEFT JOIN Karteneigenschaft p ON p.Karte = k.KarteId
              WHERE s.Board = @BoardId
                AND a.Karte IS NULL
              ORDER BY k.Spalte, k.Position", new { BoardId = boardId }, transaktion);
@@ -39,10 +41,12 @@ internal static class Kartenleser
     {
         var parameter = new { SpalteId = spalteId, archivstand.IstArchiviert };
         var zeilen = verbindung.Query<Kartenzeile>(@"
-            SELECT k.KarteId, k.Spalte, k.Titel, k.Position, e.ErledigtAm
+            SELECT k.KarteId, k.Spalte, k.Titel, k.Position, e.ErledigtAm,
+                   p.Beschreibung, p.FaelligAm, p.Farbe
               FROM Karte k
               LEFT JOIN Karteerledigung e ON e.Karte = k.KarteId
               LEFT JOIN Kartenarchivierung a ON a.Karte = k.KarteId
+              LEFT JOIN Karteneigenschaft p ON p.Karte = k.KarteId
              WHERE k.Spalte = @SpalteId
                AND ((@IstArchiviert = 0 AND a.Karte IS NULL)
                  OR (@IstArchiviert = 1 AND a.Karte IS NOT NULL))
@@ -58,27 +62,44 @@ internal static class Kartenleser
     {
         var zeile = verbindung.QuerySingleOrDefault<Kartendetailzeile>(@"
             SELECT k.KarteId, k.Spalte, k.Titel, k.Position, e.ErledigtAm,
+                   p.Beschreibung, p.FaelligAm, p.Farbe,
                    s.Bezeichnung AS Spaltenbezeichnung, b.BoardId AS Board, b.Name AS Boardname
               FROM Karte k
               JOIN Spalte s ON s.SpalteId = k.Spalte
               JOIN Board b ON b.BoardId = s.Board
               LEFT JOIN Karteerledigung e ON e.Karte = k.KarteId
+              LEFT JOIN Karteneigenschaft p ON p.Karte = k.KarteId
              WHERE k.KarteId = @KarteId", new { KarteId = karteId }, transaktion);
         if (zeile is null)
         {
             return null; // stil-check: C25 null heisst "diese Karte gibt es nicht"
         }
 
-        var karte = AlsKarte(new Kartenzeile(zeile.KarteId, zeile.Spalte, zeile.Titel, zeile.Position, zeile.ErledigtAm));
+        var karte = AlsKarte(new Kartenzeile(
+            zeile.KarteId,
+            zeile.Spalte,
+            zeile.Titel,
+            zeile.Position,
+            zeile.ErledigtAm,
+            zeile.Beschreibung,
+            zeile.FaelligAm,
+            zeile.Farbe));
         return new Kartendetail(karte, zeile.Board, zeile.Boardname, zeile.Spalte, zeile.Spaltenbezeichnung);
     }
 
     private static Karte AlsKarte(Kartenzeile zeile)
     {
-        return new Karte(zeile.KarteId, zeile.Titel, (int)zeile.Position, AlsErledigungsdatum(zeile.ErledigtAm));
+        return new Karte(
+            zeile.KarteId,
+            zeile.Titel,
+            (int)zeile.Position,
+            AlsDatum(zeile.ErledigtAm),
+            zeile.Beschreibung,
+            AlsDatum(zeile.FaelligAm),
+            AlsKartenfarbe(zeile.Farbe));
     }
 
-    private static DateOnly? AlsErledigungsdatum(string? isoText)
+    private static DateOnly? AlsDatum(string? isoText)
     {
         if (isoText is null)
         {
@@ -88,7 +109,27 @@ internal static class Kartenleser
         return DateOnly.ParseExact(isoText, IsoDatumsformat, CultureInfo.InvariantCulture);
     }
 
-    private sealed record Kartenzeile(long KarteId, long Spalte, string Titel, long Position, string? ErledigtAm);
+    // Ohne Eigenschaftszeile gibt es keine Farbe, und „ohne" ist genau das: der Vorgabewert
+    // einer Karte, die noch nie eine bekommen hat.
+    private static Kartenfarbe AlsKartenfarbe(string? text)
+    {
+        if (text is null)
+        {
+            return Kartenfarbe.Ohne;
+        }
+
+        return Enum.Parse<Kartenfarbe>(text);
+    }
+
+    private sealed record Kartenzeile(
+        long KarteId,
+        long Spalte,
+        string Titel,
+        long Position,
+        string? ErledigtAm,
+        string? Beschreibung,
+        string? FaelligAm,
+        string? Farbe);
 
     private sealed record Kartendetailzeile(
         long KarteId,
@@ -96,6 +137,9 @@ internal static class Kartenleser
         string Titel,
         long Position,
         string? ErledigtAm,
+        string? Beschreibung,
+        string? FaelligAm,
+        string? Farbe,
         string Spaltenbezeichnung,
         long Board,
         string Boardname);

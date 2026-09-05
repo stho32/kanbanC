@@ -202,7 +202,7 @@ public class AbschlussbahnTests
 
     private static Karte Karte(int position, DateOnly? erledigtAm)
     {
-        return new Karte(position, $"K{position}", position, erledigtAm);
+        return new Karte(position, $"K{position}", position, erledigtAm, Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne);
     }
 
     private static IReadOnlyList<string> Titel(Spalte spalte)
