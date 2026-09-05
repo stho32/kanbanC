@@ -1075,7 +1075,7 @@ public class KartenEndpunkteTests
 
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         var detail = await antwort.Content.ReadFromJsonAsync<Kartendetail>();
-        Assert.That(detail, Is.EqualTo(detailVorher));
+        Kartendetailvergleich.ErwarteGleichesDetail(detail, detailVorher);
     }
 
     [Test]
@@ -1185,7 +1185,7 @@ public class KartenEndpunkteTests
             Assert.That(zurueckweisung.Befunde[0].Kompensation, Does.Contain($"PUT /api/karten/{karte.KarteId}"));
         });
         using var danach = await webApi.Klient.GetAsync(Kartendetailroute(karte.KarteId));
-        Assert.That(await danach.Content.ReadFromJsonAsync<Kartendetail>(), Is.EqualTo(vorher));
+        Kartendetailvergleich.ErwarteGleichesDetail(await danach.Content.ReadFromJsonAsync<Kartendetail>(), vorher);
     }
 
     [Test]
@@ -1241,7 +1241,7 @@ public class KartenEndpunkteTests
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
         await Fehlerrumpf.ErwarteBefundMitCode(antwort, "kontributor-unbekannt");
         using var danach = await webApi.Klient.GetAsync(Kartendetailroute(karte.KarteId));
-        Assert.That(await danach.Content.ReadFromJsonAsync<Kartendetail>(), Is.EqualTo(vorher));
+        Kartendetailvergleich.ErwarteGleichesDetail(await danach.Content.ReadFromJsonAsync<Kartendetail>(), vorher);
     }
 
     // Der Stillgelegte ist eine Regelverletzung, kein fehlendes Ding — deshalb 400 und nicht 404.
@@ -1264,7 +1264,7 @@ public class KartenEndpunkteTests
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
         await Fehlerrumpf.ErwarteBefundMitCode(antwort, "kontributor-stillgelegt");
         using var danach = await webApi.Klient.GetAsync(Kartendetailroute(karte.KarteId));
-        Assert.That(await danach.Content.ReadFromJsonAsync<Kartendetail>(), Is.EqualTo(vorher));
+        Kartendetailvergleich.ErwarteGleichesDetail(await danach.Content.ReadFromJsonAsync<Kartendetail>(), vorher);
     }
 
     // Die Einloesung der zweiten Haelfte von I0009 ueber die API: gesetzt bleibt gesetzt.

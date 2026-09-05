@@ -96,7 +96,9 @@ internal static class Kartenleser
             zeile.Boardname,
             zeile.Spalte,
             zeile.Spaltenbezeichnung,
-            AlsVerantwortlicher(zeile));
+            AlsVerantwortlicher(zeile),
+            Etikettenleser.LiesEtikettenDerKarte(verbindung, transaktion, karteId),
+            Etikettenleser.LiesVorschlaegeDesBoards(verbindung, transaktion, zeile.Board));
     }
 
     private static Karte AlsKarte(Kartenzeile zeile)

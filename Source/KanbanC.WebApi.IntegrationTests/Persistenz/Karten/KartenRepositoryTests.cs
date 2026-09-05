@@ -931,7 +931,7 @@ public class KartenRepositoryTests
             Assert.That(detail.Karte.FaelligAm, Is.EqualTo(new DateOnly(2026, 9, 2)));
             Assert.That(detail.Karte.Farbe, Is.EqualTo(Kartenfarbe.Terrakotta));
         });
-        Assert.That(repository.LiesKartendetail(karte.KarteId), Is.EqualTo(detail));
+        Kartendetailvergleich.ErwarteGleichesDetail(repository.LiesKartendetail(karte.KarteId), detail);
     }
 
     // Die Faelligkeit geht als ISO-Text durch die Spalte und kommt als DateOnly zurueck.
@@ -1033,6 +1033,72 @@ public class KartenRepositoryTests
             Assert.That(detail!.Karte.Kontributor, Is.Null);
             Assert.That(detail.Verantwortlicher, Is.Null);
         });
+    }
+
+    [Test]
+    public void Wenn_die_Karte_Etiketten_traegt_dann_liefert_das_Detail_sie_in_Textreihenfolge()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Migration schreiben"));
+        FuegeEtikettEin(datenbank, karte!.KarteId, "Import");
+        FuegeEtikettEin(datenbank, karte.KarteId, "Doku");
+
+        var detail = repository.LiesKartendetail(karte.KarteId);
+
+        Assert.That(detail!.Etiketten, Is.EqualTo(new[] { "Doku", "Import" }));
+    }
+
+    // Das Rechenbeispiel der Anforderung: 7 Karten „Refactoring", 1 Karte „Refaktorierung".
+    [Test]
+    public void Wenn_das_Board_Etiketten_traegt_dann_nennen_die_Vorschlaege_jeden_Text_mit_seiner_Kartenzahl()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var spalteId = board.Spalten[0].SpalteId;
+        for (var nummer = 1; nummer <= 7; nummer++)
+        {
+            var traeger = repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage($"Karte {nummer}"));
+            FuegeEtikettEin(datenbank, traeger!.KarteId, "Refactoring");
+        }
+
+        var abweichend = repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage("Abweichend"));
+        FuegeEtikettEin(datenbank, abweichend!.KarteId, "Refaktorierung");
+
+        var detail = repository.LiesKartendetail(abweichend.KarteId);
+
+        Assert.That(detail!.Etikettvorschlaege, Is.EqualTo(new[]
+        {
+            new Etikettvorschlag("Refactoring", 7),
+            new Etikettvorschlag("Refaktorierung", 1),
+        }));
+    }
+
+    [Test]
+    public void Wenn_ein_anderes_Board_Etiketten_traegt_dann_erscheinen_sie_nicht_in_den_Vorschlaegen()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var eigenes = LegeBoardAn(datenbank);
+        var fremdes = LegeBoardAn(datenbank);
+        var eigeneKarte = repository.LegeAn(eigenes.BoardId, eigenes.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Eigene"));
+        var fremdeKarte = repository.LegeAn(fremdes.BoardId, fremdes.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Fremde"));
+        FuegeEtikettEin(datenbank, eigeneKarte!.KarteId, "Import");
+        FuegeEtikettEin(datenbank, fremdeKarte!.KarteId, "Nur woanders");
+
+        var detail = repository.LiesKartendetail(eigeneKarte.KarteId);
+
+        Assert.That(detail!.Etikettvorschlaege.Select(vorschlag => vorschlag.Text), Is.EqualTo(new[] { "Import" }));
+    }
+
+    private static void FuegeEtikettEin(TemporaereDatenbank datenbank, long karteId, string text)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Etikett (Karte, Text)
+            VALUES (@Karte, @Text)", new { Karte = karteId, Text = text });
     }
 
     private static long LegeKontributorAn(TemporaereDatenbank datenbank, string name, Kontributorart art)
