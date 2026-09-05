@@ -257,14 +257,14 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-05 | R00017 Kartendetails bearbeiten | B0241 Etikettenfeld mit Vervollstaendigung | Standard | 2h | 0,1h | 0,1h | autonom |
 | 2026-09-05 | R00017 Kartendetails bearbeiten | B0242 E2E Etiketten | Standard | 2-4h | 0,4h | 0,4h | autonom |
 | 2026-09-05 | R00017 Kartendetails bearbeiten | Lauf R00017 · S7 ausstehend | Nacharbeit | — | — | 1,3h | autonom |
-| 2026-09-05 | R00018 Karte gliedern | B0243 Teilaufgabentabelle anlegen | Standard | 0,4h | 0,1h | 0,1h | autonom |
-| 2026-09-05 | R00018 Karte gliedern | B0244 Teilaufgaben am Kartendetail lesen | Standard | 0,4h | 0,1h | 0,1h | autonom |
-| 2026-09-05 | R00018 Karte gliedern | B0245 Teilaufgabentext pruefen | Standard | 0,4h | 0,1h | 0,1h | autonom |
-| 2026-09-05 | R00018 Karte gliedern | B0246 Teilaufgabe anlegen | Standard | 0,4h | 0,1h | 0,1h | autonom |
-| 2026-09-05 | R00018 Karte gliedern | B0247 Teilaufgabe abhaken | Standard | 0,4h | 0,1h | 0,1h | autonom |
-| 2026-09-05 | R00018 Karte gliedern | B0248 Teilaufgaben verdrahten | Standard | 0,4h | 0,1h | 0,1h | autonom |
-| 2026-09-05 | R00018 Karte gliedern | B0249 Endpunkte der Teilaufgaben | Standard | 2h | 0,2h | 0,2h | autonom |
-| 2026-09-05 | R00018 Karte gliedern | B0250 API-Klient der Teilaufgaben | Standard | 2h | 0,1h | 0,1h | autonom |
-| 2026-09-05 | R00018 Karte gliedern | B0251 Teilaufgabenfortschritt rechnen | Standard | 0,4h | 0,1h | 0,1h | autonom |
-| 2026-09-05 | R00018 Karte gliedern | B0252 Teilaufgabenabschnitt der Kartenseite | Standard | 2h | 0,2h | 0,2h | autonom |
-| 2026-09-05 | R00018 Karte gliedern | B0253 E2E Karte gliedern | Standard | 2-4h | 0,3h | 0,3h | autonom |
+| 2026-09-05 | R00018 Karte gliedern | B0243 Teilaufgabentabelle anlegen | Standard | 0,4h | 0,0h | 0,0h | autonom |
+| 2026-09-05 | R00018 Karte gliedern | B0244 Teilaufgaben am Kartendetail lesen | Standard | 0,4h | 0,0h | 0,0h | autonom |
+| 2026-09-05 | R00018 Karte gliedern | B0245 Teilaufgabentext pruefen | Standard | 0,4h | 0,0h | 0,0h | autonom |
+| 2026-09-05 | R00018 Karte gliedern | B0246 Teilaufgabe anlegen | Standard | 0,4h | 0,0h | 0,0h | autonom |
+| 2026-09-05 | R00018 Karte gliedern | B0247 Teilaufgabe abhaken | Standard | 0,4h | 0,0h | 0,0h | autonom |
+| 2026-09-05 | R00018 Karte gliedern | B0248 Teilaufgaben verdrahten | Standard | 0,4h | 0,0h | 0,0h | autonom |
+| 2026-09-05 | R00018 Karte gliedern | B0249 Endpunkte der Teilaufgaben | Standard | 2h | 0,1h | 0,1h | autonom |
+| 2026-09-05 | R00018 Karte gliedern | B0250 API-Klient der Teilaufgaben | Standard | 2h | 0,0h | 0,0h | autonom |
+| 2026-09-05 | R00018 Karte gliedern | B0251 Teilaufgabenfortschritt rechnen | Standard | 0,4h | 0,0h | 0,0h | autonom |
+| 2026-09-05 | R00018 Karte gliedern | B0252 Teilaufgabenabschnitt der Kartenseite | Standard | 2h | 0,0h | 0,0h | autonom |
+| 2026-09-05 | R00018 Karte gliedern | B0253 E2E Karte gliedern | Standard | 2-4h | 0,2h | 0,2h | autonom |

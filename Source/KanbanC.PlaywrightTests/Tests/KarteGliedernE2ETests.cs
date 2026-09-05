@@ -1,5 +1,6 @@
 using KanbanC.PlaywrightTests.Infrastructure;
 using KanbanC.PlaywrightTests.PageObjects;
+using Microsoft.Playwright;
 using Microsoft.Playwright.NUnit;
 
 namespace KanbanC.PlaywrightTests.Tests;
@@ -146,6 +147,48 @@ public class KarteGliedernE2ETests : PageTest
 
         await Expect(aufbau.Seite.Teilaufgabenstand).ToHaveTextAsync("4 von 4");
         await Expect(aufbau.Seite.Teilaufgabenbalken).ToHaveAttributeAsync("aria-valuenow", "100");
+    }
+
+    // Das Akzeptanzkriterium woertlich: geprueft wird der berechnete Stil und nicht die Klasse,
+    // die ihn setzt — eine Klasse ohne Wirkung waere gruen, ohne dass etwas durchgestrichen ist.
+    [Test]
+    [Category("US-2")]
+    public async Task Wenn_eine_Zeile_abgehakt_ist_dann_ist_ihr_Text_durchgestrichen_und_der_der_offenen_nicht()
+    {
+        var aufbau = await KarteMitVierTeilaufgaben();
+
+        await aufbau.Seite.Teilaufgabenkaestchen("B").ClickAsync();
+        await Expect(aufbau.Seite.AbgehakteTeilaufgaben).ToHaveCountAsync(1);
+
+        var abgehakte = await Durchstreichung(aufbau.Seite.Teilaufgabe("B"));
+        var offene = await Durchstreichung(aufbau.Seite.Teilaufgabe("A"));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(abgehakte, Does.Contain("line-through"));
+            Assert.That(offene, Does.Not.Contain("line-through"));
+        });
+    }
+
+    // Der Abschnitt steht hinter „Beschreibung" in der linken Spalte, wie im Artboard.
+    [Test]
+    [Category("US-1")]
+    public async Task Wenn_die_Kartenseite_offen_ist_dann_steht_der_Abschnitt_hinter_der_Beschreibung()
+    {
+        var aufbau = await KarteOhneTeilaufgaben();
+
+        // AllTextContentsAsync und nicht AllInnerTextsAsync: geprueft wird die Reihenfolge im
+        // Dokument, nicht die Schreibweise — die Ueberschriften stehen im Markup gemischt und
+        // erscheinen nur durch text-transform in Grossbuchstaben.
+        var abschnitte = await Page.Locator(".karteninhalt .blattabschnitt .blattueberschrift").AllTextContentsAsync();
+
+        Assert.That(abschnitte, Is.EqualTo(new[] { "Beschreibung", "Teilaufgaben" }));
+    }
+
+    private async Task<string> Durchstreichung(ILocator zeile)
+    {
+        return await zeile.Locator(".teilaufgabentext")
+            .EvaluateAsync<string>("element => getComputedStyle(element).textDecorationLine");
     }
 
     // Die entschiedene Antwort auf die zweite offene Frage: das Kaestchen ist ein Knopf und laesst
