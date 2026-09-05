@@ -67,6 +67,8 @@ public sealed class BoardSeite
 
     public ILocator NachladeFehlermeldungen => _seite.Locator("#spaltenbahnen .spaltenbahn-nachlade-fehlermeldung");
 
+    public ILocator ArchivFehlermeldungen => _seite.Locator("#spaltenbahnen .spaltenbahn-archiv-fehlermeldung");
+
     public async Task LadeAeltereNach(ILocator bahn)
     {
         await bahn.Locator(".spaltenbahn-nachladen").ClickAsync();

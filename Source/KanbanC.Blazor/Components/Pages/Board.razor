@@ -90,7 +90,8 @@ else
                            Spalten="_board.Spalten"
                            ZeigtKartenzahl="_board.ZeigtKartenzahl"
                            KarteWurdeAngelegt="LadeBoard"
-                           KarteWurdeAbgelegt="LegeKarteAb" />
+                           KarteWurdeAbgelegt="LegeKarteAb"
+                           SpaltenWurdenGeliefert="UebernimmSpalten" />
         }
     </div>
 }
@@ -140,6 +141,13 @@ else
     private void VerlasseLayoutModus()
     {
         _layoutModusIstAktiv = false;
+    }
+
+    // Die Antwort des Archivierens trägt schon die neuen Spalten: ein zweiter Board-Abruf fände
+    // denselben Stand und ließe die Bahnen dazwischen flackern.
+    private void UebernimmSpalten(IReadOnlyList<Spalte> spalten)
+    {
+        _board = _board! with { Spalten = spalten };
     }
 
     private async Task LegeKarteAb(Kartenablage ablage)

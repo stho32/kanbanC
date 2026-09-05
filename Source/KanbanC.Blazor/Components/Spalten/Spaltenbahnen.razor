@@ -57,6 +57,10 @@
                 {
                     <p class="spaltenbahn-leer">Noch keine Karte.<br />Unten eine anlegen.</p>
                 }
+                @if (_archivierungsfehler.TryGetValue(spalte.SpalteId, out var archivierungsfehler))
+                {
+                    <div class="meldung spaltenbahn-archiv-fehlermeldung" role="alert">@archivierungsfehler</div>
+                }
                 @if (spalte.IstAbschlussspalte)
                 {
                     var gezeigte = Gezeigte(spalte);
@@ -127,6 +131,7 @@
                NimmtAn="ZeigtAblageziele"
                ZugBegann="karteId => BeginneZug(spalteId, karteId)"
                ZugEndete="BeendeZug"
+               ArchivierungGewuenscht="karteId => ArchiviereKarte(spalteId, karteId)"
                HaelfteUeberfahren="haelfte => UeberfahreHaelfte(spalteId, index, haelfte)"
                HierAbgelegt="haelfte => LegeAufHaelfteAb(spalte, index, haelfte)" />
     </text>;
@@ -144,7 +149,8 @@
                WirdGezogen="WirdGezogen(erledigte.KarteId)"
                NimmtAn="false"
                ZugBegann="karteId => BeginneZug(abschlussspalteId, karteId)"
-               ZugEndete="BeendeZug" />
+               ZugEndete="BeendeZug"
+               ArchivierungGewuenscht="karteId => ArchiviereKarte(abschlussspalteId, karteId)" />
     </text>;
 }
 
@@ -157,6 +163,7 @@
     // Vollqualifiziert, weil der Komponentenname Karte den gleichnamigen Vertragstyp verdeckt.
     private Dictionary<long, IReadOnlyList<KanbanC.Contracts.Karten.Karte>> _nachgeladeneKarten = [];
     private Dictionary<long, string> _nachladefehler = [];
+    private Dictionary<long, string> _archivierungsfehler = [];
     private IReadOnlyList<Spalte> _gezeigteSpalten = [];
     private Kartenzug? _laufenderZug;
     private Ablageziel? _ablageziel;
@@ -193,6 +200,11 @@
     [Parameter]
     public EventCallback<Kartenablage> KarteWurdeAbgelegt { get; set; }
 
+    // Die Antwort des Archivierens trägt die Spalten des Boards; sie werden nach oben gereicht,
+    // statt hier eine zweite Liste zu führen — die geladenen Spalten bleiben die eine Quelle.
+    [Parameter]
+    public EventCallback<IReadOnlyList<Spalte>> SpaltenWurdenGeliefert { get; set; }
+
     // Die Uhr des Blazor-Prozesses, wie „heute“ auch in der WebApi die lokale Uhr ist: „Heute“ ist
     // der Tag, den der Mensch vor dem Bildschirm meint.
     private static DateOnly Heute => DateOnly.FromDateTime(DateTime.Today);
@@ -216,6 +228,7 @@
         _formulare = Spalten.ToDictionary(spalte => spalte.SpalteId, SpaltenFormular.Fuer);
         _nachgeladeneKarten = [];
         _nachladefehler = [];
+        _archivierungsfehler = [];
     }
 
     // Die Bahn, wie sie gerade dasteht: gekuerzt vom Dienst oder nachgeladen. Kartenzahl bleibt in
@@ -260,6 +273,31 @@
         }
 
         _nachgeladeneKarten[spalte.SpalteId] = ergebnis.Wert;
+    }
+
+    // Zuerst räumen, dann rufen: die Meldung des vorigen Versuchs darf nicht neben dem Ergebnis
+    // des neuen stehenbleiben.
+    private async Task ArchiviereKarte(long spalteId, long karteId)
+    {
+        _archivierungsfehler.Remove(spalteId);
+        var ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(() => SendeArchivierung(spalteId, karteId));
+        var dieWebApiWarNichtErreichbar = ausfallmeldung is not null;
+        if (dieWebApiWarNichtErreichbar)
+        {
+            _archivierungsfehler[spalteId] = ausfallmeldung!;
+        }
+    }
+
+    private async Task SendeArchivierung(long spalteId, long karteId)
+    {
+        var ergebnis = await KartenKlient.SchalteArchivierung(BoardId, karteId, new Archivierung(true));
+        if (ergebnis.WurdeZurueckgewiesen)
+        {
+            _archivierungsfehler[spalteId] = ergebnis.Zurueckweisung.Befunde[0].Meldung;
+            return;
+        }
+
+        await SpaltenWurdenGeliefert.InvokeAsync(ergebnis.Wert);
     }
 
     private async Task SpeichereBahn(long spalteId)
