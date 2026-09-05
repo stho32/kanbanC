@@ -294,6 +294,84 @@ public class MigrationslaeuferTests
         });
     }
 
+    [Test]
+    public void Wenn_die_Migration_gelaufen_ist_dann_traegt_das_Schema_die_Tabelle_Karteerledigung_mit_der_Karte_als_Schluessel()
+    {
+        using var datenbank = new TemporaereDatenbank();
+
+        new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Tabellennamen(datenbank), Does.Contain("Karteerledigung"));
+            Assert.That(Spaltennamen(datenbank, "Karteerledigung"), Is.EqualTo(new[] { "Karte", "ErledigtAm" }));
+            Assert.That(Schluesselspalten(datenbank, "Karteerledigung"), Is.EqualTo(new[] { "Karte" }));
+        });
+    }
+
+    [Test]
+    public void Wenn_FuehreAus_auf_einer_Datei_mit_erledigter_Karte_ein_zweites_Mal_laeuft_dann_bleiben_Schema_und_Datum_unveraendert()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "Migration schreiben", 1);
+        FuegeKarteEin(datenbank, spalteId, "Endpunkt bauen", 2);
+        ErledigeKarte(datenbank, 1, "2026-09-03");
+        var schemaVorher = SchemaDefinitionen(datenbank);
+
+        Assert.That(() => new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus(), Throws.Nothing);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(SchemaDefinitionen(datenbank), Is.EqualTo(schemaVorher));
+            Assert.That(Erledigungszeilen(datenbank), Is.EqualTo(new[] { (1L, "2026-09-03") }));
+            Assert.That(Kartentitel(datenbank, spalteId), Is.EqualTo(new[] { "Migration schreiben", "Endpunkt bauen" }));
+        });
+    }
+
+    // Die zweite Karte bleibt ohne Zeile: Bestandskarten bekommen kein nachgetragenes Datum.
+    [Test]
+    public void Wenn_die_Migration_auf_einer_Datei_mit_Karten_laeuft_dann_traegt_keine_von_ihnen_ein_Erledigungsdatum()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = AbschlussspalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "Vor der Anforderung erledigt", 1);
+
+        new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus();
+
+        Assert.That(Erledigungszeilen(datenbank), Is.Empty);
+    }
+
+    private static void ErledigeKarte(TemporaereDatenbank datenbank, long karteId, string erledigtAm)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Karteerledigung (Karte, ErledigtAm)
+            VALUES (@Karte, @ErledigtAm)", new { Karte = karteId, ErledigtAm = erledigtAm });
+    }
+
+    private static (long Karte, string ErledigtAm)[] Erledigungszeilen(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        var zeilen = verbindung.Query<(long Karte, string ErledigtAm)>(@"
+            SELECT Karte, ErledigtAm
+              FROM Karteerledigung
+             ORDER BY Karte");
+        return zeilen.ToArray();
+    }
+
+    private static long AbschlussspalteId(TemporaereDatenbank datenbank, long boardId)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.ExecuteScalar<long>(@"
+            SELECT SpalteId
+              FROM Spalte
+             WHERE Board = @Board
+               AND IstAbschlussspalte = 1", new { Board = boardId });
+    }
+
     // Das Datum steht als ISO-Text in der Spalte: Dapper nimmt ein DateOnly nicht als
     // Parameterwert an (belegt in SqliteEigenschaftenTests).
     private static void LegeKontributorStill(TemporaereDatenbank datenbank, long kontributorId, string stillgelegtAm)
