@@ -236,17 +236,18 @@
         return spalte.Karten.Count < spalte.Kartenzahl;
     }
 
+    // Zuerst räumen, dann rufen: die Meldung des vorigen Versuchs darf nicht neben dem Ergebnis
+    // des neuen stehenbleiben. Danach schreibt entweder die Zurückweisung aus HoleAlleKarten oder
+    // die Ausfallmeldung — beide sagen dasselbe, nämlich warum nichts nachgeladen wurde.
     private async Task LadeAeltereNach(Spalte spalte)
     {
+        _nachladefehler.Remove(spalte.SpalteId);
         var ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(() => HoleAlleKarten(spalte));
         var dieWebApiWarNichtErreichbar = ausfallmeldung is not null;
         if (dieWebApiWarNichtErreichbar)
         {
             _nachladefehler[spalte.SpalteId] = ausfallmeldung!;
-            return;
         }
-
-        _nachladefehler.Remove(spalte.SpalteId);
     }
 
     private async Task HoleAlleKarten(Spalte spalte)

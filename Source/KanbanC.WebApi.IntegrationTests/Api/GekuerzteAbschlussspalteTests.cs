@@ -172,6 +172,42 @@ public class GekuerzteAbschlussspalteTests
         });
     }
 
+    // Die vollstaendige Liste steht in derselben Ordnung wie die gekuerzte, aus der sie
+    // hervorgeht: sonst stuende die nachgeladene Bahn nach dem Klick anders da als vorher. Das
+    // Arrange legt die Karten bewusst gegen die Datumsfolge an — nach Position waere „Gestern“
+    // zuerst.
+    [Test]
+    public async Task Wenn_die_Karten_einer_Abschlussspalte_abgerufen_werden_dann_stehen_sie_in_Anzeigereihenfolge()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var abschlussspalteId = board.Spalten[2].SpalteId;
+        FuegeKarteEin(datenbank, abschlussspalteId, "Gestern fertig", 1, "2026-09-04");
+        FuegeKarteEin(datenbank, abschlussspalteId, "Bestandskarte", 2, null);
+        FuegeKarteEin(datenbank, abschlussspalteId, "Heute fertig", 3, "2026-09-05");
+
+        var karten = await LadeKartenDerSpalte(webApi, board.BoardId, abschlussspalteId);
+
+        Assert.That(karten.Select(karte => karte.Titel),
+            Is.EqualTo(new[] { "Heute fertig", "Gestern fertig", "Bestandskarte" }));
+    }
+
+    [Test]
+    public async Task Wenn_die_Spalte_keine_Abschlussspalte_ist_dann_bleibt_die_Positionsfolge_unangetastet()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var rueckstandId = board.Spalten[0].SpalteId;
+        FuegeKarteEin(datenbank, rueckstandId, "Zuerst", 1, null);
+        FuegeKarteEin(datenbank, rueckstandId, "Danach", 2, null);
+
+        var karten = await LadeKartenDerSpalte(webApi, board.BoardId, rueckstandId);
+
+        Assert.That(karten.Select(karte => karte.Titel), Is.EqualTo(new[] { "Zuerst", "Danach" }));
+    }
+
     [Test]
     public async Task Wenn_die_Karten_einer_Spalte_abgerufen_werden_dann_traegt_jede_ihr_Erledigungsdatum()
     {

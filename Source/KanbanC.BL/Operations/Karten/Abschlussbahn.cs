@@ -13,21 +13,29 @@ public static class Abschlussbahn
         return spalten.Select(Gekuerzt).ToList();
     }
 
-    private static Spalte Gekuerzt(Spalte spalte)
+    // Dieselbe Ordnung ohne die Kürzung: wer die Bahn vollständig abruft, bekommt sie in der
+    // Reihenfolge, in der sie angezeigt wird — sonst stünde die nachgeladene Bahn anders da als
+    // die gekürzte, aus der sie hervorging.
+    public static Spalte InAnzeigereihenfolge(Spalte spalte)
     {
         if (!spalte.IstAbschlussspalte)
         {
             return spalte;
         }
 
-        var nachErledigung = NachErledigungsdatumAbsteigend(spalte.Karten);
-        var dieBahnPasstInIhreGrenze = spalte.Anzeigegrenze is null || nachErledigung.Count <= spalte.Anzeigegrenze.Value;
-        if (dieBahnPasstInIhreGrenze)
+        return spalte with { Karten = NachErledigungsdatumAbsteigend(spalte.Karten) };
+    }
+
+    private static Spalte Gekuerzt(Spalte spalte)
+    {
+        var geordnete = InAnzeigereihenfolge(spalte);
+        var dieBahnPasstInIhreGrenze = spalte.Anzeigegrenze is null || geordnete.Karten.Count <= spalte.Anzeigegrenze.Value;
+        if (!spalte.IstAbschlussspalte || dieBahnPasstInIhreGrenze)
         {
-            return spalte with { Karten = nachErledigung };
+            return geordnete;
         }
 
-        return spalte with { Karten = nachErledigung.Take(spalte.Anzeigegrenze!.Value).ToList() };
+        return geordnete with { Karten = geordnete.Karten.Take(spalte.Anzeigegrenze!.Value).ToList() };
     }
 
     // Ein Nullable sortiert aufsteigend mit null zuerst; absteigend stehen die Karten ohne Datum

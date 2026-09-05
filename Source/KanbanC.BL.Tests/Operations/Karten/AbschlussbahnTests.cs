@@ -171,6 +171,30 @@ public class AbschlussbahnTests
         Assert.That(gekuerzt[0].Kartenzahl, Is.Zero);
     }
 
+    [Test]
+    public void Wenn_die_Bahn_in_Anzeigereihenfolge_verlangt_wird_dann_wird_geordnet_aber_nicht_gekuerzt()
+    {
+        var spalte = Abschlussspalte(2, Karte(1, Gestern), Karte(2, null), Karte(3, Heute));
+
+        var geordnete = Abschlussbahn.InAnzeigereihenfolge(spalte);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Titel(geordnete), Is.EqualTo(new[] { "K3", "K1", "K2" }));
+            Assert.That(geordnete.Kartenzahl, Is.EqualTo(3));
+        });
+    }
+
+    [Test]
+    public void Wenn_eine_Arbeitsbahn_in_Anzeigereihenfolge_verlangt_wird_dann_bleibt_ihre_Positionsfolge_stehen()
+    {
+        var arbeitsbahn = new Spalte(7, "In Arbeit", 2, false, null, [Karte(3, null), Karte(1, null)], Kartenzahl: 2);
+
+        var geordnete = Abschlussbahn.InAnzeigereihenfolge(arbeitsbahn);
+
+        Assert.That(geordnete, Is.SameAs(arbeitsbahn));
+    }
+
     private static Spalte Abschlussspalte(int? anzeigegrenze, params Karte[] karten)
     {
         return new Spalte(9, "Erledigt", 3, true, anzeigegrenze, karten, karten.Length);

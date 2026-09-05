@@ -115,7 +115,8 @@ public sealed class KartenService
             return Zurueckgewiesen<IReadOnlyList<Karte>>(Nichtgefunden.Board(boardId));
         }
 
-        var spalteGehoertNichtZumBoard = !EnthaeltSpalte(spaltenDesBoards!, spalteId);
+        var spalte = SpalteMitNummer(spaltenDesBoards!, spalteId);
+        var spalteGehoertNichtZumBoard = spalte is null;
         if (spalteGehoertNichtZumBoard)
         {
             return Zurueckgewiesen<IReadOnlyList<Karte>>(BefundZurFehlendenSpalte(boardId, spalteId));
@@ -128,7 +129,8 @@ public sealed class KartenService
             return Zurueckgewiesen<IReadOnlyList<Karte>>(Nichtgefunden.Spalte(boardId, spalteId));
         }
 
-        return Ergebnis<IReadOnlyList<Karte>>.Erfolg(karten!);
+        var geordnete = Abschlussbahn.InAnzeigereihenfolge(spalte! with { Karten = karten! });
+        return Ergebnis<IReadOnlyList<Karte>>.Erfolg(geordnete.Karten);
     }
 
     // Zieht die Karte in ihre eigene Spalte, bleibt deren Kartenzahl gleich; kommt sie von

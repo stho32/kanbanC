@@ -140,7 +140,43 @@ public class AeltereNachladenE2ETests : PageTest
         await Expect(seite.NachladeKnoepfe).ToHaveCountAsync(1);
     }
 
-    private async Task<BoardSeite> BoardMitErledigtenKarten(int heute, int gestern)
+    // Das Arrange legt die gestrigen Karten zuerst an: nach Position stuende „Gestern“ vorn. Nach
+    // dem Nachladen muss die Bahn dieselbe Ordnung zeigen wie vorher — die neuesten oben.
+    [Test]
+    [Category("US-3")]
+    public async Task Wenn_Aeltere_nachgeladen_werden_dann_steht_die_Bahn_in_derselben_Ordnung_wie_vorher()
+    {
+        var seite = await BoardMitErledigtenKarten(heute: 3, gestern: 20, gestrigeZuerst: true);
+        var erledigt = seite.SpaltenbahnAnStelle(2);
+        await Expect(seite.DatumsgruppenDerBahn(erledigt)).ToHaveTextAsync(["Heute · 3", "Gestern · 17"]);
+
+        await seite.LadeAeltereNach(erledigt);
+
+        await Expect(seite.KartentitelDerBahn(erledigt)).ToHaveCountAsync(23);
+        await Expect(seite.DatumsgruppenDerBahn(erledigt)).ToHaveTextAsync(["Heute · 3", "Gestern · 20"]);
+    }
+
+    // Kein Ausfall, sondern eine Zurueckweisung der API: die Bahn gibt es nicht mehr. Auch dieser
+    // Weg muss einen lesbaren Grund zeigen statt still nichts zu tun.
+    [Test]
+    [Category("US-3")]
+    public async Task Wenn_die_Spalte_beim_Nachladen_nicht_mehr_existiert_dann_steht_eine_lesbare_Meldung_in_der_Bahn()
+    {
+        var seite = await BoardMitErledigtenKarten(heute: 3, gestern: 20);
+        var erledigt = seite.SpaltenbahnAnStelle(2);
+
+        // Die WebApi laeuft weiter, aber auf einer leeren Datei: das Board und seine Spalten
+        // gibt es dort nicht mehr.
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        await seite.LadeAeltereNach(erledigt);
+
+        await Expect(seite.NachladeFehlermeldungen).ToHaveCountAsync(1);
+        await Expect(seite.NachladeFehlermeldungen).ToContainTextAsync("gibt es nicht mehr");
+        await Expect(seite.Ausnahmeanzeige).ToBeHiddenAsync();
+        await Expect(seite.KartentitelDerBahn(erledigt)).ToHaveCountAsync(Anzeigegrenze);
+    }
+
+    private async Task<BoardSeite> BoardMitErledigtenKarten(int heute, int gestern, bool gestrigeZuerst = false)
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
         var liste = new BoardsSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
@@ -151,6 +187,14 @@ public class AeltereNachladenE2ETests : PageTest
 
         using var webApi = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
         var abschlussspalteId = (await webApi.LadeBoard(1)).Spalten[2].SpalteId;
+        if (gestrigeZuerst)
+        {
+            var zuerstGestrige = await LegeErledigteAn(webApi, abschlussspalteId, "Gestern", gestern);
+            await LegeErledigteAn(webApi, abschlussspalteId, "Heute", heute);
+            DatiereAufGestern(zuerstGestrige);
+            return await OeffneBoard();
+        }
+
         await LegeErledigteAn(webApi, abschlussspalteId, "Heute", heute);
         var gestrige = await LegeErledigteAn(webApi, abschlussspalteId, "Gestern", gestern);
         foreach (var karte in gestrige)
@@ -158,10 +202,23 @@ public class AeltereNachladenE2ETests : PageTest
             Testumgebung.Aktuelle.Datenbank.SetzeErledigung(karte.KarteId, DateOnly.FromDateTime(DateTime.Today).AddDays(-1));
         }
 
+        return await OeffneBoard();
+    }
+
+    private async Task<BoardSeite> OeffneBoard()
+    {
         var seite = new BoardSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
         await seite.Oeffne(1);
         await Expect(seite.Spaltenbahnen).ToHaveCountAsync(3);
         return seite;
+    }
+
+    private static void DatiereAufGestern(IReadOnlyList<Karte> karten)
+    {
+        foreach (var karte in karten)
+        {
+            Testumgebung.Aktuelle.Datenbank.SetzeErledigung(karte.KarteId, DateOnly.FromDateTime(DateTime.Today).AddDays(-1));
+        }
     }
 
     private static async Task<IReadOnlyList<Karte>> LegeErledigteAn(WebApiKlient webApi, long spalteId, string titelstamm, int anzahl)

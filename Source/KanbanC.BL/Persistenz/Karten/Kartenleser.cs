@@ -15,8 +15,7 @@ internal static class Kartenleser
             SELECT k.KarteId, k.Spalte, k.Titel, k.Position, e.ErledigtAm
               FROM Karte k
               JOIN Spalte s ON s.SpalteId = k.Spalte
-                   LEFT JOIN Karteerledigung e
-                          ON e.Karte = k.KarteId
+              LEFT JOIN Karteerledigung e ON e.Karte = k.KarteId
              WHERE s.Board = @BoardId
              ORDER BY k.Spalte, k.Position", new { BoardId = boardId }, transaktion);
 
@@ -34,8 +33,7 @@ internal static class Kartenleser
         var zeilen = verbindung.Query<Kartenzeile>(@"
             SELECT k.KarteId, k.Spalte, k.Titel, k.Position, e.ErledigtAm
               FROM Karte k
-                   LEFT JOIN Karteerledigung e
-                          ON e.Karte = k.KarteId
+              LEFT JOIN Karteerledigung e ON e.Karte = k.KarteId
              WHERE k.Spalte = @SpalteId
              ORDER BY k.Position", new { SpalteId = spalteId }, transaktion);
         return zeilen.Select(AlsKarte).ToList();
