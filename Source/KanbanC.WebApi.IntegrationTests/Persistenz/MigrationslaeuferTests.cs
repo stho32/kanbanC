@@ -1,4 +1,5 @@
 using Dapper;
+using Microsoft.Data.Sqlite;
 using KanbanC.BL.Operations.Boards;
 using KanbanC.BL.Persistenz.Boards;
 using KanbanC.BL.Persistenz.Migrationen;
@@ -50,6 +51,52 @@ public class MigrationslaeuferTests
         {
             Assert.That(SchemaDefinitionen(datenbank), Is.EqualTo(schemaVorher));
             Assert.That(Karteneigenschaften(datenbank), Is.EqualTo(new[] { (1L, "Kartenform zeichnen", "2026-09-02", "Terrakotta") }));
+        });
+    }
+
+    [Test]
+    public void Wenn_die_Migration_gelaufen_ist_dann_traegt_das_Schema_die_Tabelle_Etikett_mit_Karte_und_Text()
+    {
+        using var datenbank = new TemporaereDatenbank();
+
+        new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus();
+
+        Assert.That(Tabellennamen(datenbank), Does.Contain("Etikett"));
+        Assert.That(Spaltennamen(datenbank, "Etikett"), Is.EqualTo(new[] { "Karte", "Text" }));
+    }
+
+    // Der zusammengesetzte Schluessel ist die Pruefung: dasselbe Etikett zweimal an derselben
+    // Karte laesst SQLite nicht zu.
+    [Test]
+    public void Wenn_dasselbe_Etikett_zweimal_an_dieselbe_Karte_geschrieben_wird_dann_weist_der_Schluessel_es_ab()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "Migration schreiben", 1);
+        FuegeEtikettEin(datenbank, 1, "Import");
+
+        Assert.Throws<SqliteException>(() => FuegeEtikettEin(datenbank, 1, "Import"));
+        Assert.That(Etiketten(datenbank), Is.EqualTo(new[] { (1L, "Import") }));
+    }
+
+    [Test]
+    public void Wenn_die_Migration_ein_zweites_Mal_laeuft_dann_bleiben_gesetzte_Etiketten_stehen()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "Migration schreiben", 1);
+        FuegeEtikettEin(datenbank, 1, "Import");
+        FuegeEtikettEin(datenbank, 1, "Doku");
+        var schemaVorher = SchemaDefinitionen(datenbank);
+
+        Assert.That(() => new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus(), Throws.Nothing);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(SchemaDefinitionen(datenbank), Is.EqualTo(schemaVorher));
+            Assert.That(Etiketten(datenbank), Is.EqualTo(new[] { (1L, "Doku"), (1L, "Import") }));
         });
     }
 
@@ -566,6 +613,23 @@ public class MigrationslaeuferTests
             INSERT INTO Karte (Spalte, Titel, Position)
             VALUES (@Spalte, @Titel, @Position)",
             new { Spalte = spalteId, Titel = titel, Position = position });
+    }
+
+    private static void FuegeEtikettEin(TemporaereDatenbank datenbank, long karteId, string text)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Etikett (Karte, Text)
+            VALUES (@Karte, @Text)", new { Karte = karteId, Text = text });
+    }
+
+    private static (long Karte, string Text)[] Etiketten(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.Query<(long Karte, string Text)>(@"
+            SELECT Karte, Text
+              FROM Etikett
+             ORDER BY Karte, Text").ToArray();
     }
 
     private static void SetzeKarteneigenschaft(TemporaereDatenbank datenbank, long karteId, string beschreibung, string faelligAm, string farbe)
