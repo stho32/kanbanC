@@ -1,3 +1,4 @@
+using System.Globalization;
 using Dapper;
 using KanbanC.BL.Persistenz;
 
@@ -32,5 +33,19 @@ public sealed class Testdatenbank
             VALUES (@Karte, @ErledigtAm)
             ON CONFLICT (Karte) DO UPDATE SET ErledigtAm = excluded.ErledigtAm",
             new { Karte = karteId, ErledigtAm = erledigtAm.ToString("yyyy-MM-dd") });
+    }
+
+    // Derselbe Weg am Dienst vorbei wie bei der Erledigung, und aus demselben Grund: die
+    // Anwendung setzt den Zeitpunkt selbst, und über die Uhr des Testlaufs ließe sich kein
+    // gestriger herstellen. Geschrieben wird dasselbe Format, das das Repository schreibt —
+    // ISO-8601 in UTC.
+    public void SetzeKommentarzeitpunkt(long kommentarId, DateTimeOffset zeitpunkt)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            UPDATE Kommentar
+               SET Zeitpunkt = @Zeitpunkt
+             WHERE KommentarId = @KommentarId",
+            new { KommentarId = kommentarId, Zeitpunkt = zeitpunkt.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture) });
     }
 }

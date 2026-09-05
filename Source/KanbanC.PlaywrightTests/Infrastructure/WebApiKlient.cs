@@ -150,6 +150,14 @@ public sealed class WebApiKlient : IDisposable
         return await AlsKartendetail(antwort);
     }
 
+    // Der Weg des Agenten ins Gespraech an der Karte: eine Zeile je Aufruf, mit Urheber im Rumpf.
+    public async Task<Kartendetail> SchreibeKommentar(long karteId, string text, long kontributorId)
+    {
+        var antwort = await _klient.PostAsJsonAsync($"api/karten/{karteId}/kommentare", new KommentarSchreibenAnfrage(text, kontributorId));
+        antwort.EnsureSuccessStatusCode();
+        return await AlsKartendetail(antwort);
+    }
+
     private static async Task<Kartendetail> AlsKartendetail(HttpResponseMessage antwort)
     {
         var detail = await antwort.Content.ReadFromJsonAsync<Kartendetail>();

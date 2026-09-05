@@ -69,7 +69,13 @@ else
         <div class="meldung" role="alert" id="kartenblatt-fehlermeldung">@_ausfallmeldung</div>
     }
 
-    <div class="kartenblatt">
+    @* Das Blatt liest die Identitätswahl neu, sobald jemand es betritt — mit dem Zeiger oder mit
+       der Tabulatortaste. Die Kopfzeile ist eine eigene Komponente und lässt diese Seite beim
+       Wechseln der Identität nicht neu zeichnen; ohne dieses Nachlesen bliebe „senden" gesperrt,
+       bis die Seite neu geladen wird. Der Anlass sitzt am **Blatt** und nicht an der
+       Schreibzeile: ein gesperrter Knopf nimmt keine Zeigerereignisse an, und die Sperre hielte
+       sich dann selbst fest. Die Kapselung der Kopfzeile bleibt unangetastet. *@
+    <div class="kartenblatt" @onmouseenter="LiesUrheberNach" @onfocusin="LiesUrheberNach">
         <div class="karteninhalt">
             @* Der Titel steht dort, wo man ihn liest, und wird an derselben Stelle geändert.
                Nach einer Zurückweisung schließt das Feld wieder — so bleibt die vorige Fassung
@@ -238,12 +244,7 @@ else
                     </p>
                 }
 
-                @* Die Schreibzeile liest die Identitätswahl neu, sobald jemand sie betritt — mit
-                   dem Zeiger oder mit der Tabulatortaste. Die Kopfzeile ist eine eigene
-                   Komponente und lässt diese Seite beim Wechseln nicht neu zeichnen; ohne dieses
-                   Nachlesen bliebe „senden" gesperrt, bis die Seite neu geladen wird. Die
-                   Kapselung der Kopfzeile bleibt dabei unangetastet. *@
-                <div class="kommentarzeile" @onmouseenter="LiesUrheberNach" @onfocusin="LiesUrheberNach">
+                <div class="kommentarzeile">
                     @if (_urheber is null)
                     {
                         <span class="kuerzel kuerzel-niemand" id="kommentar-kuerzel" title="Niemand gewählt"></span>

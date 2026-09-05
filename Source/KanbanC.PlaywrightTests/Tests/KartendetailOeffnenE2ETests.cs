@@ -81,6 +81,20 @@ public class KartendetailOeffnenE2ETests : PageTest
         await Expect(aufbau.Detail.MeldungUnbekannteKarte).ToHaveCountAsync(0);
     }
 
+    // Die Leerzustandszeile der frischen Karte, wie im Artboard: beide Abschnitte tragen die
+    // Handlung statt einer Null.
+    [Test]
+    [Category("US-7")]
+    public async Task Wenn_eine_frische_Karte_geoeffnet_wird_dann_tragen_Teilaufgaben_und_Kommentare_die_Handlung_statt_einer_Null()
+    {
+        var aufbau = await BoardMitDreiKarten();
+
+        await aufbau.Detail.Oeffne(aufbau.KarteIdVonB);
+
+        await Expect(aufbau.Detail.TeilaufgabenLeerstand).ToHaveTextAsync("Keine Teilaufgaben · anlegen");
+        await Expect(aufbau.Detail.KommentarLeerstand).ToHaveTextAsync("Noch kein Kommentar · schreiben");
+    }
+
     private async Task<Aufbau> BoardMitDreiKarten()
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();

@@ -163,6 +163,56 @@ public sealed class KartendetailSeite
         await TeilaufgabeHinzufuegen.ClickAsync();
     }
 
+    public ILocator Kommentarabschnitt => _seite.Locator("#kommentarabschnitt");
+
+    public ILocator Kommentarzahl => _seite.Locator("#kommentarzahl");
+
+    public ILocator Kommentare => _seite.Locator("#kommentarliste .kommentar");
+
+    public ILocator Kommentartexte => _seite.Locator("#kommentarliste .kommentartext");
+
+    public ILocator Kommentarkuerzel => _seite.Locator("#kommentarliste .kuerzel");
+
+    public ILocator Kommentarmetazeilen => _seite.Locator("#kommentarliste .kommentarmeta");
+
+    public ILocator KommentarLeerstand => _seite.Locator("#kommentar-leerstand");
+
+    public ILocator Kommentarfeld => _seite.Locator("#kommentar-eingabe");
+
+    public ILocator KommentarSenden => _seite.Locator("#kommentar-senden");
+
+    public ILocator KommentarKuerzelDerSchreibzeile => _seite.Locator("#kommentar-kuerzel");
+
+    public ILocator KommentarHinweis => _seite.Locator("#kommentar-hinweis");
+
+    public ILocator Kartenblatt => _seite.Locator(".kartenblatt");
+
+    // Was ein Mensch tut, nachdem er in der Kopfzeile gewaehlt hat: er kehrt mit dem Zeiger zur
+    // Karte zurueck. Das ist zugleich der Anlass, bei dem die Seite die Wahl neu liest.
+    public async Task KehreZumBlattZurueck()
+    {
+        await Kartenblatt.HoverAsync();
+    }
+
+    public ILocator Kommentar(string text)
+    {
+        return Kommentare.Filter(new LocatorFilterOptions { HasText = text });
+    }
+
+    // Getippt wird Zeichen fuer Zeichen wie beim Teilaufgabenfeld: FillAsync setzt den Wert in
+    // einem Zug und traefe damit nicht die Lage, in der jede Eingabe ueber die Leitung laeuft.
+    public async Task TippeKommentar(string text)
+    {
+        await Kommentarfeld.ClickAsync();
+        await Kommentarfeld.PressSequentiallyAsync(text);
+    }
+
+    public async Task SchreibeKommentar(string text)
+    {
+        await TippeKommentar(text);
+        await KommentarSenden.ClickAsync();
+    }
+
     public ILocator Farbpunkte => _seite.Locator("#farbpunkte .farbpunkt");
 
     public ILocator GewaehlterFarbpunkt => _seite.Locator("#farbpunkte .farbpunkt-gewaehlt");

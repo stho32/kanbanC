@@ -182,7 +182,12 @@ public class KarteGliedernE2ETests : PageTest
         // erscheinen nur durch text-transform in Grossbuchstaben.
         var abschnitte = await Page.Locator(".karteninhalt .blattabschnitt .blattueberschrift").AllTextContentsAsync();
 
-        Assert.That(abschnitte, Is.EqualTo(new[] { "Beschreibung", "Teilaufgaben" }));
+        // Geprueft werden die ersten beiden Plaetze und nicht die ganze Liste: die Zusicherung
+        // dieses Tests ist „Teilaufgaben stehen hinter der Beschreibung", und jeder spaetere
+        // Abschnitt der linken Spalte haette sie sonst rot gemacht, ohne dass sich an ihr etwas
+        // aendert. Die vollstaendige Reihenfolge sichert der Slice, der den letzten Abschnitt
+        // hinzufuegt.
+        Assert.That(abschnitte.Take(2), Is.EqualTo(new[] { "Beschreibung", "Teilaufgaben" }));
     }
 
     private async Task<string> Durchstreichung(ILocator zeile)
