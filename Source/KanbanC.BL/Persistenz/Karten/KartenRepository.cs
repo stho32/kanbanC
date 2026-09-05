@@ -245,6 +245,39 @@ public sealed class KartenRepository : IKartenRepository
             VALUES (@Karte, @Text, @Position)", parameter, transaktion);
     }
 
+    // Schreibt **eine** Zeile und laesst die uebrigen unberuehrt: zwei Betrachter, die gleichzeitig
+    // verschiedene Teilaufgaben derselben Karte abhaken, verlieren einander nicht.
+    public Kartendetail? SetzeAbhakung(long karteId, long teilaufgabeId, Teilaufgabenstand stand)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+        using var transaktion = verbindung.BeginTransaction();
+
+        var dieTeilaufgabeGehoertNichtZuDieserKarte = !SchreibeAbhakung(verbindung, transaktion, karteId, teilaufgabeId, stand);
+        if (dieTeilaufgabeGehoertNichtZuDieserKarte)
+        {
+            return null; // stil-check: C25 null heisst "diese Teilaufgabe gibt es an dieser Karte nicht" (404)
+        }
+
+        var detail = Kartenleser.LiesKartendetail(verbindung, transaktion, karteId);
+        transaktion.Commit();
+        return detail;
+    }
+
+    // **Beide** Nummern stehen in der Bedingung: eine TeilaufgabeId, die es gibt, aber zu einer
+    // anderen Karte gehoert, hakt hier nichts ab — sie trifft keine Zeile und wird damit zu 404,
+    // statt still an der fremden Karte zu wirken. Die Zahl der geaenderten Zeilen ist zugleich die
+    // Auskunft darueber, wie bei SchreibeTitel.
+    private static bool SchreibeAbhakung(IDbConnection verbindung, IDbTransaction transaktion, long karteId, long teilaufgabeId, Teilaufgabenstand stand)
+    {
+        var parameter = new { TeilaufgabeId = teilaufgabeId, Karte = karteId, stand.Abgehakt };
+        var geaenderteZeilen = verbindung.Execute(@"
+            UPDATE Teilaufgabe
+               SET Abgehakt = @Abgehakt
+             WHERE TeilaufgabeId = @TeilaufgabeId
+               AND Karte = @Karte", parameter, transaktion);
+        return geaenderteZeilen > 0;
+    }
+
     // Die Zahl der geaenderten Zeilen ist zugleich die Auskunft, ob es die Karte gibt: ein
     // zweiter Zaehlaufruf davor waere dieselbe Frage ein zweites Mal.
     private static bool SchreibeTitel(IDbConnection verbindung, IDbTransaction transaktion, long karteId, string titel)

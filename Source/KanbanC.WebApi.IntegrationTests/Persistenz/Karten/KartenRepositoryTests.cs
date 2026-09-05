@@ -1352,6 +1352,111 @@ public class KartenRepositoryTests
         Assert.That(Teilaufgabenzeilen(datenbank), Is.EqualTo(0));
     }
 
+    // Das Rechenbeispiel der Anforderung: Karte mit A, B, C; B abhaken laesst A und C unberuehrt,
+    // und Nummern wie Reihenfolge bleiben dieselben.
+    [Test]
+    public void Wenn_die_mittlere_Teilaufgabe_abgehakt_wird_dann_bleiben_die_anderen_beiden_unberuehrt()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var karteId = KarteMitDreiTeilaufgaben(datenbank, repository);
+        var vorher = repository.LiesKartendetail(karteId)!.Teilaufgaben;
+
+        var detail = repository.SetzeAbhakung(karteId, vorher[1].TeilaufgabeId, new Teilaufgabenstand(true));
+
+        Assert.That(detail!.Teilaufgaben.Select(teilaufgabe => teilaufgabe.Abgehakt), Is.EqualTo(new[] { false, true, false }));
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail.Teilaufgaben.Select(teilaufgabe => teilaufgabe.Text), Is.EqualTo(new[] { "A", "B", "C" }));
+            Assert.That(detail.Teilaufgaben.Select(teilaufgabe => teilaufgabe.TeilaufgabeId),
+                Is.EqualTo(vorher.Select(teilaufgabe => teilaufgabe.TeilaufgabeId)));
+        });
+    }
+
+    [Test]
+    public void Wenn_derselbe_Stand_ein_zweites_Mal_gesetzt_wird_dann_aendert_sich_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var karteId = KarteMitDreiTeilaufgaben(datenbank, repository);
+        var teilaufgabeId = repository.LiesKartendetail(karteId)!.Teilaufgaben[1].TeilaufgabeId;
+        var nachDemErstenAufruf = repository.SetzeAbhakung(karteId, teilaufgabeId, new Teilaufgabenstand(true));
+
+        var nachDemZweitenAufruf = repository.SetzeAbhakung(karteId, teilaufgabeId, new Teilaufgabenstand(true));
+
+        Assert.That(nachDemZweitenAufruf!.Teilaufgaben, Is.EqualTo(nachDemErstenAufruf!.Teilaufgaben));
+    }
+
+    [Test]
+    public void Wenn_der_Stand_auf_nicht_abgehakt_gesetzt_wird_dann_nimmt_er_das_Abhaken_zurueck()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var karteId = KarteMitDreiTeilaufgaben(datenbank, repository);
+        var teilaufgabeId = repository.LiesKartendetail(karteId)!.Teilaufgaben[1].TeilaufgabeId;
+        repository.SetzeAbhakung(karteId, teilaufgabeId, new Teilaufgabenstand(true));
+
+        var detail = repository.SetzeAbhakung(karteId, teilaufgabeId, new Teilaufgabenstand(false));
+
+        Assert.That(detail!.Teilaufgaben.Select(teilaufgabe => teilaufgabe.Abgehakt), Is.EqualTo(new[] { false, false, false }));
+    }
+
+    // Beide Nummern stehen in der Bedingung: eine fremde TeilaufgabeId hakt hier nichts ab und
+    // laesst auch die Karte unberuehrt, zu der sie gehoert.
+    [Test]
+    public void Wenn_die_TeilaufgabeId_zu_einer_anderen_Karte_gehoert_dann_liefert_SetzeAbhakung_null_und_aendert_an_beiden_Karten_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var spalteId = board.Spalten[0].SpalteId;
+        var eigene = repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage("Eigene"));
+        var fremde = repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage("Fremde"));
+        repository.LegeTeilaufgabeAn(eigene!.KarteId, new TeilaufgabeAnlegenAnfrage("Lizenztext lesen"));
+        var fremdeTeilaufgabeId = repository.LegeTeilaufgabeAn(fremde!.KarteId, new TeilaufgabeAnlegenAnfrage("Nur woanders"))!.Teilaufgaben[0].TeilaufgabeId;
+
+        var detail = repository.SetzeAbhakung(eigene.KarteId, fremdeTeilaufgabeId, new Teilaufgabenstand(true));
+
+        Assert.That(detail, Is.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(repository.LiesKartendetail(eigene.KarteId)!.Teilaufgaben[0].Abgehakt, Is.False);
+            Assert.That(repository.LiesKartendetail(fremde.KarteId)!.Teilaufgaben[0].Abgehakt, Is.False);
+        });
+    }
+
+    [Test]
+    public void Wenn_die_TeilaufgabeId_unbekannt_ist_dann_liefert_SetzeAbhakung_null()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var karteId = KarteMitDreiTeilaufgaben(datenbank, repository);
+
+        Assert.That(repository.SetzeAbhakung(karteId, 999, new Teilaufgabenstand(true)), Is.Null);
+    }
+
+    [Test]
+    public void Wenn_die_KarteId_unbekannt_ist_dann_liefert_SetzeAbhakung_null()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var karteId = KarteMitDreiTeilaufgaben(datenbank, repository);
+        var teilaufgabeId = repository.LiesKartendetail(karteId)!.Teilaufgaben[0].TeilaufgabeId;
+
+        Assert.That(repository.SetzeAbhakung(999, teilaufgabeId, new Teilaufgabenstand(true)), Is.Null);
+        Assert.That(repository.LiesKartendetail(karteId)!.Teilaufgaben[0].Abgehakt, Is.False);
+    }
+
+    private static long KarteMitDreiTeilaufgaben(TemporaereDatenbank datenbank, KartenRepository repository)
+    {
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        repository.LegeTeilaufgabeAn(karte!.KarteId, new TeilaufgabeAnlegenAnfrage("A"));
+        repository.LegeTeilaufgabeAn(karte.KarteId, new TeilaufgabeAnlegenAnfrage("B"));
+        repository.LegeTeilaufgabeAn(karte.KarteId, new TeilaufgabeAnlegenAnfrage("C"));
+        return karte.KarteId;
+    }
+
     private static long Teilaufgabenzeilen(TemporaereDatenbank datenbank)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();

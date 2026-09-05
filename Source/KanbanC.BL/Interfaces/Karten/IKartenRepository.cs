@@ -32,6 +32,10 @@ public interface IKartenRepository
     // damit die Seite eine Quelle behaelt. null heisst: diese KarteId gibt es nicht.
     Kartendetail? LegeTeilaufgabeAn(long karteId, TeilaufgabeAnlegenAnfrage anfrage);
 
+    // Setzt den Abhakstand **einer** Teilaufgabe und laesst die uebrigen unberuehrt; zurueck kommt
+    // das ganze Kartendetail. null heisst: diese TeilaufgabeId gehoert nicht zu dieser Karte.
+    Kartendetail? SetzeAbhakung(long karteId, long teilaufgabeId, Teilaufgabenstand stand);
+
     // null heisst „diese Spalte gibt es an dieser Stelle nicht"; eine Spalte ohne Karten liefert
     // die leere Liste.
     IReadOnlyList<Karte>? LadeKartenDerSpalte(long boardId, long spalteId, Archivierung archivstand);

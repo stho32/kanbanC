@@ -210,6 +210,25 @@ public sealed class TestKartenRepository : IKartenRepository
         return _kartendetail;
     }
 
+    public Teilaufgabenstand? ErhaltenerStand { get; private set; }
+
+    public long? AbgehakteTeilaufgabeId { get; private set; }
+
+    // Wie das echte Repository: eine Zeile, zurueck kommt das gelesene Detail; null heisst „diese
+    // TeilaufgabeId gehoert nicht zu dieser Karte".
+    public Kartendetail? SetzeAbhakung(long karteId, long teilaufgabeId, Teilaufgabenstand stand)
+    {
+        GeaenderteKarteId = karteId;
+        AbgehakteTeilaufgabeId = teilaufgabeId;
+        ErhaltenerStand = stand;
+        if (_karteFehltAnDieserStelle)
+        {
+            return null;
+        }
+
+        return _kartendetail;
+    }
+
     public IReadOnlyList<Karte> Karten(long spalteId)
     {
         if (!_kartenJeSpalte.TryGetValue(spalteId, out var karten))
