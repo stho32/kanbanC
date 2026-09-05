@@ -5,6 +5,8 @@ using KanbanC.Contracts.Karten;
 
 namespace KanbanC.BL.Persistenz.Karten;
 
+// Der eine Ort, an dem entschieden wird, was als Bestand gilt: eine archivierte Karte faellt
+// hier heraus und damit zugleich aus Kartenzahl, Bahnenkopf und Zugpruefung.
 internal static class Kartenleser
 {
     private const string IsoDatumsformat = "yyyy-MM-dd";
@@ -16,7 +18,9 @@ internal static class Kartenleser
               FROM Karte k
               JOIN Spalte s ON s.SpalteId = k.Spalte
               LEFT JOIN Karteerledigung e ON e.Karte = k.KarteId
+              LEFT JOIN Kartenarchivierung a ON a.Karte = k.KarteId
              WHERE s.Board = @BoardId
+               AND a.Karte IS NULL
              ORDER BY k.Spalte, k.Position", new { BoardId = boardId }, transaktion);
 
         var kartenJeSpalte = new Dictionary<long, IReadOnlyList<Karte>>();
@@ -34,7 +38,9 @@ internal static class Kartenleser
             SELECT k.KarteId, k.Spalte, k.Titel, k.Position, e.ErledigtAm
               FROM Karte k
               LEFT JOIN Karteerledigung e ON e.Karte = k.KarteId
+              LEFT JOIN Kartenarchivierung a ON a.Karte = k.KarteId
              WHERE k.Spalte = @SpalteId
+               AND a.Karte IS NULL
              ORDER BY k.Position", new { SpalteId = spalteId }, transaktion);
         return zeilen.Select(AlsKarte).ToList();
     }

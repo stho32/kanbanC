@@ -223,10 +223,12 @@ public sealed class KartenRepository : IKartenRepository
     private static List<long> KarteIdsNachPosition(IDbConnection verbindung, IDbTransaction transaktion, long spalteId)
     {
         var karteIds = verbindung.Query<long>(@"
-            SELECT KarteId
-              FROM Karte
-             WHERE Spalte = @SpalteId
-             ORDER BY Position", new { SpalteId = spalteId }, transaktion);
+            SELECT k.KarteId
+              FROM Karte k
+              LEFT JOIN Kartenarchivierung a ON a.Karte = k.KarteId
+             WHERE k.Spalte = @SpalteId
+               AND a.Karte IS NULL
+             ORDER BY k.Position", new { SpalteId = spalteId }, transaktion);
         return karteIds.ToList();
     }
 
@@ -256,9 +258,11 @@ public sealed class KartenRepository : IKartenRepository
     private static int NaechstePosition(IDbConnection verbindung, IDbTransaction transaktion, long spalteId)
     {
         return verbindung.ExecuteScalar<int>(@"
-            SELECT COALESCE(MAX(Position), 0) + 1
-              FROM Karte
-             WHERE Spalte = @SpalteId", new { SpalteId = spalteId }, transaktion);
+            SELECT COALESCE(MAX(k.Position), 0) + 1
+              FROM Karte k
+              LEFT JOIN Kartenarchivierung a ON a.Karte = k.KarteId
+             WHERE k.Spalte = @SpalteId
+               AND a.Karte IS NULL", new { SpalteId = spalteId }, transaktion);
     }
 
     private static long FuegeKarteEin(IDbConnection verbindung, IDbTransaction transaktion, long spalteId, string titel, int position)

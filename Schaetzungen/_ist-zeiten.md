@@ -214,3 +214,4 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-05 | R00015 Erledigte Karten gebündelt sehen | B0199 „Ältere nachladen“ | Standard | 2h | 0,0h | 0,0h | autonom |
 | 2026-09-05 | R00015 Erledigte Karten gebündelt sehen | B0200 E2E Ältere nachladen | Standard | 2-4h | 0,0h | 0,0h | autonom |
 | 2026-09-05 | R00016 Karte archivieren | B0201 Kartenarchiv anlegen | Standard | 0,4h | 0,1h | 0,1h | autonom |
+| 2026-09-05 | R00016 Karte archivieren | B0202 Archivierte Karten fallen aus dem Bestand | Standard | 0,4-1,5h | 0,1h | 0,1h | autonom |
