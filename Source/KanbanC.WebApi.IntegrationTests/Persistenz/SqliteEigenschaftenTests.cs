@@ -8,12 +8,14 @@ namespace KanbanC.WebApi.IntegrationTests.Persistenz;
 
 // Probe der SQLite-Eigenschaften, auf denen die Migrationen ruhen: eindeutiger Index mit
 // COLLATE NOCASE, ROW_NUMBER mit COLLATE NOCASE in der Partition und UPDATE ... FROM auf
-// eine Unterabfrage derselben Tabelle (Migration 002), dazu die Rundreise eines DateOnly durch
-// eine TEXT-Spalte (Migration 007). Bleibt als Regressionsschutz stehen.
+// eine Unterabfrage derselben Tabelle (Migration 002), die Rundreise eines DateOnly durch
+// eine TEXT-Spalte (Migration 007) und die eines DateTimeOffset (Migration 013). Bleibt als
+// Regressionsschutz stehen.
 public class SqliteEigenschaftenTests
 {
     private const int ConstraintFehlercode = 19;
     private const int UniqueConstraintFehlercode = 2067;
+    private const string IsoZeitpunktformat = "O";
 
     [Test]
     public void Wenn_ein_eindeutiger_Index_COLLATE_NOCASE_traegt_dann_weist_er_die_abweichende_Schreibweise_ab()
@@ -134,6 +136,127 @@ public class SqliteEigenschaftenTests
 
         Assert.That(() => AlsDatum(Datumstext(verbindung, 1)), Throws.TypeOf<FormatException>());
     }
+
+    // Probe zu Migration 013, und wieder eine widerlegte Annahme. Angenommen war, Dapper
+    // materialisiere eine ISO-8601-TEXT-Spalte in einen DateTimeOffset-Record-Parameter. Er tut
+    // es nicht: Microsoft.Data.Sqlite meldet fuer die TEXT-Spalte den Typ String, und Dapper
+    // sucht dann einen Konstruktor (long, string). Dieselbe Klasse von Annahme fiel schon beim
+    // DateOnly (oben) und beim Wahrheitswert (SqliteWahrheitswertProbeTests). Der Zeitpunkt geht
+    // deshalb denselben Weg wie das Datum: als Text geschrieben, als Text gelesen, in C#
+    // umgerechnet — die Wandlung steht sichtbar im Kommentarleser.
+    [Test]
+    public void Wenn_eine_TEXT_Spalte_in_einen_DateTimeOffset_Parameter_gelesen_wird_dann_weist_Dapper_die_Materialisierung_ab()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        LegeZeitpunkttabelleAn(verbindung);
+        FuegeZeitpunktEin(verbindung, 1, new DateTimeOffset(2026, 8, 30, 15, 40, 12, TimeSpan.Zero));
+
+        var fehler = Assert.Throws<InvalidOperationException>(() => verbindung.QuerySingle<GewuenschteZeitpunktzeile>(@"
+            SELECT ProbezeitpunktId, Zeitpunkt
+              FROM Probezeitpunkt
+             WHERE ProbezeitpunktId = 1"));
+
+        Assert.That(fehler!.Message, Does.Contain("System.String"));
+    }
+
+    // Der gangbare Weg, den B0256 geht: die Zeile fuehrt den Text, C# rechnet um — und dabei
+    // kommt derselbe Zeitpunkt mit demselben Versatz heraus.
+    [Test]
+    public void Wenn_ein_Zeitpunkt_als_ISO_Text_in_UTC_geschrieben_wird_dann_ergibt_er_gelesen_wieder_denselben_Zeitpunkt()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        LegeZeitpunkttabelleAn(verbindung);
+        var geschrieben = new DateTimeOffset(2026, 8, 30, 15, 40, 12, TimeSpan.Zero);
+
+        FuegeZeitpunktEin(verbindung, 1, geschrieben);
+
+        Assert.That(Zeitpunkttext(verbindung, 1), Does.StartWith("2026-08-30T15:40:12"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(AlsZeitpunkt(Zeitpunkttext(verbindung, 1)), Is.EqualTo(geschrieben));
+            Assert.That(AlsZeitpunkt(Zeitpunkttext(verbindung, 1)).Offset, Is.EqualTo(TimeSpan.Zero), "In der Spalte steht UTC; ein anderer Versatz braeche die Textsortierung.");
+        });
+    }
+
+    // Der zweite Pfeiler von ORDER BY Zeitpunkt: die Ordnung ist eine Eigenschaft des Formats,
+    // nicht der Bibliothek — bei verschiedenen Zeitzonenversaetzen gaelte sie nicht. Deshalb UTC.
+    [Test]
+    public void Wenn_UTC_Zeitpunkte_als_Text_sortiert_werden_dann_ist_die_Textordnung_die_Zeitordnung()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        LegeZeitpunkttabelleAn(verbindung);
+        var mittag = new DateTimeOffset(2026, 8, 30, 12, 0, 0, TimeSpan.Zero);
+        FuegeZeitpunktEin(verbindung, 1, mittag.AddDays(1));
+        FuegeZeitpunktEin(verbindung, 2, mittag.AddMilliseconds(1));
+        FuegeZeitpunktEin(verbindung, 3, mittag);
+        FuegeZeitpunktEin(verbindung, 4, mittag.AddYears(-1));
+
+        var sortierte = verbindung.Query<Probezeitpunktzeile>(@"
+            SELECT ProbezeitpunktId, Zeitpunkt
+              FROM Probezeitpunkt
+             ORDER BY Zeitpunkt, ProbezeitpunktId").ToArray();
+
+        Assert.That(sortierte.Select(zeile => zeile.ProbezeitpunktId), Is.EqualTo(new[] { 4L, 3L, 2L, 1L }));
+        Assert.That(sortierte.Select(zeile => AlsZeitpunkt(zeile.Zeitpunkt)), Is.Ordered);
+    }
+
+    // Fehlerprobe: ein Text, der kein ISO-Zeitstempel ist, darf nicht still zu irgendeinem Moment
+    // werden — sonst waere eine verdorbene Zeile von einer gueltigen nicht zu unterscheiden.
+    [Test]
+    public void Wenn_der_gespeicherte_Text_kein_ISO_Zeitpunkt_ist_dann_scheitert_die_Umrechnung_sichtbar()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        LegeZeitpunkttabelleAn(verbindung);
+        verbindung.Execute(@"
+            INSERT INTO Probezeitpunkt (ProbezeitpunktId, Zeitpunkt)
+            VALUES (1, 'irgendwann')");
+
+        Assert.That(() => AlsZeitpunkt(Zeitpunkttext(verbindung, 1)), Throws.TypeOf<FormatException>());
+    }
+
+    private static void LegeZeitpunkttabelleAn(IDbConnection verbindung)
+    {
+        verbindung.Execute(@"
+            CREATE TABLE Probezeitpunkt
+            (
+                ProbezeitpunktId INTEGER PRIMARY KEY,
+                Zeitpunkt        TEXT NOT NULL
+            )");
+    }
+
+    private static void FuegeZeitpunktEin(IDbConnection verbindung, long probezeitpunktId, DateTimeOffset zeitpunkt)
+    {
+        var parameter = new
+        {
+            ProbezeitpunktId = probezeitpunktId,
+            Zeitpunkt = zeitpunkt.ToUniversalTime().ToString(IsoZeitpunktformat, CultureInfo.InvariantCulture),
+        };
+        verbindung.Execute(@"
+            INSERT INTO Probezeitpunkt (ProbezeitpunktId, Zeitpunkt)
+            VALUES (@ProbezeitpunktId, @Zeitpunkt)", parameter);
+    }
+
+    private static string Zeitpunkttext(IDbConnection verbindung, long probezeitpunktId)
+    {
+        return verbindung.QuerySingle<string>(@"
+            SELECT Zeitpunkt
+              FROM Probezeitpunkt
+             WHERE ProbezeitpunktId = @ProbezeitpunktId", new { ProbezeitpunktId = probezeitpunktId });
+    }
+
+    private static DateTimeOffset AlsZeitpunkt(string isoText)
+    {
+        return DateTimeOffset.ParseExact(isoText, IsoZeitpunktformat, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
+    }
+
+    private sealed record Probezeitpunktzeile(long ProbezeitpunktId, string Zeitpunkt);
+
+    // Nur fuer die Fehlerprobe: die Gestalt, die angenommen war und die Dapper abweist.
+    private sealed record GewuenschteZeitpunktzeile(long ProbezeitpunktId, DateTimeOffset Zeitpunkt);
 
     private static void LegeDatumstabelleAn(IDbConnection verbindung)
     {
