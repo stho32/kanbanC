@@ -103,6 +103,22 @@ public sealed class KartenService
         return Ergebnis<IReadOnlyList<Spalte>>.Erfolg(Abschlussbahn.Gekuerzt(ergebnis.Wert));
     }
 
+    // Kein Validator: ein Wahrheitswert hat keinen ungültigen Fall, und die Route ist ein
+    // Umschalter auf einen Zielzustand — zweimal archivieren ändert nichts. Die Antwort trägt die
+    // Spalten wie nach einem Zug, weil dieselbe Wirkung eintritt: die Spalte verliert eine Karte
+    // und wird neu durchnummeriert.
+    public Ergebnis<IReadOnlyList<Spalte>> SchalteArchivierung(long boardId, long karteId, Archivierung archivierung)
+    {
+        var spalten = _kartenRepository.SetzeArchivierung(boardId, karteId, archivierung);
+        var karteLiegtInKeinerSpalteDesBoards = spalten is null;
+        if (karteLiegtInKeinerSpalteDesBoards)
+        {
+            return Zurueckgewiesen<IReadOnlyList<Spalte>>(BefundZurFehlendenKarte(boardId, karteId));
+        }
+
+        return Ergebnis<IReadOnlyList<Spalte>>.Erfolg(Abschlussbahn.Gekuerzt(spalten!));
+    }
+
     // Ungekürzt, anders als am Board: wer diese Adresse ruft, will die ganze Bahn. Geprüft wird
     // erst das Board, dann die Spalte — ein Lesezugriff auf die Karten einer fremden Spalte fände
     // sonst statt, bevor jemand merkt, dass sie fremd ist.

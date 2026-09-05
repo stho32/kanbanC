@@ -448,4 +448,106 @@ public class KartenServiceTests
         });
     }
 
+    [Test]
+    public void Wenn_die_Karte_archiviert_wird_dann_reicht_SchalteArchivierung_die_Spalten_des_Repositories_durch()
+    {
+        var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen");
+        var spalteId = spaltenRepository.Spalten(1)[0].SpalteId;
+        var nachDerArchivierung = new List<Spalte>
+        {
+            new(spalteId, "Zu erledigen", 1, false, null, [new Karte(5, "Endpunkt bauen", 1, ErledigtAm: null)], Kartenzahl: 1),
+        };
+        var kartenRepository = TestKartenRepository.Leer().MitSpaltenNachDerArchivierung(nachDerArchivierung);
+        var service = new KartenService(spaltenRepository, kartenRepository);
+
+        var ergebnis = service.SchalteArchivierung(1, 7, new Archivierung(true));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.IstErfolg, Is.True);
+            Assert.That(kartenRepository.WurdeArchiviert, Is.True);
+            Assert.That(ergebnis.Wert[0].Karten.Select(karte => karte.Titel), Is.EqualTo(new[] { "Endpunkt bauen" }));
+        });
+    }
+
+    // Dieselbe Antwortgestalt wie nach einem Zug: die Abschlussbahn kommt gekürzt heraus.
+    [Test]
+    public void Wenn_die_Abschlussbahn_ueber_ihrer_Grenze_liegt_dann_kuerzt_SchalteArchivierung_sie_am_Ausgang()
+    {
+        var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Erledigt");
+        var spalteId = spaltenRepository.Spalten(1)[0].SpalteId;
+        var erledigte = new List<Karte>
+        {
+            new(1, "Fertig 1", 1, new DateOnly(2026, 9, 3)),
+            new(2, "Fertig 2", 2, new DateOnly(2026, 9, 4)),
+            new(3, "Fertig 3", 3, new DateOnly(2026, 9, 5)),
+        };
+        var nachDerArchivierung = new List<Spalte>
+        {
+            new(spalteId, "Erledigt", 1, IstAbschlussspalte: true, Anzeigegrenze: 2, erledigte, Kartenzahl: 3),
+        };
+        var kartenRepository = TestKartenRepository.Leer().MitSpaltenNachDerArchivierung(nachDerArchivierung);
+        var service = new KartenService(spaltenRepository, kartenRepository);
+
+        var ergebnis = service.SchalteArchivierung(1, 7, new Archivierung(true));
+
+        Assert.That(ergebnis.IstErfolg, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Wert[0].Karten, Has.Count.EqualTo(2));
+            Assert.That(ergebnis.Wert[0].Kartenzahl, Is.EqualTo(3));
+        });
+    }
+
+    [Test]
+    public void Wenn_es_die_Karte_nirgends_gibt_dann_meldet_SchalteArchivierung_karte_unbekannt()
+    {
+        var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen");
+        var kartenRepository = TestKartenRepository.Leer().OhneDieseKarte();
+        var service = new KartenService(spaltenRepository, kartenRepository);
+
+        var ergebnis = service.SchalteArchivierung(1, 777, new Archivierung(true));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Befundpruefung.ErwarteVollstaendigenBefund(ergebnis.Befunde[0], "karte-unbekannt");
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("777"));
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("Board 1"));
+        });
+    }
+
+    [Test]
+    public void Wenn_die_Karte_zu_einem_anderen_Board_gehoert_dann_nennt_SchalteArchivierung_dieses_Board()
+    {
+        var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen");
+        var kartenRepository = TestKartenRepository.Leer().OhneDieseKarte().MitKarteAufBoard(2);
+        var service = new KartenService(spaltenRepository, kartenRepository);
+
+        var ergebnis = service.SchalteArchivierung(1, 777, new Archivierung(true));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Befundpruefung.ErwarteVollstaendigenBefund(ergebnis.Befunde[0], "karte-fremd");
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("Board 2"));
+            Assert.That(ergebnis.Befunde[0].Kompensation, Does.Contain("/api/boards/2"));
+        });
+    }
+
+    [Test]
+    public void Wenn_eine_Karte_zurueckgeholt_wird_dann_reicht_SchalteArchivierung_den_Archivstand_an_das_Repository_durch()
+    {
+        var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen");
+        var kartenRepository = TestKartenRepository.Leer();
+        var service = new KartenService(spaltenRepository, kartenRepository);
+
+        var ergebnis = service.SchalteArchivierung(1, 7, new Archivierung(false));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.IstErfolg, Is.True);
+            Assert.That(kartenRepository.WurdeArchiviert, Is.True);
+        });
+    }
 }
