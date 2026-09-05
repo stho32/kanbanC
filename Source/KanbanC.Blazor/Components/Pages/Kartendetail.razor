@@ -701,9 +701,13 @@ else
         }
     }
 
+    // Die Ausfallmeldung wird durchgereicht und nicht verworfen: bleibt die Kontributorenliste
+    // aus, ist der Urheber „niemand" — und ohne Meldung läse der Mensch dann den Hinweis, er
+    // solle in der Kopfzeile wählen, obwohl er gewählt hat. Das wäre eine Falschaussage über die
+    // eigene Lage.
     private async Task LadeUrheber()
     {
-        await WebApiAufruf.MitAusfallmeldung(async () => _kontributoren = await KontributorenKlient.LadeAlle());
+        _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(async () => _kontributoren = await KontributorenKlient.LadeAlle());
         _urheber = await GewaehlterUrheber();
     }
 
@@ -728,7 +732,7 @@ else
         {
             // Ein Kontributor, der nach dem Laden dieser Seite entstanden ist: die Liste holt
             // sich den heutigen Stand, statt die Wahl fälschlich als „niemand" zu lesen.
-            await WebApiAufruf.MitAusfallmeldung(async () => _kontributoren = await KontributorenKlient.LadeAlle());
+            _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(async () => _kontributoren = await KontributorenKlient.LadeAlle());
             gewaehlter = _kontributoren.FirstOrDefault(kontributor => kontributor.KontributorId == gewaehlteKontributorId.Value);
         }
 
