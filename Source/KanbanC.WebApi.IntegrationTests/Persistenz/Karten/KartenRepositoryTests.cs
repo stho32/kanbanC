@@ -396,6 +396,60 @@ public class KartenRepositoryTests
         Assert.That(Erledigung(datenbank, karte.KarteId), Is.EqualTo("2026-09-01"));
     }
 
+    [Test]
+    public void Wenn_das_Board_gelesen_wird_dann_traegt_jede_Karte_ihr_Erledigungsdatum_und_jede_offene_null()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Noch offen"));
+        var erledigte = repository.LegeAn(board.BoardId, board.Spalten[2].SpalteId, new KarteAnlegenAnfrage("Fertig"))!;
+        SetzeErledigung(datenbank, erledigte.KarteId, "2026-09-01");
+
+        var geladen = new BoardRepository(datenbank.Verbindungsfabrik).Lade(board.BoardId)!;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(geladen.Spalten[0].Karten[0].ErledigtAm, Is.Null);
+            Assert.That(geladen.Spalten[2].Karten[0].ErledigtAm, Is.EqualTo(new DateOnly(2026, 9, 1)));
+        });
+    }
+
+    // Der zweite Leseweg des Kartenlesers: SpaltenRepository.Aendere liest die Karten einer
+    // einzelnen Spalte und muss dasselbe Datum mitbringen.
+    [Test]
+    public void Wenn_die_Karten_einer_einzelnen_Spalte_gelesen_werden_dann_tragen_sie_ebenfalls_ihr_Erledigungsdatum()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var abschlussspalteId = board.Spalten[2].SpalteId;
+        var karte = repository.LegeAn(board.BoardId, abschlussspalteId, new KarteAnlegenAnfrage("Fertig"))!;
+        SetzeErledigung(datenbank, karte.KarteId, "2026-09-01");
+
+        var ergebnis = new SpaltenRepository(datenbank.Verbindungsfabrik)
+            .Aendere(board.BoardId, abschlussspalteId, new SpalteAendernAnfrage("Erledigt", true, 20))!;
+
+        Assert.That(ergebnis.Wert.Karten[0].ErledigtAm, Is.EqualTo(new DateOnly(2026, 9, 1)));
+    }
+
+    [Test]
+    public void Wenn_eine_Karte_direkt_in_der_Abschlussspalte_entsteht_dann_traegt_schon_die_Antwort_von_LegeAn_das_Datum()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+
+        var inDerAbschlussspalte = repository.LegeAn(board.BoardId, board.Spalten[2].SpalteId, new KarteAnlegenAnfrage("Sofort fertig"))!;
+        var inDerArbeitsbahn = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Noch offen"))!;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(inDerAbschlussspalte.ErledigtAm, Is.EqualTo(DateOnly.FromDateTime(DateTime.Today)));
+            Assert.That(inDerArbeitsbahn.ErledigtAm, Is.Null);
+        });
+    }
+
     private static string HeuteAlsText => DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
     private static void SetzeErledigung(TemporaereDatenbank datenbank, long karteId, string erledigtAm)

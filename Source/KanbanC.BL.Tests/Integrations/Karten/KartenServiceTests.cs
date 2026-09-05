@@ -221,7 +221,7 @@ public class KartenServiceTests
         var nachDemZug = new List<Spalte>
         {
             new(quellspalteId, "Zu erledigen", 1, false, null, []),
-            new(zielspalteId, "In Arbeit", 2, false, null, [new Karte(5, "Endpunkt bauen", 1)]),
+            new(zielspalteId, "In Arbeit", 2, false, null, [new Karte(5, "Endpunkt bauen", 1, ErledigtAm: null)]),
         };
         var kartenRepository = TestKartenRepository.Leer().MitSpaltenNachDemZug(nachDemZug);
         var service = new KartenService(spaltenRepository, kartenRepository);
