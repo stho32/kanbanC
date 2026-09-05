@@ -30,12 +30,7 @@ public class KartenServiceTests
     [Test]
     public void Wenn_die_Karte_bekannt_ist_dann_reicht_LadeKartendetail_das_Detail_des_Repositories_durch()
     {
-        var detail = new Kartendetail(
-            new Karte(7, "Migration schreiben", 1, ErledigtAm: null, Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne),
-            Board: 3,
-            Boardname: "Entwicklung",
-            Spalte: 5,
-            Spaltenbezeichnung: "In Arbeit");
+        var detail = Kartendetail(new Karte(7, "Migration schreiben", 1, ErledigtAm: null, Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne));
         var kartenRepository = TestKartenRepository.Leer().MitKartendetail(detail);
         var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository);
 
@@ -60,6 +55,56 @@ public class KartenServiceTests
             Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("9999"));
             Assert.That(ergebnis.Befunde[0].Meldung, Does.Not.Contain("Board"));
         });
+    }
+
+    [Test]
+    public void Wenn_die_Aenderung_gueltig_ist_dann_reicht_AendereKarte_das_zurueckgelesene_Detail_durch()
+    {
+        var detail = Kartendetail(new Karte(7, "WBS-Import", 1, null, "Knoten überführen", new DateOnly(2026, 9, 2), Kartenfarbe.Terrakotta));
+        var kartenRepository = TestKartenRepository.Leer().MitKartendetail(detail);
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository);
+        var anfrage = new KarteAendernAnfrage("WBS-Import", "Knoten überführen", new DateOnly(2026, 9, 2), Kartenfarbe.Terrakotta);
+
+        var ergebnis = service.AendereKarte(7, anfrage);
+
+        Assert.That(ergebnis.IstErfolg, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Wert, Is.EqualTo(detail));
+            Assert.That(kartenRepository.GeaenderteKarteId, Is.EqualTo(7));
+            Assert.That(kartenRepository.ErhalteneAenderung, Is.EqualTo(anfrage));
+        });
+    }
+
+    [Test]
+    public void Wenn_der_Titel_geleert_wird_dann_weist_AendereKarte_die_Anfrage_zurueck_und_schreibt_nichts()
+    {
+        var kartenRepository = TestKartenRepository.Leer().MitKartendetail(Kartendetail(new Karte(7, "WBS-Import", 1, null, null, null, Kartenfarbe.Ohne)));
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository);
+
+        var ergebnis = service.AendereKarte(7, new KarteAendernAnfrage("", null, null, Kartenfarbe.Ohne));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Befundpruefung.ErwarteVollstaendigenBefund(ergebnis.Befunde[0], "kartentitel-leer");
+        Assert.That(kartenRepository.ErhalteneAenderung, Is.Null);
+    }
+
+    [Test]
+    public void Wenn_die_KarteId_unbekannt_ist_dann_weist_AendereKarte_mit_einem_Befund_ohne_Board_zurueck()
+    {
+        var kartenRepository = TestKartenRepository.Leer().OhneDieseKarte();
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository);
+
+        var ergebnis = service.AendereKarte(9999, new KarteAendernAnfrage("WBS-Import", null, null, Kartenfarbe.Ohne));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Befundpruefung.ErwarteVollstaendigenBefund(ergebnis.Befunde[0], "karte-unbekannt");
+        Assert.That(ergebnis.Befunde[0].Meldung, Does.Not.Contain("Board"));
+    }
+
+    private static Kartendetail Kartendetail(Karte karte)
+    {
+        return new Kartendetail(karte, Board: 3, Boardname: "Entwicklung", Spalte: 5, Spaltenbezeichnung: "In Arbeit");
     }
 
     [Test]

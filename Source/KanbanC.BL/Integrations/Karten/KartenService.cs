@@ -133,6 +133,28 @@ public sealed class KartenService
         return Ergebnis<Kartendetail>.Erfolg(detail!);
     }
 
+    // Die Antwort traegt das ganze Kartendetail statt nur der Karte: die Seite behaelt damit eine
+    // Quelle und laedt nach dem Aendern nicht nach — dieselbe Ueberlegung wie bei PUT …/lage,
+    // das die Spalten zurueckgibt.
+    public Ergebnis<Kartendetail> AendereKarte(long karteId, KarteAendernAnfrage anfrage)
+    {
+        var befunde = KartenValidator.Pruefe(karteId, anfrage);
+        var anfrageIstUngueltig = !befunde.IstOhneBefund;
+        if (anfrageIstUngueltig)
+        {
+            return Ergebnis<Kartendetail>.Zurueckgewiesen(befunde);
+        }
+
+        var detail = _kartenRepository.Aendere(karteId, anfrage);
+        var dieKarteGibtEsNicht = detail is null;
+        if (dieKarteGibtEsNicht)
+        {
+            return Zurueckgewiesen<Kartendetail>(Nichtgefunden.Karte(karteId));
+        }
+
+        return Ergebnis<Kartendetail>.Erfolg(detail!);
+    }
+
     // Ungekürzt, anders als am Board: wer diese Adresse ruft, will die ganze Bahn. Geprüft wird
     // erst das Board, dann die Spalte — ein Lesezugriff auf die Karten einer fremden Spalte fände
     // sonst statt, bevor jemand merkt, dass sie fremd ist.
