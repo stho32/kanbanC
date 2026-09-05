@@ -100,6 +100,69 @@ public class MigrationslaeuferTests
         });
     }
 
+    // Anders als bei Etikett führt der Primärschlüssel hier mit TeilaufgabeId; seine führende
+    // Spalte ist damit nicht Karte, und der eigene Index auf Karte ist keine Dublette, sondern
+    // der einzige Weg, auf dem die Lesezugriffe dieser Tabelle laufen.
+    [Test]
+    public void Wenn_die_Migration_gelaufen_ist_dann_traegt_das_Schema_die_Tabelle_Teilaufgabe_mit_eigener_Nummer_und_Index_auf_der_Karte()
+    {
+        using var datenbank = new TemporaereDatenbank();
+
+        new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Tabellennamen(datenbank), Does.Contain("Teilaufgabe"));
+            Assert.That(Spaltennamen(datenbank, "Teilaufgabe"),
+                Is.EqualTo(new[] { "TeilaufgabeId", "Karte", "Text", "Position", "Abgehakt" }));
+            Assert.That(Schluesselspalten(datenbank, "Teilaufgabe"), Is.EqualTo(new[] { "TeilaufgabeId" }));
+            Assert.That(Indexdefinition(datenbank, "IX_Teilaufgabe_Karte"),
+                Is.EqualTo("CREATE INDEX IX_Teilaufgabe_Karte ON Teilaufgabe (Karte)"));
+        });
+    }
+
+    // Zwei gleichlautende Teilaufgaben an derselben Karte sind zwei Arbeiten: der Schlüssel weist
+    // sie nicht ab, anders als beim Etikett.
+    [Test]
+    public void Wenn_derselbe_Text_zweimal_an_dieselbe_Karte_geschrieben_wird_dann_stehen_zwei_Zeilen_mit_verschiedenen_Nummern()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "Migration schreiben", 1);
+
+        FuegeTeilaufgabeEin(datenbank, 1, "Nachfassen", 1);
+        FuegeTeilaufgabeEin(datenbank, 1, "Nachfassen", 2);
+
+        var zeilen = Teilaufgaben(datenbank);
+        Assert.That(zeilen.Select(zeile => zeile.Text), Is.EqualTo(new[] { "Nachfassen", "Nachfassen" }));
+        Assert.That(zeilen.Select(zeile => zeile.TeilaufgabeId).Distinct().Count(), Is.EqualTo(2));
+    }
+
+    [Test]
+    public void Wenn_die_Migration_ein_zweites_Mal_laeuft_dann_bleiben_Texte_Reihenfolge_und_Abhakstand_stehen()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "Migration schreiben", 1);
+        FuegeTeilaufgabeEin(datenbank, 1, "Lizenztext lesen", 1, abgehakt: true);
+        FuegeTeilaufgabeEin(datenbank, 1, "Rückfrage an den Hersteller", 2);
+        var schemaVorher = SchemaDefinitionen(datenbank);
+
+        Assert.That(() => new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus(), Throws.Nothing);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(SchemaDefinitionen(datenbank), Is.EqualTo(schemaVorher));
+            Assert.That(Teilaufgaben(datenbank), Is.EqualTo(new[]
+            {
+                (1L, 1L, "Lizenztext lesen", 1L, 1L),
+                (2L, 1L, "Rückfrage an den Hersteller", 2L, 0L),
+            }));
+        });
+    }
+
     [Test]
     public void Wenn_FuehreAus_auf_einer_gefuellten_Datei_ein_zweites_Mal_laeuft_dann_bleiben_Schema_und_Daten_unveraendert()
     {
@@ -630,6 +693,27 @@ public class MigrationslaeuferTests
             SELECT Karte, Text
               FROM Etikett
              ORDER BY Karte, Text").ToArray();
+    }
+
+    private static void FuegeTeilaufgabeEin(TemporaereDatenbank datenbank, long karteId, string text, int position, bool abgehakt = false)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Teilaufgabe (Karte, Text, Position, Abgehakt)
+            VALUES (@Karte, @Text, @Position, @Abgehakt)",
+            new { Karte = karteId, Text = text, Position = position, Abgehakt = abgehakt });
+    }
+
+    // Als Tupel gelesen, weil Dapper die INTEGER-Spalte Abgehakt nicht in einen bool-Parameter
+    // materialisiert (belegt in SqliteWahrheitswertProbeTests).
+    private static (long TeilaufgabeId, long Karte, string Text, long Position, long Abgehakt)[] Teilaufgaben(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        var zeilen = verbindung.Query<(long TeilaufgabeId, long Karte, string Text, long Position, long Abgehakt)>(@"
+            SELECT TeilaufgabeId, Karte, Text, Position, Abgehakt
+              FROM Teilaufgabe
+             ORDER BY TeilaufgabeId");
+        return zeilen.ToArray();
     }
 
     private static void SetzeKarteneigenschaft(TemporaereDatenbank datenbank, long karteId, string beschreibung, string faelligAm, string farbe)
