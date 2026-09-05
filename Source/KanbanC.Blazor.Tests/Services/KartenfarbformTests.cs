@@ -17,11 +17,9 @@ public class KartenfarbformTests
     [Test]
     public void Wenn_eine_Farbe_beschriftet_wird_dann_traegt_ohne_die_Kleinschreibung_und_die_uebrigen_ihren_Namen()
     {
-        Assert.Multiple(() =>
-        {
-            Assert.That(Kartenfarbform.Beschriftung(Kartenfarbe.Ohne), Is.EqualTo("ohne"));
-            Assert.That(Kartenfarbform.Beschriftung(Kartenfarbe.Terrakotta), Is.EqualTo("Terrakotta"));
-        });
+        var beschriftungen = Kartenfarbform.Alle.Select(Kartenfarbform.Beschriftung);
+
+        Assert.That(beschriftungen, Is.EqualTo(new[] { "ohne", "Sand", "Terrakotta", "Olive", "Nebel" }));
     }
 
     [Test]
