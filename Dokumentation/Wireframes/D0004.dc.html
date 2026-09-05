@@ -1,0 +1,546 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@300..900&display=swap">
+  <style>
+    /* Werte exakt aus dem Bestand uebernommen, nichts gerundet:
+       Source/KanbanC.Blazor/wwwroot/gestaltung.css und oberflaeche.css (Tokens und Formen),
+       Components/Layout/Kopfzeile.razor(.css) (drei Zonen, min-height 35.2px),
+       Components/Pages/Board.razor (Meldung „unbekannt“ samt Rueckweg),
+       Source/KanbanC.BL/Operations/Karten/KartenValidator.cs (Wortlaut der Zurueckweisung),
+       Source/KanbanC.Blazor/Services/Terminformatierer.cs (ISO-Datum, „—“ ohne Termin).
+       Formsprache uebernommen aus D0003.dc.html (Karte, Bahn, Kartenmenue) und
+       D0002.dc.html (Kontributorzeile, Artplakette, Stillgelegte).
+       Kein Wert steht hier als neue Erfindung: D0004 ist vollstaendig rot, das
+       ganze Artboard ist Zielform. */
+    :root {
+      --color-bg: #f5ead8;
+      --color-surface: #ebddc5;
+      --color-text: #201e1d;
+      --color-accent: #c67139;
+      --color-accent-2: #7a8a5e;
+      --color-divider: color-mix(in srgb, #201e1d 16%, transparent);
+
+      --color-neutral-100: #f9f4ed;
+      --color-neutral-200: #eee7db;
+      --color-neutral-300: #dcd3c4;
+      --color-neutral-800: #474238;
+
+      --color-accent-100: #fff2eb;
+      --color-accent-200: #ffe1d0;
+      --color-accent-700: #8c491a;
+      --color-accent-800: #643312;
+
+      --color-accent-2-100: #f0fae1;
+      --color-accent-2-200: #e1eecc;
+      --color-accent-2-800: #3d472b;
+
+      --font-heading: "Caprasimo", system-ui, sans-serif;
+      --font-body: "Figtree", system-ui, sans-serif;
+
+      --space-1: 4.4px;
+      --space-2: 8.8px;
+      --space-3: 13.2px;
+      --space-4: 17.6px;
+      --space-6: 26.4px;
+
+      --radius-xs: 4px;
+      --radius-md: 16px;
+      --radius-lg: 28px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-family: var(--font-body);
+      font-size: 15px;
+      line-height: 1.55;
+      font-weight: 400;
+    }
+    h1, h2, h3 {
+      font-family: var(--font-heading);
+      font-weight: 400;
+      line-height: 1.12;
+      letter-spacing: -0.015em;
+      margin: 0;
+    }
+    a { color: var(--color-accent); text-underline-offset: 3px; text-decoration: none; }
+    a:hover { color: #8c491a; }
+    svg { display: block; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #ebddc5; display: flex; flex-direction: column">
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 1 — die Kartenseite unter eigener Adresse. Variante C aus dem
+     aelteren Satz (wireframes.js:187), entschieden im stillen Lauf; die
+     Begruendung steht in der Lesehilfe und im Index.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 17.6px 26.4px 8.8px">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 1 · Hauptzustand · /karten/14 · Fenster 1440 × 900 · Zielform, nichts davon gebaut</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Die Karte hat eine eigene Adresse — <span style="color: #201e1d">Variante C</span>. Links der Inhalt (<span style="color: #201e1d">I0016</span>, <span style="color: #201e1d">I0017</span>, <span style="color: #201e1d">I0018</span>, <span style="color: #201e1d">I0019</span>), rechts die Eigenschaften des laufenden Slice <span style="color: #201e1d">I0015</span>. Gestrichelte Kaesten gehoeren anderen Dialogs und sind hier nur als Platz vermerkt.</p>
+</div>
+
+<div style="position: relative; width: 1440px; height: 900px; background: #f5ead8; overflow: hidden; display: flex; flex-direction: column">
+
+  <!-- ══ Navigationszeile — Layout/Kopfzeile.razor(.css), drei Zonen ═════════
+       Zone 1 traegt die offene Seite: der Pfeil fuehrt zum Board zurueck, die
+       Ueberschrift nennt das Board, die Plakette die Karte. Der Kartentitel
+       steht nicht hier, sondern im Blatt — er ist aenderbar (I0015). ══════ -->
+  <header style="display: flex; align-items: stretch; gap: 17.6px; min-height: 35.2px; padding: 0 17.6px; overflow: hidden; background: #ebddc5; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent); flex: 0 0 auto">
+
+    <div style="display: flex; flex: none; align-items: center; gap: 8.8px; min-width: 0; max-width: 45%">
+      <span style="display: flex; flex: none; align-items: center; justify-content: center; width: 26.4px; height: 26.4px; font-size: 15px; line-height: 1; color: color-mix(in srgb, #201e1d 60%, transparent); border-radius: 4px">←</span>
+      <h1 style="margin: 0; flex-shrink: 1; min-width: 35.2px; font-size: 17px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">KanbanC — Release 2</h1>
+      <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">Karte 14</span>
+      <span style="flex-shrink: 1000; overflow: hidden; white-space: nowrap; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">Spalte In Arbeit</span>
+    </div>
+
+    <div style="display: flex; flex: 1; align-items: center; gap: 17.6px; min-width: 0; padding-left: 17.6px; border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+      <nav style="display: flex; align-self: stretch; align-items: stretch; gap: 13.2px">
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: color-mix(in srgb, #201e1d 35%, transparent); border-bottom: 2px solid transparent">Auswertungen</span>
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: color-mix(in srgb, #201e1d 35%, transparent); border-bottom: 2px solid transparent">Kontributoren</span>
+      </nav>
+    </div>
+
+    <!-- Zone 3 · Identitaet. Auf dieser Seite ist sie keine Zierde: der
+         Kommentar (I0017) traegt sie als Urheber. -->
+    <div style="display: flex; flex: none; align-items: center; gap: 8.8px">
+      <span style="display: inline-flex; align-items: center; gap: 8.8px; padding-left: 8.8px; font-size: 13px; border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+        <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #e1eecc; color: #3d472b">ST</span>Stefan
+      </span>
+    </div>
+  </header>
+
+  <!-- ══ Inhalt — .inhalt aus MainLayout.razor.css: padding 13.2px 17.6px ══ -->
+  <main style="flex: 1; min-height: 0; min-width: 0; padding: 13.2px 17.6px; overflow: hidden; display: flex; flex-direction: column; gap: 13.2px">
+
+    <!-- Brotkrumen — der Rueckweg in Worten, neben dem Pfeil in Zone 1.
+         Rechts die eine Handlung, die aus D0003 mitkommt: Archivieren (I0014). -->
+    <div style="display: flex; align-items: center; gap: 8.8px; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">
+      <span>Boards</span><span>/</span><span style="color: #8c491a">KanbanC — Release 2</span><span>/</span><span style="color: #201e1d">Karte 14</span>
+      <span style="margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-size: 14px; color: #c67139; padding-inline: 4.4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1.5"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/><path d="M10 12h4"/></svg>Archivieren</span>
+      <span style="font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; border: 1px dashed color-mix(in srgb, #201e1d 40%, transparent); color: color-mix(in srgb, #201e1d 55%, transparent)">I0014 · D0003</span>
+    </div>
+
+    <div style="display: flex; flex: 1; min-height: 0; gap: 26.4px; align-items: flex-start">
+
+      <!-- ═══════════ Linke Spalte · der Inhalt der Karte ═══════════════════ -->
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 17.6px">
+
+        <!-- Titel — I0015. Er steht als Ueberschrift und ist dieselbe Stelle,
+             an der er geaendert wird: Klick setzt den Schreibzeiger hinein. -->
+        <div style="display: flex; align-items: flex-start; gap: 8.8px">
+          <h2 style="flex: 1; min-width: 0; font-size: 32px; text-wrap: pretty">WBS-Import: Markdown-Baum in Karten überführen</h2>
+          <span style="flex: none; width: 36px; height: 36px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; color: #c67139" title="Titel ändern"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10-10-4-4L4 16z"/><path d="m14 6 4 4"/></svg></span>
+        </div>
+
+        <!-- Beschreibung — I0015 -->
+        <section style="display: flex; flex-direction: column; gap: 4.4px">
+          <div style="display: flex; align-items: baseline; gap: 8.8px">
+            <h3 style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">Beschreibung</h3>
+            <span style="margin-left: auto; font-size: 12px; color: #c67139">bearbeiten</span>
+          </div>
+          <p style="margin: 0; font-size: 14px; line-height: 1.55; text-wrap: pretty">Die WBS-Datei wird eingelesen: jeder Knoten der Ebene Interaction wird eine Karte, der Dialog darüber gibt die Klasse. Ein wiederholter Import gleicht ab, statt zu doppeln — Soll-Ist nach dem Muster aus <span style="font-family: ui-monospace, monospace; font-size: 13px; padding: 1px 5px; border-radius: 4px; background: #f9f4ed">SollIstVergleich.md</span>.</p>
+        </section>
+
+        <!-- Subtasks — I0016 -->
+        <section style="display: flex; flex-direction: column; gap: 8.8px">
+          <div style="display: flex; align-items: baseline; gap: 8.8px">
+            <h3 style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">Subtasks</h3>
+            <span style="font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">2 von 4</span>
+            <span style="flex: 1; height: 4px; border-radius: 2px; background: #dcd3c4; overflow: hidden"><span style="display: block; width: 50%; height: 4px; background: #7a8a5e"></span></span>
+            <span style="font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: #f9f4ed; color: #474238">I0016</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4.4px; font-size: 14px">
+            <span style="display: flex; align-items: center; gap: 8.8px; color: color-mix(in srgb, #201e1d 55%, transparent)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7a8a5e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="m8 12 3 3 5-6"/></svg><span style="text-decoration: line-through; text-decoration-color: color-mix(in srgb, #201e1d 40%, transparent)">Parser für die Gliederung</span></span>
+            <span style="display: flex; align-items: center; gap: 8.8px; color: color-mix(in srgb, #201e1d 55%, transparent)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7a8a5e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="m8 12 3 3 5-6"/></svg><span style="text-decoration: line-through; text-decoration-color: color-mix(in srgb, #201e1d 40%, transparent)">Abgleich statt Doppelung</span></span>
+            <span style="display: flex; align-items: center; gap: 8.8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="color-mix(in srgb, #201e1d 40%, transparent)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="4"/></svg>Klassenspezifische Nummerierung</span>
+            <span style="display: flex; align-items: center; gap: 8.8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="color-mix(in srgb, #201e1d 40%, transparent)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="4"/></svg>Integrationstest über zwei Läufe</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8.8px">
+            <span style="flex: 1; min-height: 32px; padding: 4px 14px; font-size: 13px; color: color-mix(in srgb, #201e1d 45%, transparent); background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px; display: flex; align-items: center">Subtask hinzufügen</span>
+            <span style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-size: 14px; line-height: 1.2; color: #c67139; padding-inline: 4.4px">+</span>
+          </div>
+        </section>
+
+        <!-- Kommentare — I0017. Jede Zeile nennt Urheber, Zeitpunkt und Quelle:
+             „An jeder Karte ist ablesbar, wer oder was gehandelt hat.“ -->
+        <section style="display: flex; flex-direction: column; gap: 8.8px">
+          <div style="display: flex; align-items: baseline; gap: 8.8px">
+            <h3 style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">Kommentare</h3>
+            <span style="font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">2</span>
+            <span style="margin-left: auto; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: #f9f4ed; color: #474238">I0017</span>
+          </div>
+          <div style="display: flex; gap: 8.8px">
+            <span style="width: 20px; height: 20px; flex: 0 0 20px; margin-top: 3px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #ffe1d0; color: #643312">KI</span>
+            <div style="flex: 1; min-width: 0">
+              <p style="margin: 0; font-size: 14px; line-height: 1.45; text-wrap: pretty">Der Parser liest jetzt auch Ebene 4. Die Nummerierung fehlt noch — sie hängt an der Klasse.</p>
+              <p style="margin: 0; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">Claude-Agent · vor 22 Min · API</p>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8.8px">
+            <span style="width: 20px; height: 20px; flex: 0 0 20px; margin-top: 3px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #e1eecc; color: #3d472b">ST</span>
+            <div style="flex: 1; min-width: 0">
+              <p style="margin: 0; font-size: 14px; line-height: 1.45; text-wrap: pretty">Dann nimm die Klasse aus dem Dialognamen, nicht aus dem Dateinamen.</p>
+              <p style="margin: 0; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">Stefan · gestern 17:40 · Oberfläche</p>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8.8px">
+            <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #e1eecc; color: #3d472b">ST</span>
+            <span style="flex: 1; min-height: 32px; padding: 4px 14px; font-size: 13px; color: color-mix(in srgb, #201e1d 45%, transparent); background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px; display: flex; align-items: center">Kommentar schreiben</span>
+            <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-size: 14px; line-height: 1.2; color: #f5ead8; background: #c67139; padding: 6px 15.84px; border-radius: 999px">senden</span>
+          </div>
+        </section>
+
+        <!-- Dateien und Verweise — I0018 und I0019 nebeneinander, weil sie
+             dasselbe Feld der Karte fuellen und sich genau darin unterscheiden:
+             die eine Datei liegt hier, der andere Pfad liegt im Repository. -->
+        <section style="display: flex; gap: 26.4px">
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4.4px">
+            <div style="display: flex; align-items: baseline; gap: 8.8px">
+              <h3 style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">Anhänge</h3>
+              <span style="margin-left: auto; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: #f9f4ed; color: #474238">I0018</span>
+            </div>
+            <span style="display: flex; align-items: center; gap: 8.8px; padding: 5px 10px; font-size: 13px; background: #ebddc5; border-radius: 4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5 11 20.5a5 5 0 0 1-7-7l9-9a3.5 3.5 0 0 1 5 5l-9 9a2 2 0 0 1-3-3l8.5-8.5"/></svg>wbs-export.md<span style="margin-left: auto; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">41 kB</span><span style="color: #c67139"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg></span></span>
+            <span style="display: flex; align-items: center; gap: 8.8px; padding: 5px 10px; font-size: 13px; background: #ebddc5; border-radius: 4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5 11 20.5a5 5 0 0 1-7-7l9-9a3.5 3.5 0 0 1 5 5l-9 9a2 2 0 0 1-3-3l8.5-8.5"/></svg>burndown-r2.png<span style="margin-left: auto; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">118 kB</span><span style="color: #c67139"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg></span></span>
+            <span style="display: flex; align-items: center; justify-content: center; min-height: 34px; font-size: 12px; color: color-mix(in srgb, #201e1d 45%, transparent); border: 1px dashed color-mix(in srgb, #201e1d 30%, transparent); border-radius: 4px">Datei hierher ziehen oder wählen</span>
+          </div>
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4.4px">
+            <div style="display: flex; align-items: baseline; gap: 8.8px">
+              <h3 style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">Verweise</h3>
+              <span style="margin-left: auto; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: #f9f4ed; color: #474238">I0019</span>
+            </div>
+            <span style="display: flex; align-items: center; gap: 8.8px; padding: 5px 10px; font-family: ui-monospace, monospace; font-size: 12px; background: #ebddc5; border-radius: 4px; border-left: 3px solid #7a8a5e"><span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Dokumentation/Planung/kanbanc.md</span><span style="margin-left: auto; color: #7a8a5e">↗</span></span>
+            <span style="display: flex; align-items: center; gap: 8.8px; padding: 5px 10px; font-family: ui-monospace, monospace; font-size: 12px; background: #ebddc5; border-radius: 4px; border-left: 3px solid #7a8a5e"><span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Anforderungen/R00000-vision.md</span><span style="margin-left: auto; color: #7a8a5e">↗</span></span>
+            <span style="display: flex; align-items: center; min-height: 34px; padding: 4px 14px; font-size: 12px; color: color-mix(in srgb, #201e1d 45%, transparent); background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px">Pfad im Repository eintragen</span>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- ═══════════ Rechte Spalte · Eigenschaften — der laufende Slice ════
+           Alle sechs Felder des Fertig-Kriteriums von I0015 stehen hier
+           beieinander: Titel oben im Blatt, die uebrigen fuenf in dieser Karte.
+           ══════════════════════════════════════════════════════════════ -->
+      <aside style="flex: 0 0 372px; display: flex; flex-direction: column; gap: 13.2px">
+
+        <section style="display: flex; flex-direction: column; gap: 13.2px; padding: 13.2px; border-radius: 32.2px; background: #ebddc5; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+          <div style="display: flex; align-items: baseline; gap: 8.8px">
+            <h3 style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">Eigenschaften</h3>
+            <span style="margin-left: auto; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: #ffe1d0; color: #643312">I0015 · laufender Slice</span>
+          </div>
+
+          <div>
+            <label style="display: block; font-size: 12px; margin-bottom: 5px; color: color-mix(in srgb, #201e1d 70%, transparent)">Verantwortlich</label>
+            <div style="display: flex; align-items: center; gap: 8.8px; min-height: 36px; padding: 4px 14px; font-size: 14px; background: #f5ead8; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px">
+              <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #ffe1d0; color: #643312">KI</span>Claude-Agent
+              <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 1px 9px; border-radius: 999px; background: #fff2eb; color: #643312">Agent</span>
+              <span style="margin-left: auto; color: color-mix(in srgb, #201e1d 55%, transparent)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 13.2px">
+            <div style="flex: 1; min-width: 0">
+              <label style="display: block; font-size: 12px; margin-bottom: 5px; color: color-mix(in srgb, #201e1d 70%, transparent)">Fällig</label>
+              <div style="display: flex; align-items: center; gap: 8.8px; min-height: 36px; padding: 6px 14px; font-size: 14px; background: #f5ead8; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px">2026-09-02<span style="margin-left: auto; color: color-mix(in srgb, #201e1d 55%, transparent)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></span></div>
+            </div>
+            <div style="flex: 0 0 148px">
+              <label style="display: block; font-size: 12px; margin-bottom: 5px; color: color-mix(in srgb, #201e1d 70%, transparent)">Farbe</label>
+              <div style="display: flex; align-items: center; gap: 8.8px; min-height: 36px">
+                <span style="width: 22px; height: 22px; border-radius: 999px; border: 1px dashed color-mix(in srgb, #201e1d 40%, transparent)" title="ohne"></span>
+                <span style="width: 22px; height: 22px; border-radius: 999px; background: #eee7db"></span>
+                <span style="width: 22px; height: 22px; border-radius: 999px; background: #ffe1d0; box-shadow: 0 0 0 2px #f5ead8, 0 0 0 3.5px #c67139"></span>
+                <span style="width: 22px; height: 22px; border-radius: 999px; background: #e1eecc"></span>
+                <span style="width: 22px; height: 22px; border-radius: 999px; background: #dcd3c4"></span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label style="display: block; font-size: 12px; margin-bottom: 5px; color: color-mix(in srgb, #201e1d 70%, transparent)">Etiketten</label>
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8.8px">
+              <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">Import<span style="color: color-mix(in srgb, #201e1d 45%, transparent)">✕</span></span>
+              <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">Doku<span style="color: color-mix(in srgb, #201e1d 45%, transparent)">✕</span></span>
+              <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px dashed #c67139; color: #c67139">+ Etikett</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Platz anderer Dialogs — hier steht nur, wo es hingehoert, nicht wie
+             es aussieht. Der Entwurf gehoert in den verfeinern-Lauf von D0005
+             und D0006 (Kontrakt: keine Interaction eines fremden Dialogs
+             ausdetaillieren). -->
+        <section style="display: flex; flex-direction: column; gap: 4.4px; padding: 13.2px; border-radius: 32.2px; border: 1px dashed color-mix(in srgb, #201e1d 35%, transparent)">
+          <div style="display: flex; align-items: baseline; gap: 8.8px">
+            <h3 style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">Klasse und Nummer</h3>
+            <span style="margin-left: auto; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">D0005 · I0021</span>
+          </div>
+          <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Erst mit der Klasse trägt die Karte eine sprechende Nummer (<span style="color: #201e1d">WBS-14</span>) — und erst dann kann die Adresse <span style="color: #201e1d">/karten/WBS-14</span> heißen statt <span style="color: #201e1d">/karten/14</span>.</p>
+        </section>
+
+        <section style="display: flex; flex-direction: column; gap: 4.4px; padding: 13.2px; border-radius: 32.2px; border: 1px dashed color-mix(in srgb, #201e1d 35%, transparent)">
+          <div style="display: flex; align-items: baseline; gap: 8.8px">
+            <h3 style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">Zeiten und Timer</h3>
+            <span style="margin-left: auto; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">D0006 · I0023–I0026</span>
+          </div>
+          <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Timerknopf, Zeiteinträge je Kontributor und die Summe. Der ältere Satz zeichnet sie in dieselbe Spalte (<span style="color: #201e1d">wireframes.js</span>, Zeitentabelle); gezeichnet wird das bei D0006, nicht hier.</p>
+        </section>
+
+      </aside>
+    </div>
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 2 — Verantwortlichen waehlen (I0015, mit I0006 und I0009).
+     Der Bezug ist ein Kontributor; die Regel „Stillgelegte nicht waehlbar“
+     kommt aus der Identitaetswahl, die Regel „Abgebildete nicht waehlbar“
+     ausdruecklich nicht.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 26.4px 26.4px 8.8px">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 2 · Verantwortlichen wählen · I0015 · Ausschnitt derselben Seite</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; padding: 0 26.4px 26.4px; display: flex; gap: 26.4px; align-items: flex-start">
+
+  <div style="flex: 0 0 372px">
+    <label style="display: block; font-size: 12px; margin-bottom: 5px; color: color-mix(in srgb, #201e1d 70%, transparent)">Verantwortlich</label>
+    <div style="display: flex; align-items: center; gap: 8.8px; min-height: 36px; padding: 4px 14px; font-size: 14px; background: #f5ead8; border: 1px solid #c67139; border-radius: 999px">
+      <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #ffe1d0; color: #643312">KI</span>Claude-Agent
+      <span style="margin-left: auto; color: color-mix(in srgb, #201e1d 55%, transparent)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"/></svg></span>
+    </div>
+
+    <div style="margin-top: 4.4px; padding: 4.4px; background: #f9f4ed; border-radius: 16px; box-shadow: 0 12px 32px color-mix(in srgb, #2e2b25 22%, transparent)">
+      <span style="display: flex; align-items: center; min-height: 32px; margin: 4.4px; padding: 4px 14px; font-size: 13px; color: color-mix(in srgb, #201e1d 45%, transparent); background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px">Name suchen</span>
+
+      <span style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px; font-size: 14px; border-radius: 4px">
+        <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #e1eecc; color: #3d472b">ST</span>Stefan
+        <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 1px 9px; border-radius: 999px; background: #f0fae1; color: #3d472b">Mensch</span>
+      </span>
+      <span style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px; font-size: 14px; border-radius: 4px">
+        <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #e1eecc; color: #3d472b">NB</span>Nina Barth
+        <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 1px 9px; border-radius: 999px; background: #f0fae1; color: #3d472b">Mensch</span>
+      </span>
+      <span style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px; font-size: 14px; border-radius: 4px; background: color-mix(in srgb, #c67139 10%, transparent); color: #8c491a">
+        <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #ffe1d0; color: #643312">KI</span>Claude-Agent
+        <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 1px 9px; border-radius: 999px; background: #fff2eb; color: #643312">Agent</span>
+        <span style="margin-left: auto"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4 10-11"/></svg></span>
+      </span>
+      <span style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px; font-size: 14px; border-radius: 4px">
+        <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; border: 1px dashed color-mix(in srgb, #201e1d 40%, transparent); color: #474238">ML</span>Maria Lenz
+        <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 1px 9px; border-radius: 999px; background: #f9f4ed; color: #474238">abgebildet</span>
+      </span>
+
+      <span style="display: block; height: 1px; margin: 4.4px 13.2px; background: color-mix(in srgb, #201e1d 16%, transparent)"></span>
+
+      <span style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px; font-size: 14px; border-radius: 4px; color: color-mix(in srgb, #201e1d 55%, transparent)">
+        <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; border: 1px dashed color-mix(in srgb, #201e1d 40%, transparent)"></span>niemand
+      </span>
+
+      <span style="display: block; padding: 13.2px 13.2px 2px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">stillgelegt · 1 — nicht wählbar</span>
+      <span style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px 8.8px; font-size: 14px; opacity: 0.45">
+        <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #e1eecc; color: #3d472b">JR</span><span style="text-decoration: line-through; text-decoration-color: color-mix(in srgb, #201e1d 40%, transparent)">Jan R.</span>
+        <span style="margin-left: auto; font-size: 11px">stillgelegt seit 2026-08-12</span>
+      </span>
+    </div>
+  </div>
+
+  <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8.8px; max-width: 700px">
+    <p style="margin: 0; font-size: 12px; line-height: 1.45; text-wrap: pretty"><span style="color: #201e1d">Zwei Regeln, die nicht dieselbe sind.</span> <span style="color: #8c491a">Stillgelegte</span> stehen nicht zur Wahl — dieselbe Regel wie in der Identitätswahl (D0002.dc.html:308) und die Einlösung der Zusage aus <span style="color: #201e1d">I0009</span>: „verschwindet aus der Auswahl, bleibt aber an alten Karten sichtbar“. <span style="color: #8c491a">Abgebildete</span> dagegen <span style="color: #201e1d">stehen hier sehr wohl zur Wahl</span>: sie können sich nicht selbst anmelden, aber jemand kann für sie eine Karte führen — genau dafür gibt es die Art.</p>
+    <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">„niemand“ ist ein Eintrag der Liste, kein zweiter Knopf: eine Karte ohne Verantwortlichen ist der Normalfall nach dem Anlegen (I0011), nicht ein Fehler, den man zurücknimmt.</p>
+    <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Das Suchfeld steht oben, weil die Kontributorenliste über Boards hinweg wächst (B0142: eine Wurzelressource, kein Anhängsel eines Boards).</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 3 — Etiketten und Farbe (I0015). Hier faellt die Entscheidung,
+     was ein Etikett ueberhaupt ist.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 26.4px 26.4px 8.8px">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 3 · Etiketten und Farbe · I0015 · Ausschnitt derselben Seite</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; padding: 0 26.4px 26.4px; display: flex; gap: 26.4px; align-items: flex-start">
+
+  <div style="flex: 0 0 372px">
+    <label style="display: block; font-size: 12px; margin-bottom: 5px; color: color-mix(in srgb, #201e1d 70%, transparent)">Etiketten</label>
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8.8px; min-height: 36px; padding: 4px 8.8px; background: #f5ead8; border: 1px solid #c67139; border-radius: 999px">
+      <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">Import<span style="color: color-mix(in srgb, #201e1d 45%, transparent)">✕</span></span>
+      <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">Doku<span style="color: color-mix(in srgb, #201e1d 45%, transparent)">✕</span></span>
+      <span style="font-size: 13px">Refac<span style="border-left: 1.5px solid #201e1d; margin-left: 1px">&nbsp;</span></span>
+    </div>
+
+    <div style="margin-top: 4.4px; padding: 4.4px; background: #f9f4ed; border-radius: 16px; box-shadow: 0 12px 32px color-mix(in srgb, #2e2b25 22%, transparent)">
+      <span style="display: block; padding: 8.8px 13.2px 2px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">auf diesem Board schon vergeben</span>
+      <span style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px; font-size: 14px; border-radius: 4px; background: color-mix(in srgb, #c67139 10%, transparent); color: #8c491a">Refactoring<span style="margin-left: auto; font-size: 11px">7 Karten</span></span>
+      <span style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px; font-size: 14px; border-radius: 4px">Refaktorierung<span style="margin-left: auto; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">1 Karte</span></span>
+      <span style="display: block; height: 1px; margin: 4.4px 13.2px; background: color-mix(in srgb, #201e1d 16%, transparent)"></span>
+      <span style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px 8.8px; font-size: 14px; border-radius: 4px; color: #c67139"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>„Refac“ neu anlegen</span>
+    </div>
+
+    <label style="display: block; margin-top: 17.6px; font-size: 12px; margin-bottom: 5px; color: color-mix(in srgb, #201e1d 70%, transparent)">Farbe der Karte</label>
+    <div style="display: flex; align-items: center; gap: 13.2px">
+      <span style="display: flex; flex-direction: column; align-items: center; gap: 4.4px; font-size: 10px; color: color-mix(in srgb, #201e1d 55%, transparent)"><span style="width: 26px; height: 26px; border-radius: 999px; border: 1px dashed color-mix(in srgb, #201e1d 40%, transparent)"></span>ohne</span>
+      <span style="display: flex; flex-direction: column; align-items: center; gap: 4.4px; font-size: 10px; color: color-mix(in srgb, #201e1d 55%, transparent)"><span style="width: 26px; height: 26px; border-radius: 999px; background: #eee7db"></span>Sand</span>
+      <span style="display: flex; flex-direction: column; align-items: center; gap: 4.4px; font-size: 10px; color: #8c491a"><span style="width: 26px; height: 26px; border-radius: 999px; background: #ffe1d0; box-shadow: 0 0 0 2px #f5ead8, 0 0 0 3.5px #c67139"></span>Terrakotta</span>
+      <span style="display: flex; flex-direction: column; align-items: center; gap: 4.4px; font-size: 10px; color: color-mix(in srgb, #201e1d 55%, transparent)"><span style="width: 26px; height: 26px; border-radius: 999px; background: #e1eecc"></span>Olive</span>
+      <span style="display: flex; flex-direction: column; align-items: center; gap: 4.4px; font-size: 10px; color: color-mix(in srgb, #201e1d 55%, transparent)"><span style="width: 26px; height: 26px; border-radius: 999px; background: #dcd3c4"></span>Nebel</span>
+    </div>
+  </div>
+
+  <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8.8px; max-width: 700px">
+    <p style="margin: 0; font-size: 12px; line-height: 1.45; text-wrap: pretty"><span style="color: #201e1d">Entschieden: ein Etikett ist eine freie Textmarke an der Karte</span> — kein verwalteter Satz je Board. Beim Tippen wird aus dem Bestand des Boards vervollständigt; was noch niemand vergeben hat, entsteht mit der ersten Karte, die es trägt, und verschwindet mit der letzten. Der Grund ist der Kontrakt: ein verwalteter Etikettensatz bräuchte einen Pflegeschirm, und den kennt die WBS nicht — ein Artboard ohne Knoten wäre erfunden. Der praktische Nutzen (eine Schreibweise statt fünf) kommt aus der Vervollständigung, nicht aus einer Verwaltung.</p>
+    <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Die Liste zeigt deshalb auch die Kehrseite ehrlich mit: <span style="color: #201e1d">Refactoring</span> und <span style="color: #201e1d">Refaktorierung</span> stehen nebeneinander. Die Vervollständigung macht das sichtbar; sie verhindert es nicht.</p>
+    <p style="margin: 0; font-size: 12px; line-height: 1.45; text-wrap: pretty"><span style="color: #201e1d">Etikett und Farbe sind zwei Dinge</span>, weil das Fertig-Kriterium sie einzeln nennt. Das Etikett trägt Worte und keine Farbe; die Farbe gehört der ganzen Karte und färbt sie auf der Bahn. Fünf Werte, alle aus dem Token-Sheet: <span style="color: #201e1d">ohne</span>, neutral-200, accent-200, accent-2-200, neutral-300.</p>
+    <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Mehr Kartenfarben hätte das Token-Sheet nicht — es führt zwei Akzenttonleitern und eine neutrale. Wer eine sechste Farbe will, ergänzt <span style="color: #201e1d">gestaltung.css</span>, und das ist eine Anforderung, kein Wireframe (dieselbe Lage wie bei den Ampelfarben, Index Frage 3).</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 4 — die frische Karte. So sieht die Seite unmittelbar nach I0011
+     aus: ein Titel, sonst nichts. Der haeufigste Zustand, nicht der Randfall.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 26.4px 26.4px 8.8px">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 4 · Frisch angelegte Karte · /karten/37 · Ausschnitt</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Eine Karte entsteht mit nichts als einem Titel (I0011). Leere Felder tragen die Handlung als Text, keinen Kasten und keine Null.</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; padding: 0 26.4px 26.4px; display: flex; gap: 26.4px; align-items: flex-start">
+
+  <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 13.2px">
+    <h2 style="font-size: 32px; text-wrap: pretty">Playwright-Lizenz klären, bevor die E2E-Strecke auf mehr als einen Rechner im LAN ausgerollt wird</h2>
+    <p style="margin: 0; font-size: 14px; color: #c67139">Beschreibung hinzufügen</p>
+    <div style="display: flex; gap: 26.4px; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">
+      <span>Keine Subtasks · <span style="color: #c67139">anlegen</span></span>
+      <span>Noch kein Kommentar · <span style="color: #c67139">schreiben</span></span>
+      <span>Keine Anhänge, keine Verweise · <span style="color: #c67139">hinzufügen</span></span>
+    </div>
+  </div>
+
+  <aside style="flex: 0 0 372px; display: flex; flex-direction: column; gap: 13.2px; padding: 13.2px; border-radius: 32.2px; background: #ebddc5; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+    <div>
+      <label style="display: block; font-size: 12px; margin-bottom: 5px; color: color-mix(in srgb, #201e1d 70%, transparent)">Verantwortlich</label>
+      <div style="display: flex; align-items: center; gap: 8.8px; min-height: 36px; padding: 4px 14px; font-size: 14px; color: color-mix(in srgb, #201e1d 55%, transparent); background: #f5ead8; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px">
+        <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; border: 1px dashed color-mix(in srgb, #201e1d 40%, transparent)"></span>niemand
+        <span style="margin-left: auto"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+      </div>
+    </div>
+    <div style="display: flex; gap: 13.2px">
+      <div style="flex: 1; min-width: 0">
+        <label style="display: block; font-size: 12px; margin-bottom: 5px; color: color-mix(in srgb, #201e1d 70%, transparent)">Fällig</label>
+        <div style="display: flex; align-items: center; min-height: 36px; padding: 6px 14px; font-size: 14px; color: color-mix(in srgb, #201e1d 55%, transparent); background: #f5ead8; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px">—</div>
+      </div>
+      <div style="flex: 0 0 148px">
+        <label style="display: block; font-size: 12px; margin-bottom: 5px; color: color-mix(in srgb, #201e1d 70%, transparent)">Farbe</label>
+        <div style="display: flex; align-items: center; gap: 8.8px; min-height: 36px">
+          <span style="width: 22px; height: 22px; border-radius: 999px; border: 1px dashed color-mix(in srgb, #201e1d 40%, transparent); box-shadow: 0 0 0 2px #ebddc5, 0 0 0 3.5px #c67139"></span>
+          <span style="width: 22px; height: 22px; border-radius: 999px; background: #eee7db"></span>
+          <span style="width: 22px; height: 22px; border-radius: 999px; background: #ffe1d0"></span>
+          <span style="width: 22px; height: 22px; border-radius: 999px; background: #e1eecc"></span>
+          <span style="width: 22px; height: 22px; border-radius: 999px; background: #dcd3c4"></span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <label style="display: block; font-size: 12px; margin-bottom: 5px; color: color-mix(in srgb, #201e1d 70%, transparent)">Etiketten</label>
+      <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px dashed #c67139; color: #c67139">+ Etikett</span>
+    </div>
+  </aside>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     RÄNDER — die Zustaende, die beim Bauen unweigerlich auftreten
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 17.6px 26.4px 8.8px">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Ränder</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; padding: 0 26.4px 26.4px; display: flex; gap: 26.4px; align-items: flex-start">
+
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">Karte gibt es nicht · /karten/9999</p>
+    <div style="margin: 0; padding: 13.2px; border-left: 3px solid #c67139; border-radius: 16px; background: #ebddc5">
+      <p style="margin: 0 0 4.4px; font-size: 15px">Eine Karte mit der Nummer 9999 gibt es nicht.</p>
+      <p style="margin: 0; font-size: 15px; color: #c67139">Zurück zum Board</p>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Wortgleich gebaut zu <span style="color: #201e1d">Board.razor</span> („Ein Board mit der Nummer @BoardId gibt es nicht.“ samt Rückweg) — eine Adresse, die man teilen kann, wird auch einmal falsch geteilt.</p>
+  </div>
+
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">Titel geleert · I0015</p>
+    <div style="margin: 0; padding: 13.2px; border-left: 3px solid #8c491a; border-radius: 16px; background: #ebddc5">
+      <p style="margin: 0; font-size: 15px">Der Titel darf nicht leer sein.</p>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Derselbe Satz wie beim Anlegen — <span style="color: #201e1d">KartenValidator</span>, Befund <span style="color: #201e1d">kartentitel-leer</span>. Die vorige Fassung bleibt stehen; gespeichert wird nichts.</p>
+  </div>
+
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">Verantwortlicher stillgelegt · I0009</p>
+    <div style="display: flex; align-items: center; gap: 8.8px; min-height: 36px; padding: 4px 14px; font-size: 14px; background: #f5ead8; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px">
+      <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #e1eecc; color: #3d472b; opacity: 0.45">JR</span><span style="opacity: 0.45">Jan R.</span>
+      <span style="margin-left: auto; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">stillgelegt</span>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Die Karte zeigt ihn weiter — das ist die zweite Hälfte des Fertig-Kriteriums von I0009, die dort nicht prüfbar war. Wählbar ist er nicht mehr: ein Wechsel geht nur nach vorn.</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     EINSTIEG — wie man hierher kommt. Das ⋯-Menue gehoert D0003 (I0014);
+     gezeichnet ist nur der Eintrag, der mit D0004 hinzukommt.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 17.6px 26.4px 8.8px">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Einstieg vom Board · Ausschnitt aus D0003</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; padding: 0 26.4px 26.4px; display: flex; gap: 26.4px; align-items: flex-start">
+
+  <div style="flex: 0 0 256px; position: relative">
+    <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 3px 10px color-mix(in srgb, #2e2b25 16%, transparent)">
+      <div style="display: flex; align-items: center; gap: 8.8px">
+        <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-14</span>
+        <span style="margin-left: auto; display: inline-flex; color: #c67139"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></span>
+      </div>
+      <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty; overflow-wrap: anywhere; text-decoration: underline; text-decoration-color: color-mix(in srgb, #c67139 50%, transparent); text-underline-offset: 3px">WBS-Import: Markdown-Baum in Karten überführen</p>
+      <div style="display: flex; align-items: center; gap: 8.8px; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">
+        <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #ffe1d0; color: #643312">KI</span>
+        <span style="margin-left: auto">5:00 Soll</span>
+      </div>
+    </div>
+    <div style="position: absolute; right: 0; top: 34px; z-index: 4; min-width: 196px; padding: 4.4px; background: #f9f4ed; border-radius: 4px; box-shadow: 0 12px 32px color-mix(in srgb, #2e2b25 22%, transparent)">
+      <span style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px; font-size: 13px; border-radius: 4px; background: color-mix(in srgb, #c67139 10%, transparent); color: #8c491a"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h10"/><path d="M4 18h7"/><path d="m15 15 5 5m0-5-5 5"/></svg>Details öffnen</span>
+      <span style="display: block; padding: 2px 13.2px 4.4px; font-size: 10px; line-height: 1.35; color: color-mix(in srgb, #201e1d 55%, transparent)">neu mit D0004 — dieselbe Adresse wie der Titelklick</span>
+      <span style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px; font-size: 13px; border-radius: 4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1.5"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/><path d="M10 12h4"/></svg>Archivieren</span>
+      <span style="display: block; padding: 2px 13.2px 4.4px; font-size: 10px; line-height: 1.35; color: color-mix(in srgb, #201e1d 55%, transparent)">unverändert aus I0014</span>
+    </div>
+  </div>
+
+  <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8.8px; max-width: 700px; padding-top: 44px">
+    <p style="margin: 0; font-size: 12px; line-height: 1.45; text-wrap: pretty"><span style="color: #201e1d">Zwei Wege, eine Adresse.</span> Der Titel auf der Karte wird zum Verweis auf <span style="color: #201e1d">/karten/14</span>; das ⋯-Menü bekommt denselben Weg als benannten Eintrag. Das Menü selbst bleibt, wie D0003 es zeichnet — die WBS-Notiz zu I0014 hat genau das zugesagt (kanbanc.md:383).</p>
+    <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Der Rückweg ist der Pfeil in Zone 1 der Navigationszeile — dieselbe Stelle, an der das Board zurück zur Board-Liste führt. Das ist der Preis der Variante C, und er ist mit einem gebauten Bedienelement bezahlt.</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     Lesehilfe — gehoert zum Wireframe, nicht zum Schirm
+     ══════════════════════════════════════════════════════════════════════ -->
+<footer style="display: flex; flex-direction: column; gap: 4.4px; padding: 17.6px 26.4px; background: #ebddc5; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent); font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent)">
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">D0004 zeigt hier:</span> <span style="color: #8c491a">I0015</span> Titel als Überschrift, Beschreibung, Verantwortlicher mit Auswahl, Fälligkeit, Farbe und Etiketten — Zustände 1 bis 4 und zwei Ränder · <span style="color: #8c491a">I0016</span> Subtasks mit Fortschritt und Zeile zum Hinzufügen · <span style="color: #8c491a">I0017</span> Kommentare mit Urheber, Zeitpunkt und Quelle (Oberfläche / API) · <span style="color: #8c491a">I0018</span> Anhänge mit Größe, Herunterladen und Ablegefläche · <span style="color: #8c491a">I0019</span> Verweise als Repository-Pfade, an der Olivkante und der Schreibmaschinenschrift von den Anhängen unterschieden. Ränder: unbekannte Karte, leerer Titel, stillgelegter Verantwortlicher; dazu die frische Karte als Leerzustand.</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Variante C gewählt — eigene Adresse je Karte.</span> Vier Gründe: die API hat je Karte eine Adresse, die Oberfläche bekommt damit dieselbe Form („Was ein Mensch klicken kann, kann ein Agent aufrufen“) · das Fertig-Kriterium von I0015 sagt „nach Reload da“, und ein Reload landet nur hier wieder auf derselben Karte · D0004 trägt fünf Interactions und speist später D0005 und D0006 — das ist genau der Platz, den <span style="color: #201e1d">A</span> laut eigener Annotation nicht hat („wenig Platz für Beschreibung, Kommentare und Anhänge gleichzeitig“) · die gebaute Kopfzeile führt Zone 1 als „die offene Seite“ samt Rückpfeil, eine Seite füllt sie, eine Schublade nicht. <span style="color: #201e1d">B</span> (Modal) verdeckt das Board und lässt Live-Änderungen dahinter unbemerkt — das steht gegen „Live überall“ — und hat keine teilbare Adresse. Die eigene Schwäche von <span style="color: #201e1d">C</span> bleibt und ist gezeichnet: der Kontextwechsel weg vom Board, gedämpft durch Brotkrumen und den gebauten Rückpfeil.</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Etiketten sind freie Textmarken je Karte</span>, mit Vervollständigung aus dem Bestand des Boards — kein verwalteter Etikettensatz, weil der einen Pflegeschirm bräuchte, den die WBS nicht kennt. Sie tragen Worte, keine Farbe; die Farbe gehört der Karte und kommt aus fünf Token-Werten. Beides ist Entwurf, keine Vereinbarung: die Zerlegung entscheidet, ob das Etikett eine eigene Tabelle bekommt.</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Bewusst nicht gezeichnet:</span> Klasse und Nummer (D0005 · I0021) und Zeiten samt Timer (D0006 · I0023–I0026) stehen als gestrichelte Kästen an ihrem Platz — derselbe Schirm des älteren Satzes speist alle drei Dialogs (Index, Zuordnung). Live-Aktualisierung (D0007) fehlt wie in D0003. <span style="color: #201e1d">Befund:</span> der ältere Satz zeichnet in allen drei Varianten einen <span style="color: #201e1d">Verlauf</span> („wer, wann, über welche Grenze“ — wireframes.js:151, 176, 195); dazu gibt es in der WBS keinen Knoten. Er ist deshalb hier nicht gezeichnet, sondern als offene Frage im Index vermerkt.</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Herkunft der Werte:</span> Tokens und Formen aus <span style="color: #201e1d">gestaltung.css</span> und <span style="color: #201e1d">oberflaeche.css</span>, Navigationszeile aus <span style="color: #201e1d">Kopfzeile.razor</span>, Meldung samt Rückweg aus <span style="color: #201e1d">Board.razor</span>, Wortlaut der Zurückweisung aus <span style="color: #201e1d">KartenValidator</span>, ISO-Datum und „—“ aus <span style="color: #201e1d">Terminformatierer</span>. Kartenform, Kartenmenü und Beispieldaten aus <span style="color: #201e1d">D0003.dc.html</span>, Kontributoren aus <span style="color: #201e1d">D0002.dc.html</span> (Stefan, Nina Barth, Claude-Agent, Maria Lenz, Jan R.). Die Adresse steht als <span style="color: #201e1d">/karten/14</span>, weil die Route dem gebauten Muster <span style="color: #201e1d">/boards/{BoardId:long}</span> folgt; der ältere Satz schrieb <span style="color: #201e1d">/karten/WBS-14</span> — das setzt die Klasse aus D0005 voraus.</p>
+</footer>
+
+</div>
+</x-dc>
+</body>
+</html>

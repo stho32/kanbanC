@@ -6,21 +6,21 @@ canvas: https://claude.ai/code/artifact/b61e3007-056d-44e0-9cf5-7350c22f858a
 seed: .claude/wireframes/kanbanc.html
 art: mockup
 richtung: aus dem Bestand — gestaltung.css (Caprasimo/Figtree, warmes Sandklima, runde Formen)
-stand: 2026-09-04
+stand: 2026-09-05
 zurueckgeholt: 2026-09-03
 ---
 
 # Wireframes — KanbanC
 
-Der Canvas trägt vier Artboards: `Main.dc.html`, den Screen-Flow über alle neun
-Dialogs, sowie `D0001.dc.html`, `D0002.dc.html` und `D0003.dc.html`, die drei
-ausdetaillierten Bildschirme. Die übrigen Dialogs bleiben Kästen im Flow; ihr
-Detail-Artboard entsteht mit `/wireframe verfeinern <dialog>`, wenn der Dialog dran
-ist (Rolling Wave). Woraus ein solcher Lauf schöpft, sagt die
+Der Canvas trägt fünf Artboards: `Main.dc.html`, den Screen-Flow über alle neun
+Dialogs, sowie `D0001.dc.html`, `D0002.dc.html`, `D0003.dc.html` und
+`D0004.dc.html`, die vier ausdetaillierten Bildschirme. Die übrigen Dialogs bleiben
+Kästen im Flow; ihr Detail-Artboard entsteht mit `/wireframe verfeinern <dialog>`,
+wenn der Dialog dran ist (Rolling Wave). Woraus ein solcher Lauf schöpft, sagt die
 [Zuordnung Schirm → Dialog](#zuordnung-schirm--dialog).
 
-Reife je Dialog wird aus dem Dateibestand gerechnet: `D0001`, `D0002` und `D0003`
-stehen auf `wireframe`, die sechs übrigen auf `flow`.
+Reife je Dialog wird aus dem Dateibestand gerechnet: `D0001`, `D0002`, `D0003` und
+`D0004` stehen auf `wireframe`, die fünf übrigen auf `flow`.
 
 | Datei | Was |
 | --- | --- |
@@ -28,7 +28,8 @@ stehen auf `wireframe`, die sechs übrigen auf `flow`.
 | `D0001.dc.html` | **Boards führen**, Rahmen 1440×3800 (gemessen 3625,3) — fünf Zustände untereinander: Board-Übersicht als echtes Fenster 1440×900, Anlegeformular, Layout-Modus, Kartenzahl-Schalter (I0004, der laufende Slice) und Board pflegen (I0005, I0038, I0039), dazu drei Ränder. Gebaut sind Übersicht, Anlegen, Layout-Modus und die Ränder; I0004, I0005, I0038 und I0039 sind Zielform und tragen an Ort und Stelle einen Vermerk |
 | `D0002.dc.html` | **Kontributoren führen**, 1440×1560 — die Liste mit den drei Arten als Hauptzustand (I0006, I0007, I0009); darunter die Identitätswahl I0008 als **zwei nebeneinander gestellte Alternativen** B und C, damit die Entscheidung am Bild fällt |
 | `D0003.dc.html` | **Board bedienen**, Fenster 1440×900, Rahmen 1100 (die Lesehilfe steht unter dem Fenster) — gefüllte Spaltenbahnen mit der Kartenform; die fünf Interactions I0010–I0014 als Zustände im selben Schirm, dazu drei Randfälle. **Am 2026-09-02 auf den gebauten Stand nachgezogen** |
-| `canvas.json` | Layout des Canvas: der Flow oben, D0003, D0002 und D0001 in der Reihe darunter, Start in der Canvas-Ansicht |
+| `D0004.dc.html` | **Karteninhalt pflegen**, Rahmen 1440×2960 (gemessen 2815,2) — die Karte als **eigene Seite** (`/karten/14`, Variante C): Hauptzustand als echtes Fenster 1440×900, dazu Verantwortlichenwahl, Etiketten und Farbe, die frisch angelegte Karte als Leerzustand, drei Ränder und der Einstieg vom Board. Alle fünf Interactions I0015–I0019 sind sichtbar; nichts davon ist gebaut, das ganze Artboard ist Zielform |
+| `canvas.json` | Layout des Canvas: der Flow oben, D0003, D0002, D0001 und D0004 in der Reihe darunter, Start in der Canvas-Ansicht |
 | `kanbanc-wireframes.html`, `wireframes.js`, `styles.css`, `README.md` | **älterer Satz, unangetastet** — acht gezeichnete Schirme mit Varianten, aus denen `verfeinern` schöpft; siehe Offene Fragen |
 
 ## Richtung
@@ -162,6 +163,14 @@ gehört in eine Anforderung, nicht ins Bild.
 | 2026-09-04 | I0038 / I0039 — Ablauf zeichnen oder Lücke markieren? | **Lücke markieren** | Der ältere Satz zeigt nur den Einstiegsknopf (Zuordnung, Spalte „Ohne Deckung"). Den Ablauf vom WBS-Import (D0008) abzuschreiben wäre falsch: dessen drei Schritte überführen Knoten in Karten, während I0039 ein Board als Ganzes wiederherstellt. Ein gestrichelter Kasten mit Grund ist ehrlicher als eine erfundene Vorschau, die die Umsetzung dann erbt. |
 | 2026-09-04 | Termine im Artboard: `30.09.2026` wie in D0003 oder `2026-09-30`? | **ISO**, `2026-09-30` | `Terminformatierer.AlsText` schreibt `yyyy-MM-dd`, und `InputDate` liest es so. D0003 zeigt an dieser Stelle das deutsche Format — ein Befund, der in Offene Frage 12 steht; D0001 wiederholt ihn nicht. |
 | 2026-09-04 | Standardspalten in der Vorschau des Anlegeformulars | **Zu erledigen · In Arbeit · Erledigt** | So stehen sie in `Boards.razor` (`Standardspalten`). Der ältere Satz nennt „Rückstand · In Arbeit · Fertig ✓" — das sind die Beispielspalten des Boards „KanbanC — Release 2", nicht die Vorlage, die der Endpunkt anlegt. |
+| 2026-09-05 | **D0004** — Schublade (A), Modal (B) oder eigene Seite (C)? | **C — eigene Seite `/karten/14`** | Vier Gründe, keiner davon Geschmack. (1) Die API hat je Karte eine Adresse; C gibt der Oberfläche dieselbe Form — „Was ein Mensch klicken kann, kann ein Agent aufrufen". (2) Das Fertig-Kriterium von I0015 sagt „nach Reload da"; nur bei C landet ein Reload wieder auf derselben Karte, bei A und B auf dem Board. (3) D0004 trägt fünf Interactions und speist später D0005 und D0006 — genau der Platz, den **A** laut eigener Annotation nicht hat („wenig Platz für Beschreibung, Kommentare und Anhänge gleichzeitig"). (4) Die gebaute Kopfzeile führt Zone 1 als „die offene Seite" mit Rückpfeil; eine Seite füllt sie, eine Schublade nicht. **B** verworfen, weil es das Board verdeckt und Live-Änderungen dahinter unbemerkt bleiben — das steht gegen „Live überall" — und keine teilbare Adresse hat. Die Schwäche von C (Kontextwechsel weg vom Board) bleibt und ist gezeichnet: Brotkrumen plus der gebaute Rückpfeil. |
+| 2026-09-05 | Was ist ein **Etikett**? Nirgends definiert — kein Knoten, keine Tabelle, kein Contract | **freie Textmarke an der Karte**, beim Tippen vervollständigt aus dem Bestand des Boards; kein verwalteter Etikettensatz | Ein verwalteter Satz bräuchte einen Pflegeschirm, und den kennt die WBS nicht — ein Artboard ohne Knoten wäre gegen den Kontrakt, und ein zusätzlicher Dialog ist Sache von `/planung`, nicht von `/wireframe`. Der praktische Nutzen (eine Schreibweise statt fünf) kommt aus der Vervollständigung. Das Artboard zeigt die Kehrseite mit: „Refactoring" und „Refaktorierung" stehen nebeneinander in der Liste. |
+| 2026-09-05 | Etikett und Farbe — ein Ding oder zwei? | **zwei** | Das Fertig-Kriterium von I0015 nennt „Farbe **und** Etiketten" einzeln. Also trägt das Etikett Worte und keine Farbe, und die Farbe gehört der ganzen Karte. Fünf Werte, alle aus dem Token-Sheet: ohne, `--color-neutral-200`, `--color-accent-200`, `--color-accent-2-200`, `--color-neutral-300`. Eine sechste Farbe hätte das Sheet nicht — die gehört in `gestaltung.css` und damit in eine Anforderung (dieselbe Lage wie bei den Ampelfarben, Frage 3). |
+| 2026-09-05 | Wer ist als **Verantwortlicher** wählbar? | Stillgelegte **nicht**, Abgebildete **doch**; „niemand" ist ein Eintrag der Liste | Die Regel „Stillgelegte nicht wählbar" ist dieselbe wie in der Identitätswahl und löst die zweite Hälfte des Fertig-Kriteriums von I0009 ein, die dort nicht prüfbar war („bleibt an alten Karten sichtbar") — der Rand zeigt genau das. Die Regel „Abgebildete nicht wählbar" gilt hier ausdrücklich **nicht**: sie können sich nicht selbst anmelden, aber jemand kann für sie eine Karte führen; genau dafür gibt es die Art. „Niemand" ist kein Zurücknehmen, sondern der Normalfall nach I0011. |
+| 2026-09-05 | Adresse der Kartenseite | **`/karten/14`** über die `KarteId`, nicht `/karten/WBS-14` | Der ältere Satz schreibt `/karten/WBS-14`; die sprechende Nummer kommt aber erst mit der Klasse (I0021, D0005, rot). Die Route folgt dem gebauten Muster `/boards/{BoardId:long}`. Kommt D0005, kann die Adresse sprechend werden — das steht als Vermerk im gestrichelten Kasten „Klasse und Nummer". |
+| 2026-09-05 | Wie kommt man in die Kartenseite? | **Titelklick auf der Karte** und ein zweiter Eintrag „Details öffnen" im ⋯-Menü | Die WBS-Notiz zu I0014 hat es zugesagt: „Kommt D0004, bekommt das Kartendetail denselben Eintrag zusätzlich; das Menü bleibt" (`kanbanc.md:383`). Gezeichnet ist nur der hinzukommende Eintrag; das Menü selbst bleibt, wie D0003 es zeigt. Umgekehrt trägt die Kartenseite „Archivieren" als benannte Fremdhandlung aus I0014. |
+| 2026-09-05 | Titel: Überschrift der Seite oder Feld im Eigenschaftenblock? | **Überschrift**, 32 px, mit Stift daneben | Der Titel ist die Identität der Karte und steht dort, wo man ihn liest — geändert wird er an derselben Stelle. Die Navigationszeile trägt statt dessen den **Boardnamen**, weil ihr Rückpfeil dorthin führt; ein zweites Mal denselben Titel zu zeigen wäre Wiederholung ohne Nutzen. |
+| 2026-09-05 | Rahmenhöhe und Platz von `D0004` auf dem Canvas | **1440×2960** bei `x` 4680, `y` 1300 | Gemessen, nicht geschätzt (Chromium, Google-Fonts-Fassung derselben Schriften): 2815,2 px. 2960 gibt 5,1 % Reserve, der Überschuss trägt die Grundfarbe `#ebddc5`. Der Platz setzt die Dialogreihe nach rechts fort, 120 px hinter `D0001` — Positionen der übrigen Artboards bleiben unverändert. |
 | 2026-09-02 | Eingabefeld der Kartenanlage steht auf der Bahn in derselben Farbe wie die Bahn | **so gezeichnet**, nicht korrigiert | `.input` trägt `background: var(--color-surface)`, und die Bahn ist `--color-surface`: das Feld zeigt sich nur als umrandete Pille. `.karte` und `.meldung` sind für diesen Fall auf `--color-bg` gedreht worden, `.input` nicht. Ob das Absicht ist, entscheidet nicht das Artboard — es zeigt, was gebaut ist. Als Befund unter Offene Fragen 11. |
 
 ## Zuordnung Schirm → Dialog
@@ -183,7 +192,7 @@ Auffüllen.
 | **D0001** Boards führen | „Start / Board-Übersicht" (ganz) · „Board anlegen & gestalten" (ganz) · „Board" (nur der Boardkopf: Kartenzahl-Schalter, Klassenfilter) | Start **A** · Anlegen **A**, Layout-Modus **B** | **I0038 / I0039** — Export und Import stehen nur als Knopf im Fuß von „Start A" und im Board-Abschnitt von „Gestalten B". Dateiwahl, Vorschau und Ergebnis sind nirgends gezeichnet. Seit 2026-09-04 als `D0001.dc.html` gezeichnet; die Lücke steht dort als **markierter Kasten**, nicht als erfundener Ablauf. |
 | **D0002** Kontributoren führen | „Kontributoren & Identität" (ganz) | Liste **A** gesetzt · Identitätswahl **B oder C offen** (Frage 4) | — vollständig; seit 2026-08-31 als `D0002.dc.html` gezeichnet |
 | **D0003** Board bedienen | „Board" (Bahnen, Karten, Abschlussspalte) | Bahnen **A/B** — dort deckungsgleich; **C** wäre eine spätere Zweitansicht | **I0014** Karte archivieren — der alte Satz kennt nur *Board* archivieren (I0005). Im Artboard als ⋯-Menü ergänzt, siehe Frage 6. |
-| **D0004** Karteninhalt pflegen | „Kartendetail" (ganz) | **offen** — A, B oder C, Wahl bei I0015–I0019 | — |
+| **D0004** Karteninhalt pflegen | „Kartendetail" (ganz) | **C** — eigene Seite, entschieden 2026-09-05 bei I0015 | **Verlauf** — alle drei Varianten des alten Satzes zeichnen eine Verlaufsspur („wer, wann, über welche Grenze"); die WBS kennt dazu keinen Knoten. Seit 2026-09-05 als `D0004.dc.html` gezeichnet; der Verlauf steht dort **nicht** im Bild, sondern als Frage 13. |
 | **D0005** Karten-Klassen | „Board anlegen & gestalten" **B**, Abschnitt *Klassen* (I0020) · „Kartendetail" und die Kartenform in „Board" (I0021, Nummer auf der Karte) | Klassen-Teil aus **B** gesetzt | **I0022** — reine API-Zusage, absichtlich ohne Schirm; die Oberflächenentsprechung ist der Klassenfilter im Boardkopf |
 | **D0006** Zeiterfassung | „Zeiten je Kontributor" (ganz) · „Kartendetail" (I0026, Zeiten der Karte) · „Board A" rechte Spur und „Start B" Banner (I0027, laufende Timer) | **offen** — A oder B, Wahl bei I0023–I0027 | — |
 | **D0007** Live-Aktualisierung | **kein eigener Schirm** — nur als Merkmal *innerhalb* von „Board": Ereignisspur rechts (**A**) oder Laufband oben (**B**), dazu die Marke „● live" in der Kopfzeile und der Live-Punkt in „Start B" | Spur oder Laufband entscheidet **I0028**, nicht vorher | **I0029** Aufschließen nach Verbindungsabbruch — weder Zustand noch Meldung gezeichnet |
@@ -287,6 +296,12 @@ Die Gegenrichtung, Schirm → Dialogs, in Kurzform:
    anzubieten. Dann hätte I0014 auf dem Board kein Bedienelement und wäre ohne D0004
    nicht bedienbar. Entscheidet sich mit `R00006` oder spätestens bei D0004.
 
+   **Nachtrag 2026-09-05, mit `D0004.dc.html` beantwortet:** es ist beides. Das
+   Menü bleibt, wie D0003 es zeichnet, und bekommt „Details öffnen" als zweiten
+   Eintrag; die Kartenseite trägt „Archivieren" als benannte Fremdhandlung aus
+   I0014. Gezeichnet im Abschnitt *Einstieg vom Board*. Offen bleibt nur, ob das
+   Menü darüber hinaus weitere Einträge bekommt.
+
 7. **Die Ablagestelle beim Ziehen trägt eine Positionsangabe** („hier ablegen ·
    Position 1"). Ob die Position beziffert wird oder die Lücke allein genügt, sagt
    das Fertig-Kriterium von I0012 nicht. Gezeichnet ist die ausführlichere Form.
@@ -351,3 +366,27 @@ Die Gegenrichtung, Schirm → Dialogs, in Kurzform:
     beim Bauen von I0005 auftritt: entweder das Menü bekommt einen
     Stapelkontext über der Verweisfläche, oder die Verweisfläche endet vor dem
     Menü. Gehört in die Anforderung zu I0005, nicht ins Bild.
+
+15. **Der Verlauf der Karte hat keinen Knoten.** Alle drei Varianten des älteren
+    Satzes zeichnen ihn — „Verlauf" mit Kontributor, Zeitpunkt und Quelle
+    (`wireframes.js:151`, `:176`, `:195`), in Variante C sogar als Zeitachse über
+    die halbe Breite. In der WBS gibt es dazu **nichts**: weder unter D0004
+    (I0015–I0019) noch anderswo steht eine Interaction, die Handlungen an einer
+    Karte festhält. `D0004.dc.html` zeichnet ihn deshalb **nicht** — ein Artboard
+    ohne Knoten wäre gegen den Kontrakt. Das ist ein Befund für `/planung`, nicht
+    eine Lücke zum Auffüllen: entweder der Verlauf ist gewollt, dann braucht er
+    eine Interaction, oder die Vision-Zusage „an jeder Karte ist ablesbar, wer
+    oder was gehandelt hat" wird von Kommentar (I0017) und Zeiteintrag (I0024)
+    allein getragen. Die Zeile „Quelle: Oberfläche / API" steht im Artboard
+    deshalb nur an den Kommentaren, wo I0017 sie deckt.
+
+16. **Etikett ist als freie Textmarke gesetzt, nicht abgestimmt.** Der Begriff
+    steht im Fertig-Kriterium von I0015, ist aber nirgends definiert — der
+    einzige Beleg im ganzen Repository ist ein einzelner Chip „Import"
+    (`wireframes.js:157`). Entschieden ist: freie Marke je Karte mit
+    Vervollständigung aus dem Bestand des Boards (siehe Entscheidungstabelle).
+    Die Zerlegung hängt daran — eine Marke braucht eine Tabelle
+    `Etikett (KarteId, Text)` und eine Abfrage über das Board, ein verwalteter
+    Satz bräuchte darüber hinaus einen Pflegeschirm und damit einen WBS-Knoten,
+    den es nicht gibt. Wer den verwalteten Satz will, geht über `/planung`, nicht
+    über das Artboard.
