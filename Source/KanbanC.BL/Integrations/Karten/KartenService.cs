@@ -168,6 +168,26 @@ public sealed class KartenService
         return Ergebnis<Kartendetail>.Erfolg(detail!);
     }
 
+    // Dieselbe Antwortgestalt wie AendereKarte, weil dieselbe Seite sie verbraucht.
+    public Ergebnis<Kartendetail> SetzeEtiketten(long karteId, Kartenetiketten etiketten)
+    {
+        var befunde = EtikettenValidator.Pruefe(karteId, etiketten);
+        var listeIstUngueltig = !befunde.IstOhneBefund;
+        if (listeIstUngueltig)
+        {
+            return Ergebnis<Kartendetail>.Zurueckgewiesen(befunde);
+        }
+
+        var detail = _kartenRepository.SetzeEtiketten(karteId, etiketten);
+        var dieKarteGibtEsNicht = detail is null;
+        if (dieKarteGibtEsNicht)
+        {
+            return Zurueckgewiesen<Kartendetail>(Nichtgefunden.Karte(karteId));
+        }
+
+        return Ergebnis<Kartendetail>.Erfolg(detail!);
+    }
+
     // null heisst „mit diesem Verantwortlichen ist alles in Ordnung" — auch dann, wenn gar keiner
     // gesetzt wird: „niemand" ist ein gültiger Wert, kein Fehler.
     private Fehlerbefund? BefundZumVerantwortlichen(long? kontributorId)

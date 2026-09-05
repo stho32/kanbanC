@@ -171,6 +171,49 @@ public class KartenServiceTests
         Assert.That(kartenRepository.ErhalteneAenderung!.Kontributor, Is.Null);
     }
 
+    [Test]
+    public void Wenn_die_Etikettenliste_gueltig_ist_dann_reicht_SetzeEtiketten_das_zurueckgelesene_Detail_durch()
+    {
+        var detail = Kartendetail(new Karte(7, "WBS-Import", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null)) with { Etiketten = ["Doku", "Import"] };
+        var kartenRepository = TestKartenRepository.Leer().MitKartendetail(detail);
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, new TestKontributorenRepository());
+        var etiketten = new Kartenetiketten(["Import", "Doku"]);
+
+        var ergebnis = service.SetzeEtiketten(7, etiketten);
+
+        Assert.That(ergebnis.IstErfolg, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Wert.Etiketten, Is.EqualTo(new[] { "Doku", "Import" }));
+            Assert.That(kartenRepository.ErhalteneEtiketten, Is.EqualTo(etiketten));
+        });
+    }
+
+    [Test]
+    public void Wenn_die_Etikettenliste_eine_Dublette_traegt_dann_weist_SetzeEtiketten_sie_zurueck_und_schreibt_nichts()
+    {
+        var kartenRepository = TestKartenRepository.Leer().MitKartendetail(Kartendetail(new Karte(7, "WBS-Import", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null)));
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, new TestKontributorenRepository());
+
+        var ergebnis = service.SetzeEtiketten(7, new Kartenetiketten(["Import", "Import"]));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Befundpruefung.ErwarteVollstaendigenBefund(ergebnis.Befunde[0], "etikett-doppelt");
+        Assert.That(kartenRepository.ErhalteneEtiketten, Is.Null);
+    }
+
+    [Test]
+    public void Wenn_die_KarteId_unbekannt_ist_dann_weist_SetzeEtiketten_mit_einem_Befund_ohne_Board_zurueck()
+    {
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), TestKartenRepository.Leer().OhneDieseKarte(), new TestKontributorenRepository());
+
+        var ergebnis = service.SetzeEtiketten(9999, new Kartenetiketten(["Import"]));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Befundpruefung.ErwarteVollstaendigenBefund(ergebnis.Befunde[0], "karte-unbekannt");
+        Assert.That(ergebnis.Befunde[0].Meldung, Does.Not.Contain("Board"));
+    }
+
     private static Kartendetail Kartendetail(Karte karte)
     {
         return new Kartendetail(karte, Board: 3, Boardname: "Entwicklung", Spalte: 5, Spaltenbezeichnung: "In Arbeit", Verantwortlicher: null, Etiketten: [], Etikettvorschlaege: []);
