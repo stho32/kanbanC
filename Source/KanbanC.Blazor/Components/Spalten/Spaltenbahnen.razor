@@ -63,7 +63,7 @@
                         <p class="spaltenbahn-datumsgruppe">@gruppe.Ueberschrift · @gruppe.Karten.Count</p>
                         for (var stelle = gruppe.ErsteStelle; stelle < gruppe.ErsteStelle + gruppe.Karten.Count; stelle++)
                         {
-                            @Kartenzeile(spalte, stelle)
+                            @Erledigtkarte(spalte, stelle)
                         }
                     }
                 }
@@ -73,8 +73,8 @@
                     {
                         @Kartenzeile(spalte, stelle)
                     }
+                    @Einfuegelinie(spalte.SpalteId, spalte.Karten.Count)
                 }
-                @Einfuegelinie(spalte.SpalteId, spalte.Karten.Count)
                 @if (ZeigtAblageziele)
                 {
                     <div class="ablageflaeche"></div>
@@ -116,9 +116,26 @@
                HaelfteUeberfahren="haelfte => UeberfahreHaelfte(spalteId, index, haelfte)"
                HierAbgelegt="haelfte => LegeAufHaelfteAb(spalte, index, haelfte)" />
     </text>;
+
+    @* Eine Karte der Abschlussbahn bietet keine Hälften und keine Fuge davor: die Bahn ist nach
+       Erledigungsdatum geordnet, dort bezeichnet eine Fuge keine Stelle. *@
+    RenderFragment Erledigtkarte(Spalte spalte, int stelle) => @<text>
+        @{
+            var erledigte = spalte.Karten[stelle];
+            var abschlussspalteId = spalte.SpalteId;
+        }
+        <Karte @key="erledigte.KarteId"
+               Kartendaten="erledigte"
+               IstZiehbar="ZeigtZiehbareKarten"
+               WirdGezogen="WirdGezogen(erledigte.KarteId)"
+               NimmtAn="false"
+               ZugBegann="karteId => BeginneZug(abschlussspalteId, karteId)"
+               ZugEndete="BeendeZug" />
+    </text>;
 }
 
 @code {
+    private const int ObersteStelle = 1;
     private Dictionary<long, SpaltenFormular> _formulare = [];
     private IReadOnlyList<Spalte> _gezeigteSpalten = [];
     private Kartenzug? _laufenderZug;
@@ -224,8 +241,17 @@
         await LegeAb(spalte.SpalteId, position);
     }
 
+    // In einer nach Erledigungsdatum geordneten Bahn bezeichnet eine Fuge keine Stelle: Ablegen
+    // heißt dort „erledigt“, nicht „an diese Stelle“. Aus der gekürzten Liste eine Position zu
+    // rechnen träfe ohnehin mitten in einen Bestand, den die Bahn gar nicht zeigt.
     private async Task LegeAmBahnendeAb(Spalte spalte)
     {
+        if (spalte.IstAbschlussspalte)
+        {
+            await LegeAb(spalte.SpalteId, ObersteStelle);
+            return;
+        }
+
         var position = Ablagestellen.ZielpositionAmEnde(spalte.Karten.Count, StelleDerGezogenenKarte(spalte));
         await LegeAb(spalte.SpalteId, position);
     }
