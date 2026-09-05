@@ -49,6 +49,53 @@ public class KartenApiKlientTests
     }
 
     [Test]
+    public async Task Wenn_die_Karte_geaendert_wird_dann_setzt_der_Klient_ein_PUT_auf_die_boardlose_Adresse_mit_allen_vier_Feldern_ab()
+    {
+        const string rumpf = """{"karte":{"karteId":14,"titel":"WBS-Import","position":2,"beschreibung":"Knoten","faelligAm":"2026-09-02","farbe":"Terrakotta"},"board":3,"boardname":"Entwicklung","spalte":5,"spaltenbezeichnung":"In Arbeit"}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.AendereKarte(14, new KarteAendernAnfrage("WBS-Import", "Knoten", new DateOnly(2026, 9, 2), Kartenfarbe.Terrakotta));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("PUT http://webapi.test/api/karten/14"));
+            Assert.That(fabrik.GesendeterRumpf, Does.Contain("\"titel\":\"WBS-Import\""));
+            Assert.That(fabrik.GesendeterRumpf, Does.Contain("\"faelligAm\":\"2026-09-02\""));
+            Assert.That(fabrik.GesendeterRumpf, Does.Contain("\"farbe\":\"Terrakotta\""));
+            Assert.That(ergebnis.Wert.Karte.Farbe, Is.EqualTo(Kartenfarbe.Terrakotta));
+        });
+    }
+
+    // Ein geleertes Datumsfeld reist als null, nicht als leerer Text — den wiese
+    // System.Text.Json ab (DateOnlyEingabeProbeTests).
+    [Test]
+    public async Task Wenn_die_Faelligkeit_geleert_wird_dann_traegt_der_Rumpf_null_und_keinen_leeren_Text()
+    {
+        const string rumpf = """{"karte":{"karteId":14,"titel":"WBS-Import","position":2,"beschreibung":null,"faelligAm":null,"farbe":"Ohne"},"board":3,"boardname":"Entwicklung","spalte":5,"spaltenbezeichnung":"In Arbeit"}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        await klient.AendereKarte(14, new KarteAendernAnfrage("WBS-Import", null, null, Kartenfarbe.Ohne));
+
+        Assert.That(fabrik.GesendeterRumpf, Does.Contain("\"faelligAm\":null"));
+    }
+
+    [Test]
+    public async Task Wenn_die_WebApi_die_Kartenaenderung_zurueckweist_dann_reicht_der_Klient_ihren_Befund_durch()
+    {
+        const string rumpf = """{"befunde":[{"code":"kartentitel-leer","meldung":"Der Titel darf nicht leer sein.","kompensation":"`PUT /api/karten/14` mit einem nichtleeren „titel“ wiederholen."}]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.BadRequest, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.AendereKarte(14, new KarteAendernAnfrage("", null, null, Kartenfarbe.Ohne));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Is.EqualTo("Der Titel darf nicht leer sein."));
+    }
+
+    [Test]
     public async Task Wenn_die_WebApi_die_Karte_anlegt_dann_liefert_der_Klient_sie_als_Erfolg()
     {
         const string rumpf = """{"karteId":7,"titel":"Migration schreiben","position":3}""";

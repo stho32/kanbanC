@@ -25,6 +25,13 @@ public sealed class KartenApiKlient
         return await AlsKartendetail(antwort);
     }
 
+    public async Task<ApiErgebnis<Kartendetail>> AendereKarte(long karteId, KarteAendernAnfrage anfrage)
+    {
+        using var klient = _klientFabrik.CreateClient(KlientName);
+        using var antwort = await klient.PutAsJsonAsync($"{KartenRoute}/{karteId}", anfrage);
+        return await AlsKartendetail(antwort);
+    }
+
     // 400 und 404 laufen denselben Weg, weil beide einen Befund der WebApi tragen.
     // ApiAntwortleser waere die falsche Stelle: sein 404-Zweig ersetzt jeden Befund durch eine
     // Board-Meldung, und diese Route kennt kein Board.
