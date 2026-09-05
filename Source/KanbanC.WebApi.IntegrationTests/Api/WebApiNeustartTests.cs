@@ -240,6 +240,33 @@ public class WebApiNeustartTests
         });
     }
 
+    [Test]
+    public async Task Wenn_die_WebApi_nach_dem_Archivieren_einer_Karte_neu_startet_dann_ist_die_Karte_weiterhin_archiviert()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        long spalteId;
+        long karteId;
+        using (var ersteInstanz = new TestWebApi(datenbank.Dateipfad))
+        {
+            var board = await LegeBoardAn(ersteInstanz, new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null));
+            spalteId = board.Spalten[0].SpalteId;
+            await LegeKarteAn(ersteInstanz, board.BoardId, spalteId, "A");
+            karteId = (await LegeKarteAn(ersteInstanz, board.BoardId, spalteId, "B")).KarteId;
+            var archiviert = await ersteInstanz.Klient.PutAsJsonAsync($"{BoardsRoute}/{board.BoardId}/karten/{karteId}/archivierung", new Archivierung(true));
+            archiviert.EnsureSuccessStatusCode();
+        }
+
+        using var zweiteInstanz = new TestWebApi(datenbank.Dateipfad);
+
+        var board2 = await zweiteInstanz.Klient.GetFromJsonAsync<Board>($"{BoardsRoute}/1");
+        var archivierte = await zweiteInstanz.Klient.GetFromJsonAsync<List<Karte>>($"{BoardsRoute}/1/spalten/{spalteId}/karten?archiviert=true");
+        Assert.Multiple(() =>
+        {
+            Assert.That(board2!.Spalten[0].Karten.Select(karte => karte.Titel), Is.EqualTo(new[] { "A" }));
+            Assert.That(archivierte!.Select(karte => karte.KarteId), Is.EqualTo(new[] { karteId }));
+        });
+    }
+
     private static async Task<Kontributor> LegeKontributorAn(TestWebApi webApi, KontributorAnlegenAnfrage anfrage)
     {
         var antwort = await webApi.Klient.PostAsJsonAsync(KontributorenRoute, anfrage);

@@ -864,6 +864,151 @@ public class KartenEndpunkteTests
         await Fehlerrumpf.ErwarteBefundMitCode(antwort, "spalte-unbekannt");
     }
 
+    // Der Rundlauf, der „fort heisst nicht weg“ belegt: archivieren, im Archiv wiederfinden,
+    // zurueckholen — und danach steht die Karte wieder in ihrer Bahn.
+    [Test]
+    public async Task Wenn_eine_Karte_archiviert_und_zurueckgeholt_wird_dann_steht_sie_dazwischen_nur_im_Archiv_und_danach_wieder_im_Board()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var spalteId = board.Spalten[0].SpalteId;
+        await LegeKarteAn(webApi, board.BoardId, spalteId, "A");
+        var b = await LegeKarteAn(webApi, board.BoardId, spalteId, "B");
+        await LegeKarteAn(webApi, board.BoardId, spalteId, "C");
+
+        await Archiviere(webApi, board.BoardId, b.KarteId, true);
+
+        var imArchiv = await webApi.Klient.GetFromJsonAsync<IReadOnlyList<Karte>>($"{KartenRoute(board.BoardId, spalteId)}?archiviert=true");
+        var waehrendDesArchivs = await LadeBoard(webApi, board.BoardId);
+        Assert.Multiple(() =>
+        {
+            Assert.That(imArchiv!.Select(karte => karte.Titel), Is.EqualTo(new[] { "B" }));
+            Assert.That(waehrendDesArchivs.Spalten[0].Karten.Select(karte => karte.Titel), Is.EqualTo(new[] { "A", "C" }));
+        });
+
+        await Archiviere(webApi, board.BoardId, b.KarteId, false);
+
+        var danach = await LadeBoard(webApi, board.BoardId);
+        var archivDanach = await webApi.Klient.GetFromJsonAsync<IReadOnlyList<Karte>>($"{KartenRoute(board.BoardId, spalteId)}?archiviert=true");
+        Assert.Multiple(() =>
+        {
+            Assert.That(danach.Spalten[0].Karten.Select(karte => karte.Titel), Is.EqualTo(new[] { "A", "B", "C" }));
+            Assert.That(danach.Spalten[0].Karten.Select(karte => karte.Position), Is.EqualTo(new[] { 1, 2, 3 }));
+            Assert.That(archivDanach, Is.Empty);
+        });
+    }
+
+    [Test]
+    public async Task Wenn_eine_erledigte_Karte_den_Rundlauf_durchlaeuft_dann_bleibt_ihr_Erledigungsdatum_unveraendert()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var abschlussspalteId = board.Spalten[2].SpalteId;
+        var fertig = await LegeKarteAn(webApi, board.BoardId, abschlussspalteId, "Fertig");
+        Assert.That(fertig.ErledigtAm, Is.Not.Null);
+
+        await Archiviere(webApi, board.BoardId, fertig.KarteId, true);
+        var imArchiv = await webApi.Klient.GetFromJsonAsync<IReadOnlyList<Karte>>($"{KartenRoute(board.BoardId, abschlussspalteId)}?archiviert=true");
+        await Archiviere(webApi, board.BoardId, fertig.KarteId, false);
+        var danach = await LadeBoard(webApi, board.BoardId);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(imArchiv![0].ErledigtAm, Is.EqualTo(fertig.ErledigtAm));
+            Assert.That(danach.Spalten[2].Karten[0].ErledigtAm, Is.EqualTo(fertig.ErledigtAm));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_eine_Karte_der_Zielspalte_archiviert_ist_dann_wird_die_Zielposition_gegen_die_aktiven_geprueft()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var zielspalteId = board.Spalten[0].SpalteId;
+        await LegeKarteAn(webApi, board.BoardId, zielspalteId, "A");
+        var b = await LegeKarteAn(webApi, board.BoardId, zielspalteId, "B");
+        await LegeKarteAn(webApi, board.BoardId, zielspalteId, "C");
+        await Archiviere(webApi, board.BoardId, b.KarteId, true);
+        var wanderer = await LegeKarteAn(webApi, board.BoardId, board.Spalten[1].SpalteId, "Wanderer");
+
+        var angenommen = await webApi.Klient.PutAsJsonAsync(Lageroute(board.BoardId, wanderer.KarteId), new Kartenlage(zielspalteId, 3));
+        Assert.That(angenommen.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+
+        var zurueck = await LegeKarteAn(webApi, board.BoardId, board.Spalten[1].SpalteId, "Zweiter Wanderer");
+        var abgewiesen = await webApi.Klient.PutAsJsonAsync(Lageroute(board.BoardId, zurueck.KarteId), new Kartenlage(zielspalteId, 5));
+
+        Assert.That(abgewiesen.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        await Fehlerrumpf.ErwarteBefundMitCode(abgewiesen, "position-ausserhalb");
+    }
+
+    [Test]
+    public async Task Wenn_eine_Karte_archiviert_ist_dann_bekommt_die_naechste_neue_Karte_die_Position_hinter_der_letzten_aktiven()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var spalteId = board.Spalten[0].SpalteId;
+        await LegeKarteAn(webApi, board.BoardId, spalteId, "A");
+        var b = await LegeKarteAn(webApi, board.BoardId, spalteId, "B");
+        await Archiviere(webApi, board.BoardId, b.KarteId, true);
+
+        var neue = await LegeKarteAn(webApi, board.BoardId, spalteId, "C");
+
+        Assert.That(neue.Position, Is.EqualTo(2));
+    }
+
+    // Eine archivierte Karte ist kein Bestand: sie ist weder Zugobjekt noch Bezugspunkt.
+    [Test]
+    public async Task Wenn_eine_archivierte_Karte_verschoben_werden_soll_dann_verhaelt_sich_die_Lage_wie_bei_einer_fehlenden_Karte()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var spalteId = board.Spalten[0].SpalteId;
+        await LegeKarteAn(webApi, board.BoardId, spalteId, "A");
+        var b = await LegeKarteAn(webApi, board.BoardId, spalteId, "B");
+        await Archiviere(webApi, board.BoardId, b.KarteId, true);
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Lageroute(board.BoardId, b.KarteId), new Kartenlage(spalteId, 1));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "karte-unbekannt");
+    }
+
+    // Die Kuerzung rechnet auf den aktiven Karten, ohne einen eigenen Archivbegriff zu lernen.
+    [Test]
+    public async Task Wenn_eine_Karte_der_vollen_Abschlussspalte_archiviert_wird_dann_ist_die_Bahn_nicht_mehr_gekuerzt()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var abschlussspalteId = board.Spalten[2].SpalteId;
+        var erste = await LegeKarteAn(webApi, board.BoardId, abschlussspalteId, "Fertig 1");
+        for (var nummer = 2; nummer <= 21; nummer++)
+        {
+            await LegeKarteAn(webApi, board.BoardId, abschlussspalteId, $"Fertig {nummer}");
+        }
+
+        var vorher = await LadeBoard(webApi, board.BoardId);
+        Assert.Multiple(() =>
+        {
+            Assert.That(vorher.Spalten[2].Karten, Has.Count.EqualTo(20));
+            Assert.That(vorher.Spalten[2].Kartenzahl, Is.EqualTo(21));
+        });
+
+        await Archiviere(webApi, board.BoardId, erste.KarteId, true);
+
+        var nachher = await LadeBoard(webApi, board.BoardId);
+        Assert.Multiple(() =>
+        {
+            Assert.That(nachher.Spalten[2].Karten, Has.Count.EqualTo(20));
+            Assert.That(nachher.Spalten[2].Kartenzahl, Is.EqualTo(20));
+        });
+    }
+
     private static async Task<IReadOnlyList<Spalte>> Archiviere(TestWebApi webApi, long boardId, long karteId, bool istArchiviert)
     {
         var antwort = await webApi.Klient.PutAsJsonAsync(Archivierungsroute(boardId, karteId), new Archivierung(istArchiviert));
