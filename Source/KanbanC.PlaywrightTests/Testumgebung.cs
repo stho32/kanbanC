@@ -46,6 +46,22 @@ public sealed class Testumgebung
 
     public string WebApiAdresse { get; }
 
+    // Der Weg am Dienst vorbei: zwei verschiedene Erledigungsdaten lassen sich über die Uhr des
+    // Testlaufs nicht herstellen, und ein Testhaken in der WebApi wäre Produktionscode, den nur
+    // der Test braucht.
+    public Testdatenbank Datenbank
+    {
+        get
+        {
+            if (_datenbankDateipfad is null)
+            {
+                throw new InvalidOperationException("Die WebApi läuft noch auf keiner Datenbankdatei.");
+            }
+
+            return new Testdatenbank(_datenbankDateipfad);
+        }
+    }
+
     [OneTimeSetUp] // stil-check: C18 Prozess-Infrastruktur (Blazor einmal je Lauf), kein Arrange eines Tests
     public async Task StarteBlazor()
     {

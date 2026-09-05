@@ -207,3 +207,4 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-05 | R00015 Erledigte Karten gebündelt sehen | B0192 Datumsgruppen in der Bahn | Standard | 2h | 0,1h | 0,1h | autonom |
 | 2026-09-05 | R00015 Erledigte Karten gebündelt sehen | B0193 Bahnenkopf zeigt „N+“ | Standard | 2h | 0,0h | 0,0h | autonom |
 | 2026-09-05 | R00015 Erledigte Karten gebündelt sehen | B0194 Die Abschlussbahn nimmt ganzflächig an | Standard | 2h | 0,0h | 0,0h | autonom |
+| 2026-09-05 | R00015 Erledigte Karten gebündelt sehen | B0195 E2E gruppiert und gekürzt | Standard | 2-4h | 0,0h | 0,0h | autonom |
