@@ -189,3 +189,16 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-05 | R00015 Erledigte Karten gebündelt sehen | B0186 Erledigung schreiben und löschen | Standard | 2h | 0,0h | 0,0h | autonom |
 | 2026-09-05 | R00015 Erledigte Karten gebündelt sehen | B0187 Erledigungsdatum reist mit der Karte | Standard | 0,4-1,5h | 0,0h | 0,0h | autonom |
 | 2026-09-05 | R00015 Erledigte Karten gebündelt sehen | B0188 Erledigung über die API | Standard | 0,4h | 0,0h | 0,0h | autonom |
+| 2026-08-29 | R00003 Boards auflisten und öffnen | Lauf R00003 · S7 ausstehend | Nacharbeit | — | — | 0,1h | autonom |
+| 2026-08-30 | R00004 Layout-Modus für die Spaltenpflege | Lauf R00004 · S7 ausstehend | Nacharbeit | — | — | 0,4h | autonom |
+| 2026-09-02 | R00005 Oberfläche auf das gezeichnete Design bringen | Lauf R00005 · S7 ausstehend | Nacharbeit | — | — | 4,6h | autonom |
+| 2026-08-31 | R00006 Karten anlegen und am Board sehen | Lauf R00006 · S7 ausstehend | Nacharbeit | — | — | 0,9h | autonom |
+| 2026-09-03 | R00007 Karte verschieben | Lauf R00007 · S7 ausstehend | Nacharbeit | — | — | 1,2h | autonom |
+| 2026-09-03 | R00008 Einfügelinie statt Ablagekästen | Lauf R00008 · S7 ausstehend | Nacharbeit | — | — | 1,6h | autonom |
+| 2026-09-04 | R00009 Kartenzahl je Spalte anzeigen | Lauf R00009 · S7 ausstehend | Nacharbeit | — | — | 0,2h | autonom |
+| 2026-09-04 | R00010 Board umbenennen und archivieren | Lauf R00010 · S7 ausstehend | Nacharbeit | — | — | 0,3h | autonom |
+| 2026-09-04 | R00011 Kontributor anlegen | Lauf R00011 · S7 ausstehend | Nacharbeit | — | — | 0,2h | autonom |
+| 2026-09-04 | R00012 Kontributor bearbeiten | Lauf R00012 · S7 ausstehend | Nacharbeit | — | — | 0,4h | autonom |
+| 2026-09-04 | R00013 Identität wählen | Lauf R00013 · S7 ausstehend | Nacharbeit | — | — | 0,6h | autonom |
+| 2026-09-04 | R00014 Kontributor stilllegen | Lauf R00014 · S7 ausstehend | Nacharbeit | — | — | 0,2h | autonom |
+| 2026-09-05 | R00015 Erledigte Karten gebündelt sehen | B0189 Erledigungsordnung und Kürzung | Standard | 0,4h | 0,0h | 0,0h | autonom |
