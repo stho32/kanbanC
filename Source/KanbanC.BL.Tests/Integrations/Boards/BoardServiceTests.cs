@@ -1,6 +1,7 @@
 using KanbanC.BL.Integrations.Boards;
 using KanbanC.BL.Tests.TestHelpers;
 using KanbanC.Contracts.Boards;
+using KanbanC.Contracts.Karten;
 
 namespace KanbanC.BL.Tests.Integrations.Boards;
 
@@ -85,8 +86,40 @@ public class BoardServiceTests
 
         var geladen = service.LadeBoard(7);
 
+        // Verglichen wird Feld für Feld statt als ganzer Record: der Dienst kürzt die
+        // Abschlussbahnen an seinem Ausgang und baut die Spaltenliste dabei neu — der Record
+        // vergleicht diesen Member per Referenz.
         Assert.That(repository.ErfragteBoardId, Is.EqualTo(7));
-        Assert.That(geladen, Is.EqualTo(gespeichert));
+        Assert.Multiple(() =>
+        {
+            Assert.That(geladen!.BoardId, Is.EqualTo(gespeichert.BoardId));
+            Assert.That(geladen.Name, Is.EqualTo(gespeichert.Name));
+            Assert.That(geladen.Art, Is.EqualTo(gespeichert.Art));
+            Assert.That(geladen.Spalten, Is.EqualTo(gespeichert.Spalten));
+            Assert.That(geladen.ZeigtKartenzahl, Is.EqualTo(gespeichert.ZeigtKartenzahl));
+            Assert.That(geladen.IstArchiviert, Is.EqualTo(gespeichert.IstArchiviert));
+        });
+    }
+
+    [Test]
+    public void Wenn_die_Abschlussbahn_ueber_ihrer_Grenze_liegt_dann_kuerzt_der_Dienst_sie_am_Ausgang()
+    {
+        var repository = new TestBoardRepository();
+        var abschlussbahn = new Spalte(9, "Erledigt", 1, true, 2, [
+            new Karte(1, "Vorgestern", 1, new DateOnly(2026, 9, 3)),
+            new Karte(2, "Heute", 2, new DateOnly(2026, 9, 5)),
+            new Karte(3, "Gestern", 3, new DateOnly(2026, 9, 4)),
+        ], Kartenzahl: 3);
+        repository.Speichere(new Board(7, "Entwicklung", BoardArt.Linie, null, null, [abschlussbahn], false, false));
+        var service = new BoardService(repository);
+
+        var geladen = service.LadeBoard(7);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(geladen!.Spalten[0].Karten.Select(karte => karte.Titel), Is.EqualTo(new[] { "Heute", "Gestern" }));
+            Assert.That(geladen.Spalten[0].Kartenzahl, Is.EqualTo(3));
+        });
     }
 
     [Test]

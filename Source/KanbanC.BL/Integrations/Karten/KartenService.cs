@@ -92,7 +92,15 @@ public sealed class KartenService
             return Zurueckgewiesen(Nichtgefunden.Karte(boardId, karteId));
         }
 
-        return ergebnis!;
+        var derZugWurdeVomBestandZurueckgewiesen = !ergebnis!.IstErfolg;
+        if (derZugWurdeVomBestandZurueckgewiesen)
+        {
+            return ergebnis;
+        }
+
+        // Derselbe Ausgang wie beim Board lesen: es gibt nicht zwei Antwortgestalten für dieselbe
+        // Sache. Geprüft wurde oben gegen den ungekürzten Bestand.
+        return Ergebnis<IReadOnlyList<Spalte>>.Erfolg(Abschlussbahn.Gekuerzt(ergebnis.Wert));
     }
 
     // Zieht die Karte in ihre eigene Spalte, bleibt deren Kartenzahl gleich; kommt sie von

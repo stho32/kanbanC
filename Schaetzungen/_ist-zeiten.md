@@ -203,3 +203,4 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-04 | R00014 Kontributor stilllegen | Lauf R00014 · S7 ausstehend | Nacharbeit | — | — | 0,2h | autonom |
 | 2026-09-05 | R00015 Erledigte Karten gebündelt sehen | B0189 Erledigungsordnung und Kürzung | Standard | 0,4h | 0,0h | 0,0h | autonom |
 | 2026-09-05 | R00015 Erledigte Karten gebündelt sehen | B0190 Wahre Kartenzahl an der Spalte | Standard | 0,4h | 0,1h | 0,1h | autonom |
+| 2026-09-05 | R00015 Erledigte Karten gebündelt sehen | B0191 Gekürzte Spalte verlässt die API | Standard | 2h | 0,1h | 0,1h | autonom |

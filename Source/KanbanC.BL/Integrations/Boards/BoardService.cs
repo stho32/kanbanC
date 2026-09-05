@@ -2,6 +2,7 @@ using KanbanC.BL.Interfaces.Boards;
 using KanbanC.BL.Models;
 using KanbanC.BL.Operations.Boards;
 using KanbanC.BL.Operations.Fehler;
+using KanbanC.BL.Operations.Karten;
 using KanbanC.Contracts.Boards;
 
 namespace KanbanC.BL.Integrations.Boards;
@@ -34,9 +35,17 @@ public sealed class BoardService
         return _repository.LadeAlle(archivstand);
     }
 
+    // Die Kürzung sitzt hier am Ausgang und nicht im Repository: der Bestand, gegen den ein Zug
+    // geprüft wird, muss vollständig bleiben.
     public Board? LadeBoard(long boardId)
     {
-        return _repository.Lade(boardId);
+        var board = _repository.Lade(boardId);
+        if (board is null)
+        {
+            return null;
+        }
+
+        return board with { Spalten = Abschlussbahn.Gekuerzt(board.Spalten) };
     }
 
     // Ein Ergebnis statt null, weil zwei Lagen zu unterscheiden sind: ein leerer Name ist eine

@@ -211,6 +211,36 @@ public class KartenServiceTests
         });
     }
 
+    // Dieselbe Antwortgestalt wie beim Board lesen: gekuerzt am Ausgang, mit der wahren Kartenzahl.
+    [Test]
+    public void Wenn_die_Zielspalte_eine_volle_Abschlussbahn_ist_dann_kuerzt_VerschiebeKarte_sie_am_Ausgang()
+    {
+        var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen", "Erledigt");
+        var quellspalteId = spaltenRepository.Spalten(1)[0].SpalteId;
+        var zielspalteId = spaltenRepository.Spalten(1)[1].SpalteId;
+        spaltenRepository.MitKarte(1, quellspalteId, 5, "Endpunkt bauen");
+        var nachDemZug = new List<Spalte>
+        {
+            new(quellspalteId, "Zu erledigen", 1, false, null, [], Kartenzahl: 0),
+            new(zielspalteId, "Erledigt", 2, true, 2, [
+                new Karte(5, "Endpunkt bauen", 1, new DateOnly(2026, 9, 5)),
+                new Karte(6, "Gestern fertig", 2, new DateOnly(2026, 9, 4)),
+                new Karte(7, "Bestandskarte", 3, ErledigtAm: null),
+            ], Kartenzahl: 3),
+        };
+        var kartenRepository = TestKartenRepository.Leer().MitSpaltenNachDemZug(nachDemZug);
+        var service = new KartenService(spaltenRepository, kartenRepository);
+
+        var ergebnis = service.VerschiebeKarte(1, 5, new Kartenlage(zielspalteId, 1));
+
+        Assert.That(ergebnis.IstErfolg, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Wert[1].Karten.Select(karte => karte.Titel), Is.EqualTo(new[] { "Endpunkt bauen", "Gestern fertig" }));
+            Assert.That(ergebnis.Wert[1].Kartenzahl, Is.EqualTo(3));
+        });
+    }
+
     [Test]
     public void Wenn_der_Zug_moeglich_ist_dann_reicht_VerschiebeKarte_die_Spalten_des_Repositories_durch()
     {
