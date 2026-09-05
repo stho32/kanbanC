@@ -230,8 +230,10 @@ public class KartenServiceTests
     [Test]
     public void Wenn_der_Text_gueltig_ist_dann_reicht_LegeTeilaufgabeAn_das_zurueckgelesene_Detail_durch()
     {
-        var detail = Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null))
-            with { Teilaufgaben = [new Teilaufgabe(3, "Lizenztext lesen", 1, Abgehakt: false)] };
+        var detail = Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null)) with
+        {
+            Teilaufgaben = [new Teilaufgabe(3, "Lizenztext lesen", 1, Abgehakt: false)]
+        };
         var kartenRepository = TestKartenRepository.Leer().MitKartendetail(detail);
         var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, new TestKontributorenRepository());
         var anfrage = new TeilaufgabeAnlegenAnfrage("Lizenztext lesen");
@@ -279,8 +281,10 @@ public class KartenServiceTests
     [Test]
     public void Wenn_die_Teilaufgabe_bekannt_ist_dann_reicht_SetzeAbhakung_das_zurueckgelesene_Detail_durch()
     {
-        var detail = Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null))
-            with { Teilaufgaben = [new Teilaufgabe(3, "Lizenztext lesen", 1, Abgehakt: true)] };
+        var detail = Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null)) with
+        {
+            Teilaufgaben = [new Teilaufgabe(3, "Lizenztext lesen", 1, Abgehakt: true)]
+        };
         var kartenRepository = TestKartenRepository.Leer().MitKartendetail(detail);
         var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, new TestKontributorenRepository());
 
