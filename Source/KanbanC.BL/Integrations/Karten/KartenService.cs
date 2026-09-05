@@ -1,11 +1,13 @@
 using KanbanC.BL.Interfaces.Boards;
 using KanbanC.BL.Interfaces.Karten;
+using KanbanC.BL.Interfaces.Kontributoren;
 using KanbanC.BL.Models;
 using KanbanC.BL.Operations.Fehler;
 using KanbanC.BL.Operations.Karten;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Fehler;
 using KanbanC.Contracts.Karten;
+using KanbanC.Contracts.Kontributoren;
 
 namespace KanbanC.BL.Integrations.Karten;
 
@@ -13,11 +15,13 @@ public sealed class KartenService
 {
     private readonly ISpaltenRepository _spaltenRepository;
     private readonly IKartenRepository _kartenRepository;
+    private readonly IKontributorenRepository _kontributorenRepository;
 
-    public KartenService(ISpaltenRepository spaltenRepository, IKartenRepository kartenRepository)
+    public KartenService(ISpaltenRepository spaltenRepository, IKartenRepository kartenRepository, IKontributorenRepository kontributorenRepository)
     {
         _spaltenRepository = spaltenRepository;
         _kartenRepository = kartenRepository;
+        _kontributorenRepository = kontributorenRepository;
     }
 
     public Ergebnis<Karte>? LegeKarteAn(long boardId, long spalteId, KarteAnlegenAnfrage anfrage)
@@ -145,6 +149,15 @@ public sealed class KartenService
             return Ergebnis<Kartendetail>.Zurueckgewiesen(befunde);
         }
 
+        // Die Prüfung braucht den Kontributorenbestand und sitzt deshalb hier und nicht im
+        // Validator — dieselbe Trennung wie beim Zug, wo der KartenlageValidator den Bestand
+        // gereicht bekommt.
+        var befundZumVerantwortlichen = BefundZumVerantwortlichen(anfrage.Kontributor);
+        if (befundZumVerantwortlichen is not null)
+        {
+            return Zurueckgewiesen<Kartendetail>(befundZumVerantwortlichen);
+        }
+
         var detail = _kartenRepository.Aendere(karteId, anfrage);
         var dieKarteGibtEsNicht = detail is null;
         if (dieKarteGibtEsNicht)
@@ -153,6 +166,31 @@ public sealed class KartenService
         }
 
         return Ergebnis<Kartendetail>.Erfolg(detail!);
+    }
+
+    // null heisst „mit diesem Verantwortlichen ist alles in Ordnung" — auch dann, wenn gar keiner
+    // gesetzt wird: „niemand" ist ein gültiger Wert, kein Fehler.
+    private Fehlerbefund? BefundZumVerantwortlichen(long? kontributorId)
+    {
+        if (kontributorId is null)
+        {
+            return null;
+        }
+
+        var kontributor = _kontributorenRepository.LadeAlle().FirstOrDefault(eintrag => eintrag.KontributorId == kontributorId.Value);
+        var denKontributorGibtEsNicht = kontributor is null;
+        if (denKontributorGibtEsNicht)
+        {
+            return Nichtgefunden.Kontributor(kontributorId.Value);
+        }
+
+        var derKontributorArbeitetNichtMehrMit = kontributor!.StillgelegtAm is not null;
+        if (derKontributorArbeitetNichtMehrMit)
+        {
+            return Stillgelegt.Kontributor(kontributorId.Value);
+        }
+
+        return null;
     }
 
     // Ungekürzt, anders als am Board: wer diese Adresse ruft, will die ganze Bahn. Geprüft wird

@@ -244,3 +244,4 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-05 | R00017 Kartendetails bearbeiten | B0228 E2E vier Felder aendern | Standard | 2-4h | 0,3h | 0,3h | autonom |
 | 2026-09-05 | R00017 Kartendetails bearbeiten | B0229 Waehlbare Verantwortliche | Standard | 0,4h | 0,0h | 0,0h | autonom |
 | 2026-09-05 | R00017 Kartendetails bearbeiten | B0230 Verantwortlicher reist mit der Karte | Standard | 0,4h | 0,1h | 0,1h | autonom |
+| 2026-09-05 | R00017 Kartendetails bearbeiten | B0231 Unwaehlbarer Verantwortlicher wird zurueckgewiesen | Standard | 0,4h | 0,1h | 0,1h | autonom |

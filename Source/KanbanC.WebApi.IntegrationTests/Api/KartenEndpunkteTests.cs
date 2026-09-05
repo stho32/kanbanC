@@ -4,6 +4,7 @@ using Dapper;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Fehler;
 using KanbanC.Contracts.Karten;
+using KanbanC.Contracts.Kontributoren;
 using KanbanC.WebApi.IntegrationTests.Infrastructure;
 
 namespace KanbanC.WebApi.IntegrationTests.Api;
@@ -1204,6 +1205,102 @@ public class KartenEndpunkteTests
             Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain("9999"));
             Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Not.Contain("Board"));
         });
+    }
+
+    [Test]
+    public async Task Wenn_ein_aktiver_Kontributor_gesetzt_wird_dann_traegt_das_Kartendetail_ihn_mit_Name_und_Art()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Migration schreiben");
+        var agent = await LegeKontributorAn(webApi, "Claude-Agent", Kontributorart.Agent);
+
+        var detail = await Aendere(webApi, karte.KarteId, new KarteAendernAnfrage("Migration schreiben", null, null, Kartenfarbe.Ohne, agent.KontributorId));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail.Karte.Kontributor, Is.EqualTo(agent.KontributorId));
+            Assert.That(detail.Verantwortlicher, Is.EqualTo(agent));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_Kontributornummer_unbekannt_ist_dann_antwortet_PUT_karten_mit_404_und_Befund_und_speichert_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Migration schreiben");
+        var vorher = await Aendere(webApi, karte.KarteId, new KarteAendernAnfrage("WBS-Import", null, null, Kartenfarbe.Ohne, Kontributor: null));
+
+        using var antwort = await webApi.Klient.PutAsJsonAsync(
+            Kartendetailroute(karte.KarteId),
+            new KarteAendernAnfrage("WBS-Import", null, null, Kartenfarbe.Ohne, Kontributor: 999));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "kontributor-unbekannt");
+        using var danach = await webApi.Klient.GetAsync(Kartendetailroute(karte.KarteId));
+        Assert.That(await danach.Content.ReadFromJsonAsync<Kartendetail>(), Is.EqualTo(vorher));
+    }
+
+    // Der Stillgelegte ist eine Regelverletzung, kein fehlendes Ding — deshalb 400 und nicht 404.
+    [Test]
+    public async Task Wenn_der_Kontributor_stillgelegt_ist_dann_antwortet_PUT_karten_mit_400_und_eigenem_Befund_und_speichert_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Migration schreiben");
+        var jan = await LegeKontributorAn(webApi, "Jan R.", Kontributorart.Mensch);
+        var vorher = await Aendere(webApi, karte.KarteId, new KarteAendernAnfrage("WBS-Import", null, null, Kartenfarbe.Ohne, Kontributor: null));
+        var stillgelegt = await webApi.Klient.PutAsJsonAsync($"/api/kontributoren/{jan.KontributorId}/stilllegung", new Stilllegung(true));
+        stillgelegt.EnsureSuccessStatusCode();
+
+        using var antwort = await webApi.Klient.PutAsJsonAsync(
+            Kartendetailroute(karte.KarteId),
+            new KarteAendernAnfrage("WBS-Import", null, null, Kartenfarbe.Ohne, jan.KontributorId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "kontributor-stillgelegt");
+        using var danach = await webApi.Klient.GetAsync(Kartendetailroute(karte.KarteId));
+        Assert.That(await danach.Content.ReadFromJsonAsync<Kartendetail>(), Is.EqualTo(vorher));
+    }
+
+    // Die Einloesung der zweiten Haelfte von I0009 ueber die API: gesetzt bleibt gesetzt.
+    [Test]
+    public async Task Wenn_der_gesetzte_Verantwortliche_danach_stillgelegt_wird_dann_steht_er_weiterhin_am_Kartendetail()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Migration schreiben");
+        var jan = await LegeKontributorAn(webApi, "Jan R.", Kontributorart.Mensch);
+        await Aendere(webApi, karte.KarteId, new KarteAendernAnfrage("Migration schreiben", null, null, Kartenfarbe.Ohne, jan.KontributorId));
+
+        var stillgelegt = await webApi.Klient.PutAsJsonAsync($"/api/kontributoren/{jan.KontributorId}/stilllegung", new Stilllegung(true));
+        stillgelegt.EnsureSuccessStatusCode();
+
+        using var antwort = await webApi.Klient.GetAsync(Kartendetailroute(karte.KarteId));
+        var detail = await antwort.Content.ReadFromJsonAsync<Kartendetail>();
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail!.Verantwortlicher!.Name, Is.EqualTo("Jan R."));
+            Assert.That(detail.Verantwortlicher.StillgelegtAm, Is.Not.Null);
+        });
+    }
+
+    private static async Task<Kontributor> LegeKontributorAn(TestWebApi webApi, string name, Kontributorart art)
+    {
+        var antwort = await webApi.Klient.PostAsJsonAsync("/api/kontributoren", new KontributorAnlegenAnfrage(name, art));
+        antwort.EnsureSuccessStatusCode();
+        var kontributor = await antwort.Content.ReadFromJsonAsync<Kontributor>();
+        if (kontributor is null)
+        {
+            throw new InvalidOperationException("Die API hat keinen Kontributor zurückgegeben.");
+        }
+
+        return kontributor;
     }
 
     private static async Task<Kartendetail> Aendere(TestWebApi webApi, long karteId, KarteAendernAnfrage anfrage)

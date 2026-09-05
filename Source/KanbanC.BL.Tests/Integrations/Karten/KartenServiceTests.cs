@@ -1,7 +1,9 @@
 using KanbanC.BL.Integrations.Karten;
+using KanbanC.BL.Operations.Fehler;
 using KanbanC.BL.Tests.TestHelpers;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
+using KanbanC.Contracts.Kontributoren;
 
 namespace KanbanC.BL.Tests.Integrations.Karten;
 
@@ -12,7 +14,7 @@ public class KartenServiceTests
     {
         var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen", "In Arbeit");
         var kartenRepository = TestKartenRepository.Leer();
-        var service = new KartenService(spaltenRepository, kartenRepository);
+        var service = new KartenService(spaltenRepository, kartenRepository, new TestKontributorenRepository());
         var spalteId = spaltenRepository.Spalten(1)[1].SpalteId;
 
         var ergebnis = service.LegeKarteAn(1, spalteId, new KarteAnlegenAnfrage("Kartenform zeichnen"));
@@ -32,7 +34,7 @@ public class KartenServiceTests
     {
         var detail = Kartendetail(new Karte(7, "Migration schreiben", 1, ErledigtAm: null, Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne, Kontributor: null));
         var kartenRepository = TestKartenRepository.Leer().MitKartendetail(detail);
-        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository);
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, new TestKontributorenRepository());
 
         var ergebnis = service.LadeKartendetail(7);
 
@@ -44,7 +46,7 @@ public class KartenServiceTests
     [Test]
     public void Wenn_die_KarteId_unbekannt_ist_dann_weist_LadeKartendetail_mit_einem_Befund_ohne_Board_zurueck()
     {
-        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), TestKartenRepository.Leer());
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), TestKartenRepository.Leer(), new TestKontributorenRepository());
 
         var ergebnis = service.LadeKartendetail(9999);
 
@@ -62,7 +64,7 @@ public class KartenServiceTests
     {
         var detail = Kartendetail(new Karte(7, "WBS-Import", 1, null, "Knoten überführen", new DateOnly(2026, 9, 2), Kartenfarbe.Terrakotta, Kontributor: null));
         var kartenRepository = TestKartenRepository.Leer().MitKartendetail(detail);
-        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository);
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, new TestKontributorenRepository());
         var anfrage = new KarteAendernAnfrage("WBS-Import", "Knoten überführen", new DateOnly(2026, 9, 2), Kartenfarbe.Terrakotta, Kontributor: null);
 
         var ergebnis = service.AendereKarte(7, anfrage);
@@ -80,7 +82,7 @@ public class KartenServiceTests
     public void Wenn_der_Titel_geleert_wird_dann_weist_AendereKarte_die_Anfrage_zurueck_und_schreibt_nichts()
     {
         var kartenRepository = TestKartenRepository.Leer().MitKartendetail(Kartendetail(new Karte(7, "WBS-Import", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null)));
-        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository);
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, new TestKontributorenRepository());
 
         var ergebnis = service.AendereKarte(7, new KarteAendernAnfrage("", null, null, Kartenfarbe.Ohne, Kontributor: null));
 
@@ -93,13 +95,80 @@ public class KartenServiceTests
     public void Wenn_die_KarteId_unbekannt_ist_dann_weist_AendereKarte_mit_einem_Befund_ohne_Board_zurueck()
     {
         var kartenRepository = TestKartenRepository.Leer().OhneDieseKarte();
-        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository);
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, new TestKontributorenRepository());
 
         var ergebnis = service.AendereKarte(9999, new KarteAendernAnfrage("WBS-Import", null, null, Kartenfarbe.Ohne, Kontributor: null));
 
         Assert.That(ergebnis.IstErfolg, Is.False);
         Befundpruefung.ErwarteVollstaendigenBefund(ergebnis.Befunde[0], "karte-unbekannt");
         Assert.That(ergebnis.Befunde[0].Meldung, Does.Not.Contain("Board"));
+    }
+
+    [Test]
+    public void Wenn_die_Kontributornummer_unbekannt_ist_dann_weist_AendereKarte_sie_zurueck_und_schreibt_nichts()
+    {
+        var kartenRepository = TestKartenRepository.Leer().MitKartendetail(Kartendetail(new Karte(7, "WBS-Import", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null)));
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, new TestKontributorenRepository());
+
+        var ergebnis = service.AendereKarte(7, new KarteAendernAnfrage("WBS-Import", null, null, Kartenfarbe.Ohne, Kontributor: 999));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Befundpruefung.ErwarteVollstaendigenBefund(ergebnis.Befunde[0], "kontributor-unbekannt");
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("999"));
+            Assert.That(kartenRepository.ErhalteneAenderung, Is.Null);
+        });
+    }
+
+    // Eine andere Lage als „gibt es nicht", deshalb ein eigener Code — und eine Regelverletzung,
+    // deshalb 400 statt 404.
+    [Test]
+    public void Wenn_der_Kontributor_stillgelegt_ist_dann_weist_AendereKarte_ihn_mit_eigenem_Code_zurueck_und_schreibt_nichts()
+    {
+        var kontributorenRepository = new TestKontributorenRepository();
+        var jan = kontributorenRepository.LegeAn(new KontributorAnlegenAnfrage("Jan R.", Kontributorart.Mensch));
+        kontributorenRepository.SetzeStilllegung(jan.KontributorId, new Stilllegung(true));
+        var kartenRepository = TestKartenRepository.Leer().MitKartendetail(Kartendetail(new Karte(7, "WBS-Import", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null)));
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, kontributorenRepository);
+
+        var ergebnis = service.AendereKarte(7, new KarteAendernAnfrage("WBS-Import", null, null, Kartenfarbe.Ohne, jan.KontributorId));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Befundpruefung.ErwarteVollstaendigenBefund(ergebnis.Befunde[0], "kontributor-stillgelegt");
+        Assert.Multiple(() =>
+        {
+            Assert.That(Nichtgefunden.MeldetEinFehlendesDing(ergebnis.Befunde[0]), Is.False);
+            Assert.That(kartenRepository.ErhalteneAenderung, Is.Null);
+        });
+    }
+
+    // Abgebildete sind waehlbar: die Regel der Identitaetswahl gilt hier ausdruecklich nicht.
+    [Test]
+    public void Wenn_der_Kontributor_abgebildet_und_aktiv_ist_dann_nimmt_AendereKarte_ihn_an()
+    {
+        var kontributorenRepository = new TestKontributorenRepository();
+        var maria = kontributorenRepository.LegeAn(new KontributorAnlegenAnfrage("Maria Lenz", Kontributorart.Abgebildet));
+        var kartenRepository = TestKartenRepository.Leer().MitKartendetail(Kartendetail(new Karte(7, "WBS-Import", 1, null, null, null, Kartenfarbe.Ohne, maria.KontributorId)));
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, kontributorenRepository);
+
+        var ergebnis = service.AendereKarte(7, new KarteAendernAnfrage("WBS-Import", null, null, Kartenfarbe.Ohne, maria.KontributorId));
+
+        Assert.That(ergebnis.IstErfolg, Is.True);
+        Assert.That(kartenRepository.ErhalteneAenderung!.Kontributor, Is.EqualTo(maria.KontributorId));
+    }
+
+    // „niemand" ist ein gueltiger Wert, kein Fehler.
+    [Test]
+    public void Wenn_niemand_verantwortlich_sein_soll_dann_nimmt_AendereKarte_null_an()
+    {
+        var kartenRepository = TestKartenRepository.Leer().MitKartendetail(Kartendetail(new Karte(7, "WBS-Import", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null)));
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, new TestKontributorenRepository());
+
+        var ergebnis = service.AendereKarte(7, new KarteAendernAnfrage("WBS-Import", null, null, Kartenfarbe.Ohne, Kontributor: null));
+
+        Assert.That(ergebnis.IstErfolg, Is.True);
+        Assert.That(kartenRepository.ErhalteneAenderung!.Kontributor, Is.Null);
     }
 
     private static Kartendetail Kartendetail(Karte karte)
@@ -112,7 +181,7 @@ public class KartenServiceTests
     {
         var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen");
         var kartenRepository = TestKartenRepository.Leer();
-        var service = new KartenService(spaltenRepository, kartenRepository);
+        var service = new KartenService(spaltenRepository, kartenRepository, new TestKontributorenRepository());
 
         var ergebnis = service.LegeKarteAn(99, 1, new KarteAnlegenAnfrage("Migration schreiben"));
 
@@ -125,7 +194,7 @@ public class KartenServiceTests
     {
         var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen");
         var kartenRepository = TestKartenRepository.Leer();
-        var service = new KartenService(spaltenRepository, kartenRepository);
+        var service = new KartenService(spaltenRepository, kartenRepository, new TestKontributorenRepository());
 
         var ergebnis = service.LegeKarteAn(1, 999, new KarteAnlegenAnfrage("Migration schreiben"));
 
@@ -138,7 +207,7 @@ public class KartenServiceTests
     {
         var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen");
         var kartenRepository = TestKartenRepository.Leer();
-        var service = new KartenService(spaltenRepository, kartenRepository);
+        var service = new KartenService(spaltenRepository, kartenRepository, new TestKontributorenRepository());
         var spalteId = spaltenRepository.Spalten(1)[0].SpalteId;
 
         var ergebnis = service.LegeKarteAn(1, spalteId, new KarteAnlegenAnfrage("   "));
@@ -157,7 +226,7 @@ public class KartenServiceTests
     {
         var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen");
         var kartenRepository = TestKartenRepository.Leer();
-        var service = new KartenService(spaltenRepository, kartenRepository);
+        var service = new KartenService(spaltenRepository, kartenRepository, new TestKontributorenRepository());
         var spalteId = spaltenRepository.Spalten(1)[0].SpalteId;
 
         var ergebnis = service.LegeKarteAn(1, spalteId, new KarteAnlegenAnfrage(new string('a', 1001)));
@@ -176,7 +245,7 @@ public class KartenServiceTests
     {
         var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen");
         var kartenRepository = TestKartenRepository.MitVerschwundenerSpalte();
-        var service = new KartenService(spaltenRepository, kartenRepository);
+        var service = new KartenService(spaltenRepository, kartenRepository, new TestKontributorenRepository());
         var spalteId = spaltenRepository.Spalten(1)[0].SpalteId;
 
         var ergebnis = service.LegeKarteAn(1, spalteId, new KarteAnlegenAnfrage("Migration schreiben"));
@@ -190,7 +259,7 @@ public class KartenServiceTests
     {
         var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen");
         var kartenRepository = TestKartenRepository.Leer();
-        var service = new KartenService(spaltenRepository, kartenRepository);
+        var service = new KartenService(spaltenRepository, kartenRepository, new TestKontributorenRepository());
         var spalteId = spaltenRepository.Spalten(1)[0].SpalteId;
         service.LegeKarteAn(1, spalteId, new KarteAnlegenAnfrage("Migration schreiben"));
 
@@ -207,7 +276,7 @@ public class KartenServiceTests
     {
         var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen", "In Arbeit");
         var kartenRepository = TestKartenRepository.Leer();
-        var service = new KartenService(spaltenRepository, kartenRepository);
+        var service = new KartenService(spaltenRepository, kartenRepository, new TestKontributorenRepository());
 
         var ergebnis = service.VerschiebeKarte(99, 1, new Kartenlage(1, 1));
 
@@ -224,7 +293,7 @@ public class KartenServiceTests
     {
         var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen", "In Arbeit");
         var kartenRepository = TestKartenRepository.Leer();
-        var service = new KartenService(spaltenRepository, kartenRepository);
+        var service = new KartenService(spaltenRepository, kartenRepository, new TestKontributorenRepository());
         var zielspalteId = spaltenRepository.Spalten(1)[1].SpalteId;
 
         var ergebnis = service.VerschiebeKarte(1, 777, new Kartenlage(zielspalteId, 1));
@@ -244,7 +313,7 @@ public class KartenServiceTests
     {
         var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen", "In Arbeit");
         var kartenRepository = TestKartenRepository.Leer().MitKarteAufBoard(1);
-        var service = new KartenService(spaltenRepository, kartenRepository);
+        var service = new KartenService(spaltenRepository, kartenRepository, new TestKontributorenRepository());
         var zielspalteId = spaltenRepository.Spalten(1)[1].SpalteId;
 
         var ergebnis = service.VerschiebeKarte(1, 777, new Kartenlage(zielspalteId, 1));
@@ -259,7 +328,7 @@ public class KartenServiceTests
     {
         var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen", "In Arbeit");
         var kartenRepository = TestKartenRepository.Leer().MitKarteAufBoard(2);
-        var service = new KartenService(spaltenRepository, kartenRepository);
+        var service = new KartenService(spaltenRepository, kartenRepository, new TestKontributorenRepository());
         var zielspalteId = spaltenRepository.Spalten(1)[1].SpalteId;
 
         var ergebnis = service.VerschiebeKarte(1, 777, new Kartenlage(zielspalteId, 1));
@@ -279,7 +348,7 @@ public class KartenServiceTests
         var quellspalteId = spaltenRepository.Spalten(1)[0].SpalteId;
         spaltenRepository.MitKarte(1, quellspalteId, 5, "Endpunkt bauen");
         var kartenRepository = TestKartenRepository.Leer();
-        var service = new KartenService(spaltenRepository, kartenRepository);
+        var service = new KartenService(spaltenRepository, kartenRepository, new TestKontributorenRepository());
 
         var ergebnis = service.VerschiebeKarte(1, 5, new Kartenlage(888, 1));
 
@@ -297,7 +366,7 @@ public class KartenServiceTests
         var quellspalteId = spaltenRepository.Spalten(1)[0].SpalteId;
         spaltenRepository.MitKarte(1, quellspalteId, 5, "Endpunkt bauen");
         var fremdeSpalteId = spaltenRepository.Spalten(2)[0].SpalteId;
-        var service = new KartenService(spaltenRepository, TestKartenRepository.Leer());
+        var service = new KartenService(spaltenRepository, TestKartenRepository.Leer(), new TestKontributorenRepository());
 
         var ergebnis = service.VerschiebeKarte(1, 5, new Kartenlage(fremdeSpalteId, 1));
 
@@ -315,7 +384,7 @@ public class KartenServiceTests
         var spalteId = spaltenRepository.Spalten(1)[0].SpalteId;
         var kartenRepository = TestKartenRepository.Leer();
         kartenRepository.LegeAn(1, spalteId, new KarteAnlegenAnfrage("Migration schreiben"));
-        var service = new KartenService(spaltenRepository, kartenRepository);
+        var service = new KartenService(spaltenRepository, kartenRepository, new TestKontributorenRepository());
 
         var ergebnis = service.LadeKartenDerSpalte(1, spalteId, new Archivierung(false));
 
@@ -328,7 +397,7 @@ public class KartenServiceTests
     {
         var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen");
         var kartenRepository = TestKartenRepository.Leer();
-        var service = new KartenService(spaltenRepository, kartenRepository);
+        var service = new KartenService(spaltenRepository, kartenRepository, new TestKontributorenRepository());
 
         var ergebnis = service.LadeKartenDerSpalte(99, spaltenRepository.Spalten(1)[0].SpalteId, new Archivierung(false));
 
@@ -346,7 +415,7 @@ public class KartenServiceTests
         var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen").MitZusaetzlichemBoard(2, "Eingang");
         var fremdeSpalteId = spaltenRepository.Spalten(2)[0].SpalteId;
         var kartenRepository = TestKartenRepository.Leer();
-        var service = new KartenService(spaltenRepository, kartenRepository);
+        var service = new KartenService(spaltenRepository, kartenRepository, new TestKontributorenRepository());
 
         var ergebnis = service.LadeKartenDerSpalte(1, fremdeSpalteId, new Archivierung(false));
 
@@ -369,7 +438,7 @@ public class KartenServiceTests
         var zielspalteId = spaltenRepository.Spalten(1)[1].SpalteId;
         spaltenRepository.MitKarte(1, quellspalteId, 5, "Endpunkt bauen");
         var kartenRepository = TestKartenRepository.Leer().MitZurueckgewiesenemZug();
-        var service = new KartenService(spaltenRepository, kartenRepository);
+        var service = new KartenService(spaltenRepository, kartenRepository, new TestKontributorenRepository());
 
         var ergebnis = service.VerschiebeKarte(1, 5, new Kartenlage(zielspalteId, 1));
 
@@ -384,7 +453,7 @@ public class KartenServiceTests
     {
         var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen");
         var spalteId = spaltenRepository.Spalten(1)[0].SpalteId;
-        var service = new KartenService(spaltenRepository, TestKartenRepository.MitVerschwundenerSpalte());
+        var service = new KartenService(spaltenRepository, TestKartenRepository.MitVerschwundenerSpalte(), new TestKontributorenRepository());
 
         var ergebnis = service.LadeKartenDerSpalte(1, spalteId, new Archivierung(false));
 
@@ -397,7 +466,7 @@ public class KartenServiceTests
     {
         var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen");
         var spalteId = spaltenRepository.Spalten(1)[0].SpalteId;
-        var service = new KartenService(spaltenRepository, TestKartenRepository.Leer());
+        var service = new KartenService(spaltenRepository, TestKartenRepository.Leer(), new TestKontributorenRepository());
 
         var ergebnis = service.LadeKartenDerSpalte(1, spalteId, new Archivierung(false));
 
@@ -423,7 +492,7 @@ public class KartenServiceTests
             ], Kartenzahl: 3),
         };
         var kartenRepository = TestKartenRepository.Leer().MitSpaltenNachDemZug(nachDemZug);
-        var service = new KartenService(spaltenRepository, kartenRepository);
+        var service = new KartenService(spaltenRepository, kartenRepository, new TestKontributorenRepository());
 
         var ergebnis = service.VerschiebeKarte(1, 5, new Kartenlage(zielspalteId, 1));
 
@@ -448,7 +517,7 @@ public class KartenServiceTests
             new(zielspalteId, "In Arbeit", 2, false, null, [new Karte(5, "Endpunkt bauen", 1, ErledigtAm: null, Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne, Kontributor: null)], Kartenzahl: 1),
         };
         var kartenRepository = TestKartenRepository.Leer().MitSpaltenNachDemZug(nachDemZug);
-        var service = new KartenService(spaltenRepository, kartenRepository);
+        var service = new KartenService(spaltenRepository, kartenRepository, new TestKontributorenRepository());
 
         var ergebnis = service.VerschiebeKarte(1, 5, new Kartenlage(zielspalteId, 1));
 
@@ -469,7 +538,7 @@ public class KartenServiceTests
         var zielspalteId = spaltenRepository.Spalten(1)[1].SpalteId;
         spaltenRepository.MitKarte(1, quellspalteId, 5, "Endpunkt bauen");
         var kartenRepository = TestKartenRepository.Leer().MitVerschwundenerKarte();
-        var service = new KartenService(spaltenRepository, kartenRepository);
+        var service = new KartenService(spaltenRepository, kartenRepository, new TestKontributorenRepository());
 
         var ergebnis = service.VerschiebeKarte(1, 5, new Kartenlage(zielspalteId, 1));
 
@@ -491,7 +560,7 @@ public class KartenServiceTests
         spaltenRepository.MitKarte(1, quellspalteId, 5, "Endpunkt bauen");
         spaltenRepository.MitKarte(1, zielspalteId, 6, "Kartenform zeichnen");
         var kartenRepository = TestKartenRepository.Leer();
-        var service = new KartenService(spaltenRepository, kartenRepository);
+        var service = new KartenService(spaltenRepository, kartenRepository, new TestKontributorenRepository());
 
         var ergebnis = service.VerschiebeKarte(1, 5, new Kartenlage(zielspalteId, 3));
 
@@ -514,7 +583,7 @@ public class KartenServiceTests
         spaltenRepository.MitKarte(1, quellspalteId, 5, "Endpunkt bauen");
         spaltenRepository.MitKarte(1, zielspalteId, 6, "Kartenform zeichnen");
         var kartenRepository = TestKartenRepository.Leer();
-        var service = new KartenService(spaltenRepository, kartenRepository);
+        var service = new KartenService(spaltenRepository, kartenRepository, new TestKontributorenRepository());
 
         var ergebnis = service.VerschiebeKarte(1, 5, new Kartenlage(zielspalteId, 2));
 
@@ -532,7 +601,7 @@ public class KartenServiceTests
         var spalteId = spaltenRepository.Spalten(1)[0].SpalteId;
         spaltenRepository.MitKarte(1, spalteId, 5, "Endpunkt bauen");
         var kartenRepository = TestKartenRepository.Leer();
-        var service = new KartenService(spaltenRepository, kartenRepository);
+        var service = new KartenService(spaltenRepository, kartenRepository, new TestKontributorenRepository());
 
         var ergebnis = service.VerschiebeKarte(1, 5, new Kartenlage(spalteId, 2));
 
@@ -555,7 +624,7 @@ public class KartenServiceTests
             new(spalteId, "Zu erledigen", 1, false, null, [new Karte(5, "Endpunkt bauen", 1, ErledigtAm: null, Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne, Kontributor: null)], Kartenzahl: 1),
         };
         var kartenRepository = TestKartenRepository.Leer().MitSpaltenNachDerArchivierung(nachDerArchivierung);
-        var service = new KartenService(spaltenRepository, kartenRepository);
+        var service = new KartenService(spaltenRepository, kartenRepository, new TestKontributorenRepository());
 
         var ergebnis = service.SchalteArchivierung(1, 7, new Archivierung(true));
 
@@ -584,7 +653,7 @@ public class KartenServiceTests
             new(spalteId, "Erledigt", 1, IstAbschlussspalte: true, Anzeigegrenze: 2, erledigte, Kartenzahl: 3),
         };
         var kartenRepository = TestKartenRepository.Leer().MitSpaltenNachDerArchivierung(nachDerArchivierung);
-        var service = new KartenService(spaltenRepository, kartenRepository);
+        var service = new KartenService(spaltenRepository, kartenRepository, new TestKontributorenRepository());
 
         var ergebnis = service.SchalteArchivierung(1, 7, new Archivierung(true));
 
@@ -601,7 +670,7 @@ public class KartenServiceTests
     {
         var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen");
         var kartenRepository = TestKartenRepository.Leer().OhneDieseKarte();
-        var service = new KartenService(spaltenRepository, kartenRepository);
+        var service = new KartenService(spaltenRepository, kartenRepository, new TestKontributorenRepository());
 
         var ergebnis = service.SchalteArchivierung(1, 777, new Archivierung(true));
 
@@ -619,7 +688,7 @@ public class KartenServiceTests
     {
         var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen");
         var kartenRepository = TestKartenRepository.Leer().OhneDieseKarte().MitKarteAufBoard(2);
-        var service = new KartenService(spaltenRepository, kartenRepository);
+        var service = new KartenService(spaltenRepository, kartenRepository, new TestKontributorenRepository());
 
         var ergebnis = service.SchalteArchivierung(1, 777, new Archivierung(true));
 
@@ -637,7 +706,7 @@ public class KartenServiceTests
     {
         var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen");
         var kartenRepository = TestKartenRepository.Leer();
-        var service = new KartenService(spaltenRepository, kartenRepository);
+        var service = new KartenService(spaltenRepository, kartenRepository, new TestKontributorenRepository());
 
         var ergebnis = service.SchalteArchivierung(1, 7, new Archivierung(false));
 
