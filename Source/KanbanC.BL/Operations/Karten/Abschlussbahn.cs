@@ -29,8 +29,13 @@ public static class Abschlussbahn
     private static Spalte Gekuerzt(Spalte spalte)
     {
         var geordnete = InAnzeigereihenfolge(spalte);
+        if (!spalte.IstAbschlussspalte)
+        {
+            return geordnete;
+        }
+
         var dieBahnPasstInIhreGrenze = spalte.Anzeigegrenze is null || geordnete.Karten.Count <= spalte.Anzeigegrenze.Value;
-        if (!spalte.IstAbschlussspalte || dieBahnPasstInIhreGrenze)
+        if (dieBahnPasstInIhreGrenze)
         {
             return geordnete;
         }
