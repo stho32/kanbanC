@@ -27,11 +27,19 @@ public static class KartenEndpunkte
     // Unterressource derselben Kartenadresse wie die Lage und die Archivierung — hier ohne Board.
     private const string Etikettenroute = "/api/karten/{karteId:long}/etiketten";
 
+    // Dieselbe boardlose Kartenadresse, eine Unterressource weiter. Anders als bei den Etiketten
+    // wird hier **eine** Zeile angelegt statt der ganzen Liste, und die zweite Route adressiert
+    // genau eine davon: eine Teilaufgabe hat eine Nummer, die das Abhaken überlebt.
+    private const string Teilaufgabenroute = "/api/karten/{karteId:long}/teilaufgaben";
+    private const string Teilaufgabenstandsroute = "/api/karten/{karteId:long}/teilaufgaben/{teilaufgabeId:long}";
+
     public static void Registriere(IEndpointRouteBuilder routen)
     {
         routen.MapGet(Kartenroute, LiesKartendetail).WithName("KartendetailLesen");
         routen.MapPut(Kartenroute, AendereKarte).WithName("KarteAendern");
         routen.MapPut(Etikettenroute, SetzeEtiketten).WithName("KartenetikettenSetzen");
+        routen.MapPost(Teilaufgabenroute, LegeTeilaufgabeAn).WithName("TeilaufgabeAnlegen");
+        routen.MapPut(Teilaufgabenstandsroute, SetzeAbhakung).WithName("TeilaufgabenstandSetzen");
         routen.MapGet(Basisroute, LiesKartenDerSpalte).WithName("KartenDerSpalteLesen");
         routen.MapPost(Basisroute, LegeKarteAn).WithName("KarteAnlegen");
         routen.MapPut(Lageroute, VerschiebeKarte).WithName("KarteVerschieben");
@@ -67,6 +75,35 @@ public static class KartenEndpunkte
     private static IResult SetzeEtiketten(long karteId, Kartenetiketten etiketten, KartenService kartenService)
     {
         var ergebnis = kartenService.SetzeEtiketten(karteId, etiketten);
+        if (ergebnis.IstErfolg)
+        {
+            return Results.Ok(ergebnis.Wert);
+        }
+
+        return Zurueckweisungen.AlsFehlerantwort(ergebnis.Befunde);
+    }
+
+    // **200 statt 201**, anders als POST …/karten: die Antwort traegt nicht die angelegte Zeile,
+    // sondern die Seite, die der Aufrufer betrachtet — ein Created-Rumpf waere eine zweite
+    // Antwortgestalt fuer dieselbe Seite. Ein Location-Kopf haette hier ohnehin kein Ziel: eine
+    // einzelne Teilaufgabe hat keine Leseadresse.
+    private static IResult LegeTeilaufgabeAn(long karteId, TeilaufgabeAnlegenAnfrage anfrage, KartenService kartenService)
+    {
+        var ergebnis = kartenService.LegeTeilaufgabeAn(karteId, anfrage);
+        if (ergebnis.IstErfolg)
+        {
+            return Results.Ok(ergebnis.Wert);
+        }
+
+        return Zurueckweisungen.AlsFehlerantwort(ergebnis.Befunde);
+    }
+
+    // Setzt den Stand **einer** Teilaufgabe, statt ihn zu kippen: derselbe Aufruf ein zweites Mal
+    // aendert nichts, und ein Agent kommt nicht beim Ausgangszustand heraus. Dieselbe
+    // Antwortgestalt wie das Anlegen, weil dieselbe Seite sie verbraucht.
+    private static IResult SetzeAbhakung(long karteId, long teilaufgabeId, Teilaufgabenstand stand, KartenService kartenService)
+    {
+        var ergebnis = kartenService.SetzeAbhakung(karteId, teilaufgabeId, stand);
         if (ergebnis.IstErfolg)
         {
             return Results.Ok(ergebnis.Wert);

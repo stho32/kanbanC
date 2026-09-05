@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using Dapper;
@@ -13,6 +14,7 @@ public class KartenEndpunkteTests
 {
     private const string BoardsRoute = "/api/boards";
     private const int HoechsteTitellaenge = 1000;
+    private const int HoechsteTeilaufgabenlaenge = 200;
 
     [Test]
     public async Task Wenn_eine_Karte_per_POST_angelegt_wird_dann_antwortet_die_API_mit_201_Location_und_vergebener_KarteId()
@@ -1409,6 +1411,317 @@ public class KartenEndpunkteTests
             Assert.That(gezogene.FaelligAm, Is.EqualTo(new DateOnly(2026, 9, 2)));
             Assert.That(gezogene.Farbe, Is.EqualTo(Kartenfarbe.Olive));
         });
+    }
+
+    // US-4: die Antwort traegt die ganze Seite, nicht die angelegte Zeile — und 200, nicht 201.
+    [Test]
+    public async Task Wenn_eine_Teilaufgabe_per_POST_angelegt_wird_dann_antwortet_die_API_mit_200_und_dem_ganzen_Kartendetail()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Playwright-Lizenz klären");
+
+        using var antwort = await webApi.Klient.PostAsJsonAsync(Teilaufgabenroute(karte.KarteId), new TeilaufgabeAnlegenAnfrage("Lizenztext lesen"));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var detail = await antwort.Content.ReadFromJsonAsync<Kartendetail>();
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail!.Karte.Titel, Is.EqualTo("Playwright-Lizenz klären"));
+            Assert.That(detail.Boardname, Is.EqualTo("Entwicklung"));
+            Assert.That(detail.Teilaufgaben.Select(teilaufgabe => teilaufgabe.Text), Is.EqualTo(new[] { "Lizenztext lesen" }));
+            Assert.That(detail.Teilaufgaben[0].TeilaufgabeId, Is.GreaterThan(0));
+            Assert.That(detail.Teilaufgaben[0].Abgehakt, Is.False);
+        });
+    }
+
+    // Das Rechenbeispiel der Anforderung: A, B, C angelegt, danach liest GET dieselbe Reihenfolge.
+    [Test]
+    public async Task Wenn_drei_Teilaufgaben_angelegt_werden_dann_liefert_GET_karten_sie_in_Anlegereihenfolge_mit_eigenen_Nummern()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Playwright-Lizenz klären");
+        await LegeTeilaufgabeAn(webApi, karte.KarteId, "A");
+        await LegeTeilaufgabeAn(webApi, karte.KarteId, "B");
+        await LegeTeilaufgabeAn(webApi, karte.KarteId, "C");
+
+        var detail = await webApi.Klient.GetFromJsonAsync<Kartendetail>(Kartendetailroute(karte.KarteId));
+
+        Assert.That(detail!.Teilaufgaben.Select(teilaufgabe => teilaufgabe.Text), Is.EqualTo(new[] { "A", "B", "C" }));
+        Assert.That(detail.Teilaufgaben.Select(teilaufgabe => teilaufgabe.TeilaufgabeId).Distinct().Count(), Is.EqualTo(3));
+    }
+
+    // Zwei gleich benannte Arbeiten sind zwei Arbeiten — anders als bei zwei gleichen Etiketten.
+    [Test]
+    public async Task Wenn_derselbe_Text_zweimal_angelegt_wird_dann_stehen_zwei_Eintraege_mit_verschiedenen_Nummern()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Playwright-Lizenz klären");
+        await LegeTeilaufgabeAn(webApi, karte.KarteId, "Nachfassen");
+
+        var detail = await LegeTeilaufgabeAn(webApi, karte.KarteId, "Nachfassen");
+
+        Assert.That(detail.Teilaufgaben.Select(teilaufgabe => teilaufgabe.Text), Is.EqualTo(new[] { "Nachfassen", "Nachfassen" }));
+        Assert.That(detail.Teilaufgaben[0].TeilaufgabeId, Is.Not.EqualTo(detail.Teilaufgaben[1].TeilaufgabeId));
+    }
+
+    // US-5: die Teilaufgaben haengen am Kartendetail und nicht an der Karte — die Boardantwort
+    // bleibt unveraendert, und ein Fortschrittsfeld gibt es nirgends.
+    [Test]
+    public async Task Wenn_eine_Karte_Teilaufgaben_traegt_dann_bekommt_die_Boardantwort_keine_Teilaufgabenliste()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Playwright-Lizenz klären");
+        await LegeTeilaufgabeAn(webApi, karte.KarteId, "Lizenztext lesen");
+
+        var rumpf = await webApi.Klient.GetStringAsync($"{BoardsRoute}/{board.BoardId}");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(rumpf, Does.Not.Contain("teilaufgaben"));
+            Assert.That(rumpf, Does.Not.Contain("Lizenztext lesen"));
+        });
+    }
+
+    // Der Fortschritt wird gerechnet, nicht gespeichert: kein Feld der Antwort traegt ihn.
+    [Test]
+    public async Task Wenn_das_Kartendetail_gelesen_wird_dann_traegt_es_kein_Feld_mit_dem_Fortschritt()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Playwright-Lizenz klären");
+        await LegeTeilaufgabeAn(webApi, karte.KarteId, "A");
+        await LegeTeilaufgabeAn(webApi, karte.KarteId, "B");
+
+        var rumpf = await webApi.Klient.GetStringAsync(Kartendetailroute(karte.KarteId));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(rumpf, Does.Not.Contain("fortschritt"));
+            Assert.That(rumpf, Does.Not.Contain("abgehaktezahl"));
+            Assert.That(rumpf, Does.Contain("\"teilaufgaben\""));
+        });
+    }
+
+    // Das Rechenbeispiel der Anforderung: Karte mit A, B, C; B abhaken laesst A und C offen.
+    [Test]
+    public async Task Wenn_eine_Teilaufgabe_abgehakt_wird_dann_ist_genau_sie_abgehakt_und_die_uebrigen_stehen_unveraendert()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Playwright-Lizenz klären");
+        await LegeTeilaufgabeAn(webApi, karte.KarteId, "A");
+        await LegeTeilaufgabeAn(webApi, karte.KarteId, "B");
+        var vorher = (await LegeTeilaufgabeAn(webApi, karte.KarteId, "C")).Teilaufgaben;
+
+        var detail = await SetzeAbhakung(webApi, karte.KarteId, vorher[1].TeilaufgabeId, abgehakt: true);
+
+        Assert.That(detail.Teilaufgaben.Select(teilaufgabe => teilaufgabe.Abgehakt), Is.EqualTo(new[] { false, true, false }));
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail.Teilaufgaben.Select(teilaufgabe => teilaufgabe.Text), Is.EqualTo(new[] { "A", "B", "C" }));
+            Assert.That(detail.Teilaufgaben.Select(teilaufgabe => teilaufgabe.TeilaufgabeId),
+                Is.EqualTo(vorher.Select(teilaufgabe => teilaufgabe.TeilaufgabeId)));
+        });
+    }
+
+    // Der Stand kippt nicht: derselbe Aufruf ein zweites Mal antwortet mit 200 und demselben Stand.
+    [Test]
+    public async Task Wenn_derselbe_Stand_ein_zweites_Mal_gesetzt_wird_dann_antwortet_die_API_mit_200_und_aendert_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Playwright-Lizenz klären");
+        var teilaufgabeId = (await LegeTeilaufgabeAn(webApi, karte.KarteId, "Lizenztext lesen")).Teilaufgaben[0].TeilaufgabeId;
+        var nachDemErsten = await SetzeAbhakung(webApi, karte.KarteId, teilaufgabeId, abgehakt: true);
+
+        using var antwort = await webApi.Klient.PutAsJsonAsync(Teilaufgabenstandsroute(karte.KarteId, teilaufgabeId), new Teilaufgabenstand(true));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var nachDemZweiten = await antwort.Content.ReadFromJsonAsync<Kartendetail>();
+        Assert.That(nachDemZweiten!.Teilaufgaben, Is.EqualTo(nachDemErsten.Teilaufgaben));
+    }
+
+    [Test]
+    public async Task Wenn_der_Stand_auf_nicht_abgehakt_gesetzt_wird_dann_nimmt_er_das_Abhaken_zurueck()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Playwright-Lizenz klären");
+        var teilaufgabeId = (await LegeTeilaufgabeAn(webApi, karte.KarteId, "Lizenztext lesen")).Teilaufgaben[0].TeilaufgabeId;
+        await SetzeAbhakung(webApi, karte.KarteId, teilaufgabeId, abgehakt: true);
+
+        var detail = await SetzeAbhakung(webApi, karte.KarteId, teilaufgabeId, abgehakt: false);
+
+        Assert.That(detail.Teilaufgaben[0].Abgehakt, Is.False);
+    }
+
+    [Test]
+    public async Task Wenn_der_Text_leer_ist_dann_antwortet_POST_teilaufgaben_mit_400_und_Befund_und_speichert_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Playwright-Lizenz klären");
+        await LegeTeilaufgabeAn(webApi, karte.KarteId, "Lizenztext lesen");
+
+        using var antwort = await webApi.Klient.PostAsJsonAsync(Teilaufgabenroute(karte.KarteId), new TeilaufgabeAnlegenAnfrage("   "));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "teilaufgabe-leer");
+        var detail = await webApi.Klient.GetFromJsonAsync<Kartendetail>(Kartendetailroute(karte.KarteId));
+        Assert.That(detail!.Teilaufgaben.Select(teilaufgabe => teilaufgabe.Text), Is.EqualTo(new[] { "Lizenztext lesen" }));
+    }
+
+    [Test]
+    public async Task Wenn_der_Text_zu_lang_ist_dann_antwortet_POST_teilaufgaben_mit_400_und_Befund_und_speichert_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Playwright-Lizenz klären");
+
+        using var antwort = await webApi.Klient.PostAsJsonAsync(
+            Teilaufgabenroute(karte.KarteId),
+            new TeilaufgabeAnlegenAnfrage(new string('a', HoechsteTeilaufgabenlaenge + 1)));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "teilaufgabe-zu-lang");
+        var detail = await webApi.Klient.GetFromJsonAsync<Kartendetail>(Kartendetailroute(karte.KarteId));
+        Assert.That(detail!.Teilaufgaben, Is.Empty);
+    }
+
+    // Das Rechenbeispiel der Anforderung: „  Kaffee  " wird als „Kaffee" gespeichert.
+    [Test]
+    public async Task Wenn_der_Text_Randleerzeichen_traegt_dann_steht_er_ohne_sie_in_der_Liste()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Playwright-Lizenz klären");
+
+        var detail = await LegeTeilaufgabeAn(webApi, karte.KarteId, "  Kaffee Holen  ");
+
+        Assert.That(detail.Teilaufgaben.Select(teilaufgabe => teilaufgabe.Text), Is.EqualTo(new[] { "Kaffee Holen" }));
+    }
+
+    [Test]
+    public async Task Wenn_die_KarteId_unbekannt_ist_dann_antwortet_POST_teilaufgaben_mit_404_und_einem_Befund_ohne_Board()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        await LegeBoardAn(webApi);
+
+        using var antwort = await webApi.Klient.PostAsJsonAsync(Teilaufgabenroute(9999), new TeilaufgabeAnlegenAnfrage("Lizenztext lesen"));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Teilaufgabe anlegen mit unbekannter KarteId");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("karte-unbekannt"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain("9999"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Not.Contain("Board"));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_KarteId_unbekannt_ist_dann_antwortet_PUT_teilaufgabenstand_mit_404_und_einem_Befund_ohne_Board()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        await LegeBoardAn(webApi);
+
+        using var antwort = await webApi.Klient.PutAsJsonAsync(Teilaufgabenstandsroute(9999, 1), new Teilaufgabenstand(true));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Teilaufgabe abhaken an unbekannter Karte");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("karte-unbekannt"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain("9999"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Not.Contain("Board"));
+        });
+    }
+
+    // US-4: die Teilaufgabe gehoert zur Karte 14, aufgerufen wird sie an der Karte 15 — der Befund
+    // nennt beide Nummern, und an keiner der beiden Karten hat sich etwas geaendert.
+    [Test]
+    public async Task Wenn_die_Teilaufgabe_zu_einer_anderen_Karte_gehoert_dann_antwortet_PUT_mit_404_und_nennt_beide_Nummern()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var spalteId = board.Spalten[0].SpalteId;
+        var eigene = await LegeKarteAn(webApi, board.BoardId, spalteId, "Eigene");
+        var fremde = await LegeKarteAn(webApi, board.BoardId, spalteId, "Fremde");
+        await LegeTeilaufgabeAn(webApi, eigene.KarteId, "Lizenztext lesen");
+        var fremdeTeilaufgabeId = (await LegeTeilaufgabeAn(webApi, fremde.KarteId, "Nur woanders")).Teilaufgaben[0].TeilaufgabeId;
+
+        using var antwort = await webApi.Klient.PutAsJsonAsync(Teilaufgabenstandsroute(eigene.KarteId, fremdeTeilaufgabeId), new Teilaufgabenstand(true));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Teilaufgabe einer fremden Karte abhaken");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("teilaufgabe-unbekannt"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain(fremdeTeilaufgabeId.ToString(CultureInfo.InvariantCulture)));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain(eigene.KarteId.ToString(CultureInfo.InvariantCulture)));
+            Assert.That(zurueckweisung.Befunde[0].Kompensation, Is.Not.Empty);
+        });
+        await ErwarteKeineAbgehakteTeilaufgabe(webApi, eigene.KarteId);
+        await ErwarteKeineAbgehakteTeilaufgabe(webApi, fremde.KarteId);
+    }
+
+    private static async Task ErwarteKeineAbgehakteTeilaufgabe(TestWebApi webApi, long karteId)
+    {
+        var detail = await webApi.Klient.GetFromJsonAsync<Kartendetail>(Kartendetailroute(karteId));
+        Assert.That(detail!.Teilaufgaben.Any(teilaufgabe => teilaufgabe.Abgehakt), Is.False);
+    }
+
+    private static string Teilaufgabenroute(long karteId)
+    {
+        return $"/api/karten/{karteId}/teilaufgaben";
+    }
+
+    private static string Teilaufgabenstandsroute(long karteId, long teilaufgabeId)
+    {
+        return $"/api/karten/{karteId}/teilaufgaben/{teilaufgabeId}";
+    }
+
+    private static async Task<Kartendetail> LegeTeilaufgabeAn(TestWebApi webApi, long karteId, string text)
+    {
+        using var antwort = await webApi.Klient.PostAsJsonAsync(Teilaufgabenroute(karteId), new TeilaufgabeAnlegenAnfrage(text));
+        antwort.EnsureSuccessStatusCode();
+        return await AlsKartendetail(antwort);
+    }
+
+    private static async Task<Kartendetail> SetzeAbhakung(TestWebApi webApi, long karteId, long teilaufgabeId, bool abgehakt)
+    {
+        using var antwort = await webApi.Klient.PutAsJsonAsync(Teilaufgabenstandsroute(karteId, teilaufgabeId), new Teilaufgabenstand(abgehakt));
+        antwort.EnsureSuccessStatusCode();
+        return await AlsKartendetail(antwort);
+    }
+
+    private static async Task<Kartendetail> AlsKartendetail(HttpResponseMessage antwort)
+    {
+        var detail = await antwort.Content.ReadFromJsonAsync<Kartendetail>();
+        if (detail is null)
+        {
+            throw new InvalidOperationException("Die API hat kein Kartendetail zurückgegeben.");
+        }
+
+        return detail;
     }
 
     private static string Etikettenroute(long karteId)

@@ -129,6 +129,55 @@ public class WebApiNeustartTests
         });
     }
 
+    // US-4: Texte, Reihenfolge und Abhakstand ueberstehen den Neustart.
+    [Test]
+    public async Task Wenn_die_WebApi_nach_dem_Gliedern_einer_Karte_neu_startet_dann_stehen_Texte_Reihenfolge_und_Abhakstand_unveraendert_da()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        long karteId;
+        long abgehakteTeilaufgabeId;
+        using (var ersteInstanz = new TestWebApi(datenbank.Dateipfad))
+        {
+            var board = await LegeBoardAn(ersteInstanz, new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null));
+            var karte = await LegeKarteAn(ersteInstanz, board.BoardId, board.Spalten[0].SpalteId, "Playwright-Lizenz klären");
+            karteId = karte.KarteId;
+            await LegeTeilaufgabeAn(ersteInstanz, karteId, "Lizenztext lesen");
+            var nachDerZweiten = await LegeTeilaufgabeAn(ersteInstanz, karteId, "Rückfrage an den Hersteller");
+            await LegeTeilaufgabeAn(ersteInstanz, karteId, "Nachfassen");
+            abgehakteTeilaufgabeId = nachDerZweiten.Teilaufgaben[1].TeilaufgabeId;
+            using var abgehakt = await ersteInstanz.Klient.PutAsJsonAsync(
+                $"/api/karten/{karteId}/teilaufgaben/{abgehakteTeilaufgabeId}",
+                new Teilaufgabenstand(true));
+            abgehakt.EnsureSuccessStatusCode();
+        }
+
+        using var zweiteInstanz = new TestWebApi(datenbank.Dateipfad);
+
+        var detail = await zweiteInstanz.Klient.GetFromJsonAsync<Kartendetail>($"/api/karten/{karteId}");
+        Assert.That(detail, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail!.Teilaufgaben.Select(teilaufgabe => teilaufgabe.Text),
+                Is.EqualTo(new[] { "Lizenztext lesen", "Rückfrage an den Hersteller", "Nachfassen" }));
+            Assert.That(detail.Teilaufgaben.Select(teilaufgabe => teilaufgabe.Abgehakt),
+                Is.EqualTo(new[] { false, true, false }));
+            Assert.That(detail.Teilaufgaben[1].TeilaufgabeId, Is.EqualTo(abgehakteTeilaufgabeId));
+        });
+    }
+
+    private static async Task<Kartendetail> LegeTeilaufgabeAn(TestWebApi webApi, long karteId, string text)
+    {
+        var antwort = await webApi.Klient.PostAsJsonAsync($"/api/karten/{karteId}/teilaufgaben", new TeilaufgabeAnlegenAnfrage(text));
+        antwort.EnsureSuccessStatusCode();
+        var detail = await antwort.Content.ReadFromJsonAsync<Kartendetail>();
+        if (detail is null)
+        {
+            throw new InvalidOperationException("Die API hat kein Kartendetail zurückgegeben.");
+        }
+
+        return detail;
+    }
+
     [Test]
     public async Task Wenn_die_WebApi_nach_dem_Einschalten_der_Kartenzahl_neu_startet_dann_steht_die_Einstellung_unveraendert_da()
     {
