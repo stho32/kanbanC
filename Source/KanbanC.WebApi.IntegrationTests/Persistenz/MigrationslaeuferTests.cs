@@ -163,6 +163,89 @@ public class MigrationslaeuferTests
         });
     }
 
+    // Wie bei Teilaufgabe fuehrt der Primaerschluessel mit einer eigenen Nummer; der Index auf
+    // Karte ist deshalb keine Dublette. **Keine Position**: die Reihenfolge ist der Zeitpunkt.
+    [Test]
+    public void Wenn_die_Migration_gelaufen_ist_dann_traegt_das_Schema_die_Tabelle_Kommentar_mit_eigener_Nummer_und_Index_auf_der_Karte()
+    {
+        using var datenbank = new TemporaereDatenbank();
+
+        new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Tabellennamen(datenbank), Does.Contain("Kommentar"));
+            Assert.That(Spaltennamen(datenbank, "Kommentar"),
+                Is.EqualTo(new[] { "KommentarId", "Karte", "Kontributor", "Text", "Zeitpunkt" }));
+            Assert.That(Schluesselspalten(datenbank, "Kommentar"), Is.EqualTo(new[] { "KommentarId" }));
+            Assert.That(Indexdefinition(datenbank, "IX_Kommentar_Karte"),
+                Is.EqualTo("CREATE INDEX IX_Kommentar_Karte ON Kommentar (Karte)"));
+        });
+    }
+
+    // Ein Kommentar ohne Urheber oder ohne Zeitpunkt ist keiner: beide Spalten tragen NOT NULL,
+    // und die Datenbank weist eine solche Zeile ab, statt sie halb anzunehmen.
+    [Test]
+    public void Wenn_ein_Kommentar_ohne_Urheber_oder_ohne_Zeitpunkt_geschrieben_wird_dann_weist_die_Tabelle_ihn_ab()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "Playwright-Lizenz klären", 1);
+        LegeKontributorAn(datenbank, "Stefan");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(() => FuegeKommentarEin(datenbank, 1, kontributorId: null, "Bitte prüfen", "2026-08-30T15:40:12.0000000Z"), Throws.TypeOf<SqliteException>());
+            Assert.That(() => FuegeKommentarEin(datenbank, 1, kontributorId: 1, "Bitte prüfen", zeitpunkt: null), Throws.TypeOf<SqliteException>());
+        });
+        Assert.That(Kommentarzeilen(datenbank), Is.Empty);
+    }
+
+    // Zwei gleichlautende Kommentare an derselben Karte sind zwei Aeusserungen: der Schluessel
+    // weist sie nicht ab, anders als beim Etikett.
+    [Test]
+    public void Wenn_derselbe_Kommentartext_zweimal_an_dieselbe_Karte_geschrieben_wird_dann_stehen_zwei_Zeilen_mit_verschiedenen_Nummern()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "Playwright-Lizenz klären", 1);
+        LegeKontributorAn(datenbank, "Stefan");
+
+        FuegeKommentarEin(datenbank, 1, 1, "Nachfassen", "2026-08-30T15:40:12.0000000Z");
+        FuegeKommentarEin(datenbank, 1, 1, "Nachfassen", "2026-08-30T15:41:12.0000000Z");
+
+        var zeilen = Kommentarzeilen(datenbank);
+        Assert.That(zeilen.Select(zeile => zeile.Text), Is.EqualTo(new[] { "Nachfassen", "Nachfassen" }));
+        Assert.That(zeilen.Select(zeile => zeile.KommentarId).Distinct().Count(), Is.EqualTo(2));
+    }
+
+    [Test]
+    public void Wenn_die_Migration_ein_zweites_Mal_laeuft_dann_bleiben_Kommentartexte_Urheber_und_Zeitpunkte_stehen()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "Playwright-Lizenz klären", 1);
+        LegeKontributorAn(datenbank, "Stefan");
+        FuegeKommentarEin(datenbank, 1, 1, "Die Lizenz gilt nur pro Rechner.", "2026-08-30T15:40:12.0000000Z");
+        FuegeKommentarEin(datenbank, 1, 1, "Ich frage beim Hersteller nach.", "2026-08-30T17:40:12.0000000Z");
+        var schemaVorher = SchemaDefinitionen(datenbank);
+
+        Assert.That(() => new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus(), Throws.Nothing);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(SchemaDefinitionen(datenbank), Is.EqualTo(schemaVorher));
+            Assert.That(Kommentarzeilen(datenbank), Is.EqualTo(new[]
+            {
+                (1L, 1L, 1L, "Die Lizenz gilt nur pro Rechner.", "2026-08-30T15:40:12.0000000Z"),
+                (2L, 1L, 1L, "Ich frage beim Hersteller nach.", "2026-08-30T17:40:12.0000000Z"),
+            }));
+        });
+    }
+
     [Test]
     public void Wenn_FuehreAus_auf_einer_gefuellten_Datei_ein_zweites_Mal_laeuft_dann_bleiben_Schema_und_Daten_unveraendert()
     {
@@ -693,6 +776,34 @@ public class MigrationslaeuferTests
             SELECT Karte, Text
               FROM Etikett
              ORDER BY Karte, Text").ToArray();
+    }
+
+    private static long LegeKontributorAn(TemporaereDatenbank datenbank, string name)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.ExecuteScalar<long>(@"
+            INSERT INTO Kontributor (Name, Kontributorart)
+            VALUES (@Name, 'Mensch');
+            SELECT last_insert_rowid();", new { Name = name });
+    }
+
+    private static void FuegeKommentarEin(TemporaereDatenbank datenbank, long karteId, long? kontributorId, string text, string? zeitpunkt)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Kommentar (Karte, Kontributor, Text, Zeitpunkt)
+            VALUES (@Karte, @Kontributor, @Text, @Zeitpunkt)",
+            new { Karte = karteId, Kontributor = kontributorId, Text = text, Zeitpunkt = zeitpunkt });
+    }
+
+    private static (long KommentarId, long Karte, long Kontributor, string Text, string Zeitpunkt)[] Kommentarzeilen(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        var zeilen = verbindung.Query<(long KommentarId, long Karte, long Kontributor, string Text, string Zeitpunkt)>(@"
+            SELECT KommentarId, Karte, Kontributor, Text, Zeitpunkt
+              FROM Kommentar
+             ORDER BY KommentarId");
+        return zeilen.ToArray();
     }
 
     private static void FuegeTeilaufgabeEin(TemporaereDatenbank datenbank, long karteId, string text, int position, bool abgehakt = false)
