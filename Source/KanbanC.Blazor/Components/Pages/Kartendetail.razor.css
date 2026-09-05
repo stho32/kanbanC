@@ -536,3 +536,25 @@
     font-size: 13px;
     border-radius: var(--radius-lg);
 }
+
+/* Die Schreibzeile des Kommentars: Kürzel des Gewählten, Feld über die Restbreite, „senden"
+   rechts — wie im Artboard. Ohne gewählte Identität steht der leere Kreis für die leere Stelle,
+   und der Knopf trägt die Sperre, die .btn:disabled im Token-Sheet zeichnet. */
+.kommentarzeile {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.kommentarfeld {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Der Hinweis steht unter der Zeile und nicht in ihr: er erklärt die Sperre und nimmt dem Feld
+   keinen Platz, sobald eine Identität gewählt ist. */
+.kommentarhinweis {
+    margin: 0;
+    font-size: 12px;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}

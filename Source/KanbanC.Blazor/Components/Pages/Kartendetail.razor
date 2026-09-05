@@ -4,7 +4,10 @@
 @using KanbanC.Blazor.Services
 @using KanbanC.Contracts.Fehler
 @using KanbanC.Contracts.Karten
+@using KanbanC.Contracts.Kontributoren
 @inject KartenApiKlient KartenKlient
+@inject KontributorenApiKlient KontributorenKlient
+@inject Identitaetsspeicher Identitaetsspeicher
 @inject IJSRuntime Browser
 
 <PageTitle>Karte @KarteId</PageTitle>
@@ -190,6 +193,48 @@ else
                     </button>
                 </div>
             </section>
+
+            <section class="blattabschnitt" id="kommentarabschnitt">
+                @* Die Schreibzeile liest die Identitätswahl neu, sobald jemand sie betritt — mit
+                   dem Zeiger oder mit der Tabulatortaste. Die Kopfzeile ist eine eigene
+                   Komponente und lässt diese Seite beim Wechseln nicht neu zeichnen; ohne dieses
+                   Nachlesen bliebe „senden" gesperrt, bis die Seite neu geladen wird. Die
+                   Kapselung der Kopfzeile bleibt dabei unangetastet. *@
+                <div class="kommentarzeile" @onmouseenter="LiesUrheberNach" @onfocusin="LiesUrheberNach">
+                    @if (_urheber is null)
+                    {
+                        <span class="kuerzel kuerzel-niemand" id="kommentar-kuerzel" title="Niemand gewählt"></span>
+                    }
+                    else
+                    {
+                        <span class="kuerzel @Kontributorartform.Kuerzelklasse(_urheber.Art)" id="kommentar-kuerzel" title="@_urheber.Name">@Kontributorartform.Kuerzel(_urheber.Name)</span>
+                    }
+                    @* Den Text des Feldes führt das Feld selbst, nicht der Server: kein value.
+                       Dieselbe Bauform wie das Teilaufgaben- und das Etikettenfeld, und dieselbe
+                       Lehre — sonst schriebe jede zurückkommende Renderrunde den Stand von vorhin
+                       über das, was inzwischen getippt wurde. *@
+                    <input class="input kommentarfeld"
+                           id="kommentar-eingabe"
+                           @ref="_kommentarfeld"
+                           placeholder="Kommentar schreiben"
+                           @oninput="TippeKommentar"
+                           @onkeydown="AufKommentartaste" />
+                    <button type="button"
+                            class="btn btn-haupt"
+                            id="kommentar-senden"
+                            disabled="@(_urheber is null)"
+                            title="@Sendetitel"
+                            @onclick="SendeKommentar">senden</button>
+                </div>
+
+                @* Ohne gewählte Identität wird nicht gesendet: ein Kommentar ohne Absender ist
+                   keiner. Gesperrt ist allein diese eine Handlung — Board und Kartenseite bleiben
+                   im Übrigen unverändert bedienbar. *@
+                @if (_urheber is null)
+                {
+                    <p class="kommentarhinweis" id="kommentar-hinweis">Wähle oben in der Kopfzeile, wer du bist, um zu kommentieren.</p>
+                }
+            </section>
         </div>
 
         <aside class="eigenschaftenblatt" id="eigenschaftenblatt">
@@ -328,6 +373,7 @@ else
         try
         {
             await LadeKartendetail();
+            await LadeUrheber();
             _webApiIstNichtErreichbar = false;
         }
         catch (HttpRequestException)
@@ -548,6 +594,122 @@ else
         }
 
         _detail = ergebnis.Wert;
+    }
+
+    private string _kommentartext = string.Empty;
+    private ElementReference _kommentarfeld;
+
+    // Der Urheber kommt aus der Identitätswahl dieses Browsers: die Seite injiziert den
+    // Identitaetsspeicher selbst, statt ihn sich von der Kopfzeile reichen zu lassen. Der Dienst
+    // ist AddScoped und damit je Blazor-Kreislauf dieselbe Instanz — die Seite liest genau den
+    // Wert, den die Kopfzeile geschrieben hat, und R00013 bleibt unberührt.
+    private Kontributor? _urheber;
+
+    // Die Liste je Kreislauf einmal, wie in der Kopfzeile: aus der KontributorId wird erst über
+    // sie ein Name mit Art, und daraus das Kürzel.
+    private IReadOnlyList<Kontributor> _kontributoren = [];
+
+    private string Sendetitel
+    {
+        get
+        {
+            if (_urheber is null)
+            {
+                return "Erst in der Kopfzeile wählen, wer du bist";
+            }
+
+            return $"Als {_urheber.Name} senden";
+        }
+    }
+
+    private async Task LadeUrheber()
+    {
+        await WebApiAufruf.MitAusfallmeldung(async () => _kontributoren = await KontributorenKlient.LadeAlle());
+        _urheber = await GewaehlterUrheber();
+    }
+
+    // Gelesen wird bei **jedem** Anlass neu und nicht einmal beim Laden: nur so gilt eine Wahl,
+    // die während der offenen Kartenseite in der Kopfzeile wechselt, sofort.
+    private async Task LiesUrheberNach()
+    {
+        _urheber = await GewaehlterUrheber();
+    }
+
+    private async Task<Kontributor?> GewaehlterUrheber()
+    {
+        var gewaehlteKontributorId = await Identitaetsspeicher.Lies();
+        if (gewaehlteKontributorId is null)
+        {
+            return null;
+        }
+
+        var gewaehlter = _kontributoren.FirstOrDefault(kontributor => kontributor.KontributorId == gewaehlteKontributorId.Value);
+        var derGewaehlteIstNochNichtGeladen = gewaehlter is null;
+        if (derGewaehlteIstNochNichtGeladen)
+        {
+            // Ein Kontributor, der nach dem Laden dieser Seite entstanden ist: die Liste holt
+            // sich den heutigen Stand, statt die Wahl fälschlich als „niemand" zu lesen.
+            await WebApiAufruf.MitAusfallmeldung(async () => _kontributoren = await KontributorenKlient.LadeAlle());
+            gewaehlter = _kontributoren.FirstOrDefault(kontributor => kontributor.KontributorId == gewaehlteKontributorId.Value);
+        }
+
+        return gewaehlter;
+    }
+
+    private void TippeKommentar(ChangeEventArgs ereignis)
+    {
+        _kommentartext = Text(ereignis);
+    }
+
+    // Die Eingabetaste sendet, was im Feld steht — der Weg ohne Zeiger, wie beim Teilaufgabenfeld.
+    private async Task AufKommentartaste(KeyboardEventArgs taste)
+    {
+        var dieTasteSendet = taste.Key == "Enter";
+        if (!dieTasteSendet)
+        {
+            return;
+        }
+
+        await SendeKommentar();
+    }
+
+    // Die Wahl wird hier ein letztes Mal gelesen und nicht aus _urheber genommen: zwischen dem
+    // letzten Nachlesen und dem Klick kann sie gewechselt haben, und der Kommentar trägt dann den
+    // neuen Urheber.
+    private async Task SendeKommentar()
+    {
+        _zurueckweisung = null;
+        _urheber = await GewaehlterUrheber();
+        if (_urheber is null)
+        {
+            return;
+        }
+
+        var anfrage = new KommentarSchreibenAnfrage(_kommentartext, _urheber.KontributorId);
+        _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(() => UebernimmKommentar(anfrage));
+    }
+
+    // Nach einer Zurückweisung bleibt der getippte Text stehen: er ist der Grund der Meldung.
+    private async Task UebernimmKommentar(KommentarSchreibenAnfrage anfrage)
+    {
+        var ergebnis = await KartenKlient.SchreibeKommentar(KarteId, anfrage);
+        if (ergebnis.WurdeZurueckgewiesen)
+        {
+            _zurueckweisung = ergebnis.Zurueckweisung;
+            return;
+        }
+
+        _kommentartext = string.Empty;
+        _detail = ergebnis.Wert;
+        await LeereKommentarfeld();
+    }
+
+    // Das Feld bleibt nach dem Senden stehen, leer und unter dem Cursor: wer eine Rückfrage
+    // stellt, schreibt selten genau einen Satz. Dieselbe Antwort wie bei der Teilaufgabenzeile.
+    private async Task LeereKommentarfeld()
+    {
+        await Browser.InvokeVoidAsync(ElementEigenschaftenSetzen, _kommentarfeld, new { value = string.Empty });
+        await _kommentarfeld.FocusAsync();
     }
 
     private bool IstOffen(string feld)
