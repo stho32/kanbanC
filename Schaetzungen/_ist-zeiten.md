@@ -254,3 +254,4 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-05 | R00017 Kartendetails bearbeiten | B0238 Etiketten verdrahten | Standard | 0,4h | 0,0h | 0,0h | autonom |
 | 2026-09-05 | R00017 Kartendetails bearbeiten | B0239 Endpunkt der Etiketten | Standard | 2h | 0,0h | 0,0h | autonom |
 | 2026-09-05 | R00017 Kartendetails bearbeiten | B0240 API-Klient der Etiketten | Standard | 2h | 0,0h | 0,0h | autonom |
+| 2026-09-05 | R00017 Kartendetails bearbeiten | B0241 Etikettenfeld mit Vervollstaendigung | Standard | 2h | 0,1h | 0,1h | autonom |

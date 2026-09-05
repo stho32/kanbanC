@@ -122,6 +122,19 @@ public sealed class WebApiKlient : IDisposable
         return spalten;
     }
 
+    public async Task<Kartendetail> SetzeEtiketten(long karteId, IReadOnlyList<string> etiketten)
+    {
+        var antwort = await _klient.PutAsJsonAsync($"api/karten/{karteId}/etiketten", new Kartenetiketten(etiketten));
+        antwort.EnsureSuccessStatusCode();
+        var detail = await antwort.Content.ReadFromJsonAsync<Kartendetail>();
+        if (detail is null)
+        {
+            throw new InvalidOperationException("Die WebApi hat kein Kartendetail zurückgegeben.");
+        }
+
+        return detail;
+    }
+
     public async Task<Kontributor> LegeKontributorAn(string name, Kontributorart art)
     {
         var antwort = await _klient.PostAsJsonAsync(KontributorenRoute, new KontributorAnlegenAnfrage(name, art));

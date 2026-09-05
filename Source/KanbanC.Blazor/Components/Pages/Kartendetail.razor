@@ -207,6 +207,55 @@ else
                 }
             </div>
 
+            @* Das Feld ist ein Textfeld mit Marken davor, kein Auswahlfeld: ein Etikett ist eine
+               freie Textmarke, und was noch niemand vergeben hat, entsteht mit der ersten Karte,
+               die es trägt. *@
+            <div class="blattfeld etikettenfeld">
+                <label class="blattmarke" for="etikett-eingabe">Etiketten</label>
+                <div class="etikettenzeile" id="etikettenzeile">
+                    @foreach (var etikett in _detail.Etiketten)
+                    {
+                        <span class="etikett" data-etikett="@etikett">
+                            @etikett
+                            <button type="button" class="etikett-entfernen" title="@etikett entfernen" @onclick="() => EntferneEtikett(etikett)">✕</button>
+                        </span>
+                    }
+                    <input class="etikett-eingabe"
+                           id="etikett-eingabe"
+                           placeholder="+ Etikett"
+                           value="@_etikettentext"
+                           @oninput="TippeEtikett"
+                           @onkeydown="AufEtikettentaste" />
+                </div>
+
+                @if (_etikettentext.Length > 0)
+                {
+                    <div class="etikettenvorschlaege" id="etikettenvorschlaege">
+                        @if (Etikettvorschlaege.Count > 0)
+                        {
+                            <p class="etikettenabschnitt">auf diesem Board schon vergeben</p>
+                            @foreach (var vorschlag in Etikettvorschlaege)
+                            {
+                                <button type="button"
+                                        class="etikettenvorschlag"
+                                        data-vorschlag="@vorschlag.Text"
+                                        @onclick="() => FuegeEtikettHinzu(vorschlag.Text)">
+                                    @vorschlag.Text
+                                    <span class="etikettenzahl">@Etikettenwahl.Kartenzahltext(vorschlag.Kartenzahl)</span>
+                                </button>
+                            }
+                        }
+                        @if (EtikettentextIstNeu)
+                        {
+                            <button type="button" class="etikettenvorschlag etikettenvorschlag-neu" id="etikett-neu-anlegen" @onclick="() => FuegeEtikettHinzu(_etikettentext)">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+                                „@_etikettentext.Trim()“ neu anlegen
+                            </button>
+                        }
+                    </div>
+                }
+            </div>
+
             @* Die fünf Punkte stehen immer offen: eine Farbe ist eine Wahl mit einem Klick, kein
                Feld, das man erst aufschlägt. *@
             <div class="blattfeld">
@@ -245,6 +294,7 @@ else
     private Zurueckweisung? _zurueckweisung;
     private IReadOnlyList<Kontributor> _kontributoren = [];
     private string _verantwortlichensuche = string.Empty;
+    private string _etikettentext = string.Empty;
     private string? _ausfallmeldung;
 
     [Parameter]
@@ -314,6 +364,75 @@ else
     private async Task SetzeVerantwortlichen(long? kontributorId)
     {
         await Speichere(_detail! with { Karte = _detail.Karte with { Kontributor = kontributorId } });
+    }
+
+    private IReadOnlyList<Etikettvorschlag> Etikettvorschlaege
+    {
+        get
+        {
+            return Etikettenwahl.Vorschlaege(_detail!.Etikettvorschlaege, _detail.Etiketten, _etikettentext);
+        }
+    }
+
+    private bool EtikettentextIstNeu
+    {
+        get
+        {
+            return Etikettenwahl.LaesstSichNeuAnlegen(_detail!.Etikettvorschlaege, _detail.Etiketten, _etikettentext);
+        }
+    }
+
+    private void TippeEtikett(ChangeEventArgs ereignis)
+    {
+        _etikettentext = Text(ereignis);
+    }
+
+    // Die Eingabetaste legt an, was im Feld steht — der Weg ohne Zeiger.
+    private async Task AufEtikettentaste(KeyboardEventArgs taste)
+    {
+        var dieTasteLegtAn = taste.Key == "Enter" && _etikettentext.Trim().Length > 0;
+        if (!dieTasteLegtAn)
+        {
+            return;
+        }
+
+        await FuegeEtikettHinzu(_etikettentext);
+    }
+
+    private async Task FuegeEtikettHinzu(string text)
+    {
+        var neuerText = text.Trim();
+        var dieKarteTraegtIhnSchon = _detail!.Etiketten.Contains(neuerText, StringComparer.Ordinal);
+        if (dieKarteTraegtIhnSchon)
+        {
+            return;
+        }
+
+        await SetzeEtiketten([.. _detail.Etiketten, neuerText]);
+    }
+
+    private async Task EntferneEtikett(string text)
+    {
+        await SetzeEtiketten(_detail!.Etiketten.Where(etikett => etikett != text).ToList());
+    }
+
+    private async Task SetzeEtiketten(IReadOnlyList<string> etiketten)
+    {
+        _etikettentext = string.Empty;
+        _zurueckweisung = null;
+        _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(() => UebernimmEtiketten(new Kartenetiketten(etiketten)));
+    }
+
+    private async Task UebernimmEtiketten(Kartenetiketten etiketten)
+    {
+        var ergebnis = await KartenKlient.SetzeEtiketten(KarteId, etiketten);
+        if (ergebnis.WurdeZurueckgewiesen)
+        {
+            _zurueckweisung = ergebnis.Zurueckweisung;
+            return;
+        }
+
+        _detail = ergebnis.Wert;
     }
 
     private bool IstOffen(string feld)

@@ -88,6 +88,39 @@ public sealed class KartendetailSeite
         await Assertions.Expect(Verantwortlichenpopover).ToBeVisibleAsync();
     }
 
+    public ILocator Etiketten => _seite.Locator("#etikettenzeile .etikett");
+
+    public ILocator Etikett(string text)
+    {
+        return _seite.Locator($"#etikettenzeile .etikett[data-etikett='{text}']");
+    }
+
+    public ILocator Etikettfeld => _seite.Locator("#etikett-eingabe");
+
+    // Nur die Vorschlaege aus dem Bestand: „… neu anlegen" traegt dieselbe Klasse, aber kein
+    // data-vorschlag — es kommt nicht aus dem Bestand.
+    public ILocator Etikettenvorschlaege => _seite.Locator("#etikettenvorschlaege .etikettenvorschlag[data-vorschlag]");
+
+    public ILocator Etikettenvorschlag(string text)
+    {
+        return _seite.Locator($"#etikettenvorschlaege .etikettenvorschlag[data-vorschlag='{text}']");
+    }
+
+    public ILocator EtikettNeuAnlegen => _seite.Locator("#etikett-neu-anlegen");
+
+    // Getippt wird Zeichen fuer Zeichen: FillAsync setzt den Wert in einem Zug und traefe damit
+    // nicht die Lage, in der sich die Vorschlagsliste mit jedem Tastendruck neu aufbaut.
+    public async Task TippeEtikett(string text)
+    {
+        await Etikettfeld.ClickAsync();
+        await Etikettfeld.PressSequentiallyAsync(text);
+    }
+
+    public async Task EntferneEtikett(string text)
+    {
+        await Etikett(text).Locator(".etikett-entfernen").ClickAsync();
+    }
+
     public ILocator Farbpunkte => _seite.Locator("#farbpunkte .farbpunkt");
 
     public ILocator GewaehlterFarbpunkt => _seite.Locator("#farbpunkte .farbpunkt-gewaehlt");
