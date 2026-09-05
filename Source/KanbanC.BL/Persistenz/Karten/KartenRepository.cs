@@ -16,6 +16,7 @@ namespace KanbanC.BL.Persistenz.Karten;
 public sealed class KartenRepository : IKartenRepository
 {
     private const string IsoDatumsformat = "yyyy-MM-dd";
+    private const string IsoZeitpunktformat = "O";
     private readonly IDatenbankVerbindungsfabrik _verbindungsfabrik;
 
     public KartenRepository(IDatenbankVerbindungsfabrik verbindungsfabrik)
@@ -276,6 +277,57 @@ public sealed class KartenRepository : IKartenRepository
              WHERE TeilaufgabeId = @TeilaufgabeId
                AND Karte = @Karte", parameter, transaktion);
         return geaenderteZeilen > 0;
+    }
+
+    // Eine Zeile mehr, Muster LegeTeilaufgabeAn: Existenzpruefung, Schreiben und Rueckgabe des
+    // ganzen Details in **einer** Transaktion. Anders als dort gibt es keine Position zu rechnen —
+    // die Reihenfolge ist der Zeitpunkt, und den setzt diese Stelle.
+    public Kartendetail? SchreibeKommentar(long karteId, KommentarSchreibenAnfrage anfrage)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+        using var transaktion = verbindung.BeginTransaction();
+
+        var dieKarteGibtEsNicht = !GibtEsDieKarte(verbindung, transaktion, karteId);
+        if (dieKarteGibtEsNicht)
+        {
+            return null; // stil-check: C25 null heisst "diese Karte gibt es nicht" (404)
+        }
+
+        FuegeKommentarEin(verbindung, transaktion, karteId, Kommentartext.Normalisiert(anfrage.Text), anfrage.Kontributor, Jetzt());
+        var detail = Kartenleser.LiesKartendetail(verbindung, transaktion, karteId);
+        transaktion.Commit();
+        return detail;
+    }
+
+    // Der Zeitpunkt entsteht hier und nicht beim Aufrufer: koennte ein Agent ihn mitgeben,
+    // koennte er die Reihenfolge des Gespraechs faelschen. Dieselbe Stelle, an der DateTime.Today
+    // fuer die Erledigung steht — **keine Uhr-Abstraktion**; geprueft wird stattdessen ueber ein
+    // Zeitfenster.
+    // UTC und nicht die Ortszeit der WebApi, anders als bei Heute(): der Wert geht als Text durch
+    // die Spalte, und nur bei einheitlichem Versatz sortiert Text lexikografisch wie
+    // chronologisch. „Heute" meint den Tag des Menschen vor dem Bildschirm, ein Zeitpunkt meint
+    // den Moment — der ist ueberall derselbe.
+    private static DateTimeOffset Jetzt()
+    {
+        return DateTimeOffset.UtcNow;
+    }
+
+    // Der Zeitpunkt geht als ISO-Text durch die Spalte: Microsoft.Data.Sqlite meldet fuer sie den
+    // Typ String, und Dapper materialisiert daraus keinen DateTimeOffset (belegt in
+    // SqliteEigenschaftenTests). Geschrieben wird deshalb derselbe Text, den der Kommentarleser
+    // wieder umrechnet.
+    private static void FuegeKommentarEin(IDbConnection verbindung, IDbTransaction transaktion, long karteId, string text, long kontributorId, DateTimeOffset zeitpunkt)
+    {
+        var parameter = new
+        {
+            Karte = karteId,
+            Kontributor = kontributorId,
+            Text = text,
+            Zeitpunkt = zeitpunkt.ToUniversalTime().ToString(IsoZeitpunktformat, CultureInfo.InvariantCulture),
+        };
+        verbindung.Execute(@"
+            INSERT INTO Kommentar (Karte, Kontributor, Text, Zeitpunkt)
+            VALUES (@Karte, @Kontributor, @Text, @Zeitpunkt)", parameter, transaktion);
     }
 
     // Die Zahl der geaenderten Zeilen ist zugleich die Auskunft, ob es die Karte gibt: ein

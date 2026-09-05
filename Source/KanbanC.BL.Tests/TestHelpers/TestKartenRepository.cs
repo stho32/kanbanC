@@ -238,6 +238,22 @@ public sealed class TestKartenRepository : IKartenRepository
         return _kartendetail;
     }
 
+    public KommentarSchreibenAnfrage? ErhaltenerKommentar { get; private set; }
+
+    // Wie das echte Repository: eine Zeile mehr, zurueck kommt das gelesene Detail; null heisst
+    // „diese KarteId gibt es nicht".
+    public Kartendetail? SchreibeKommentar(long karteId, KommentarSchreibenAnfrage anfrage)
+    {
+        GeaenderteKarteId = karteId;
+        ErhaltenerKommentar = anfrage;
+        if (_karteFehltAnDieserStelle)
+        {
+            return null;
+        }
+
+        return _kartendetail;
+    }
+
     public IReadOnlyList<Karte> Karten(long spalteId)
     {
         if (!_kartenJeSpalte.TryGetValue(spalteId, out var karten))

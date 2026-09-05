@@ -36,6 +36,11 @@ public interface IKartenRepository
     // das ganze Kartendetail. null heisst: diese TeilaufgabeId gehoert nicht zu dieser Karte.
     Kartendetail? SetzeAbhakung(long karteId, long teilaufgabeId, Teilaufgabenstand stand);
 
+    // Schreibt **einen** Kommentar mit dem Zeitpunkt der Uhr und haengt ihn ans Ende der
+    // Zeitordnung; zurueck kommt das ganze Kartendetail. null heisst: diese KarteId gibt es nicht.
+    // Der Urheber ist Pflicht und steckt in der Anfrage — einen Kommentar ohne ihn gibt es nicht.
+    Kartendetail? SchreibeKommentar(long karteId, KommentarSchreibenAnfrage anfrage);
+
     // null heisst „diese Spalte gibt es an dieser Stelle nicht"; eine Spalte ohne Karten liefert
     // die leere Liste.
     IReadOnlyList<Karte>? LadeKartenDerSpalte(long boardId, long spalteId, Archivierung archivstand);

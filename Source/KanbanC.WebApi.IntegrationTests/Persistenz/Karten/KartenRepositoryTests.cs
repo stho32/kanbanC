@@ -1563,6 +1563,149 @@ public class KartenRepositoryTests
         Assert.That(detail!.Kommentare.Select(kommentar => kommentar.Text), Is.EqualTo(new[] { "Bitte prüfen" }));
     }
 
+    // Der einzige ehrliche Test ohne stellbare Uhr: der gespeicherte Zeitpunkt liegt im Fenster
+    // zwischen dem Moment vor und dem nach dem Aufruf. Das ist eine echte Zustandsaenderung und
+    // kein zurueckgelesener Testwert.
+    [Test]
+    public void Wenn_ein_Kommentar_geschrieben_wird_dann_liegt_sein_Zeitpunkt_im_Fenster_des_Aufrufs()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+
+        var vorher = DateTimeOffset.UtcNow;
+        var detail = repository.SchreibeKommentar(karte!.KarteId, new KommentarSchreibenAnfrage("Die Lizenz gilt nur pro Rechner.", stefan));
+        var nachher = DateTimeOffset.UtcNow;
+
+        Assert.That(detail!.Kommentare, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail.Kommentare[0].Zeitpunkt, Is.GreaterThanOrEqualTo(vorher));
+            Assert.That(detail.Kommentare[0].Zeitpunkt, Is.LessThanOrEqualTo(nachher));
+            Assert.That(detail.Kommentare[0].Zeitpunkt.Offset, Is.EqualTo(TimeSpan.Zero));
+        });
+    }
+
+    // In der Spalte steht UTC — sonst waere ORDER BY Zeitpunkt eine stille Luege. Der Versatz
+    // erscheint als „+00:00" und nicht als „Z": ToString("O") schreibt an einem DateTimeOffset
+    // den Versatz aus. Wichtig ist nur, dass er bei jeder Zeile derselbe und die Breite fest ist —
+    // dann und nur dann ist die Textordnung die Zeitordnung.
+    [Test]
+    public void Wenn_ein_Kommentar_geschrieben_wird_dann_steht_in_der_Spalte_ISO_Text_in_UTC()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+
+        repository.SchreibeKommentar(karte!.KarteId, new KommentarSchreibenAnfrage("Bitte prüfen", stefan));
+
+        Assert.That(Kommentarzeitpunkttexte(datenbank), Has.Length.EqualTo(1));
+        Assert.That(Kommentarzeitpunkttexte(datenbank)[0], Does.EndWith("+00:00"));
+        Assert.That(Kommentarzeitpunkttexte(datenbank)[0], Has.Length.EqualTo(33), "Feste Breite: nur so sortiert der Text wie die Zeit.");
+    }
+
+    // Die Antwort traegt die ganze Seite und nicht die geschriebene Zeile.
+    [Test]
+    public void Wenn_ein_Kommentar_geschrieben_wird_dann_traegt_die_Antwort_das_ganze_Kartendetail_mit_dem_Urheber()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var agent = LegeKontributorAn(datenbank, "Claude-Agent", Kontributorart.Agent);
+
+        var detail = repository.SchreibeKommentar(karte!.KarteId, new KommentarSchreibenAnfrage("Der Parser liest jetzt auch Ebene 4.", agent));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail!.Karte.Titel, Is.EqualTo("Playwright-Lizenz klären"));
+            Assert.That(detail.Board, Is.EqualTo(board.BoardId));
+            Assert.That(detail.Boardname, Is.EqualTo("Entwicklung"));
+            Assert.That(detail.Kommentare[0].Urheber, Is.EqualTo(new Kontributor(agent, "Claude-Agent", Kontributorart.Agent, StillgelegtAm: null)));
+            Assert.That(detail.Kommentare[0].KommentarId, Is.GreaterThan(0));
+        });
+    }
+
+    // Das Rechenbeispiel der Anforderung: A, B, C nacheinander geschrieben stehen in dieser
+    // Reihenfolge, aeltester oben.
+    [Test]
+    public void Wenn_drei_Kommentare_nacheinander_geschrieben_werden_dann_stehen_sie_in_Schreibreihenfolge()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+
+        repository.SchreibeKommentar(karte!.KarteId, new KommentarSchreibenAnfrage("A", stefan));
+        repository.SchreibeKommentar(karte.KarteId, new KommentarSchreibenAnfrage("B", stefan));
+        var detail = repository.SchreibeKommentar(karte.KarteId, new KommentarSchreibenAnfrage("C", stefan));
+
+        Assert.That(detail!.Kommentare.Select(kommentar => kommentar.Text), Is.EqualTo(new[] { "A", "B", "C" }));
+        Assert.That(detail.Kommentare.Select(kommentar => kommentar.KommentarId).Distinct().Count(), Is.EqualTo(3));
+    }
+
+    [Test]
+    public void Wenn_zweimal_derselbe_Kommentartext_geschrieben_wird_dann_stehen_zwei_Zeilen_mit_verschiedenen_Nummern()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+
+        repository.SchreibeKommentar(karte!.KarteId, new KommentarSchreibenAnfrage("Nachfassen", stefan));
+        var detail = repository.SchreibeKommentar(karte.KarteId, new KommentarSchreibenAnfrage("Nachfassen", stefan));
+
+        Assert.That(detail!.Kommentare.Select(kommentar => kommentar.Text), Is.EqualTo(new[] { "Nachfassen", "Nachfassen" }));
+        Assert.That(detail.Kommentare[0].KommentarId, Is.Not.EqualTo(detail.Kommentare[1].KommentarId));
+    }
+
+    // Das Rechenbeispiel von US-3: die Randleerzeichen fallen weg, der Text im Uebrigen nicht.
+    [Test]
+    public void Wenn_ein_Kommentar_mit_Randleerzeichen_geschrieben_wird_dann_steht_er_ohne_sie_in_der_Liste()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+
+        var detail = repository.SchreibeKommentar(karte!.KarteId, new KommentarSchreibenAnfrage("  Bitte prüfen  ", stefan));
+
+        Assert.That(detail!.Kommentare.Select(kommentar => kommentar.Text), Is.EqualTo(new[] { "Bitte prüfen" }));
+    }
+
+    [Test]
+    public void Wenn_die_KarteId_unbekannt_ist_dann_liefert_SchreibeKommentar_null_und_schreibt_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+
+        Assert.That(repository.SchreibeKommentar(999, new KommentarSchreibenAnfrage("Bitte prüfen", stefan)), Is.Null);
+        Assert.That(Kommentarzeilen(datenbank), Is.Zero);
+    }
+
+    private static long Kommentarzeilen(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.ExecuteScalar<long>("SELECT COUNT(*) FROM Kommentar");
+    }
+
+    private static string[] Kommentarzeitpunkttexte(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.Query<string>(@"
+            SELECT Zeitpunkt
+              FROM Kommentar
+             ORDER BY KommentarId").ToArray();
+    }
+
     private static long KarteMitKommentar(TemporaereDatenbank datenbank, KartenRepository repository, string text, string zeitpunkt)
     {
         var board = LegeBoardAn(datenbank);

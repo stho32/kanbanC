@@ -273,3 +273,4 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-05 | R00019 Karte kommentieren | B0255 Kommentartabelle anlegen | Standard | 0,4h | 0,0h | 0,0h | autonom |
 | 2026-09-05 | R00019 Karte kommentieren | B0256 Kommentare am Kartendetail lesen | Standard | 0,4h | 0,0h | 0,0h | autonom |
 | 2026-09-05 | R00019 Karte kommentieren | B0257 Kommentartext pruefen | Standard | 0,4h | 0,0h | 0,0h | autonom |
+| 2026-09-05 | R00019 Karte kommentieren | B0258 Kommentar schreiben | Standard | 0,4h | 0,0h | 0,0h | autonom |
