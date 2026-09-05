@@ -17,6 +17,19 @@ public sealed class WebApiKlient : IDisposable
         _klient = new HttpClient { BaseAddress = new Uri(webApiAdresse + "/") };
     }
 
+    public async Task<Board> LegeBoardAn(string name)
+    {
+        var antwort = await _klient.PostAsJsonAsync(BoardsRoute, new BoardAnlegenAnfrage(name, BoardArt.Linie, null, null));
+        antwort.EnsureSuccessStatusCode();
+        var board = await antwort.Content.ReadFromJsonAsync<Board>();
+        if (board is null)
+        {
+            throw new InvalidOperationException("Die WebApi hat kein Board zurückgegeben.");
+        }
+
+        return board;
+    }
+
     public async Task<Board> LadeBoard(long boardId)
     {
         var board = await _klient.GetFromJsonAsync<Board>($"{BoardsRoute}/{boardId}");

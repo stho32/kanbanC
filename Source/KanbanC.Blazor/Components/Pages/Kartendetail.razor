@@ -1,0 +1,91 @@
+@page "/karten/{KarteId:long}"
+@using KanbanC.Blazor.Services
+@using KanbanC.Contracts.Karten
+@inject KartenApiKlient KartenKlient
+
+<PageTitle>Karte @KarteId</PageTitle>
+
+@if (_webApiIstNichtErreichbar)
+{
+    <div class="meldung" role="alert" id="fehlermeldung">
+        <p>@WebApiAusfall.Meldung</p>
+        <a href="/boards" id="zur-board-liste">Zurück zur Board-Liste</a>
+    </div>
+}
+else if (!_ladenIstAbgeschlossen)
+{
+    <p>Die Karte wird geladen …</p>
+}
+else if (_detail is null)
+{
+    @* Wortgleich zu Board.razor, nur mit „Karte". Der Rückweg führt zur Board-Liste und nicht
+       zum Board: zu einer Kartennummer, die es nicht gibt, gehört kein Board — eine geratene
+       Nummer im Verweis wäre dieselbe Falschaussage, die der Befund der API vermeidet. *@
+    <div class="meldung" role="alert" id="karte-unbekannt">
+        <p>Eine Karte mit der Nummer @KarteId gibt es nicht.</p>
+        <a href="/boards" id="zur-board-liste">Zurück zur Board-Liste</a>
+    </div>
+}
+else
+{
+    @* Zone 1 trägt die offene Seite: der Pfeil führt zum Board zurück, die Überschrift nennt es.
+       Der Kartentitel steht nicht hier, sondern als Überschrift im Blatt — dort wird er auch
+       geändert. *@
+    <SectionContent SectionName="kopfzeile-kontext">
+        <a href="/boards/@_detail.Board" id="karte-zurueck" class="karte-zurueck" title="Zurück zum Board">←</a>
+        <h1 id="karte-boardname" class="karte-boardname">@_detail.Boardname</h1>
+        <span class="tag tag-neutral" id="karte-plakette">Karte @KarteId</span>
+        <span class="karte-spalte" id="karte-spalte">Spalte @_detail.Spaltenbezeichnung</span>
+    </SectionContent>
+
+    <nav class="brotkrumen" id="brotkrumen" aria-label="Brotkrumen">
+        <a href="/boards">Boards</a>
+        <span aria-hidden="true">/</span>
+        <a href="/boards/@_detail.Board">@_detail.Boardname</a>
+        <span aria-hidden="true">/</span>
+        <span class="brotkrume-hier">Karte @KarteId</span>
+    </nav>
+
+    <h2 class="kartenueberschrift" id="kartenueberschrift">@_detail.Karte.Titel</h2>
+}
+
+@code {
+    // Vollqualifiziert, weil der Komponentenname Kartendetail den gleichnamigen Vertragstyp
+    // verdeckt — dieselbe Lage wie bei Board.razor und Karte.razor.
+    private KanbanC.Contracts.Karten.Kartendetail? _detail;
+    private bool _ladenIstAbgeschlossen;
+    private bool _webApiIstNichtErreichbar;
+
+    [Parameter]
+    public long KarteId { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _ladenIstAbgeschlossen = false;
+        try
+        {
+            await LadeKartendetail();
+            _webApiIstNichtErreichbar = false;
+        }
+        catch (HttpRequestException)
+        {
+            _webApiIstNichtErreichbar = true;
+        }
+
+        _ladenIstAbgeschlossen = true;
+    }
+
+    // Die Zurückweisung wird nicht angezeigt, sondern nur ausgewertet: die Seite kennt ihre
+    // eigene Nummer und sagt dasselbe wie Board.razor. Der Befund der API bleibt dem Agenten.
+    private async Task LadeKartendetail()
+    {
+        var ergebnis = await KartenKlient.LadeKartendetail(KarteId);
+        if (ergebnis.WurdeZurueckgewiesen)
+        {
+            _detail = null;
+            return;
+        }
+
+        _detail = ergebnis.Wert;
+    }
+}

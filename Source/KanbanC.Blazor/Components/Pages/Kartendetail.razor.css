@@ -1,0 +1,50 @@
+/* Die Kopfdaten sitzen in der Navigationszeile — sie ordnen sich deren Zeilenhöhe unter,
+   wie die des Boards. */
+.karte-zurueck {
+    font-size: 16px;
+    line-height: 1;
+    color: var(--color-accent);
+    text-decoration: none;
+}
+
+.karte-boardname {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.karte-spalte {
+    font-size: 12px;
+    white-space: nowrap;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+/* Der Rückweg in Worten, neben dem Pfeil in Zone 1: die Seite liegt zwei Stufen tief, und
+   der Pfeil trägt nur eine davon. */
+.brotkrumen {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 12px;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.brotkrumen a {
+    color: var(--color-accent-700);
+    text-decoration: none;
+}
+
+.brotkrumen a:hover {
+    text-decoration: underline;
+}
+
+.brotkrume-hier {
+    color: var(--color-text);
+}
+
+.kartenueberschrift {
+    margin: var(--space-3) 0 0;
+    font-size: 32px;
+    text-wrap: pretty;
+}
