@@ -262,6 +262,52 @@ public class KartenServiceTests
         });
     }
 
+    // Das Rennen zwischen Pruefung und Schreiben: der Dienst reicht die Zurueckweisung des
+    // Repositories durch, statt sie zu kuerzen — es gibt nichts zu kuerzen.
+    [Test]
+    public void Wenn_das_Repository_den_Zug_zurueckweist_dann_reicht_der_Dienst_die_Befunde_unveraendert_durch()
+    {
+        var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen", "Erledigt");
+        var quellspalteId = spaltenRepository.Spalten(1)[0].SpalteId;
+        var zielspalteId = spaltenRepository.Spalten(1)[1].SpalteId;
+        spaltenRepository.MitKarte(1, quellspalteId, 5, "Endpunkt bauen");
+        var kartenRepository = TestKartenRepository.Leer().MitZurueckgewiesenemZug();
+        var service = new KartenService(spaltenRepository, kartenRepository);
+
+        var ergebnis = service.VerschiebeKarte(1, 5, new Kartenlage(zielspalteId, 1));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("bestand-geaendert"));
+    }
+
+    // Das Rennen beim Lesen: der Dienst hat die Spalte gesehen, das Repository findet sie nicht
+    // mehr. Eine leere Bahn ist davon zu unterscheiden — sie liefert die leere Liste.
+    [Test]
+    public void Wenn_die_Spalte_zwischen_Pruefung_und_Lesen_verschwindet_dann_weist_LadeKartenDerSpalte_zurueck()
+    {
+        var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen");
+        var spalteId = spaltenRepository.Spalten(1)[0].SpalteId;
+        var service = new KartenService(spaltenRepository, TestKartenRepository.MitVerschwundenerSpalte());
+
+        var ergebnis = service.LadeKartenDerSpalte(1, spalteId);
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("spalte-unbekannt"));
+    }
+
+    [Test]
+    public void Wenn_die_Spalte_keine_Karte_traegt_dann_liefert_LadeKartenDerSpalte_die_leere_Liste_als_Erfolg()
+    {
+        var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen");
+        var spalteId = spaltenRepository.Spalten(1)[0].SpalteId;
+        var service = new KartenService(spaltenRepository, TestKartenRepository.Leer());
+
+        var ergebnis = service.LadeKartenDerSpalte(1, spalteId);
+
+        Assert.That(ergebnis.IstErfolg, Is.True);
+        Assert.That(ergebnis.Wert, Is.Empty);
+    }
+
     // Dieselbe Antwortgestalt wie beim Board lesen: gekuerzt am Ausgang, mit der wahren Kartenzahl.
     [Test]
     public void Wenn_die_Zielspalte_eine_volle_Abschlussbahn_ist_dann_kuerzt_VerschiebeKarte_sie_am_Ausgang()

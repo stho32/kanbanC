@@ -2,6 +2,7 @@ using KanbanC.BL.Interfaces.Karten;
 using KanbanC.BL.Models;
 using KanbanC.BL.Operations.Karten;
 using KanbanC.Contracts.Boards;
+using KanbanC.Contracts.Fehler;
 using KanbanC.Contracts.Karten;
 
 namespace KanbanC.BL.Tests.TestHelpers;
@@ -13,6 +14,7 @@ public sealed class TestKartenRepository : IKartenRepository
     private long _naechsteKarteId = 1;
     private IReadOnlyList<Spalte> _spaltenNachDemZug = [];
     private bool _karteIstInzwischenVerschwunden;
+    private bool _derZugWirdZurueckgewiesen;
     private long? _boardDerKarte;
 
     private TestKartenRepository(bool spalteIstInzwischenVerschwunden)
@@ -46,6 +48,14 @@ public sealed class TestKartenRepository : IKartenRepository
         return this;
     }
 
+    // Bildet das Rennen um die Zielposition ab: der Dienst hat gegen den Bestand geprueft, beim
+    // Schreiben passt die Position nicht mehr.
+    public TestKartenRepository MitZurueckgewiesenemZug()
+    {
+        _derZugWirdZurueckgewiesen = true;
+        return this;
+    }
+
     public TestKartenRepository MitSpaltenNachDemZug(IReadOnlyList<Spalte> spalten)
     {
         _spaltenNachDemZug = spalten;
@@ -66,18 +76,30 @@ public sealed class TestKartenRepository : IKartenRepository
             return null;
         }
 
+        if (_derZugWirdZurueckgewiesen)
+        {
+            return Ergebnis<IReadOnlyList<Spalte>>.Zurueckgewiesen(new Pruefbefunde([
+                new Fehlerbefund(
+                    "bestand-geaendert",
+                    "Die Karten des Boards haben sich zwischenzeitlich geändert; der Zug wurde nicht ausgeführt.",
+                    "`GET /api/boards/1` abrufen und den Zug mit einer Position innerhalb der Zielspalte wiederholen."),
+            ]));
+        }
+
         return Ergebnis<IReadOnlyList<Spalte>>.Erfolg(_spaltenNachDemZug);
     }
 
+    // Wie das echte Repository: null heisst „diese Spalte gibt es an dieser Stelle nicht", eine
+    // Spalte ohne Karten liefert die leere Liste.
     public IReadOnlyList<Karte>? LadeKartenDerSpalte(long boardId, long spalteId)
     {
         WurdenKartenGelesen = true;
-        if (!_kartenJeSpalte.TryGetValue(spalteId, out var karten))
+        if (_spalteIstInzwischenVerschwunden)
         {
             return null;
         }
 
-        return karten;
+        return Karten(spalteId);
     }
 
     public long? BoardDerKarte(long karteId)
