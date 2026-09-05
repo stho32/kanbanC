@@ -344,6 +344,73 @@ public class MigrationslaeuferTests
         Assert.That(Erledigungszeilen(datenbank), Is.Empty);
     }
 
+    [Test]
+    public void Wenn_die_Migration_gelaufen_ist_dann_traegt_das_Schema_die_Tabelle_Kartenarchivierung_mit_der_Karte_als_Schluessel()
+    {
+        using var datenbank = new TemporaereDatenbank();
+
+        new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Tabellennamen(datenbank), Does.Contain("Kartenarchivierung"));
+            Assert.That(Spaltennamen(datenbank, "Kartenarchivierung"), Is.EqualTo(new[] { "Karte" }));
+            Assert.That(Schluesselspalten(datenbank, "Kartenarchivierung"), Is.EqualTo(new[] { "Karte" }));
+        });
+    }
+
+    [Test]
+    public void Wenn_FuehreAus_auf_einer_Datei_mit_archivierter_Karte_ein_zweites_Mal_laeuft_dann_bleiben_Schema_und_Archivstand_unveraendert()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "Migration schreiben", 1);
+        FuegeKarteEin(datenbank, spalteId, "Endpunkt bauen", 2);
+        ArchiviereKarte(datenbank, 1);
+        var schemaVorher = SchemaDefinitionen(datenbank);
+
+        Assert.That(() => new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus(), Throws.Nothing);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(SchemaDefinitionen(datenbank), Is.EqualTo(schemaVorher));
+            Assert.That(Archivzeilen(datenbank), Is.EqualTo(new[] { 1L }));
+            Assert.That(Kartentitel(datenbank, spalteId), Is.EqualTo(new[] { "Migration schreiben", "Endpunkt bauen" }));
+        });
+    }
+
+    // Ein Archivstand, den die Migration erfände, nähme dem Board Karten, die niemand abgelegt hat.
+    [Test]
+    public void Wenn_die_Migration_auf_einer_Datei_mit_Karten_laeuft_dann_ist_keine_von_ihnen_archiviert()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "Vor der Anforderung angelegt", 1);
+
+        new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus();
+
+        Assert.That(Archivzeilen(datenbank), Is.Empty);
+    }
+
+    private static void ArchiviereKarte(TemporaereDatenbank datenbank, long karteId)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Kartenarchivierung (Karte)
+            VALUES (@Karte)", new { Karte = karteId });
+    }
+
+    private static long[] Archivzeilen(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.Query<long>(@"
+            SELECT Karte
+              FROM Kartenarchivierung
+             ORDER BY Karte").ToArray();
+    }
+
     private static void ErledigeKarte(TemporaereDatenbank datenbank, long karteId, string erledigtAm)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
