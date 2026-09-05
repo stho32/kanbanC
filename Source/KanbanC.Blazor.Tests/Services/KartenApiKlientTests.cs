@@ -377,6 +377,113 @@ public class KartenApiKlientTests
     }
 
     [Test]
+    public async Task Wenn_eine_Teilaufgabe_angelegt_wird_dann_setzt_der_Klient_ein_POST_auf_die_Unterressource_mit_dem_Text_ab()
+    {
+        const string rumpf = """{"karte":{"karteId":14,"titel":"Playwright-Lizenz klären","position":2,"farbe":"Ohne"},"board":3,"boardname":"Entwicklung","spalte":5,"spaltenbezeichnung":"In Arbeit","etiketten":[],"etikettvorschlaege":[],"teilaufgaben":[{"teilaufgabeId":7,"text":"Lizenztext lesen","position":1,"abgehakt":false}]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.LegeTeilaufgabeAn(14, new TeilaufgabeAnlegenAnfrage("Lizenztext lesen"));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("POST http://webapi.test/api/karten/14/teilaufgaben"));
+            Assert.That(fabrik.GesendeterRumpf, Is.EqualTo("""{"text":"Lizenztext lesen"}"""));
+            Assert.That(ergebnis.Wert.Teilaufgaben[0].TeilaufgabeId, Is.EqualTo(7));
+            Assert.That(ergebnis.Wert.Teilaufgaben[0].Text, Is.EqualTo("Lizenztext lesen"));
+            Assert.That(ergebnis.Wert.Teilaufgaben[0].Abgehakt, Is.False);
+        });
+    }
+
+    // Der 400 dieser Route traegt einen eigenen Befund; ueber den Browser ist der Fehlerpfad des
+    // Klienten nicht ausloesbar.
+    [Test]
+    public async Task Wenn_die_WebApi_die_Teilaufgabe_zurueckweist_dann_reicht_der_Klient_ihren_Befund_durch()
+    {
+        const string rumpf = """{"befunde":[{"code":"teilaufgabe-leer","meldung":"Eine Teilaufgabe darf nicht leer sein.","kompensation":"`POST /api/karten/14/teilaufgaben` mit einem nichtleeren „text“ wiederholen."}]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.BadRequest, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.LegeTeilaufgabeAn(14, new TeilaufgabeAnlegenAnfrage("  "));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.EqualTo("teilaufgabe-leer"));
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Is.EqualTo("Eine Teilaufgabe darf nicht leer sein."));
+        });
+    }
+
+    // Der 404 dieser Route darf nicht durch die Board-Meldung des ApiAntwortlesers ersetzt werden:
+    // die Route kennt kein Board.
+    [Test]
+    public async Task Wenn_die_Karte_beim_Anlegen_der_Teilaufgabe_unbekannt_ist_dann_reicht_der_Klient_den_Befund_der_WebApi_durch()
+    {
+        const string rumpf = """{"befunde":[{"code":"karte-unbekannt","meldung":"Eine Karte mit der Nummer 9999 gibt es nicht.","kompensation":"`GET /api/boards` abrufen."}]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.NotFound, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.LegeTeilaufgabeAn(9999, new TeilaufgabeAnlegenAnfrage("Lizenztext lesen"));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.EqualTo("karte-unbekannt"));
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Not.Contain("Board "));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_eine_Teilaufgabe_abgehakt_wird_dann_setzt_der_Klient_ein_PUT_auf_ihre_Adresse_mit_dem_Stand_ab()
+    {
+        const string rumpf = """{"karte":{"karteId":14,"titel":"Playwright-Lizenz klären","position":2,"farbe":"Ohne"},"board":3,"boardname":"Entwicklung","spalte":5,"spaltenbezeichnung":"In Arbeit","etiketten":[],"etikettvorschlaege":[],"teilaufgaben":[{"teilaufgabeId":7,"text":"Lizenztext lesen","position":1,"abgehakt":true}]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.SetzeAbhakung(14, 7, new Teilaufgabenstand(true));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("PUT http://webapi.test/api/karten/14/teilaufgaben/7"));
+            Assert.That(fabrik.GesendeterRumpf, Is.EqualTo("""{"abgehakt":true}"""));
+            Assert.That(ergebnis.Wert.Teilaufgaben[0].Abgehakt, Is.True);
+        });
+    }
+
+    // Der Stand kippt nicht: das Zuruecknehmen schickt denselben Rumpf mit false.
+    [Test]
+    public async Task Wenn_das_Abhaken_zurueckgenommen_wird_dann_schickt_der_Klient_denselben_Rumpf_mit_false()
+    {
+        const string rumpf = """{"karte":{"karteId":14,"titel":"Playwright-Lizenz klären","position":2,"farbe":"Ohne"},"board":3,"boardname":"Entwicklung","spalte":5,"spaltenbezeichnung":"In Arbeit","etiketten":[],"etikettvorschlaege":[],"teilaufgaben":[]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        await klient.SetzeAbhakung(14, 7, new Teilaufgabenstand(false));
+
+        Assert.That(fabrik.GesendeterRumpf, Is.EqualTo("""{"abgehakt":false}"""));
+    }
+
+    [Test]
+    public async Task Wenn_die_Teilaufgabe_zu_einer_anderen_Karte_gehoert_dann_reicht_der_Klient_den_Befund_mit_beiden_Nummern_durch()
+    {
+        const string rumpf = """{"befunde":[{"code":"teilaufgabe-unbekannt","meldung":"Eine Teilaufgabe mit der Nummer 4711 gibt es an der Karte 14 nicht.","kompensation":"`GET /api/karten/14` abrufen."}]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.NotFound, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.SetzeAbhakung(14, 4711, new Teilaufgabenstand(true));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.EqualTo("teilaufgabe-unbekannt"));
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("4711"));
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("14"));
+        });
+    }
+
+    [Test]
     public async Task Wenn_der_Klient_zurueckholt_dann_schickt_er_denselben_Rumpf_mit_false()
     {
         using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, "[]", "application/json");

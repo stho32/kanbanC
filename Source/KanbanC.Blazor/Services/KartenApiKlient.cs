@@ -40,6 +40,23 @@ public sealed class KartenApiKlient
         return await AlsKartendetail(antwort);
     }
 
+    // Eine Zeile, nicht die ganze Liste — anders als bei den Etiketten. Zurueck kommt trotzdem das
+    // ganze Kartendetail, weil die Seite eine Quelle behaelt und nach dem Schreiben nicht nachlaedt.
+    public async Task<ApiErgebnis<Kartendetail>> LegeTeilaufgabeAn(long karteId, TeilaufgabeAnlegenAnfrage anfrage)
+    {
+        using var klient = _klientFabrik.CreateClient(KlientName);
+        using var antwort = await klient.PostAsJsonAsync($"{KartenRoute}/{karteId}/teilaufgaben", anfrage);
+        return await AlsKartendetail(antwort);
+    }
+
+    // Setzt den Stand, statt ihn zu kippen: derselbe Aufruf zweimal laesst denselben Stand stehen.
+    public async Task<ApiErgebnis<Kartendetail>> SetzeAbhakung(long karteId, long teilaufgabeId, Teilaufgabenstand stand)
+    {
+        using var klient = _klientFabrik.CreateClient(KlientName);
+        using var antwort = await klient.PutAsJsonAsync($"{KartenRoute}/{karteId}/teilaufgaben/{teilaufgabeId}", stand);
+        return await AlsKartendetail(antwort);
+    }
+
     // 400 und 404 laufen denselben Weg, weil beide einen Befund der WebApi tragen.
     // ApiAntwortleser waere die falsche Stelle: sein 404-Zweig ersetzt jeden Befund durch eine
     // Board-Meldung, und diese Route kennt kein Board.
