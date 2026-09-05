@@ -1447,6 +1447,140 @@ public class KartenRepositoryTests
         Assert.That(repository.LiesKartendetail(karteId)!.Teilaufgaben[0].Abgehakt, Is.False);
     }
 
+    // Die Reihenfolge ist die Zeitordnung und nicht die des Schreibens: die drei Zeilen werden
+    // absichtlich in verkehrter Zeitfolge eingefuegt, die aeltere kommt trotzdem oben zurueck.
+    [Test]
+    public void Wenn_Kommentare_verschieden_datiert_sind_dann_liefert_das_Kartendetail_sie_in_Zeitordnung()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+        FuegeKommentarEin(datenbank, karte!.KarteId, stefan, "Gestern", "2026-08-30T17:40:12.0000000Z");
+        FuegeKommentarEin(datenbank, karte.KarteId, stefan, "Vorgestern", "2026-08-29T09:05:00.0000000Z");
+        FuegeKommentarEin(datenbank, karte.KarteId, stefan, "Heute", "2026-08-31T11:38:00.0000000Z");
+
+        var detail = repository.LiesKartendetail(karte.KarteId);
+
+        Assert.That(detail!.Kommentare.Select(kommentar => kommentar.Text), Is.EqualTo(new[] { "Vorgestern", "Gestern", "Heute" }));
+        Assert.That(detail.Kommentare.Select(kommentar => kommentar.Zeitpunkt), Is.Ordered);
+    }
+
+    // Der Zeitpunkt kommt mit Uhrzeit und in UTC zurueck — der Wert, der in der Spalte steht.
+    [Test]
+    public void Wenn_ein_Kommentar_gelesen_wird_dann_traegt_er_seinen_Zeitpunkt_mit_Uhrzeit_in_UTC()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var karte = KarteMitKommentar(datenbank, repository, "Bitte prüfen", "2026-08-30T17:40:12.0000000Z");
+
+        var detail = repository.LiesKartendetail(karte);
+
+        Assert.That(detail!.Kommentare[0].Zeitpunkt, Is.EqualTo(new DateTimeOffset(2026, 8, 30, 17, 40, 12, TimeSpan.Zero)));
+        Assert.That(detail.Kommentare[0].KommentarId, Is.GreaterThan(0));
+    }
+
+    // Der Urheber reist als ganzer Kontributor: Nummer, Name, Art und Stilllegungsstand.
+    [Test]
+    public void Wenn_ein_Kommentar_gelesen_wird_dann_traegt_er_den_ganzen_Urheber()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var agent = LegeKontributorAn(datenbank, "Claude-Agent", Kontributorart.Agent);
+        FuegeKommentarEin(datenbank, karte!.KarteId, agent, "Der Parser liest jetzt auch Ebene 4.", "2026-08-30T17:40:12.0000000Z");
+
+        var detail = repository.LiesKartendetail(karte.KarteId);
+
+        Assert.That(detail!.Kommentare[0].Urheber, Is.EqualTo(new Kontributor(agent, "Claude-Agent", Kontributorart.Agent, StillgelegtAm: null)));
+    }
+
+    // Der zweite Halbsatz des Fertig-Kriteriums von I0009: wer geht, bleibt an seinen alten
+    // Aeusserungen sichtbar — mit Name und mit dem Stilllegungsstand.
+    [Test]
+    public void Wenn_der_Urheber_inzwischen_stillgelegt_ist_dann_bleibt_er_am_Kommentar_sichtbar()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var maria = LegeKontributorAn(datenbank, "Maria Lenz", Kontributorart.Mensch);
+        FuegeKommentarEin(datenbank, karte!.KarteId, maria, "Die Lizenz gilt nur pro Rechner.", "2026-08-30T17:40:12.0000000Z");
+        LegeKontributorStill(datenbank, maria, "2026-08-31");
+
+        var detail = repository.LiesKartendetail(karte.KarteId);
+
+        Assert.That(detail!.Kommentare, Has.Count.EqualTo(1));
+        Assert.That(detail.Kommentare[0].Urheber, Is.EqualTo(new Kontributor(maria, "Maria Lenz", Kontributorart.Mensch, new DateOnly(2026, 8, 31))));
+    }
+
+    [Test]
+    public void Wenn_die_Karte_keinen_Kommentar_traegt_dann_liefert_das_Kartendetail_die_leere_Liste()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+
+        Assert.That(repository.LiesKartendetail(karte!.KarteId)!.Kommentare, Is.Empty);
+    }
+
+    // Die Kommentare einer Karte und nur die: die Zeilen einer fremden Karte kommen nicht mit.
+    [Test]
+    public void Wenn_eine_andere_Karte_Kommentare_traegt_dann_liefert_das_Kartendetail_nur_die_eigenen()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var eigene = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var fremde = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Andere Karte"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+        FuegeKommentarEin(datenbank, fremde!.KarteId, stefan, "Nur woanders", "2026-08-30T17:40:12.0000000Z");
+        FuegeKommentarEin(datenbank, eigene!.KarteId, stefan, "Bitte prüfen", "2026-08-30T17:41:12.0000000Z");
+
+        var detail = repository.LiesKartendetail(eigene.KarteId);
+
+        Assert.That(detail!.Kommentare.Select(kommentar => kommentar.Text), Is.EqualTo(new[] { "Bitte prüfen" }));
+    }
+
+    // Ohne Archivfilter, wie das ganze Kartendetail: eine archivierte Karte behaelt ihre Adresse
+    // und mit ihr die Geschichte, die an ihr haengt.
+    [Test]
+    public void Wenn_die_Karte_archiviert_ist_dann_liefert_das_Kartendetail_ihre_Kommentare_weiterhin()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+        FuegeKommentarEin(datenbank, karte!.KarteId, stefan, "Bitte prüfen", "2026-08-30T17:40:12.0000000Z");
+        repository.SetzeArchivierung(board.BoardId, karte.KarteId, new Archivierung(true));
+
+        var detail = repository.LiesKartendetail(karte.KarteId);
+
+        Assert.That(detail!.Kommentare.Select(kommentar => kommentar.Text), Is.EqualTo(new[] { "Bitte prüfen" }));
+    }
+
+    private static long KarteMitKommentar(TemporaereDatenbank datenbank, KartenRepository repository, string text, string zeitpunkt)
+    {
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+        FuegeKommentarEin(datenbank, karte!.KarteId, stefan, text, zeitpunkt);
+        return karte.KarteId;
+    }
+
+    private static void FuegeKommentarEin(TemporaereDatenbank datenbank, long karteId, long kontributorId, string text, string zeitpunkt)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Kommentar (Karte, Kontributor, Text, Zeitpunkt)
+            VALUES (@Karte, @Kontributor, @Text, @Zeitpunkt)",
+            new { Karte = karteId, Kontributor = kontributorId, Text = text, Zeitpunkt = zeitpunkt });
+    }
+
     private static long KarteMitDreiTeilaufgaben(TemporaereDatenbank datenbank, KartenRepository repository)
     {
         var board = LegeBoardAn(datenbank);

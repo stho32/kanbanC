@@ -16,6 +16,10 @@ namespace KanbanC.Contracts.Karten;
 // an Karte — auf der Bahn ist nichts von ihnen gezeichnet. Kein Zählfeld daneben: ein
 // gespeicherter Fortschritt wäre eine zweite Wahrheit neben der Liste, die ihn trägt, und liefe
 // beim ersten nebenläufigen Abhaken auseinander. Gerechnet wird er in der Oberflächenschicht.
+// Und aus demselben Grund die Kommentare: auf der Bahn steht kein Kommentarzeichen, und ein
+// Board-Abruf zahlte sonst eine zweite Abfrage je Karte. Auch hier kein Zählfeld und keine
+// Ordnungszahl daneben — die Anzahl ist .Count an der gelieferten Liste, und die Ordnung liefert
+// der Zeitpunkt jeder Zeile.
 public record Kartendetail(
     Karte Karte,
     long Board,
@@ -25,4 +29,5 @@ public record Kartendetail(
     Kontributor? Verantwortlicher,
     IReadOnlyList<string> Etiketten,
     IReadOnlyList<Etikettvorschlag> Etikettvorschlaege,
-    IReadOnlyList<Teilaufgabe> Teilaufgaben);
+    IReadOnlyList<Teilaufgabe> Teilaufgaben,
+    IReadOnlyList<Kommentar> Kommentare);
