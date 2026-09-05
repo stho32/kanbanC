@@ -1,6 +1,7 @@
 @using KanbanC.Blazor.Components.Karten
 @using KanbanC.Blazor.Services
 @using KanbanC.Contracts.Boards
+@inject KartenApiKlient KartenKlient
 
 <div class="spaltenbahnen" id="spaltenbahnen" @ondragenter="VerlasseZiel">
     @foreach (var spalte in Spalten)
@@ -20,7 +21,7 @@
                    Plus statt einer genauen Zahl über einer gekürzten Liste. *@
                 @if (ZeigtKartenzahl)
                 {
-                    <span class="spaltenbahn-kartenzahl">@Bahnenkopfzahl.AlsText(spalte)</span>
+                    <span class="spaltenbahn-kartenzahl">@Bahnenkopfzahl.AlsText(Gezeigte(spalte))</span>
                 }
                 else
                 {
@@ -58,13 +59,26 @@
                 }
                 @if (spalte.IstAbschlussspalte)
                 {
-                    @foreach (var gruppe in Datumsgruppen.Bilde(spalte.Karten, Heute))
+                    var gezeigte = Gezeigte(spalte);
+                    @foreach (var gruppe in Datumsgruppen.Bilde(gezeigte.Karten, Heute))
                     {
                         <p class="spaltenbahn-datumsgruppe">@gruppe.Ueberschrift · @gruppe.Karten.Count</p>
                         for (var stelle = gruppe.ErsteStelle; stelle < gruppe.ErsteStelle + gruppe.Karten.Count; stelle++)
                         {
-                            @Erledigtkarte(spalte, stelle)
+                            @Erledigtkarte(gezeigte, stelle)
                         }
+                    }
+                    @if (_nachladefehler.TryGetValue(spalte.SpalteId, out var nachladefehler))
+                    {
+                        <div class="meldung spaltenbahn-nachlade-fehlermeldung" role="alert">@nachladefehler</div>
+                    }
+                    @if (IstGekuerzt(gezeigte))
+                    {
+                        <p class="spaltenbahn-nachlade-hinweis">@gezeigte.Karten.Count neueste gezeigt · ältere über die API vollständig</p>
+                        <button type="button" class="btn btn-schlicht spaltenbahn-nachladen" @onclick="() => LadeAeltereNach(spalte)">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+                            Ältere nachladen
+                        </button>
                     }
                 }
                 else
@@ -137,6 +151,12 @@
 @code {
     private const int ObersteStelle = 1;
     private Dictionary<long, SpaltenFormular> _formulare = [];
+
+    // Das Nachladen ist eine Handlung, keine Einstellung des Boards: der naechste Board-Abruf
+    // liefert neue Spalten, und mit ihnen faellt der nachgeladene Stand fort.
+    // Vollqualifiziert, weil der Komponentenname Karte den gleichnamigen Vertragstyp verdeckt.
+    private Dictionary<long, IReadOnlyList<KanbanC.Contracts.Karten.Karte>> _nachgeladeneKarten = [];
+    private Dictionary<long, string> _nachladefehler = [];
     private IReadOnlyList<Spalte> _gezeigteSpalten = [];
     private Kartenzug? _laufenderZug;
     private Ablageziel? _ablageziel;
@@ -194,6 +214,51 @@
 
         _gezeigteSpalten = Spalten;
         _formulare = Spalten.ToDictionary(spalte => spalte.SpalteId, SpaltenFormular.Fuer);
+        _nachgeladeneKarten = [];
+        _nachladefehler = [];
+    }
+
+    // Die Bahn, wie sie gerade dasteht: gekuerzt vom Dienst oder nachgeladen. Kartenzahl bleibt in
+    // beiden Faellen die wahre Zahl.
+    private Spalte Gezeigte(Spalte spalte)
+    {
+        var dieBahnWurdeNachgeladen = _nachgeladeneKarten.TryGetValue(spalte.SpalteId, out var alleKarten);
+        if (dieBahnWurdeNachgeladen)
+        {
+            return spalte with { Karten = alleKarten! };
+        }
+
+        return spalte;
+    }
+
+    private static bool IstGekuerzt(Spalte spalte)
+    {
+        return spalte.Karten.Count < spalte.Kartenzahl;
+    }
+
+    private async Task LadeAeltereNach(Spalte spalte)
+    {
+        var ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(() => HoleAlleKarten(spalte));
+        var dieWebApiWarNichtErreichbar = ausfallmeldung is not null;
+        if (dieWebApiWarNichtErreichbar)
+        {
+            _nachladefehler[spalte.SpalteId] = ausfallmeldung!;
+            return;
+        }
+
+        _nachladefehler.Remove(spalte.SpalteId);
+    }
+
+    private async Task HoleAlleKarten(Spalte spalte)
+    {
+        var ergebnis = await KartenKlient.LadeKartenDerSpalte(BoardId, spalte.SpalteId);
+        if (ergebnis.WurdeZurueckgewiesen)
+        {
+            _nachladefehler[spalte.SpalteId] = ergebnis.Zurueckweisung.Befunde[0].Meldung;
+            return;
+        }
+
+        _nachgeladeneKarten[spalte.SpalteId] = ergebnis.Wert;
     }
 
     private async Task SpeichereBahn(long spalteId)

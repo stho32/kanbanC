@@ -61,6 +61,17 @@ public sealed class BoardSeite
 
     public ILocator Datumsgruppen => _seite.Locator("#spaltenbahnen .spaltenbahn-datumsgruppe");
 
+    public ILocator Nachladehinweise => _seite.Locator("#spaltenbahnen .spaltenbahn-nachlade-hinweis");
+
+    public ILocator NachladeKnoepfe => _seite.Locator("#spaltenbahnen .spaltenbahn-nachladen");
+
+    public ILocator NachladeFehlermeldungen => _seite.Locator("#spaltenbahnen .spaltenbahn-nachlade-fehlermeldung");
+
+    public async Task LadeAeltereNach(ILocator bahn)
+    {
+        await bahn.Locator(".spaltenbahn-nachladen").ClickAsync();
+    }
+
     public ILocator DatumsgruppenDerBahn(ILocator bahn)
     {
         return bahn.Locator(".spaltenbahn-datumsgruppe");
