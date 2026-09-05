@@ -1097,6 +1097,128 @@ public class KartenEndpunkteTests
         });
     }
 
+    [Test]
+    public async Task Wenn_PUT_karten_die_vier_Felder_setzt_dann_antwortet_die_API_mit_dem_vollstaendigen_Kartendetail()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Migration schreiben");
+
+        using var antwort = await webApi.Klient.PutAsJsonAsync(
+            Kartendetailroute(karte.KarteId),
+            new KarteAendernAnfrage("WBS-Import", "Knoten in Karten überführen", new DateOnly(2026, 9, 2), Kartenfarbe.Terrakotta));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var detail = await antwort.Content.ReadFromJsonAsync<Kartendetail>();
+        Assert.That(detail, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail.Karte.Titel, Is.EqualTo("WBS-Import"));
+            Assert.That(detail.Karte.Beschreibung, Is.EqualTo("Knoten in Karten überführen"));
+            Assert.That(detail.Karte.FaelligAm, Is.EqualTo(new DateOnly(2026, 9, 2)));
+            Assert.That(detail.Karte.Farbe, Is.EqualTo(Kartenfarbe.Terrakotta));
+            Assert.That(detail.Boardname, Is.EqualTo("Entwicklung"));
+        });
+    }
+
+    // US-3: die geaenderten Werte reisen an der Karte mit und stehen ohne zweiten Aufruf auch
+    // in der Boardantwort.
+    [Test]
+    public async Task Wenn_die_Karte_geaendert_wurde_dann_traegt_sie_ihre_drei_Werte_auch_in_der_Boardantwort()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Migration schreiben");
+        await Aendere(webApi, karte.KarteId, new KarteAendernAnfrage("WBS-Import", "Knoten überführen", new DateOnly(2026, 9, 2), Kartenfarbe.Olive));
+
+        var geladen = await LadeBoard(webApi, board.BoardId);
+
+        var ausDemBoard = geladen.Spalten[0].Karten[0];
+        Assert.Multiple(() =>
+        {
+            Assert.That(ausDemBoard.Titel, Is.EqualTo("WBS-Import"));
+            Assert.That(ausDemBoard.Beschreibung, Is.EqualTo("Knoten überführen"));
+            Assert.That(ausDemBoard.FaelligAm, Is.EqualTo(new DateOnly(2026, 9, 2)));
+            Assert.That(ausDemBoard.Farbe, Is.EqualTo(Kartenfarbe.Olive));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_eine_Karte_frisch_angelegt_ist_dann_liefert_das_Kartendetail_null_null_und_Farbe_Ohne()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Playwright-Lizenz klären");
+
+        using var antwort = await webApi.Klient.GetAsync(Kartendetailroute(karte.KarteId));
+
+        var detail = await antwort.Content.ReadFromJsonAsync<Kartendetail>();
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail!.Karte.Beschreibung, Is.Null);
+            Assert.That(detail.Karte.FaelligAm, Is.Null);
+            Assert.That(detail.Karte.Farbe, Is.EqualTo(Kartenfarbe.Ohne));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_der_Titel_beim_Aendern_geleert_wird_dann_antwortet_die_API_mit_400_und_es_bleibt_alles_stehen()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Migration schreiben");
+        var vorher = await Aendere(webApi, karte.KarteId, new KarteAendernAnfrage("WBS-Import", "Knoten überführen", new DateOnly(2026, 9, 2), Kartenfarbe.Terrakotta));
+
+        using var antwort = await webApi.Klient.PutAsJsonAsync(Kartendetailroute(karte.KarteId), new KarteAendernAnfrage("", null, null, Kartenfarbe.Ohne));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Karte ändern mit geleertem Titel");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("kartentitel-leer"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Is.EqualTo("Der Titel darf nicht leer sein."));
+            Assert.That(zurueckweisung.Befunde[0].Kompensation, Does.Contain($"PUT /api/karten/{karte.KarteId}"));
+        });
+        using var danach = await webApi.Klient.GetAsync(Kartendetailroute(karte.KarteId));
+        Assert.That(await danach.Content.ReadFromJsonAsync<Kartendetail>(), Is.EqualTo(vorher));
+    }
+
+    [Test]
+    public async Task Wenn_die_KarteId_unbekannt_ist_dann_antwortet_PUT_karten_mit_404_und_einem_Befund_ohne_Board()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        await LegeBoardAn(webApi);
+
+        using var antwort = await webApi.Klient.PutAsJsonAsync(Kartendetailroute(9999), new KarteAendernAnfrage("WBS-Import", null, null, Kartenfarbe.Ohne));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Karte ändern mit unbekannter KarteId");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("karte-unbekannt"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain("9999"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Not.Contain("Board"));
+        });
+    }
+
+    private static async Task<Kartendetail> Aendere(TestWebApi webApi, long karteId, KarteAendernAnfrage anfrage)
+    {
+        using var antwort = await webApi.Klient.PutAsJsonAsync(Kartendetailroute(karteId), anfrage);
+        antwort.EnsureSuccessStatusCode();
+        var detail = await antwort.Content.ReadFromJsonAsync<Kartendetail>();
+        if (detail is null)
+        {
+            throw new InvalidOperationException("Die API hat kein Kartendetail zurückgegeben.");
+        }
+
+        return detail;
+    }
+
     private static string Kartendetailroute(long karteId)
     {
         return $"/api/karten/{karteId}";

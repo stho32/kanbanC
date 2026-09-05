@@ -27,6 +27,7 @@ public static class KartenEndpunkte
     public static void Registriere(IEndpointRouteBuilder routen)
     {
         routen.MapGet(Kartenroute, LiesKartendetail).WithName("KartendetailLesen");
+        routen.MapPut(Kartenroute, AendereKarte).WithName("KarteAendern");
         routen.MapGet(Basisroute, LiesKartenDerSpalte).WithName("KartenDerSpalteLesen");
         routen.MapPost(Basisroute, LegeKarteAn).WithName("KarteAnlegen");
         routen.MapPut(Lageroute, VerschiebeKarte).WithName("KarteVerschieben");
@@ -36,6 +37,19 @@ public static class KartenEndpunkte
     private static IResult LiesKartendetail(long karteId, KartenService kartenService)
     {
         var ergebnis = kartenService.LadeKartendetail(karteId);
+        if (ergebnis.IstErfolg)
+        {
+            return Results.Ok(ergebnis.Wert);
+        }
+
+        return Zurueckweisungen.AlsFehlerantwort(ergebnis.Befunde);
+    }
+
+    // Dieselbe Antwortgestalt wie das Lesen: wer aendert, bekommt die Seite zurueck, die er
+    // gerade betrachtet — ein zweiter GET danach faende denselben Stand.
+    private static IResult AendereKarte(long karteId, KarteAendernAnfrage anfrage, KartenService kartenService)
+    {
+        var ergebnis = kartenService.AendereKarte(karteId, anfrage);
         if (ergebnis.IstErfolg)
         {
             return Results.Ok(ergebnis.Wert);

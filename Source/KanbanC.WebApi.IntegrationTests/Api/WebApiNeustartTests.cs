@@ -66,6 +66,35 @@ public class WebApiNeustartTests
     }
 
     [Test]
+    public async Task Wenn_die_WebApi_nach_einer_Kartenaenderung_neu_startet_dann_stehen_alle_vier_Werte_unveraendert_da()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        long karteId;
+        using (var ersteInstanz = new TestWebApi(datenbank.Dateipfad))
+        {
+            var board = await LegeBoardAn(ersteInstanz, new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null));
+            var karte = await LegeKarteAn(ersteInstanz, board.BoardId, board.Spalten[0].SpalteId, "Migration schreiben");
+            karteId = karte.KarteId;
+            var geaendert = await ersteInstanz.Klient.PutAsJsonAsync(
+                $"/api/karten/{karteId}",
+                new KarteAendernAnfrage("WBS-Import", "Knoten in Karten überführen", new DateOnly(2026, 9, 2), Kartenfarbe.Terrakotta));
+            geaendert.EnsureSuccessStatusCode();
+        }
+
+        using var zweiteInstanz = new TestWebApi(datenbank.Dateipfad);
+
+        var detail = await zweiteInstanz.Klient.GetFromJsonAsync<Kartendetail>($"/api/karten/{karteId}");
+        Assert.That(detail, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail!.Karte.Titel, Is.EqualTo("WBS-Import"));
+            Assert.That(detail.Karte.Beschreibung, Is.EqualTo("Knoten in Karten überführen"));
+            Assert.That(detail.Karte.FaelligAm, Is.EqualTo(new DateOnly(2026, 9, 2)));
+            Assert.That(detail.Karte.Farbe, Is.EqualTo(Kartenfarbe.Terrakotta));
+        });
+    }
+
+    [Test]
     public async Task Wenn_die_WebApi_nach_dem_Einschalten_der_Kartenzahl_neu_startet_dann_steht_die_Einstellung_unveraendert_da()
     {
         using var datenbank = new TemporaereDatenbank();
