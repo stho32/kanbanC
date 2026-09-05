@@ -118,26 +118,6 @@ public sealed class KartenRepository : IKartenRepository
         return spalten;
     }
 
-    // Die Zeile selbst ist die Aussage: archivieren legt sie an, zurückholen entfernt sie. Beides
-    // lässt sich beliebig oft wiederholen, ohne dass sich etwas ändert.
-    private static void SchreibeArchivierung(IDbConnection verbindung, IDbTransaction transaktion, long karteId, Archivierung archivierung)
-    {
-        var parameter = new { Karte = karteId };
-        if (archivierung.IstArchiviert)
-        {
-            verbindung.Execute(@"
-                INSERT INTO Kartenarchivierung (Karte)
-                VALUES (@Karte)
-                ON CONFLICT (Karte) DO NOTHING", parameter, transaktion);
-            return;
-        }
-
-        verbindung.Execute(@"
-            DELETE
-              FROM Kartenarchivierung
-             WHERE Karte = @Karte", parameter, transaktion);
-    }
-
     public long? BoardDerKarte(long karteId)
     {
         using var verbindung = _verbindungsfabrik.Oeffne();
@@ -167,6 +147,26 @@ public sealed class KartenRepository : IKartenRepository
     private static DateOnly Heute()
     {
         return DateOnly.FromDateTime(DateTime.Today);
+    }
+
+    // Die Zeile selbst ist die Aussage: archivieren legt sie an, zurückholen entfernt sie. Beides
+    // lässt sich beliebig oft wiederholen, ohne dass sich etwas ändert.
+    private static void SchreibeArchivierung(IDbConnection verbindung, IDbTransaction transaktion, long karteId, Archivierung archivierung)
+    {
+        var parameter = new { Karte = karteId };
+        if (archivierung.IstArchiviert)
+        {
+            verbindung.Execute(@"
+                INSERT INTO Kartenarchivierung (Karte)
+                VALUES (@Karte)
+                ON CONFLICT (Karte) DO NOTHING", parameter, transaktion);
+            return;
+        }
+
+        verbindung.Execute(@"
+            DELETE
+              FROM Kartenarchivierung
+             WHERE Karte = @Karte", parameter, transaktion);
     }
 
     private static void SchreibeErledigung(IDbConnection verbindung, IDbTransaction transaktion, long karteId, Erledigungsaenderung aenderung)
