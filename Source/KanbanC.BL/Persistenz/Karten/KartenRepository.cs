@@ -134,6 +134,67 @@ public sealed class KartenRepository : IKartenRepository
         return Kartenleser.LiesKartendetail(verbindung, null, karteId);
     }
 
+    // Zwei Tabellen in einem Zug: der Titel steht an der Karte, die uebrigen drei Werte an ihrer
+    // Eigenschaftszeile, die beim ersten Aendern entsteht. Muster SchreibeErledigung. Der Upsert
+    // nennt alle vier Nutzspalten — eine nicht genannte behielte ihren alten Wert und machte aus
+    // dem Ersetzen ein halbes (belegt in SqliteMehrspaltigerUpsertProbeTests).
+    public Kartendetail? Aendere(long karteId, KarteAendernAnfrage anfrage)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+        using var transaktion = verbindung.BeginTransaction();
+
+        var dieKarteGibtEsNicht = !SchreibeTitel(verbindung, transaktion, karteId, Kartentitel.Normalisiert(anfrage.Titel));
+        if (dieKarteGibtEsNicht)
+        {
+            return null; // stil-check: C25 null heisst "diese Karte gibt es nicht" (404)
+        }
+
+        SchreibeEigenschaften(verbindung, transaktion, karteId, anfrage);
+        var detail = Kartenleser.LiesKartendetail(verbindung, transaktion, karteId);
+        transaktion.Commit();
+        return detail;
+    }
+
+    // Die Zahl der geaenderten Zeilen ist zugleich die Auskunft, ob es die Karte gibt: ein
+    // zweiter Zaehlaufruf davor waere dieselbe Frage ein zweites Mal.
+    private static bool SchreibeTitel(IDbConnection verbindung, IDbTransaction transaktion, long karteId, string titel)
+    {
+        var geaenderteZeilen = verbindung.Execute(@"
+            UPDATE Karte
+               SET Titel = @Titel
+             WHERE KarteId = @KarteId", new { KarteId = karteId, Titel = titel }, transaktion);
+        return geaenderteZeilen > 0;
+    }
+
+    private static void SchreibeEigenschaften(IDbConnection verbindung, IDbTransaction transaktion, long karteId, KarteAendernAnfrage anfrage)
+    {
+        var parameter = new
+        {
+            Karte = karteId,
+            anfrage.Beschreibung,
+            FaelligAm = AlsIsoText(anfrage.FaelligAm),
+            Farbe = anfrage.Farbe.ToString(),
+        };
+        verbindung.Execute(@"
+            INSERT INTO Karteneigenschaft (Karte, Beschreibung, Kontributor, FaelligAm, Farbe)
+            VALUES (@Karte, @Beschreibung, NULL, @FaelligAm, @Farbe)
+            ON CONFLICT (Karte) DO UPDATE SET Beschreibung = excluded.Beschreibung,
+                                              FaelligAm    = excluded.FaelligAm,
+                                              Farbe        = excluded.Farbe", parameter, transaktion);
+    }
+
+    // Das Datum geht als ISO-Text durch die Spalte: Dapper nimmt ein DateOnly nicht als
+    // Parameterwert an (belegt in SqliteEigenschaftenTests).
+    private static string? AlsIsoText(DateOnly? datum)
+    {
+        if (datum is null)
+        {
+            return null;
+        }
+
+        return datum.Value.ToString(IsoDatumsformat, CultureInfo.InvariantCulture);
+    }
+
     // Ungekuerzt und in Anzeigereihenfolge: was die Oberflaeche kuerzt, bleibt hier vollstaendig.
     public IReadOnlyList<Karte>? LadeKartenDerSpalte(long boardId, long spalteId, Archivierung archivstand)
     {

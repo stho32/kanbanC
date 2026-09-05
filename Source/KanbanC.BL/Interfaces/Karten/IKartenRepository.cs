@@ -20,6 +20,10 @@ public interface IKartenRepository
     // Kartenadresse keins traegt — das Board steht erst in der Antwort.
     Kartendetail? LiesKartendetail(long karteId);
 
+    // null heisst: diese KarteId gibt es nicht. Zurueck kommt das ganze Kartendetail, damit die
+    // Seite eine Quelle behaelt und nach dem Schreiben nicht nachladen muss.
+    Kartendetail? Aendere(long karteId, KarteAendernAnfrage anfrage);
+
     // null heisst „diese Spalte gibt es an dieser Stelle nicht"; eine Spalte ohne Karten liefert
     // die leere Liste.
     IReadOnlyList<Karte>? LadeKartenDerSpalte(long boardId, long spalteId, Archivierung archivstand);

@@ -155,6 +155,24 @@ public sealed class TestKartenRepository : IKartenRepository
         return _kartendetail;
     }
 
+    public KarteAendernAnfrage? ErhalteneAenderung { get; private set; }
+
+    // Wie das echte Repository: geschrieben wird der ganze Satz, zurueck kommt das gelesene
+    // Detail; null heisst „diese KarteId gibt es nicht".
+    public Kartendetail? Aendere(long karteId, KarteAendernAnfrage anfrage)
+    {
+        GeaenderteKarteId = karteId;
+        ErhalteneAenderung = anfrage;
+        if (_karteFehltAnDieserStelle)
+        {
+            return null;
+        }
+
+        return _kartendetail;
+    }
+
+    public long? GeaenderteKarteId { get; private set; }
+
     public IReadOnlyList<Karte> Karten(long spalteId)
     {
         if (!_kartenJeSpalte.TryGetValue(spalteId, out var karten))

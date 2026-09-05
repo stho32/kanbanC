@@ -912,6 +912,87 @@ public class KartenRepositoryTests
         });
     }
 
+    [Test]
+    public void Wenn_Aendere_die_vier_Werte_setzt_dann_stehen_sie_danach_im_zurueckgelesenen_Kartendetail()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Migration schreiben"));
+
+        var detail = repository.Aendere(karte!.KarteId, new KarteAendernAnfrage("WBS-Import", "Knoten in Karten überführen", new DateOnly(2026, 9, 2), Kartenfarbe.Terrakotta));
+
+        Assert.That(detail, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail.Karte.Titel, Is.EqualTo("WBS-Import"));
+            Assert.That(detail.Karte.Beschreibung, Is.EqualTo("Knoten in Karten überführen"));
+            Assert.That(detail.Karte.FaelligAm, Is.EqualTo(new DateOnly(2026, 9, 2)));
+            Assert.That(detail.Karte.Farbe, Is.EqualTo(Kartenfarbe.Terrakotta));
+        });
+        Assert.That(repository.LiesKartendetail(karte.KarteId), Is.EqualTo(detail));
+    }
+
+    // Die Faelligkeit geht als ISO-Text durch die Spalte und kommt als DateOnly zurueck.
+    [Test]
+    public void Wenn_Aendere_eine_Faelligkeit_setzt_dann_steht_sie_als_ISO_Text_in_der_Spalte()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Migration schreiben"));
+
+        repository.Aendere(karte!.KarteId, new KarteAendernAnfrage("Migration schreiben", null, new DateOnly(2026, 9, 2), Kartenfarbe.Ohne));
+
+        Assert.That(FaelligkeitsText(datenbank, karte.KarteId), Is.EqualTo("2026-09-02"));
+    }
+
+    [Test]
+    public void Wenn_Aendere_ein_zweites_Mal_schreibt_dann_ersetzt_es_alle_vier_Werte_statt_eine_zweite_Zeile_anzulegen()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Migration schreiben"));
+        repository.Aendere(karte!.KarteId, new KarteAendernAnfrage("WBS-Import", "erste Fassung", new DateOnly(2026, 9, 2), Kartenfarbe.Terrakotta));
+
+        var detail = repository.Aendere(karte.KarteId, new KarteAendernAnfrage("WBS-Import", null, null, Kartenfarbe.Olive));
+
+        Assert.That(Eigenschaftszeilen(datenbank), Is.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail!.Karte.Beschreibung, Is.Null);
+            Assert.That(detail.Karte.FaelligAm, Is.Null);
+            Assert.That(detail.Karte.Farbe, Is.EqualTo(Kartenfarbe.Olive));
+        });
+    }
+
+    [Test]
+    public void Wenn_die_KarteId_unbekannt_ist_dann_liefert_Aendere_null_und_schreibt_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        LegeBoardAn(datenbank);
+
+        Assert.That(repository.Aendere(999, new KarteAendernAnfrage("WBS-Import", "erste Fassung", null, Kartenfarbe.Olive)), Is.Null);
+        Assert.That(Eigenschaftszeilen(datenbank), Is.EqualTo(0));
+    }
+
+    private static string? FaelligkeitsText(TemporaereDatenbank datenbank, long karteId)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.QuerySingleOrDefault<string?>(@"
+            SELECT FaelligAm
+              FROM Karteneigenschaft
+             WHERE Karte = @Karte", new { Karte = karteId });
+    }
+
+    private static long Eigenschaftszeilen(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.ExecuteScalar<long>("SELECT COUNT(*) FROM Karteneigenschaft");
+    }
+
     private static void SetzeKarteneigenschaft(TemporaereDatenbank datenbank, long karteId, string beschreibung, string faelligAm, string farbe)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
