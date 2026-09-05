@@ -205,3 +205,4 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-05 | R00015 Erledigte Karten gebündelt sehen | B0190 Wahre Kartenzahl an der Spalte | Standard | 0,4h | 0,1h | 0,1h | autonom |
 | 2026-09-05 | R00015 Erledigte Karten gebündelt sehen | B0191 Gekürzte Spalte verlässt die API | Standard | 2h | 0,1h | 0,1h | autonom |
 | 2026-09-05 | R00015 Erledigte Karten gebündelt sehen | B0192 Datumsgruppen in der Bahn | Standard | 2h | 0,1h | 0,1h | autonom |
+| 2026-09-05 | R00015 Erledigte Karten gebündelt sehen | B0193 Bahnenkopf zeigt „N+“ | Standard | 2h | 0,0h | 0,0h | autonom |

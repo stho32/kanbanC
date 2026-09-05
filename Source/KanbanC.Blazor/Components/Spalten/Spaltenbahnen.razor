@@ -16,11 +16,11 @@
                         <span class="spaltenbahn-vermerk">Grenze @spalte.Anzeigegrenze</span>
                     }
                 </span>
-                @* Die Zahl wird aus der gelieferten Kartenliste gerechnet: es gibt keinen zweiten
-                   Ort, der gepflegt werden müsste und veralten könnte. *@
+                @* Zeigt die Bahn nicht alle ihre Karten, nennt der Kopf die gezeigten mit einem
+                   Plus statt einer genauen Zahl über einer gekürzten Liste. *@
                 @if (ZeigtKartenzahl)
                 {
-                    <span class="spaltenbahn-kartenzahl">@spalte.Karten.Count</span>
+                    <span class="spaltenbahn-kartenzahl">@Bahnenkopfzahl.AlsText(spalte)</span>
                 }
                 else
                 {
