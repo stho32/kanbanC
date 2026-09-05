@@ -125,6 +125,28 @@ public class EtikettenE2ETests : PageTest
         await Expect(aufbau.Seite.Etikett("Import")).ToBeVisibleAsync();
     }
 
+    // Nach einem angenommenen Etikett steht das Feld leer und weiter unter dem Cursor: das zweite
+    // Etikett wird getippt, ohne das Feld erneut anzuklicken.
+    [Test]
+    [Category("US-6")]
+    public async Task Wenn_zwei_Etiketten_nacheinander_mit_der_Eingabetaste_angelegt_werden_dann_traegt_die_Karte_beide()
+    {
+        var aufbau = await ZweiKartenEinesBoards();
+
+        await aufbau.Seite.TippeEtikett("Import");
+        await Page.Keyboard.PressAsync("Enter");
+        await Expect(aufbau.Seite.Etiketten).ToHaveCountAsync(1);
+        await Expect(aufbau.Seite.Etikettfeld).ToHaveValueAsync(string.Empty);
+        await Expect(aufbau.Seite.Etikettfeld).ToBeFocusedAsync();
+
+        await Page.Keyboard.TypeAsync("Export");
+        await Page.Keyboard.PressAsync("Enter");
+
+        await Expect(aufbau.Seite.Etiketten).ToHaveCountAsync(2);
+        await Expect(aufbau.Seite.Etikett("Import")).ToBeVisibleAsync();
+        await Expect(aufbau.Seite.Etikett("Export")).ToBeVisibleAsync();
+    }
+
     private async Task<Aufbau> ZweiKartenEinesBoards()
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();

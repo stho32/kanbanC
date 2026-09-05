@@ -5,6 +5,7 @@
 @using KanbanC.Contracts.Fehler
 @using KanbanC.Contracts.Karten
 @inject KartenApiKlient KartenKlient
+@inject IJSRuntime Browser
 
 <PageTitle>Karte @KarteId</PageTitle>
 
@@ -141,10 +142,16 @@ else
                             <button type="button" class="etikett-entfernen" title="@etikett entfernen" @onclick="() => EntferneEtikett(etikett)">✕</button>
                         </span>
                     }
+                    @* Den Text des Feldes führt das Feld selbst, nicht der Server: kein value.
+                       Jedes Zeichen läuft über die Leitung, und trüge das Feld den
+                       serverseitigen Stand als value, schriebe jede zurückkommende Renderrunde
+                       den Stand von vorhin über das, was inzwischen getippt wurde — wer schnell
+                       tippt, verliert dann Zeichen. Geleert wird es deshalb einmal und gezielt,
+                       wenn ein Etikett angenommen ist. *@
                     <input class="etikett-eingabe"
                            id="etikett-eingabe"
+                           @ref="_etikettfeld"
                            placeholder="+ Etikett"
-                           value="@_etikettentext"
                            @oninput="TippeEtikett"
                            @onkeydown="AufEtikettentaste" />
                 </div>
@@ -219,6 +226,13 @@ else
     private Zurueckweisung? _zurueckweisung;
     private string _etikettentext = string.Empty;
     private string? _ausfallmeldung;
+
+    // Das Etikettenfeld wird im Browser geleert, nicht über ein value-Attribut: so bleibt es
+    // dasselbe Feld, der Cursor steht danach weiter darin, und keine Renderrunde fasst den Text
+    // an, während getippt wird. Object.assign setzt die value-Eigenschaft des Elements — derselbe
+    // Weg über einen Browser-Standardbefehl, den auch der Identitätsspeicher geht.
+    private const string ElementEigenschaftenSetzen = "Object.assign";
+    private ElementReference _etikettfeld;
 
     [Parameter]
     public long KarteId { get; set; }
@@ -320,6 +334,12 @@ else
 
         _etikettentext = string.Empty;
         _detail = ergebnis.Wert;
+        await LeereEtikettfeld();
+    }
+
+    private async Task LeereEtikettfeld()
+    {
+        await Browser.InvokeVoidAsync(ElementEigenschaftenSetzen, _etikettfeld, new { value = string.Empty });
     }
 
     private bool IstOffen(string feld)

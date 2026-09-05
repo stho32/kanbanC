@@ -25,6 +25,10 @@ public class EtikettenfeldProbeE2ETests : PageTest
 
         await seite.Etikettfeld.PressSequentiallyAsync("efac");
 
+        // Zuerst das Feld selbst: im Feld steht, was getippt wurde. Ohne diese Aussage ließe eine
+        // leere Vorschlagsliste offen, ob die Liste falsch rechnet oder ob dem Feld Zeichen
+        // fehlen — und genau das war der Fall, den diese Probe aufgedeckt hat.
+        await Expect(seite.Etikettfeld).ToHaveValueAsync("Refac");
         await Expect(seite.Etikettenvorschlaege).ToHaveCountAsync(2);
         await Expect(seite.Etikettenvorschlag("Refactoring")).ToBeVisibleAsync();
         await Expect(seite.EtikettNeuAnlegen).ToBeVisibleAsync();
