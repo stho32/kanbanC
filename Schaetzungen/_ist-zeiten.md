@@ -185,3 +185,4 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-04 | R00014 Kontributor stilllegen | B0182 Gemerkte Identität eines Stillgelegten | Standard | 2h | — | 0,0h | autonom |
 | 2026-09-04 | R00014 Kontributor stilllegen | B0183 E2E aus der Auswahl verschwunden | Standard | 2h | — | 0,0h | autonom |
 | 2026-09-05 | R00015 Erledigte Karten gebündelt sehen | B0184 Erledigungstabelle anlegen | Standard | 0,4h | 0,0h | 0,1h | autonom |
+| 2026-09-05 | R00015 Erledigte Karten gebündelt sehen | B0185 Erledigungsregel | Standard | 0,4h | 0,0h | 0,0h | autonom |
