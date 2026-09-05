@@ -165,6 +165,54 @@ public class WebApiNeustartTests
         });
     }
 
+    // US-4, letztes Szenario: Texte, Urheber, Zeitpunkte und Reihenfolge ueberstehen den Neustart
+    // unveraendert — auch der Zeitpunkt kommt als derselbe Moment zurueck, nicht als naeherungsweise
+    // derselbe.
+    [Test]
+    public async Task Wenn_die_WebApi_nach_dem_Kommentieren_einer_Karte_neu_startet_dann_stehen_Texte_Urheber_Zeitpunkte_und_Reihenfolge_unveraendert_da()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        long karteId;
+        Kartendetail vorDemNeustart;
+        using (var ersteInstanz = new TestWebApi(datenbank.Dateipfad))
+        {
+            var board = await LegeBoardAn(ersteInstanz, new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null));
+            var karte = await LegeKarteAn(ersteInstanz, board.BoardId, board.Spalten[0].SpalteId, "Playwright-Lizenz klären");
+            karteId = karte.KarteId;
+            var stefan = await LegeKontributorAn(ersteInstanz, new KontributorAnlegenAnfrage("Stefan", Kontributorart.Mensch));
+            var agent = await LegeKontributorAn(ersteInstanz, new KontributorAnlegenAnfrage("Claude-Agent", Kontributorart.Agent));
+            await SchreibeKommentar(ersteInstanz, karteId, "Die Lizenz gilt nur pro Rechner.", stefan.KontributorId);
+            await SchreibeKommentar(ersteInstanz, karteId, "Der Parser liest jetzt auch Ebene 4.", agent.KontributorId);
+            vorDemNeustart = await SchreibeKommentar(ersteInstanz, karteId, "Ich frage beim Hersteller nach.", stefan.KontributorId);
+        }
+
+        using var zweiteInstanz = new TestWebApi(datenbank.Dateipfad);
+
+        var detail = await zweiteInstanz.Klient.GetFromJsonAsync<Kartendetail>($"/api/karten/{karteId}");
+        Assert.That(detail, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail!.Kommentare.Select(kommentar => kommentar.Text), Is.EqualTo(vorDemNeustart.Kommentare.Select(kommentar => kommentar.Text)));
+            Assert.That(detail.Kommentare.Select(kommentar => kommentar.KommentarId), Is.EqualTo(vorDemNeustart.Kommentare.Select(kommentar => kommentar.KommentarId)));
+            Assert.That(detail.Kommentare.Select(kommentar => kommentar.Urheber), Is.EqualTo(vorDemNeustart.Kommentare.Select(kommentar => kommentar.Urheber)));
+            Assert.That(detail.Kommentare.Select(kommentar => kommentar.Zeitpunkt), Is.EqualTo(vorDemNeustart.Kommentare.Select(kommentar => kommentar.Zeitpunkt)));
+            Assert.That(detail.Kommentare.Select(kommentar => kommentar.Urheber.Name), Is.EqualTo(new[] { "Stefan", "Claude-Agent", "Stefan" }));
+        });
+    }
+
+    private static async Task<Kartendetail> SchreibeKommentar(TestWebApi webApi, long karteId, string text, long kontributorId)
+    {
+        var antwort = await webApi.Klient.PostAsJsonAsync($"/api/karten/{karteId}/kommentare", new KommentarSchreibenAnfrage(text, kontributorId));
+        antwort.EnsureSuccessStatusCode();
+        var detail = await antwort.Content.ReadFromJsonAsync<Kartendetail>();
+        if (detail is null)
+        {
+            throw new InvalidOperationException("Die API hat kein Kartendetail zurückgegeben.");
+        }
+
+        return detail;
+    }
+
     private static async Task<Kartendetail> LegeTeilaufgabeAn(TestWebApi webApi, long karteId, string text)
     {
         var antwort = await webApi.Klient.PostAsJsonAsync($"/api/karten/{karteId}/teilaufgaben", new TeilaufgabeAnlegenAnfrage(text));

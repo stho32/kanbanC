@@ -33,6 +33,11 @@ public static class KartenEndpunkte
     private const string Teilaufgabenroute = "/api/karten/{karteId:long}/teilaufgaben";
     private const string Teilaufgabenstandsroute = "/api/karten/{karteId:long}/teilaufgaben/{teilaufgabeId:long}";
 
+    // Dieselbe boardlose Kartenadresse, eine Unterressource weiter. **Eine** Route und nicht
+    // zwei wie bei den Teilaufgaben: das Artboard zeichnet weder Stift noch Kreuz an einer
+    // Kommentarzeile, und eine Route, die niemand ruft, waere tote Flexibilitaet.
+    private const string Kommentarroute = "/api/karten/{karteId:long}/kommentare";
+
     public static void Registriere(IEndpointRouteBuilder routen)
     {
         routen.MapGet(Kartenroute, LiesKartendetail).WithName("KartendetailLesen");
@@ -40,6 +45,7 @@ public static class KartenEndpunkte
         routen.MapPut(Etikettenroute, SetzeEtiketten).WithName("KartenetikettenSetzen");
         routen.MapPost(Teilaufgabenroute, LegeTeilaufgabeAn).WithName("TeilaufgabeAnlegen");
         routen.MapPut(Teilaufgabenstandsroute, SetzeAbhakung).WithName("TeilaufgabenstandSetzen");
+        routen.MapPost(Kommentarroute, SchreibeKommentar).WithName("KommentarSchreiben");
         routen.MapGet(Basisroute, LiesKartenDerSpalte).WithName("KartenDerSpalteLesen");
         routen.MapPost(Basisroute, LegeKarteAn).WithName("KarteAnlegen");
         routen.MapPut(Lageroute, VerschiebeKarte).WithName("KarteVerschieben");
@@ -104,6 +110,22 @@ public static class KartenEndpunkte
     private static IResult SetzeAbhakung(long karteId, long teilaufgabeId, Teilaufgabenstand stand, KartenService kartenService)
     {
         var ergebnis = kartenService.SetzeAbhakung(karteId, teilaufgabeId, stand);
+        if (ergebnis.IstErfolg)
+        {
+            return Results.Ok(ergebnis.Wert);
+        }
+
+        return Zurueckweisungen.AlsFehlerantwort(ergebnis.Befunde);
+    }
+
+    // **200 statt 201**, aus demselben Grund wie beim Anlegen einer Teilaufgabe: die Antwort
+    // traegt die ganze Seite und nicht die geschriebene Zeile. Der Zeitpunkt steht nicht in der
+    // Anfrage — koennte ein Agent ihn mitgeben, koennte er die Reihenfolge des Gespraechs
+    // faelschen. Der Urheber reist im Rumpf und nicht als Query, wie jeder Kontributor in diesem
+    // Projekt.
+    private static IResult SchreibeKommentar(long karteId, KommentarSchreibenAnfrage anfrage, KartenService kartenService)
+    {
+        var ergebnis = kartenService.SchreibeKommentar(karteId, anfrage);
         if (ergebnis.IstErfolg)
         {
             return Results.Ok(ergebnis.Wert);

@@ -257,6 +257,26 @@ public class FehlervertragTests
             "Teilaufgabe abhaken mit unbekannter TeilaufgabeId",
             await webApi.Klient.PutAsJsonAsync($"/api/karten/{aufbau.Karte.KarteId}/teilaufgaben/999", new Teilaufgabenstand(true))));
 
+        faelle.Add(new Fehlerfall(
+            "POST /api/karten/{karteId:long}/kommentare",
+            "Kommentar schreiben mit leerem Text",
+            await webApi.Klient.PostAsJsonAsync($"/api/karten/{aufbau.Karte.KarteId}/kommentare", new KommentarSchreibenAnfrage("  ", aufbau.Kontributor.KontributorId))));
+
+        faelle.Add(new Fehlerfall(
+            "POST /api/karten/{karteId:long}/kommentare",
+            "Kommentar schreiben mit unbekannter KarteId",
+            await webApi.Klient.PostAsJsonAsync("/api/karten/999/kommentare", new KommentarSchreibenAnfrage("Bitte prüfen", aufbau.Kontributor.KontributorId))));
+
+        faelle.Add(new Fehlerfall(
+            "POST /api/karten/{karteId:long}/kommentare",
+            "Kommentar schreiben mit unbekannter KontributorId",
+            await webApi.Klient.PostAsJsonAsync($"/api/karten/{aufbau.Karte.KarteId}/kommentare", new KommentarSchreibenAnfrage("Bitte prüfen", 999))));
+
+        faelle.Add(new Fehlerfall(
+            "POST /api/karten/{karteId:long}/kommentare",
+            "Kommentar schreiben mit stillgelegter KontributorId",
+            await webApi.Klient.PostAsJsonAsync($"/api/karten/{aufbau.Karte.KarteId}/kommentare", new KommentarSchreibenAnfrage("Bitte prüfen", aufbau.Stillgelegter.KontributorId))));
+
         return faelle;
     }
 
@@ -278,10 +298,19 @@ public class FehlervertragTests
         Assert.That(eingetragen.StatusCode, Is.EqualTo(HttpStatusCode.Created));
         var kontributor = await eingetragen.Content.ReadFromJsonAsync<Kontributor>();
         Assert.That(kontributor, Is.Not.Null);
-        return new Aufbau(board, karte!, kontributor!);
+
+        // Ein zweiter, stillgelegter: die Zurueckweisung des Urhebers ist eine Regelverletzung
+        // und braucht deshalb einen Kontributor, den es gibt.
+        var ausgeschieden = await webApi.Klient.PostAsJsonAsync(KontributorenRoute, new KontributorAnlegenAnfrage("Maria Lenz", Kontributorart.Mensch));
+        Assert.That(ausgeschieden.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        var maria = await ausgeschieden.Content.ReadFromJsonAsync<Kontributor>();
+        Assert.That(maria, Is.Not.Null);
+        var stillgelegt = await webApi.Klient.PutAsJsonAsync($"{KontributorenRoute}/{maria!.KontributorId}/stilllegung", new Stilllegung(true));
+        stillgelegt.EnsureSuccessStatusCode();
+        return new Aufbau(board, karte!, kontributor!, maria);
     }
 
-    private sealed record Aufbau(Board Board, Karte Karte, Kontributor Kontributor);
+    private sealed record Aufbau(Board Board, Karte Karte, Kontributor Kontributor, Kontributor Stillgelegter);
 
     private sealed record Fehlerfall(string Route, string Lage, HttpResponseMessage Antwort);
 }

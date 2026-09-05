@@ -15,6 +15,7 @@ public class KartenEndpunkteTests
     private const string BoardsRoute = "/api/boards";
     private const int HoechsteTitellaenge = 1000;
     private const int HoechsteTeilaufgabenlaenge = 200;
+    private const int HoechsteKommentarlaenge = 2000;
 
     [Test]
     public async Task Wenn_eine_Karte_per_POST_angelegt_wird_dann_antwortet_die_API_mit_201_Location_und_vergebener_KarteId()
@@ -1682,6 +1683,349 @@ public class KartenEndpunkteTests
         await ErwarteKeineAbgehakteTeilaufgabe(webApi, eigene.KarteId);
         await ErwarteKeineAbgehakteTeilaufgabe(webApi, fremde.KarteId);
     }
+
+    // US-4: die Antwort ist 200 mit dem **ganzen** Kartendetail, nicht 201 mit der geschriebenen
+    // Zeile — dieselbe Antwortgestalt, die diese Seite ueberall hat.
+    [Test]
+    public async Task Wenn_ein_Kommentar_geschrieben_wird_dann_antwortet_POST_kommentare_mit_200_und_dem_ganzen_Kartendetail()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+
+        using var antwort = await webApi.Klient.PostAsJsonAsync(
+            Kommentarroute(aufbau.KarteId),
+            new KommentarSchreibenAnfrage("Der Parser liest jetzt auch Ebene 4.", aufbau.Urheber.KontributorId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var detail = await AlsKartendetail(antwort);
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail.Karte.Titel, Is.EqualTo("Playwright-Lizenz klären"));
+            Assert.That(detail.Boardname, Is.EqualTo("Entwicklung"));
+            Assert.That(detail.Kommentare[^1].Text, Is.EqualTo("Der Parser liest jetzt auch Ebene 4."));
+            Assert.That(detail.Kommentare[^1].KommentarId, Is.GreaterThan(0));
+        });
+    }
+
+    // Der Eintrag traegt den **ganzen** Urheber und nicht nur seine Nummer, und einen Zeitpunkt
+    // im Fenster des Aufrufs — das Rechenbeispiel der Anforderung.
+    [Test]
+    public async Task Wenn_ein_Kommentar_geschrieben_wird_dann_traegt_er_den_ganzen_Urheber_und_einen_Zeitpunkt_im_Fenster_des_Aufrufs()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+
+        var vorher = DateTimeOffset.UtcNow;
+        var detail = await SchreibeKommentar(webApi, aufbau.KarteId, "Bitte prüfen", aufbau.Urheber.KontributorId);
+        var nachher = DateTimeOffset.UtcNow;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail.Kommentare[0].Urheber, Is.EqualTo(aufbau.Urheber));
+            Assert.That(detail.Kommentare[0].Zeitpunkt, Is.GreaterThanOrEqualTo(vorher));
+            Assert.That(detail.Kommentare[0].Zeitpunkt, Is.LessThanOrEqualTo(nachher));
+        });
+    }
+
+    // Der Aufrufer kann den Zeitpunkt nicht mitgeben: ein mitgeschicktes Feld aendert nichts am
+    // gespeicherten Wert — sonst koennte ein Agent die Reihenfolge des Gespraechs faelschen.
+    [Test]
+    public async Task Wenn_der_Aufruf_einen_Zeitpunkt_mitschickt_dann_bleibt_der_gespeicherte_Wert_der_der_Anwendung()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+        var gefaelscht = new DateTimeOffset(1999, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        var rumpf = JsonContent.Create(new
+        {
+            text = "Bitte prüfen",
+            kontributor = aufbau.Urheber.KontributorId,
+            zeitpunkt = gefaelscht,
+        });
+
+        using var antwort = await webApi.Klient.PostAsync(Kommentarroute(aufbau.KarteId), rumpf);
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var detail = await AlsKartendetail(antwort);
+        Assert.That(detail.Kommentare[0].Zeitpunkt, Is.GreaterThan(new DateTimeOffset(2020, 1, 1, 0, 0, 0, TimeSpan.Zero)));
+    }
+
+    // Das Rechenbeispiel der Reihenfolge: A, B, C nacheinander geschrieben, GET liefert dieselbe
+    // Liste in derselben Reihenfolge.
+    [Test]
+    public async Task Wenn_drei_Kommentare_geschrieben_werden_dann_liefert_GET_sie_in_derselben_Reihenfolge_mit_eigenen_Nummern()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+        await SchreibeKommentar(webApi, aufbau.KarteId, "A", aufbau.Urheber.KontributorId);
+        await SchreibeKommentar(webApi, aufbau.KarteId, "B", aufbau.Urheber.KontributorId);
+        var nachDemSchreiben = await SchreibeKommentar(webApi, aufbau.KarteId, "C", aufbau.Urheber.KontributorId);
+
+        var gelesen = await webApi.Klient.GetFromJsonAsync<Kartendetail>(Kartendetailroute(aufbau.KarteId));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(nachDemSchreiben.Kommentare.Select(kommentar => kommentar.Text), Is.EqualTo(new[] { "A", "B", "C" }));
+            Assert.That(gelesen!.Kommentare.Select(kommentar => kommentar.Text), Is.EqualTo(new[] { "A", "B", "C" }));
+            Assert.That(gelesen.Kommentare.Select(kommentar => kommentar.KommentarId), Is.EqualTo(nachDemSchreiben.Kommentare.Select(kommentar => kommentar.KommentarId)));
+            Assert.That(gelesen.Kommentare.Select(kommentar => kommentar.KommentarId).Distinct().Count(), Is.EqualTo(3));
+        });
+    }
+
+    // Die Sortierung ist die Zeitordnung und nicht die des Schreibens: nachtraeglich anders
+    // datiert, steht der aeltere oben.
+    [Test]
+    public async Task Wenn_zwei_Kommentare_nachtraeglich_anders_datiert_werden_dann_steht_der_aeltere_oben()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+        var beide = await SchreibeZwei(webApi, aufbau, "Zuerst geschrieben", "Danach geschrieben");
+        DatiereZurueck(datenbank, beide.Kommentare[1].KommentarId, new DateTimeOffset(2020, 1, 1, 8, 0, 0, TimeSpan.Zero));
+
+        var gelesen = await webApi.Klient.GetFromJsonAsync<Kartendetail>(Kartendetailroute(aufbau.KarteId));
+
+        Assert.That(gelesen!.Kommentare.Select(kommentar => kommentar.Text), Is.EqualTo(new[] { "Danach geschrieben", "Zuerst geschrieben" }));
+    }
+
+    [Test]
+    public async Task Wenn_derselbe_Kommentar_zweimal_geschrieben_wird_dann_stehen_zwei_Eintraege_mit_verschiedenen_Nummern()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+
+        await SchreibeKommentar(webApi, aufbau.KarteId, "Nachfassen", aufbau.Urheber.KontributorId);
+        var detail = await SchreibeKommentar(webApi, aufbau.KarteId, "Nachfassen", aufbau.Urheber.KontributorId);
+
+        Assert.That(detail.Kommentare.Select(kommentar => kommentar.Text), Is.EqualTo(new[] { "Nachfassen", "Nachfassen" }));
+        Assert.That(detail.Kommentare[0].KommentarId, Is.Not.EqualTo(detail.Kommentare[1].KommentarId));
+    }
+
+    // Das Rechenbeispiel von US-3: die Randleerzeichen fallen weg, Gross- und Kleinschreibung
+    // bleibt.
+    [Test]
+    public async Task Wenn_der_Kommentartext_Randleerzeichen_traegt_dann_steht_er_ohne_sie_in_der_Liste()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+
+        var detail = await SchreibeKommentar(webApi, aufbau.KarteId, "  Bitte Prüfen  ", aufbau.Urheber.KontributorId);
+
+        Assert.That(detail.Kommentare.Select(kommentar => kommentar.Text), Is.EqualTo(new[] { "Bitte Prüfen" }));
+    }
+
+    // US-6: wer geht, bleibt an seinen alten Aeusserungen sichtbar — mit Name und
+    // Stilllegungsstand.
+    [Test]
+    public async Task Wenn_der_Urheber_nach_dem_Kommentar_stillgelegt_wird_dann_bleibt_er_an_der_Karte_sichtbar()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Playwright-Lizenz klären");
+        var maria = await LegeKontributorAn(webApi, "Maria Lenz", Kontributorart.Mensch);
+        await SchreibeKommentar(webApi, karte.KarteId, "Die Lizenz gilt nur pro Rechner.", maria.KontributorId);
+
+        using var stillgelegt = await webApi.Klient.PutAsJsonAsync($"/api/kontributoren/{maria.KontributorId}/stilllegung", new Stilllegung(true));
+        stillgelegt.EnsureSuccessStatusCode();
+
+        var detail = await webApi.Klient.GetFromJsonAsync<Kartendetail>(Kartendetailroute(karte.KarteId));
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail!.Kommentare[0].Text, Is.EqualTo("Die Lizenz gilt nur pro Rechner."));
+            Assert.That(detail.Kommentare[0].Urheber.Name, Is.EqualTo("Maria Lenz"));
+            Assert.That(detail.Kommentare[0].Urheber.StillgelegtAm, Is.Not.Null);
+        });
+    }
+
+    // US-7 als Gegenprobe: die Kommentare haengen am Kartendetail und nicht an der Karte — die
+    // Boardantwort bleibt unveraendert.
+    [Test]
+    public async Task Wenn_eine_Karte_Kommentare_traegt_dann_bekommt_die_Boardantwort_keine_Kommentarliste()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+        await SchreibeKommentar(webApi, aufbau.KarteId, "Die Lizenz gilt nur pro Rechner.", aufbau.Urheber.KontributorId);
+
+        var rumpf = await webApi.Klient.GetStringAsync($"{BoardsRoute}/{aufbau.BoardId}");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(rumpf, Does.Not.Contain("kommentare"));
+            Assert.That(rumpf, Does.Not.Contain("Die Lizenz gilt nur pro Rechner."));
+        });
+    }
+
+    // Die Anzahl wird gerechnet und nicht mitgesendet, und eine Position gibt es nicht: kein Feld
+    // der Antwort traegt sie.
+    [Test]
+    public async Task Wenn_das_Kartendetail_gelesen_wird_dann_traegt_es_weder_eine_Kommentarzahl_noch_eine_Position()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+        await SchreibeZwei(webApi, aufbau, "A", "B");
+
+        var rumpf = await webApi.Klient.GetStringAsync(Kartendetailroute(aufbau.KarteId));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(rumpf, Does.Contain("\"kommentare\""));
+            Assert.That(rumpf, Does.Not.Contain("kommentarzahl"));
+            Assert.That(rumpf, Does.Not.Contain("kommentaranzahl"));
+        });
+
+        // Die Karte selbst traegt weiterhin ihre Position auf der Bahn; geprueft wird deshalb der
+        // Ausschnitt der Kommentarliste und nicht der ganze Rumpf.
+        var kommentarliste = rumpf[rumpf.IndexOf("\"kommentare\"", StringComparison.Ordinal)..];
+        Assert.That(kommentarliste, Does.Not.Contain("position"));
+    }
+
+    [Test]
+    public async Task Wenn_der_Kommentartext_leer_ist_dann_antwortet_POST_kommentare_mit_400_und_Befund_und_speichert_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+        await SchreibeKommentar(webApi, aufbau.KarteId, "Bitte prüfen", aufbau.Urheber.KontributorId);
+
+        using var antwort = await webApi.Klient.PostAsJsonAsync(Kommentarroute(aufbau.KarteId), new KommentarSchreibenAnfrage("   ", aufbau.Urheber.KontributorId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "kommentar-leer");
+        var detail = await webApi.Klient.GetFromJsonAsync<Kartendetail>(Kartendetailroute(aufbau.KarteId));
+        Assert.That(detail!.Kommentare.Select(kommentar => kommentar.Text), Is.EqualTo(new[] { "Bitte prüfen" }));
+    }
+
+    [Test]
+    public async Task Wenn_der_Kommentartext_zu_lang_ist_dann_antwortet_POST_kommentare_mit_400_und_Befund_und_speichert_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+
+        using var antwort = await webApi.Klient.PostAsJsonAsync(
+            Kommentarroute(aufbau.KarteId),
+            new KommentarSchreibenAnfrage(new string('a', HoechsteKommentarlaenge + 1), aufbau.Urheber.KontributorId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "kommentar-zu-lang");
+        var detail = await webApi.Klient.GetFromJsonAsync<Kartendetail>(Kartendetailroute(aufbau.KarteId));
+        Assert.That(detail!.Kommentare, Is.Empty);
+    }
+
+    [Test]
+    public async Task Wenn_die_KarteId_unbekannt_ist_dann_antwortet_POST_kommentare_mit_404_und_einem_Befund_ohne_Board()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+
+        using var antwort = await webApi.Klient.PostAsJsonAsync(Kommentarroute(9999), new KommentarSchreibenAnfrage("Bitte prüfen", aufbau.Urheber.KontributorId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Kommentar schreiben mit unbekannter KarteId");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("karte-unbekannt"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain("9999"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Not.Contain("Board"));
+            Assert.That(zurueckweisung.Befunde[0].Kompensation, Is.Not.Empty);
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_KontributorId_unbekannt_ist_dann_antwortet_POST_kommentare_mit_404_und_nennt_die_Kontributorenliste()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+
+        using var antwort = await webApi.Klient.PostAsJsonAsync(Kommentarroute(aufbau.KarteId), new KommentarSchreibenAnfrage("Bitte prüfen", 9999));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Kommentar schreiben mit unbekannter KontributorId");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("kontributor-unbekannt"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain("9999"));
+            Assert.That(zurueckweisung.Befunde[0].Kompensation, Does.Contain("GET /api/kontributoren"));
+        });
+        var detail = await webApi.Klient.GetFromJsonAsync<Kartendetail>(Kartendetailroute(aufbau.KarteId));
+        Assert.That(detail!.Kommentare, Is.Empty);
+    }
+
+    // 400 und nicht 404: es fehlt kein Ding, es wurde eine Regel verletzt. Und die Meldung sagt
+    // **nicht** „kann nicht verantwortlich sein" — dieser Wortlaut gehoert der Karte.
+    [Test]
+    public async Task Wenn_die_KontributorId_stillgelegt_ist_dann_antwortet_POST_kommentare_mit_400_und_einer_Meldung_zum_Kommentar()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+        var maria = await LegeKontributorAn(webApi, "Maria Lenz", Kontributorart.Mensch);
+        using var stillgelegt = await webApi.Klient.PutAsJsonAsync($"/api/kontributoren/{maria.KontributorId}/stilllegung", new Stilllegung(true));
+        stillgelegt.EnsureSuccessStatusCode();
+
+        using var antwort = await webApi.Klient.PostAsJsonAsync(Kommentarroute(aufbau.KarteId), new KommentarSchreibenAnfrage("Bitte prüfen", maria.KontributorId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Kommentar schreiben mit stillgelegter KontributorId");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("kontributor-stillgelegt"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain("Kommentar"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Not.Contain("verantwortlich"));
+        });
+        var detail = await webApi.Klient.GetFromJsonAsync<Kartendetail>(Kartendetailroute(aufbau.KarteId));
+        Assert.That(detail!.Kommentare, Is.Empty);
+    }
+
+    private static string Kommentarroute(long karteId)
+    {
+        return $"/api/karten/{karteId}/kommentare";
+    }
+
+    private static async Task<Kartendetail> SchreibeKommentar(TestWebApi webApi, long karteId, string text, long kontributorId)
+    {
+        using var antwort = await webApi.Klient.PostAsJsonAsync(Kommentarroute(karteId), new KommentarSchreibenAnfrage(text, kontributorId));
+        antwort.EnsureSuccessStatusCode();
+        return await AlsKartendetail(antwort);
+    }
+
+    private static async Task<Kartendetail> SchreibeZwei(TestWebApi webApi, Kommentaraufbau aufbau, string erster, string zweiter)
+    {
+        await SchreibeKommentar(webApi, aufbau.KarteId, erster, aufbau.Urheber.KontributorId);
+        return await SchreibeKommentar(webApi, aufbau.KarteId, zweiter, aufbau.Urheber.KontributorId);
+    }
+
+    // Am Dienst vorbei: zwei verschiedene Zeitpunkte lassen sich ueber die Uhr des Testlaufs nicht
+    // herstellen, und ein Testhaken in der WebApi waere Produktionscode, den nur der Test braucht.
+    private static void DatiereZurueck(TemporaereDatenbank datenbank, long kommentarId, DateTimeOffset zeitpunkt)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            UPDATE Kommentar
+               SET Zeitpunkt = @Zeitpunkt
+             WHERE KommentarId = @KommentarId",
+            new { KommentarId = kommentarId, Zeitpunkt = zeitpunkt.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture) });
+    }
+
+    private static async Task<Kommentaraufbau> KarteMitUrheber(TestWebApi webApi)
+    {
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Playwright-Lizenz klären");
+        var urheber = await LegeKontributorAn(webApi, "Stefan", Kontributorart.Mensch);
+        return new Kommentaraufbau(board.BoardId, karte.KarteId, urheber);
+    }
+
+    private sealed record Kommentaraufbau(long BoardId, long KarteId, Kontributor Urheber);
 
     private static async Task ErwarteKeineAbgehakteTeilaufgabe(TestWebApi webApi, long karteId)
     {
