@@ -119,6 +119,20 @@ public sealed class KartenService
         return Ergebnis<IReadOnlyList<Spalte>>.Erfolg(Abschlussbahn.Gekuerzt(spalten!));
     }
 
+    // Die einzige Kartenabfrage ohne Board: wer eine geteilte Adresse oeffnet, kennt es noch
+    // nicht — es steht erst in der Antwort. Ein Archivfilter fehlt mit Absicht (I0014).
+    public Ergebnis<Kartendetail> LadeKartendetail(long karteId)
+    {
+        var detail = _kartenRepository.LiesKartendetail(karteId);
+        var dieKarteGibtEsNicht = detail is null;
+        if (dieKarteGibtEsNicht)
+        {
+            return Zurueckgewiesen<Kartendetail>(Nichtgefunden.Karte(karteId));
+        }
+
+        return Ergebnis<Kartendetail>.Erfolg(detail!);
+    }
+
     // Ungekürzt, anders als am Board: wer diese Adresse ruft, will die ganze Bahn. Geprüft wird
     // erst das Board, dann die Spalte — ein Lesezugriff auf die Karten einer fremden Spalte fände
     // sonst statt, bevor jemand merkt, dass sie fremd ist.

@@ -30,6 +30,16 @@ public static class Nichtgefunden
             $"`GET /api/boards/{boardId}` abrufen, die KarteIds in den Spalten ablesen und den Aufruf mit einer vorhandenen wiederholen.");
     }
 
+    // Die Schwester ohne Board: die Kartenadresse traegt keins, und eine erfundene Nummer im
+    // Befund waere eine Falschaussage. Der Weg zurueck beginnt deshalb bei der Wurzelressource.
+    public static Fehlerbefund Karte(long karteId)
+    {
+        return new Fehlerbefund(
+            KarteUnbekannt,
+            $"Eine Karte mit der Nummer {karteId} gibt es nicht.",
+            "`GET /api/boards` abrufen, ein Board oeffnen und den Aufruf mit einer der dort genannten KarteIds wiederholen.");
+    }
+
     public static Fehlerbefund FremdeKarte(long boardId, long karteId, long boardIdDerKarte)
     {
         return new Fehlerbefund(

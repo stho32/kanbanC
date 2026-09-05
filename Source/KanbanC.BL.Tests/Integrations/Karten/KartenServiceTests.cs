@@ -28,6 +28,41 @@ public class KartenServiceTests
     }
 
     [Test]
+    public void Wenn_die_Karte_bekannt_ist_dann_reicht_LadeKartendetail_das_Detail_des_Repositories_durch()
+    {
+        var detail = new Kartendetail(
+            new Karte(7, "Migration schreiben", 1, ErledigtAm: null),
+            Board: 3,
+            Boardname: "Entwicklung",
+            Spalte: 5,
+            Spaltenbezeichnung: "In Arbeit");
+        var kartenRepository = TestKartenRepository.Leer().MitKartendetail(detail);
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository);
+
+        var ergebnis = service.LadeKartendetail(7);
+
+        Assert.That(ergebnis.IstErfolg, Is.True);
+        Assert.That(ergebnis.Wert, Is.EqualTo(detail));
+        Assert.That(kartenRepository.GeleseneKarteId, Is.EqualTo(7));
+    }
+
+    [Test]
+    public void Wenn_die_KarteId_unbekannt_ist_dann_weist_LadeKartendetail_mit_einem_Befund_ohne_Board_zurueck()
+    {
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), TestKartenRepository.Leer());
+
+        var ergebnis = service.LadeKartendetail(9999);
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Befundpruefung.ErwarteVollstaendigenBefund(ergebnis.Befunde[0], "karte-unbekannt");
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("9999"));
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Not.Contain("Board"));
+        });
+    }
+
+    [Test]
     public void Wenn_die_BoardId_unbekannt_ist_dann_liefert_LegeKarteAn_null_und_schreibt_nicht()
     {
         var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen");

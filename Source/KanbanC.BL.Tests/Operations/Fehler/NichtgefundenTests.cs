@@ -33,6 +33,21 @@ public class NichtgefundenTests
         });
     }
 
+    // Die boardlose Kartenroute kennt kein Board — der Befund darf deshalb keins nennen.
+    [Test]
+    public void Wenn_eine_Karte_ohne_Board_fehlt_dann_nennt_der_Befund_nur_die_Kartennummer_und_den_Weg_ueber_die_Boardliste()
+    {
+        var befund = Nichtgefunden.Karte(9999);
+
+        Befundpruefung.ErwarteVollstaendigenBefund(befund, "karte-unbekannt");
+        Assert.Multiple(() =>
+        {
+            Assert.That(befund.Meldung, Is.EqualTo("Eine Karte mit der Nummer 9999 gibt es nicht."));
+            Assert.That(befund.Meldung, Does.Not.Contain("Board"));
+            Assert.That(befund.Kompensation, Does.Contain("GET /api/boards"));
+        });
+    }
+
     [Test]
     public void Wenn_die_Karte_zu_einem_anderen_Board_gehoert_dann_nennt_die_Kompensationsaktion_dieses_Board()
     {
