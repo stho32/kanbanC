@@ -140,4 +140,65 @@ public class KartenApiKlientTests
         Assert.That(async () => await klient.VerschiebeKarte(1, 7, new Kartenlage(2, 1)),
             Throws.TypeOf<HttpRequestException>());
     }
+
+    [Test]
+    public async Task Wenn_die_WebApi_die_Karten_einer_Spalte_liefert_dann_gibt_der_Klient_sie_mit_Erledigungsdatum_zurueck()
+    {
+        const string rumpf = """
+            [
+              {"karteId":7,"titel":"Zuerst fertig","position":1,"erledigtAm":"2026-09-04"},
+              {"karteId":8,"titel":"Bestandskarte","position":2,"erledigtAm":null}
+            ]
+            """;
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.LadeKartenDerSpalte(1, 3);
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Wert, Has.Count.EqualTo(2));
+            Assert.That(ergebnis.Wert[0].ErledigtAm, Is.EqualTo(new DateOnly(2026, 9, 4)));
+            Assert.That(ergebnis.Wert[1].ErledigtAm, Is.Null);
+        });
+    }
+
+    // Ueber den Browser nicht pruefbar: dass der Klient genau die vereinbarte Route mit GET trifft.
+    [Test]
+    public async Task Wenn_die_Karten_einer_Spalte_geholt_werden_dann_trifft_der_Klient_die_vereinbarte_Adresse_mit_GET()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, "[]", "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        await klient.LadeKartenDerSpalte(4, 9);
+
+        Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("GET http://webapi.test/api/boards/4/spalten/9/karten"));
+    }
+
+    [Test]
+    public async Task Wenn_die_Spalte_beim_Nachladen_unbekannt_ist_dann_meldet_der_Klient_einen_Befund_statt_zu_werfen()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwortOhneRumpf(HttpStatusCode.NotFound);
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.LadeKartenDerSpalte(1, 999);
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.Not.Empty);
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("gibt es nicht mehr"));
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Kompensation, Is.Not.Empty);
+        });
+    }
+
+    [Test]
+    public void Wenn_die_WebApi_beim_Nachladen_nicht_erreichbar_ist_dann_bleibt_die_Ausnahme_sichtbar()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwortOhneRumpf(HttpStatusCode.InternalServerError);
+        var klient = new KartenApiKlient(fabrik);
+
+        Assert.That(async () => await klient.LadeKartenDerSpalte(1, 3), Throws.TypeOf<HttpRequestException>());
+    }
 }

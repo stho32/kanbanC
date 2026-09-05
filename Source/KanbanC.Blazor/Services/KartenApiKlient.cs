@@ -21,6 +21,14 @@ public sealed class KartenApiKlient
         return await ApiAntwortleser.AlsErgebnis<Karte>(antwort);
     }
 
+    // Ungekürzt: dieselbe Adresse, auf der eine Karte entsteht, liefert alle Karten der Spalte.
+    public async Task<ApiErgebnis<IReadOnlyList<Karte>>> LadeKartenDerSpalte(long boardId, long spalteId)
+    {
+        using var klient = _klientFabrik.CreateClient(KlientName);
+        using var antwort = await klient.GetAsync($"{BoardsRoute}/{boardId}/spalten/{spalteId}/karten");
+        return await ApiAntwortleser.AlsErgebnis<IReadOnlyList<Karte>>(antwort);
+    }
+
     public async Task<ApiErgebnis<IReadOnlyList<Spalte>>> VerschiebeKarte(long boardId, long karteId, Kartenlage lage)
     {
         using var klient = _klientFabrik.CreateClient(KlientName);
