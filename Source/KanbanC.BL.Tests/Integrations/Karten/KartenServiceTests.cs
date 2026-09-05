@@ -157,6 +157,23 @@ public class KartenServiceTests
         });
     }
 
+    // Eine archivierte Karte liegt weiter an ihrem Board, steht aber in keiner seiner Spalten.
+    // Der Befund darf dann nicht „fremd“ heissen und auf dasselbe Board zurueckverweisen.
+    [Test]
+    public void Wenn_die_Karte_am_eigenen_Board_liegt_aber_in_keiner_Spalte_steht_dann_meldet_der_Befund_karte_unbekannt()
+    {
+        var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen", "In Arbeit");
+        var kartenRepository = TestKartenRepository.Leer().MitKarteAufBoard(1);
+        var service = new KartenService(spaltenRepository, kartenRepository);
+        var zielspalteId = spaltenRepository.Spalten(1)[1].SpalteId;
+
+        var ergebnis = service.VerschiebeKarte(1, 777, new Kartenlage(zielspalteId, 1));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Befundpruefung.ErwarteVollstaendigenBefund(ergebnis.Befunde[0], "karte-unbekannt");
+        Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("777"));
+    }
+
     [Test]
     public void Wenn_die_Karte_zu_einem_anderen_Board_gehoert_dann_nennt_der_Befund_dieses_Board()
     {

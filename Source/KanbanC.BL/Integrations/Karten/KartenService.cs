@@ -162,11 +162,14 @@ public sealed class KartenService
         return zielspalte.Karten.Count + 1;
     }
 
+    // Eine archivierte Karte liegt weiter an ihrem Board, gehört aber nicht mehr zu dessen
+    // Bestand. Ohne die zweite Bedingung meldete der Befund „gehört zum Board 1, nicht zum
+    // Board 1“ und schickte den Agenten mit derselben Nummer zurück, die eben gescheitert ist.
     private Fehlerbefund BefundZurFehlendenKarte(long boardId, long karteId)
     {
         var boardDerKarte = _kartenRepository.BoardDerKarte(karteId);
-        var karteGibtEsNirgends = boardDerKarte is null;
-        if (karteGibtEsNirgends)
+        var karteGehoertZuKeinemAnderenBoard = boardDerKarte is null || boardDerKarte.Value == boardId;
+        if (karteGehoertZuKeinemAnderenBoard)
         {
             return Nichtgefunden.Karte(boardId, karteId);
         }
