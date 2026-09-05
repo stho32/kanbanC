@@ -21,6 +21,39 @@ public class MigrationslaeuferTests
     }
 
     [Test]
+    public void Wenn_die_Migration_gelaufen_ist_dann_traegt_das_Schema_die_Tabelle_Karteneigenschaft_mit_ihren_fuenf_Spalten()
+    {
+        using var datenbank = new TemporaereDatenbank();
+
+        new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus();
+
+        Assert.That(Tabellennamen(datenbank), Does.Contain("Karteneigenschaft"));
+        Assert.That(Spaltennamen(datenbank, "Karteneigenschaft"),
+            Is.EqualTo(new[] { "Karte", "Beschreibung", "Kontributor", "FaelligAm", "Farbe" }));
+    }
+
+    // Der Migrationslaeufer kennt kein Journal und fuehrt jedes Skript bei jedem Start aus:
+    // eine gesetzte Eigenschaft muss den zweiten Lauf ueberstehen.
+    [Test]
+    public void Wenn_die_Migration_ein_zweites_Mal_laeuft_dann_bleibt_eine_gesetzte_Karteneigenschaft_stehen()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "Migration schreiben", 1);
+        SetzeKarteneigenschaft(datenbank, 1, "Kartenform zeichnen", "2026-09-02", "Terrakotta");
+        var schemaVorher = SchemaDefinitionen(datenbank);
+
+        Assert.That(() => new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus(), Throws.Nothing);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(SchemaDefinitionen(datenbank), Is.EqualTo(schemaVorher));
+            Assert.That(Karteneigenschaften(datenbank), Is.EqualTo(new[] { (1L, "Kartenform zeichnen", "2026-09-02", "Terrakotta") }));
+        });
+    }
+
+    [Test]
     public void Wenn_FuehreAus_auf_einer_gefuellten_Datei_ein_zweites_Mal_laeuft_dann_bleiben_Schema_und_Daten_unveraendert()
     {
         using var datenbank = new TemporaereDatenbank().MitSchema();
@@ -533,6 +566,25 @@ public class MigrationslaeuferTests
             INSERT INTO Karte (Spalte, Titel, Position)
             VALUES (@Spalte, @Titel, @Position)",
             new { Spalte = spalteId, Titel = titel, Position = position });
+    }
+
+    private static void SetzeKarteneigenschaft(TemporaereDatenbank datenbank, long karteId, string beschreibung, string faelligAm, string farbe)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Karteneigenschaft (Karte, Beschreibung, Kontributor, FaelligAm, Farbe)
+            VALUES (@Karte, @Beschreibung, NULL, @FaelligAm, @Farbe)",
+            new { Karte = karteId, Beschreibung = beschreibung, FaelligAm = faelligAm, Farbe = farbe });
+    }
+
+    private static (long Karte, string? Beschreibung, string? FaelligAm, string Farbe)[] Karteneigenschaften(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        var zeilen = verbindung.Query<(long Karte, string? Beschreibung, string? FaelligAm, string Farbe)>(@"
+            SELECT Karte, Beschreibung, FaelligAm, Farbe
+              FROM Karteneigenschaft
+             ORDER BY Karte");
+        return zeilen.ToArray();
     }
 
     private static string[] Kartentitel(TemporaereDatenbank datenbank, long spalteId)
