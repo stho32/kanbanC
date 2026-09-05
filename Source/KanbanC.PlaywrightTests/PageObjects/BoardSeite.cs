@@ -249,6 +249,59 @@ public sealed class BoardSeite
 
     public ILocator KarteFehlermeldung => _seite.Locator("#karte-fehlermeldung");
 
+    public ILocator Kartenmenueschalter => _seite.Locator("#spaltenbahnen .kartenmenue-schalter");
+
+    public ILocator Kartenmenuelisten => _seite.Locator("#spaltenbahnen .kartenmenueliste");
+
+    public ILocator MenueschalterDerKarte(ILocator karte)
+    {
+        return karte.Locator(".kartenmenue-schalter");
+    }
+
+    public ILocator MenueDerKarte(ILocator karte)
+    {
+        return karte.Locator(".kartenmenueliste");
+    }
+
+    public ILocator MenuepunkteDerKarte(ILocator karte)
+    {
+        return karte.Locator(".kartenmenuepunkt");
+    }
+
+    public ILocator MenuehinweisDerKarte(ILocator karte)
+    {
+        return karte.Locator(".kartenmenuehinweis");
+    }
+
+    public async Task OeffneKartenmenue(ILocator karte)
+    {
+        await MenueschalterDerKarte(karte).ClickAsync();
+        await Assertions.Expect(MenueDerKarte(karte)).ToBeVisibleAsync();
+    }
+
+    public async Task ArchiviereKarte(ILocator karte)
+    {
+        await OeffneKartenmenue(karte);
+        await karte.Locator(".kartenmenuepunkt-archivieren").ClickAsync();
+    }
+
+    // Druecken und ziehen am ⋯-Schalter statt zu klicken: nur so wird sichtbar, wie sich der
+    // Schalter als Kind einer ziehbaren Karte verhaelt (KindZiehbarkeitProbeE2ETests).
+    public async Task ZieheAmMenueschalter(ILocator karte)
+    {
+        var kasten = await MenueschalterDerKarte(karte).BoundingBoxAsync();
+        if (kasten is null)
+        {
+            throw new InvalidOperationException("Der Menüschalter der Karte ist nicht sichtbar.");
+        }
+
+        await _seite.Mouse.MoveAsync(kasten.X + kasten.Width / 2, kasten.Y + kasten.Height / 2);
+        await _seite.Mouse.DownAsync();
+        await _seite.Mouse.MoveAsync(kasten.X + kasten.Width / 2, kasten.Y + kasten.Height / 2 + 24, new MouseMoveOptions { Steps = 5 });
+    }
+
+    public ILocator GezogeneKarten => _seite.Locator("#spaltenbahnen .karte-wird-gezogen");
+
     public ILocator KarteMitTitel(string titel)
     {
         return _seite.Locator("#spaltenbahnen .karte").Filter(new LocatorFilterOptions { HasText = titel });

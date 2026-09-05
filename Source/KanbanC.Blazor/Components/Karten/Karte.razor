@@ -1,5 +1,26 @@
 <article class="@Klassen" data-karte-id="@Kartendaten.KarteId" draggable="@Ziehbarkeit"
          @ondragstart="BeginneZug" @ondragend="BeendeZug">
+    <div class="kartenkopf">
+        <div class="kartenmenue">
+            <button type="button"
+                    class="btn btn-schlicht kartenmenue-schalter"
+                    aria-label="Menü von @Kartendaten.Titel"
+                    aria-expanded="@_menuezustand"
+                    @onclick="SchalteMenue">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="19" cy="12" r="1.6"></circle></svg>
+            </button>
+            @if (_menueIstOffen)
+            {
+                <div class="kartenmenueliste">
+                    <button type="button" class="kartenmenuepunkt kartenmenuepunkt-archivieren" @onclick="Archiviere">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="4" rx="1.5"></rect><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"></path><path d="M10 12h4"></path></svg>
+                        Archivieren
+                    </button>
+                    <span class="kartenmenuehinweis">verschwindet vom Board, bleibt über API und Archiv auffindbar</span>
+                </div>
+            }
+        </div>
+    </div>
     <p class="karte-titel">@Kartendaten.Titel</p>
     @if (NimmtAn)
     {
@@ -21,6 +42,9 @@
 </article>
 
 @code {
+    private bool _menueIstOffen;
+    private string _menuezustand = "false";
+
     // Vollqualifiziert, weil der Komponentenname Karte den gleichnamigen Vertragstyp verdeckt.
     [Parameter]
     [EditorRequired]
@@ -37,6 +61,11 @@
 
     [Parameter]
     public EventCallback ZugEndete { get; set; }
+
+    // Die Karte meldet den Wunsch nach oben, statt selbst zu rufen: die Bahn kennt die Antwort
+    // der WebApi und zeichnet sich daraus neu.
+    [Parameter]
+    public EventCallback<long> ArchivierungGewuenscht { get; set; }
 
     // Die zwei Ablagezonen liegen als Auflagen über der Karte, nicht als Kinder im Fluss:
     // sonst wüchse die Karte in dem Moment, in dem der Nutzer zu zielen beginnt.
@@ -75,6 +104,34 @@
 
             return "karte";
         }
+    }
+
+    // Das Menü schließt über einen zweiten Klick auf ⋯, wie das Menü der Boardkachel.
+    private void SchalteMenue()
+    {
+        SetzeMenue(!_menueIstOffen);
+    }
+
+    private async Task Archiviere()
+    {
+        SetzeMenue(false);
+        await ArchivierungGewuenscht.InvokeAsync(Kartendaten.KarteId);
+    }
+
+    private void SetzeMenue(bool istOffen)
+    {
+        _menueIstOffen = istOffen;
+        _menuezustand = AlsAttributtext(istOffen);
+    }
+
+    private static string AlsAttributtext(bool wert)
+    {
+        if (wert)
+        {
+            return "true";
+        }
+
+        return "false";
     }
 
     private async Task BeginneZug()
