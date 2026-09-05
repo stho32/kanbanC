@@ -48,3 +48,169 @@
     font-size: 32px;
     text-wrap: pretty;
 }
+
+/* Zwei Spalten: links der Inhalt der Karte, rechts das Eigenschaftenblatt. */
+.kartenblatt {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-6);
+    margin-top: var(--space-3);
+}
+
+.karteninhalt {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--space-4);
+    min-width: 0;
+}
+
+.ueberschriftzeile {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+}
+
+/* Der Stift steht neben der Überschrift und tritt zurück, bis jemand ihn sucht. */
+.blattstift {
+    flex: none;
+    width: var(--space-8);
+    height: var(--space-8);
+    padding: 0;
+    color: var(--color-accent);
+    border-radius: var(--radius-lg);
+}
+
+/* Das Feld sieht aus wie die Überschrift, die es ersetzt: derselbe Platz, dieselbe Größe. */
+.kartenueberschrift-feld {
+    width: 100%;
+    padding: 0;
+    font-family: var(--font-heading);
+    font-weight: var(--font-heading-weight);
+    background: transparent;
+    border: 0;
+    border-bottom: 2px solid var(--color-accent);
+    border-radius: 0;
+}
+
+.blattabschnitt {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.blattueberschrift {
+    margin: 0;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.beschreibung {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.55;
+    text-wrap: pretty;
+    cursor: text;
+}
+
+.beschreibungsfeld {
+    width: 100%;
+    font-size: 14px;
+    line-height: 1.55;
+}
+
+/* Eine Handlung statt einer Null: das leere Feld sagt, was zu tun ist. */
+.blatthandlung {
+    align-self: flex-start;
+    padding: 0;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--color-accent);
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+}
+
+.eigenschaftenblatt {
+    display: flex;
+    flex: 0 0 372px;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.blattfeld {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.blattmarke {
+    font-size: 12px;
+    color: color-mix(in srgb, var(--color-text) 70%, transparent);
+}
+
+/* Anzeige und Eingabe tragen dieselbe Pille — beim Umschalten springt nichts. */
+.blattwert {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: var(--space-8);
+    padding: var(--space-1) var(--space-4);
+    font-family: inherit;
+    font-size: 14px;
+    text-align: left;
+    color: inherit;
+    background: var(--color-bg);
+    border: 1px solid var(--color-divider);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+}
+
+.farbpunkte {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: var(--space-8);
+}
+
+.farbpunkt {
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+}
+
+/* „Ohne" ist keine Farbe, sondern ihr Fehlen — deshalb der gestrichelte Umriss statt einer Füllung. */
+.farbpunkt-ohne {
+    background: transparent;
+    border: 1px dashed color-mix(in srgb, var(--color-text) 40%, transparent);
+}
+
+.farbpunkt-sand {
+    background: var(--color-neutral-200);
+}
+
+.farbpunkt-terrakotta {
+    background: var(--color-accent-200);
+}
+
+.farbpunkt-olive {
+    background: var(--color-accent-2-200);
+}
+
+.farbpunkt-nebel {
+    background: var(--color-neutral-300);
+}
+
+/* Der Ring liegt außerhalb des Punktes: eine Füllung zu verändern hieße, die Farbe zu verfälschen. */
+.farbpunkt-gewaehlt {
+    box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 3.5px var(--color-accent);
+}

@@ -240,3 +240,4 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-05 | R00017 Kartendetails bearbeiten | B0224 Kartenaenderung verdrahten | Standard | 0,4h | 0,0h | 0,0h | autonom |
 | 2026-09-05 | R00017 Kartendetails bearbeiten | B0225 Endpunkt der Kartenaenderung | Standard | 2h | 0,1h | 0,1h | autonom |
 | 2026-09-05 | R00017 Kartendetails bearbeiten | B0226 API-Klient der Kartenaenderung | Standard | 2h | 0,0h | 0,0h | autonom |
+| 2026-09-05 | R00017 Kartendetails bearbeiten | B0227 Eigenschaftenblatt der Kartenseite | Standard | 2h | 0,0h | 0,1h | autonom |

@@ -1,5 +1,7 @@
 @page "/karten/{KarteId:long}"
+@using System.Globalization
 @using KanbanC.Blazor.Services
+@using KanbanC.Contracts.Fehler
 @using KanbanC.Contracts.Karten
 @inject KartenApiKlient KartenKlient
 
@@ -46,15 +48,114 @@ else
         <span class="brotkrume-hier">Karte @KarteId</span>
     </nav>
 
-    <h2 class="kartenueberschrift" id="kartenueberschrift">@_detail.Karte.Titel</h2>
+    @if (_zurueckweisung is not null)
+    {
+        <div class="meldung meldung-abweisung" role="alert" id="kartenblatt-zurueckweisung">
+            <ul>
+                @foreach (var befund in _zurueckweisung.Befunde)
+                {
+                    <li>@befund.Meldung</li>
+                }
+            </ul>
+        </div>
+    }
+    @if (_ausfallmeldung is not null)
+    {
+        <div class="meldung" role="alert" id="kartenblatt-fehlermeldung">@_ausfallmeldung</div>
+    }
+
+    <div class="kartenblatt">
+        <div class="karteninhalt">
+            @* Der Titel steht dort, wo man ihn liest, und wird an derselben Stelle geändert.
+               Nach einer Zurückweisung schließt das Feld wieder — so bleibt die vorige Fassung
+               sichtbar stehen, statt hinter der abgewiesenen Eingabe zu verschwinden. *@
+            @if (IstOffen(Titelfeld))
+            {
+                <input class="kartenueberschrift kartenueberschrift-feld"
+                       id="titel-feld"
+                       value="@_detail.Karte.Titel"
+                       autofocus
+                       @onchange="SetzeTitel" />
+            }
+            else
+            {
+                <div class="ueberschriftzeile">
+                    <h2 class="kartenueberschrift" id="kartenueberschrift">@_detail.Karte.Titel</h2>
+                    <button type="button" class="btn btn-schlicht btn-symbol blattstift" id="titel-bearbeiten" title="Titel ändern" @onclick="() => Oeffne(Titelfeld)">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4l10-10-4-4L4 16z"></path><path d="m14 6 4 4"></path></svg>
+                    </button>
+                </div>
+            }
+
+            <section class="blattabschnitt">
+                <h3 class="blattueberschrift">Beschreibung</h3>
+                @if (IstOffen(Beschreibungsfeld))
+                {
+                    <textarea class="input beschreibungsfeld" id="beschreibung-feld" rows="5" @onchange="SetzeBeschreibung">@_detail.Karte.Beschreibung</textarea>
+                }
+                else if (string.IsNullOrEmpty(_detail.Karte.Beschreibung))
+                {
+                    @* Leere Felder tragen die Handlung als Text, keinen leeren Kasten. *@
+                    <button type="button" class="blatthandlung" id="beschreibung-hinzufuegen" @onclick="() => Oeffne(Beschreibungsfeld)">Beschreibung hinzufügen</button>
+                }
+                else
+                {
+                    <p class="beschreibung" id="beschreibung" @onclick="() => Oeffne(Beschreibungsfeld)">@_detail.Karte.Beschreibung</p>
+                }
+            </section>
+        </div>
+
+        <aside class="eigenschaftenblatt" id="eigenschaftenblatt">
+            <h3 class="blattueberschrift">Eigenschaften</h3>
+
+            <div class="blattfeld">
+                <label class="blattmarke" for="faellig-feld">Fällig</label>
+                @if (IstOffen(Faelligkeitsfeld))
+                {
+                    <input type="date" class="input blattwert" id="faellig-feld" value="@Terminwert" @onchange="SetzeFaelligkeit" />
+                }
+                else
+                {
+                    <button type="button" class="blattwert" id="faellig" @onclick="() => Oeffne(Faelligkeitsfeld)">@Terminformatierer.AlsText(_detail.Karte.FaelligAm)</button>
+                }
+            </div>
+
+            @* Die fünf Punkte stehen immer offen: eine Farbe ist eine Wahl mit einem Klick, kein
+               Feld, das man erst aufschlägt. *@
+            <div class="blattfeld">
+                <span class="blattmarke">Farbe der Karte</span>
+                <div class="farbpunkte" id="farbpunkte">
+                    @foreach (var farbe in Kartenfarbform.Alle)
+                    {
+                        <button type="button"
+                                class="farbpunkt @Kartenfarbform.Punktklasse(farbe) @Gewaehltklasse(farbe)"
+                                id="farbpunkt-@farbe"
+                                title="@Kartenfarbform.Beschriftung(farbe)"
+                                aria-pressed="@AlsAttributtext(farbe == _detail.Karte.Farbe)"
+                                @onclick="() => SetzeFarbe(farbe)"></button>
+                    }
+                </div>
+            </div>
+        </aside>
+    </div>
 }
 
 @code {
+    private const string Titelfeld = "titel";
+    private const string Beschreibungsfeld = "beschreibung";
+    private const string Faelligkeitsfeld = "faellig";
+
     // Vollqualifiziert, weil der Komponentenname Kartendetail den gleichnamigen Vertragstyp
     // verdeckt — dieselbe Lage wie bei Board.razor und Karte.razor.
     private KanbanC.Contracts.Karten.Kartendetail? _detail;
     private bool _ladenIstAbgeschlossen;
     private bool _webApiIstNichtErreichbar;
+
+    // Höchstens ein Feld steht offen; welches, sagt sein Name. Ein Wahrheitswert je Feld wäre
+    // dieselbe Aussage mehrfach und ließe zwei offene Felder zu.
+    private string? _offenesFeld;
+    private Zurueckweisung? _zurueckweisung;
+    private string? _ausfallmeldung;
 
     [Parameter]
     public long KarteId { get; set; }
@@ -73,6 +174,128 @@ else
         }
 
         _ladenIstAbgeschlossen = true;
+    }
+
+    private bool IstOffen(string feld)
+    {
+        return _offenesFeld == feld;
+    }
+
+    private void Oeffne(string feld)
+    {
+        _offenesFeld = feld;
+    }
+
+    // Der Wert des Datumsfeldes ist derselbe ISO-Text, den der Terminformatierer anzeigt —
+    // kein zweites Datumsformat in der Anwendung.
+    private string Terminwert
+    {
+        get
+        {
+            if (_detail!.Karte.FaelligAm is null)
+            {
+                return string.Empty;
+            }
+
+            return Terminformatierer.AlsText(_detail.Karte.FaelligAm);
+        }
+    }
+
+    private string Gewaehltklasse(Kartenfarbe farbe)
+    {
+        if (farbe == _detail!.Karte.Farbe)
+        {
+            return "farbpunkt-gewaehlt";
+        }
+
+        return string.Empty;
+    }
+
+    private static string AlsAttributtext(bool wert)
+    {
+        if (wert)
+        {
+            return "true";
+        }
+
+        return "false";
+    }
+
+    private async Task SetzeTitel(ChangeEventArgs ereignis)
+    {
+        await Speichere(_detail! with { Karte = _detail.Karte with { Titel = Text(ereignis) } });
+    }
+
+    private async Task SetzeBeschreibung(ChangeEventArgs ereignis)
+    {
+        await Speichere(_detail! with { Karte = _detail.Karte with { Beschreibung = AlsBeschreibung(Text(ereignis)) } });
+    }
+
+    // Ein geleertes Datumsfeld reist als null, nicht als leerer Text — den wiese
+    // System.Text.Json ab (DateOnlyEingabeProbeTests).
+    private async Task SetzeFaelligkeit(ChangeEventArgs ereignis)
+    {
+        await Speichere(_detail! with { Karte = _detail.Karte with { FaelligAm = AlsTermin(Text(ereignis)) } });
+    }
+
+    private async Task SetzeFarbe(Kartenfarbe farbe)
+    {
+        await Speichere(_detail! with { Karte = _detail.Karte with { Farbe = farbe } });
+    }
+
+    private static string Text(ChangeEventArgs ereignis)
+    {
+        return ereignis.Value?.ToString() ?? string.Empty;
+    }
+
+    private static string? AlsBeschreibung(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return null;
+        }
+
+        return text;
+    }
+
+    private static DateOnly? AlsTermin(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return null;
+        }
+
+        return DateOnly.Parse(text, CultureInfo.InvariantCulture);
+    }
+
+    // Gespeichert wird je Feld, sobald es verlassen oder gewählt ist — nicht gesammelt. Das
+    // Artboard zeichnet keinen Speicherknopf, und ein Zwischenstand, den ein Reload verlöre,
+    // stünde gegen „nach Reload da". Die Anfrage trägt trotzdem alle Felder, weil sie so
+    // geschnitten ist; abgesetzt wird sie nur für das eine Feld, das sich geändert hat.
+    private async Task Speichere(KanbanC.Contracts.Karten.Kartendetail gewuenscht)
+    {
+        _offenesFeld = null;
+        _zurueckweisung = null;
+        var anfrage = new KarteAendernAnfrage(
+            gewuenscht.Karte.Titel,
+            gewuenscht.Karte.Beschreibung,
+            gewuenscht.Karte.FaelligAm,
+            gewuenscht.Karte.Farbe);
+        _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(() => UebernimmAenderung(anfrage));
+    }
+
+    // Nach einer Zurückweisung bleibt _detail unangetastet: die vorige Fassung steht weiter da,
+    // und gespeichert wurde nichts.
+    private async Task UebernimmAenderung(KarteAendernAnfrage anfrage)
+    {
+        var ergebnis = await KartenKlient.AendereKarte(KarteId, anfrage);
+        if (ergebnis.WurdeZurueckgewiesen)
+        {
+            _zurueckweisung = ergebnis.Zurueckweisung;
+            return;
+        }
+
+        _detail = ergebnis.Wert;
     }
 
     // Die Zurückweisung wird nicht angezeigt, sondern nur ausgewertet: die Seite kennt ihre

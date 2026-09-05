@@ -38,6 +38,55 @@ public sealed class KartendetailSeite
 
     public ILocator Fehlermeldung => _seite.Locator("#fehlermeldung");
 
+    public ILocator BlattZurueckweisung => _seite.Locator("#kartenblatt-zurueckweisung");
+
+    public ILocator BlattFehlermeldung => _seite.Locator("#kartenblatt-fehlermeldung");
+
+    public ILocator TitelStift => _seite.Locator("#titel-bearbeiten");
+
+    public ILocator Titelfeld => _seite.Locator("#titel-feld");
+
+    public ILocator Beschreibung => _seite.Locator("#beschreibung");
+
+    public ILocator BeschreibungHinzufuegen => _seite.Locator("#beschreibung-hinzufuegen");
+
+    public ILocator Beschreibungsfeld => _seite.Locator("#beschreibung-feld");
+
+    public ILocator Faelligkeit => _seite.Locator("#faellig");
+
+    public ILocator Faelligkeitsfeld => _seite.Locator("#faellig-feld");
+
+    public ILocator Farbpunkte => _seite.Locator("#farbpunkte .farbpunkt");
+
+    public ILocator GewaehlterFarbpunkt => _seite.Locator("#farbpunkte .farbpunkt-gewaehlt");
+
+    public ILocator Farbpunkt(string farbe)
+    {
+        return _seite.Locator($"#farbpunkt-{farbe}");
+    }
+
+    // Ein Feld wird beim Verlassen gesichert; Blur ist deshalb Teil der Handlung, nicht Beiwerk.
+    public async Task SchreibeTitel(string titel)
+    {
+        await TitelStift.ClickAsync();
+        await Titelfeld.FillAsync(titel);
+        await Titelfeld.BlurAsync();
+    }
+
+    public async Task SchreibeBeschreibung(string beschreibung)
+    {
+        await BeschreibungHinzufuegen.ClickAsync();
+        await Beschreibungsfeld.FillAsync(beschreibung);
+        await Beschreibungsfeld.BlurAsync();
+    }
+
+    public async Task SetzeFaelligkeit(string isoDatum)
+    {
+        await Faelligkeit.ClickAsync();
+        await Faelligkeitsfeld.FillAsync(isoDatum);
+        await Faelligkeitsfeld.BlurAsync();
+    }
+
     public ILocator Ausnahmeanzeige => _seite.Locator("#blazor-error-ui");
 
     public async Task Rufe(long karteId)
