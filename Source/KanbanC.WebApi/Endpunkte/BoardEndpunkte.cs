@@ -8,6 +8,7 @@ namespace KanbanC.WebApi.Endpunkte;
 public static class BoardEndpunkte
 {
     private const string Basisroute = "/api/boards";
+    private const string Listenroute = "GET /api/boards";
 
     public static void Registriere(IEndpointRouteBuilder routen)
     {
@@ -34,7 +35,7 @@ public static class BoardEndpunkte
 
     private static IResult LadeAlleBoards(string? archiviert, BoardService boardService)
     {
-        var archivstand = Archivfilter.Aus(archiviert);
+        var archivstand = Archivfilter.Aus(archiviert, Listenroute);
         var derFilterIstUnlesbar = !archivstand.IstErfolg;
         if (derFilterIstUnlesbar)
         {

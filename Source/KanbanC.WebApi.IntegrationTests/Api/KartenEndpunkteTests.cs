@@ -734,6 +734,136 @@ public class KartenEndpunkteTests
         });
     }
 
+    [Test]
+    public async Task Wenn_die_Adresse_mit_archiviert_true_gerufen_wird_dann_liefert_sie_genau_die_archivierten_Karten_der_Spalte()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var spalteId = board.Spalten[0].SpalteId;
+        await LegeKarteAn(webApi, board.BoardId, spalteId, "A");
+        var b = await LegeKarteAn(webApi, board.BoardId, spalteId, "B");
+        await LegeKarteAn(webApi, board.BoardId, spalteId, "C");
+        await Archiviere(webApi, board.BoardId, b.KarteId, true);
+
+        var antwort = await webApi.Klient.GetAsync($"{KartenRoute(board.BoardId, spalteId)}?archiviert=true");
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var karten = await antwort.Content.ReadFromJsonAsync<IReadOnlyList<Karte>>();
+        Assert.That(karten!.Select(karte => karte.Titel), Is.EqualTo(new[] { "B" }));
+    }
+
+    [Test]
+    public async Task Wenn_die_Adresse_ohne_Parameter_gerufen_wird_dann_liefert_sie_unveraendert_nur_die_aktiven_Karten()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var spalteId = board.Spalten[0].SpalteId;
+        await LegeKarteAn(webApi, board.BoardId, spalteId, "A");
+        var b = await LegeKarteAn(webApi, board.BoardId, spalteId, "B");
+        await LegeKarteAn(webApi, board.BoardId, spalteId, "C");
+        await Archiviere(webApi, board.BoardId, b.KarteId, true);
+
+        var karten = await webApi.Klient.GetFromJsonAsync<IReadOnlyList<Karte>>(KartenRoute(board.BoardId, spalteId));
+
+        Assert.That(karten!.Select(karte => karte.Titel), Is.EqualTo(new[] { "A", "C" }));
+    }
+
+    [Test]
+    public async Task Wenn_die_Adresse_mit_archiviert_false_gerufen_wird_dann_liefert_sie_dasselbe_wie_ohne_Parameter()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var spalteId = board.Spalten[0].SpalteId;
+        await LegeKarteAn(webApi, board.BoardId, spalteId, "A");
+        var b = await LegeKarteAn(webApi, board.BoardId, spalteId, "B");
+        await Archiviere(webApi, board.BoardId, b.KarteId, true);
+
+        var mitFalse = await webApi.Klient.GetFromJsonAsync<IReadOnlyList<Karte>>($"{KartenRoute(board.BoardId, spalteId)}?archiviert=false");
+        var ohneParameter = await webApi.Klient.GetFromJsonAsync<IReadOnlyList<Karte>>(KartenRoute(board.BoardId, spalteId));
+
+        Assert.That(mitFalse!.Select(karte => karte.Titel), Is.EqualTo(ohneParameter!.Select(karte => karte.Titel)));
+    }
+
+    // Leeres Archiv ist eine Antwort, kein Fehler: die Spalte gibt es, sie hat nur nichts abgelegt.
+    [Test]
+    public async Task Wenn_die_Spalte_keine_archivierte_Karte_traegt_dann_antwortet_das_Archiv_mit_200_und_leerer_Liste()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var spalteId = board.Spalten[0].SpalteId;
+        await LegeKarteAn(webApi, board.BoardId, spalteId, "A");
+
+        var antwort = await webApi.Klient.GetAsync($"{KartenRoute(board.BoardId, spalteId)}?archiviert=true");
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var karten = await antwort.Content.ReadFromJsonAsync<IReadOnlyList<Karte>>();
+        Assert.That(karten, Is.Empty);
+    }
+
+    [Test]
+    public async Task Wenn_der_Archivfilter_der_Kartenadresse_unlesbar_ist_dann_nennt_die_Kompensation_diese_Adresse()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var spalteId = board.Spalten[0].SpalteId;
+
+        var antwort = await webApi.Klient.GetAsync($"{KartenRoute(board.BoardId, spalteId)}?archiviert=vielleicht");
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Kartenadresse mit unlesbarem Archivfilter");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("archiv-filter-unlesbar"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain("vielleicht"));
+            Assert.That(zurueckweisung.Befunde[0].Kompensation, Does.Contain($"GET {KartenRoute(board.BoardId, spalteId)}?archiviert=true"));
+        });
+    }
+
+    // Jede der beiden Adressen erklaert sich selbst: die Boardliste nennt weiterhin sich.
+    [Test]
+    public async Task Wenn_der_Archivfilter_der_Boardliste_unlesbar_ist_dann_nennt_die_Kompensation_weiterhin_die_Boardliste()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+
+        var antwort = await webApi.Klient.GetAsync($"{BoardsRoute}?archiviert=vielleicht");
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Boardliste mit unlesbarem Archivfilter");
+        Assert.That(zurueckweisung.Befunde[0].Kompensation, Does.Contain("GET /api/boards?archiviert=true"));
+    }
+
+    [Test]
+    public async Task Wenn_die_BoardId_unbekannt_ist_dann_antwortet_auch_das_Archiv_mit_404_und_Befund()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+
+        var antwort = await webApi.Klient.GetAsync($"{BoardsRoute}/999/spalten/{board.Spalten[0].SpalteId}/karten?archiviert=true");
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "board-unbekannt");
+    }
+
+    [Test]
+    public async Task Wenn_die_SpalteId_unbekannt_ist_dann_antwortet_auch_das_Archiv_mit_404_und_Befund()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+
+        var antwort = await webApi.Klient.GetAsync($"{KartenRoute(board.BoardId, 999)}?archiviert=true");
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "spalte-unbekannt");
+    }
+
     private static async Task<IReadOnlyList<Spalte>> Archiviere(TestWebApi webApi, long boardId, long karteId, bool istArchiviert)
     {
         var antwort = await webApi.Klient.PutAsJsonAsync(Archivierungsroute(boardId, karteId), new Archivierung(istArchiviert));

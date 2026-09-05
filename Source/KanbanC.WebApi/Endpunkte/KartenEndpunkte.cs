@@ -1,4 +1,5 @@
 using KanbanC.BL.Integrations.Karten;
+using KanbanC.BL.Operations.Boards;
 using KanbanC.BL.Operations.Fehler;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
@@ -27,16 +28,29 @@ public static class KartenEndpunkte
     }
 
     // Dieselbe Adresse wie das Anlegen: wer weiss, wo eine Karte entsteht, weiss damit auch, wo
-    // alle stehen. Ungekuerzt, auch wenn das Board dieselbe Spalte gekuerzt liefert.
-    private static IResult LiesKartenDerSpalte(long boardId, long spalteId, KartenService kartenService)
+    // alle stehen. Ungekuerzt, auch wenn das Board dieselbe Spalte gekuerzt liefert. Mit
+    // ?archiviert=true zeigt dieselbe Ressource ihren zweiten Ausschnitt — das Archiv der Spalte.
+    private static IResult LiesKartenDerSpalte(long boardId, long spalteId, string? archiviert, KartenService kartenService)
     {
-        var ergebnis = kartenService.LadeKartenDerSpalte(boardId, spalteId, new Archivierung(false));
+        var archivstand = Archivfilter.Aus(archiviert, Kartenlisteroute(boardId, spalteId));
+        var derFilterIstUnlesbar = !archivstand.IstErfolg;
+        if (derFilterIstUnlesbar)
+        {
+            return Zurueckweisungen.AlsFehlerantwort(archivstand.Befunde);
+        }
+
+        var ergebnis = kartenService.LadeKartenDerSpalte(boardId, spalteId, archivstand.Wert);
         if (ergebnis.IstErfolg)
         {
             return Results.Ok(ergebnis.Wert);
         }
 
         return Zurueckweisungen.AlsFehlerantwort(ergebnis.Befunde);
+    }
+
+    private static string Kartenlisteroute(long boardId, long spalteId)
+    {
+        return $"GET /api/boards/{boardId}/spalten/{spalteId}/karten";
     }
 
     private static IResult LegeKarteAn(long boardId, long spalteId, KarteAnlegenAnfrage anfrage, KartenService kartenService)

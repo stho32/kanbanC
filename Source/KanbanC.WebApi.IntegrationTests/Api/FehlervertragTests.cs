@@ -168,6 +168,11 @@ public class FehlervertragTests
             await webApi.Klient.GetAsync($"{BoardsRoute}/{board.BoardId}/spalten/999/karten")));
 
         faelle.Add(new Fehlerfall(
+            "GET /api/boards/{boardId:long}/spalten/{spalteId:long}/karten",
+            "Karten einer Spalte lesen mit unlesbarem Archiv-Filter",
+            await webApi.Klient.GetAsync($"{BoardsRoute}/{board.BoardId}/spalten/{spalteId}/karten?archiviert=vielleicht")));
+
+        faelle.Add(new Fehlerfall(
             "POST /api/boards/{boardId:long}/spalten/{spalteId:long}/karten",
             "Karte anlegen ohne Titel",
             await webApi.Klient.PostAsJsonAsync($"{BoardsRoute}/{board.BoardId}/spalten/{spalteId}/karten", new KarteAnlegenAnfrage(""))));
