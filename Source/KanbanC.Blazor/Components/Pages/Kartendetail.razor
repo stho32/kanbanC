@@ -105,6 +105,91 @@ else
                     <p class="beschreibung" id="beschreibung" @onclick="() => Oeffne(Beschreibungsfeld)">@_detail.Karte.Beschreibung</p>
                 }
             </section>
+
+            @* Der Abschnitt heißt „Teilaufgaben" und nicht „Subtasks": eine bewusste Abweichung
+               vom Artboard, das hier als einzigen Abschnittstitel ein englisches Wort trägt.
+               Die gebaute Oberfläche ist durchgehend deutsch, und C06 verbietet zwei Namen für
+               dasselbe Ding. Alles andere folgt der Skizze. *@
+            <section class="blattabschnitt" id="teilaufgabenabschnitt">
+                <div class="teilaufgabenkopf">
+                    <h3 class="blattueberschrift">Teilaufgaben</h3>
+                    @* Fortschritt und Balken bleiben fort, solange nichts zu zählen ist: „0 von 0"
+                       wäre eine Aussage über nichts. *@
+                    @if (HatTeilaufgaben)
+                    {
+                        <span class="teilaufgabenstand" id="teilaufgabenstand">@Teilaufgabenfortschritt.AlsText(_detail.Teilaufgaben)</span>
+                        <span class="teilaufgabenbalken"
+                              id="teilaufgabenbalken"
+                              role="progressbar"
+                              aria-valuemin="0"
+                              aria-valuemax="100"
+                              aria-valuenow="@Balkenanteil">
+                            <span class="teilaufgabenbalken-anteil" style="width: @Balkenbreite"></span>
+                        </span>
+                    }
+                </div>
+
+                @if (HatTeilaufgaben)
+                {
+                    <div class="teilaufgabenliste" id="teilaufgabenliste">
+                        @* @key hält die Elementkennung über die Neuaufbauten hinweg fest: nach
+                           jedem Abhaken kommt die ganze Liste neu, und ohne Schlüssel ordnete
+                           Blazor die Kästchen neu zu. *@
+                        @foreach (var teilaufgabe in _detail.Teilaufgaben)
+                        {
+                            <div class="teilaufgabe @Abhakklasse(teilaufgabe)" @key="teilaufgabe.TeilaufgabeId" data-teilaufgabe="@teilaufgabe.TeilaufgabeId">
+                                @* Ein Knopf und keine gezeichnete Fläche mit @onclick: so lässt
+                                   sich das Kästchen mit der Tabulatortaste erreichen und mit
+                                   Eingabe- oder Leertaste schalten, ohne dass es dafür eigene
+                                   Tastenbehandlung bräuchte. aria-pressed sagt den Stand an,
+                                   dieselbe Bauform wie die Farbpunkte. *@
+                                <button type="button"
+                                        class="teilaufgabenkaestchen"
+                                        id="teilaufgabe-kaestchen-@teilaufgabe.TeilaufgabeId"
+                                        title="@Abhaktitel(teilaufgabe)"
+                                        aria-pressed="@AlsAttributtext(teilaufgabe.Abgehakt)"
+                                        @onclick="() => SchalteAbhakung(teilaufgabe)">
+                                    @if (teilaufgabe.Abgehakt)
+                                    {
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"></rect><path d="m8 12 3 3 5-6"></path></svg>
+                                    }
+                                    else
+                                    {
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"></rect></svg>
+                                    }
+                                </button>
+                                <span class="teilaufgabentext">@teilaufgabe.Text</span>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    @* Die Handlung statt der Null, wie beim leeren Beschreibungsfeld. „anlegen"
+                       setzt den Cursor ins Feld darunter — mehr ist nicht zu tun, es steht
+                       ohnehin offen. *@
+                    <p class="teilaufgabenleerstand" id="teilaufgaben-leerstand">
+                        Keine Teilaufgaben ·
+                        <button type="button" class="blatthandlung" id="teilaufgabe-anlegen" @onclick="FokussiereTeilaufgabenfeld">anlegen</button>
+                    </p>
+                }
+
+                <div class="teilaufgabenzeile">
+                    @* Den Text des Feldes führt das Feld selbst, nicht der Server: kein value.
+                       Trüge es den serverseitigen Stand, schriebe jede zurückkommende Renderrunde
+                       den Stand von vorhin über das, was inzwischen getippt wurde — wer schnell
+                       tippt, verlöre Zeichen. Dieselbe Lehre wie beim Etikettenfeld. *@
+                    <input class="input teilaufgabenfeld"
+                           id="teilaufgabe-eingabe"
+                           @ref="_teilaufgabenfeld"
+                           placeholder="Teilaufgabe hinzufügen"
+                           @oninput="TippeTeilaufgabe"
+                           @onkeydown="AufTeilaufgabentaste" />
+                    <button type="button" class="btn btn-schlicht btn-symbol" id="teilaufgabe-hinzufuegen" title="Teilaufgabe hinzufügen" @onclick="FuegeTeilaufgabeHinzu">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+                    </button>
+                </div>
+            </section>
         </div>
 
         <aside class="eigenschaftenblatt" id="eigenschaftenblatt">
@@ -340,6 +425,129 @@ else
     private async Task LeereEtikettfeld()
     {
         await Browser.InvokeVoidAsync(ElementEigenschaftenSetzen, _etikettfeld, new { value = string.Empty });
+    }
+
+    private string _teilaufgabentext = string.Empty;
+    private ElementReference _teilaufgabenfeld;
+
+    private bool HatTeilaufgaben
+    {
+        get
+        {
+            return _detail!.Teilaufgaben.Count > 0;
+        }
+    }
+
+    private string Balkenanteil
+    {
+        get
+        {
+            return Teilaufgabenfortschritt.AlsProzent(_detail!.Teilaufgaben).ToString(CultureInfo.InvariantCulture);
+        }
+    }
+
+    private string Balkenbreite
+    {
+        get
+        {
+            return Balkenanteil + "%";
+        }
+    }
+
+    private static string Abhakklasse(Teilaufgabe teilaufgabe)
+    {
+        if (teilaufgabe.Abgehakt)
+        {
+            return "teilaufgabe-abgehakt";
+        }
+
+        return string.Empty;
+    }
+
+    private static string Abhaktitel(Teilaufgabe teilaufgabe)
+    {
+        if (teilaufgabe.Abgehakt)
+        {
+            return "Abhaken zurücknehmen";
+        }
+
+        return "Als erledigt abhaken";
+    }
+
+    private void TippeTeilaufgabe(ChangeEventArgs ereignis)
+    {
+        _teilaufgabentext = Text(ereignis);
+    }
+
+    // Die Eingabetaste legt an, was im Feld steht — der Weg ohne Zeiger, wie beim Etikettenfeld.
+    // Anders als dort ohne Prüfung auf einen leeren Text: die Zurückweisung ist die Antwort der
+    // API, und eine zweite Leerregel in der Oberfläche wäre eine zweite Wahrheit.
+    private async Task AufTeilaufgabentaste(KeyboardEventArgs taste)
+    {
+        var dieTasteLegtAn = taste.Key == "Enter";
+        if (!dieTasteLegtAn)
+        {
+            return;
+        }
+
+        await FuegeTeilaufgabeHinzu();
+    }
+
+    private async Task FuegeTeilaufgabeHinzu()
+    {
+        _zurueckweisung = null;
+        _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(UebernimmTeilaufgabe);
+    }
+
+    // Nach einer Zurückweisung bleibt der getippte Text stehen: er ist der Grund der Meldung, und
+    // die Liste bleibt, wie sie war.
+    private async Task UebernimmTeilaufgabe()
+    {
+        var ergebnis = await KartenKlient.LegeTeilaufgabeAn(KarteId, new TeilaufgabeAnlegenAnfrage(_teilaufgabentext));
+        if (ergebnis.WurdeZurueckgewiesen)
+        {
+            _zurueckweisung = ergebnis.Zurueckweisung;
+            return;
+        }
+
+        _teilaufgabentext = string.Empty;
+        _detail = ergebnis.Wert;
+        await LeereTeilaufgabenfeld();
+    }
+
+    // Das Feld bleibt nach dem Anlegen stehen, leer und unter dem Cursor: wer eine Gliederung
+    // schreibt, legt selten genau eine Zeile an. Der Fokus wird ausdrücklich zurückgeholt, damit
+    // der Weg über „+" derselbe ist wie der über die Eingabetaste — ein Klick auf den Knopf nähme
+    // ihn sonst mit.
+    private async Task LeereTeilaufgabenfeld()
+    {
+        await Browser.InvokeVoidAsync(ElementEigenschaftenSetzen, _teilaufgabenfeld, new { value = string.Empty });
+        await _teilaufgabenfeld.FocusAsync();
+    }
+
+    private async Task FokussiereTeilaufgabenfeld()
+    {
+        await _teilaufgabenfeld.FocusAsync();
+    }
+
+    // Die Oberfläche kippt, die Route setzt: geschickt wird der Zielzustand, den der Betrachter
+    // gerade sieht. Ein zweiter gleicher Aufruf ändert damit nichts.
+    private async Task SchalteAbhakung(Teilaufgabe teilaufgabe)
+    {
+        _zurueckweisung = null;
+        _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(() => UebernimmAbhakung(teilaufgabe));
+    }
+
+    private async Task UebernimmAbhakung(Teilaufgabe teilaufgabe)
+    {
+        var ergebnis = await KartenKlient.SetzeAbhakung(KarteId, teilaufgabe.TeilaufgabeId, new Teilaufgabenstand(!teilaufgabe.Abgehakt));
+        if (ergebnis.WurdeZurueckgewiesen)
+        {
+            _zurueckweisung = ergebnis.Zurueckweisung;
+            return;
+        }
+
+        _detail = ergebnis.Wert;
     }
 
     private bool IstOffen(string feld)
