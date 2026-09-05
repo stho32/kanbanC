@@ -56,21 +56,23 @@
                 {
                     <p class="spaltenbahn-leer">Noch keine Karte.<br />Unten eine anlegen.</p>
                 }
-                @for (var stelle = 0; stelle < spalte.Karten.Count; stelle++)
+                @if (spalte.IstAbschlussspalte)
                 {
-                    var kartendaten = spalte.Karten[stelle];
-                    var spalteId = spalte.SpalteId;
-                    var index = stelle;
-                    @Einfuegelinie(spalte.SpalteId, index)
-                    <Karte @key="kartendaten.KarteId"
-                           Kartendaten="kartendaten"
-                           IstZiehbar="ZeigtZiehbareKarten"
-                           WirdGezogen="WirdGezogen(kartendaten.KarteId)"
-                           NimmtAn="ZeigtAblageziele"
-                           ZugBegann="karteId => BeginneZug(spalteId, karteId)"
-                           ZugEndete="BeendeZug"
-                           HaelfteUeberfahren="haelfte => UeberfahreHaelfte(spalteId, index, haelfte)"
-                           HierAbgelegt="haelfte => LegeAufHaelfteAb(spalte, index, haelfte)" />
+                    @foreach (var gruppe in Datumsgruppen.Bilde(spalte.Karten, Heute))
+                    {
+                        <p class="spaltenbahn-datumsgruppe">@gruppe.Ueberschrift · @gruppe.Karten.Count</p>
+                        for (var stelle = gruppe.ErsteStelle; stelle < gruppe.ErsteStelle + gruppe.Karten.Count; stelle++)
+                        {
+                            @Kartenzeile(spalte, stelle)
+                        }
+                    }
+                }
+                else
+                {
+                    @for (var stelle = 0; stelle < spalte.Karten.Count; stelle++)
+                    {
+                        @Kartenzeile(spalte, stelle)
+                    }
                 }
                 @Einfuegelinie(spalte.SpalteId, spalte.Karten.Count)
                 @if (ZeigtAblageziele)
@@ -95,6 +97,24 @@
         {
             <div class="einfuegelinie"></div>
         }
+    </text>;
+
+    RenderFragment Kartenzeile(Spalte spalte, int stelle) => @<text>
+        @{
+            var kartendaten = spalte.Karten[stelle];
+            var spalteId = spalte.SpalteId;
+            var index = stelle;
+        }
+        @Einfuegelinie(spalteId, index)
+        <Karte @key="kartendaten.KarteId"
+               Kartendaten="kartendaten"
+               IstZiehbar="ZeigtZiehbareKarten"
+               WirdGezogen="WirdGezogen(kartendaten.KarteId)"
+               NimmtAn="ZeigtAblageziele"
+               ZugBegann="karteId => BeginneZug(spalteId, karteId)"
+               ZugEndete="BeendeZug"
+               HaelfteUeberfahren="haelfte => UeberfahreHaelfte(spalteId, index, haelfte)"
+               HierAbgelegt="haelfte => LegeAufHaelfteAb(spalte, index, haelfte)" />
     </text>;
 }
 
@@ -135,6 +155,10 @@
 
     [Parameter]
     public EventCallback<Kartenablage> KarteWurdeAbgelegt { get; set; }
+
+    // Die Uhr des Blazor-Prozesses, wie „heute“ auch in der WebApi die lokale Uhr ist: „Heute“ ist
+    // der Tag, den der Mensch vor dem Bildschirm meint.
+    private static DateOnly Heute => DateOnly.FromDateTime(DateTime.Today);
 
     // Im Layout-Modus werden Spalten gepflegt, nicht Karten bewegt.
     private bool ZeigtZiehbareKarten => !IstBearbeitbar;

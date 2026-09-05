@@ -59,6 +59,13 @@ public sealed class BoardSeite
 
     public ILocator LeerhinweiseDerBahnen => _seite.Locator("#spaltenbahnen .spaltenbahn-leer");
 
+    public ILocator Datumsgruppen => _seite.Locator("#spaltenbahnen .spaltenbahn-datumsgruppe");
+
+    public ILocator DatumsgruppenDerBahn(ILocator bahn)
+    {
+        return bahn.Locator(".spaltenbahn-datumsgruppe");
+    }
+
     public ILocator KarteAnlegenKnoepfe => _seite.Locator("#spaltenbahnen .kartenanlage-oeffnen");
 
     public ILocator MeldungUnbekanntesBoard => _seite.Locator("#board-unbekannt");
