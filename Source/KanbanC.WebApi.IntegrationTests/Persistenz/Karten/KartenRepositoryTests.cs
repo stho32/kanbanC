@@ -1169,6 +1169,101 @@ public class KartenRepositoryTests
         Assert.That(Etikettzeilen(datenbank), Is.EqualTo(0));
     }
 
+    // Die Reihenfolge ist die des Anlegens und nicht die des Textes: eine Gliederung sagt, was
+    // nacheinander zu tun ist.
+    [Test]
+    public void Wenn_die_Karte_Teilaufgaben_traegt_dann_liefert_das_Detail_sie_in_Position_Reihenfolge()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        FuegeTeilaufgabeEin(datenbank, karte!.KarteId, "Zuletzt eingetragen", 3);
+        FuegeTeilaufgabeEin(datenbank, karte.KarteId, "Lizenztext lesen", 1, abgehakt: true);
+        FuegeTeilaufgabeEin(datenbank, karte.KarteId, "Rückfrage an den Hersteller", 2);
+
+        var detail = repository.LiesKartendetail(karte.KarteId);
+
+        Assert.That(detail!.Teilaufgaben.Select(teilaufgabe => teilaufgabe.Text),
+            Is.EqualTo(new[] { "Lizenztext lesen", "Rückfrage an den Hersteller", "Zuletzt eingetragen" }));
+        Assert.That(detail.Teilaufgaben.Select(teilaufgabe => teilaufgabe.Abgehakt),
+            Is.EqualTo(new[] { true, false, false }));
+    }
+
+    // Jede Zeile trägt ihre eigene Nummer; sie ist es, an der der Abhakstand hängt.
+    [Test]
+    public void Wenn_zwei_Teilaufgaben_denselben_Text_tragen_dann_stehen_sie_beide_da_mit_verschiedenen_Nummern()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        FuegeTeilaufgabeEin(datenbank, karte!.KarteId, "Nachfassen", 1);
+        FuegeTeilaufgabeEin(datenbank, karte.KarteId, "Nachfassen", 2);
+
+        var detail = repository.LiesKartendetail(karte.KarteId);
+
+        Assert.That(detail!.Teilaufgaben.Select(teilaufgabe => teilaufgabe.Text), Is.EqualTo(new[] { "Nachfassen", "Nachfassen" }));
+        Assert.That(detail.Teilaufgaben.Select(teilaufgabe => teilaufgabe.TeilaufgabeId).Distinct().Count(), Is.EqualTo(2));
+    }
+
+    [Test]
+    public void Wenn_die_Karte_keine_Teilaufgabe_traegt_dann_ist_die_Liste_im_Detail_leer()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+
+        var detail = repository.LiesKartendetail(karte!.KarteId);
+
+        Assert.That(detail!.Teilaufgaben, Is.Empty);
+    }
+
+    // Kein Archivfilter, wie das ganze Kartendetail: eine archivierte Karte behält ihre Adresse
+    // und damit ihre Gliederung.
+    [Test]
+    public void Wenn_die_Karte_archiviert_ist_dann_traegt_ihr_Detail_die_Teilaufgaben_weiterhin()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        FuegeTeilaufgabeEin(datenbank, karte!.KarteId, "Lizenztext lesen", 1);
+        ArchiviereKarte(datenbank, karte.KarteId);
+
+        var detail = repository.LiesKartendetail(karte.KarteId);
+
+        Assert.That(detail!.Teilaufgaben.Select(teilaufgabe => teilaufgabe.Text), Is.EqualTo(new[] { "Lizenztext lesen" }));
+    }
+
+    // Die Liste einer Karte trägt nur ihre eigenen Zeilen.
+    [Test]
+    public void Wenn_eine_andere_Karte_Teilaufgaben_traegt_dann_erscheinen_sie_nicht_im_Detail_dieser_Karte()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var spalteId = board.Spalten[0].SpalteId;
+        var eigene = repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage("Eigene"));
+        var fremde = repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage("Fremde"));
+        FuegeTeilaufgabeEin(datenbank, eigene!.KarteId, "Lizenztext lesen", 1);
+        FuegeTeilaufgabeEin(datenbank, fremde!.KarteId, "Nur woanders", 1);
+
+        var detail = repository.LiesKartendetail(eigene.KarteId);
+
+        Assert.That(detail!.Teilaufgaben.Select(teilaufgabe => teilaufgabe.Text), Is.EqualTo(new[] { "Lizenztext lesen" }));
+    }
+
+    private static void FuegeTeilaufgabeEin(TemporaereDatenbank datenbank, long karteId, string text, int position, bool abgehakt = false)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Teilaufgabe (Karte, Text, Position, Abgehakt)
+            VALUES (@Karte, @Text, @Position, @Abgehakt)",
+            new { Karte = karteId, Text = text, Position = position, Abgehakt = abgehakt });
+    }
+
     private static long Etikettzeilen(TemporaereDatenbank datenbank)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
