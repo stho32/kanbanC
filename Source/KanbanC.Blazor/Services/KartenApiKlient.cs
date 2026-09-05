@@ -35,4 +35,13 @@ public sealed class KartenApiKlient
         using var antwort = await klient.PutAsJsonAsync($"{BoardsRoute}/{boardId}/karten/{karteId}/lage", lage);
         return await ApiAntwortleser.AlsErgebnis<IReadOnlyList<Spalte>>(antwort);
     }
+
+    // Dieselbe Antwortgestalt wie der Zug: die Spalten kommen zurück, weil die Bahn eine Karte
+    // verliert und neu durchnummeriert wird. Derselbe Aufruf mit false holt die Karte zurück.
+    public async Task<ApiErgebnis<IReadOnlyList<Spalte>>> SchalteArchivierung(long boardId, long karteId, Archivierung archivierung)
+    {
+        using var klient = _klientFabrik.CreateClient(KlientName);
+        using var antwort = await klient.PutAsJsonAsync($"{BoardsRoute}/{boardId}/karten/{karteId}/archivierung", archivierung);
+        return await ApiAntwortleser.AlsErgebnis<IReadOnlyList<Spalte>>(antwort);
+    }
 }

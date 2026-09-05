@@ -201,4 +201,104 @@ public class KartenApiKlientTests
 
         Assert.That(async () => await klient.LadeKartenDerSpalte(1, 3), Throws.TypeOf<HttpRequestException>());
     }
+
+    [Test]
+    public async Task Wenn_die_WebApi_die_Archivierung_annimmt_dann_liefert_der_Klient_die_Spalten_ohne_die_Karte()
+    {
+        const string rumpf = """
+            [
+              {"spalteId":2,"bezeichnung":"Zu erledigen","position":1,"istAbschlussspalte":false,"anzeigegrenze":null,
+               "karten":[{"karteId":7,"titel":"A","position":1}],"kartenzahl":1}
+            ]
+            """;
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.SchalteArchivierung(1, 8, new Archivierung(true));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Wert, Has.Count.EqualTo(1));
+            Assert.That(ergebnis.Wert[0].Karten[0].Titel, Is.EqualTo("A"));
+            Assert.That(ergebnis.Wert[0].Kartenzahl, Is.EqualTo(1));
+        });
+    }
+
+    // Ueber den Browser ist nicht pruefbar, ob der Klient die vereinbarte Route trifft und den
+    // gewuenschten Archivstand mitschickt.
+    [Test]
+    public async Task Wenn_der_Klient_archiviert_dann_setzt_er_ein_PUT_auf_die_Archivierungsadresse_mit_dem_Archivstand_ab()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, "[]", "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        await klient.SchalteArchivierung(1, 8, new Archivierung(true));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("PUT http://webapi.test/api/boards/1/karten/8/archivierung"));
+            Assert.That(fabrik.GesendeterRumpf, Is.EqualTo("""{"istArchiviert":true}"""));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_der_Klient_zurueckholt_dann_schickt_er_denselben_Rumpf_mit_false()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, "[]", "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        await klient.SchalteArchivierung(1, 8, new Archivierung(false));
+
+        Assert.That(fabrik.GesendeterRumpf, Is.EqualTo("""{"istArchiviert":false}"""));
+    }
+
+    // Wie auf allen Wegen des Klienten wird ein 404 zur festen, lesbaren Meldung: den Befund der
+    // API liest der Agent an der Route, der Mensch am Bildschirm braucht einen Satz.
+    [Test]
+    public async Task Wenn_die_Karte_beim_Archivieren_unbekannt_ist_dann_meldet_der_Klient_einen_Befund_statt_zu_werfen()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwortOhneRumpf(HttpStatusCode.NotFound);
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.SchalteArchivierung(1, 999, new Archivierung(true));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.Not.Empty);
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("gibt es nicht mehr"));
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Kompensation, Is.Not.Empty);
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_WebApi_das_Archivieren_zurueckweist_dann_reicht_der_Klient_Meldung_und_Code_durch()
+    {
+        const string rumpf = """
+            {"befunde":[{"code":"archiv-stand-unlesbar","meldung":"Der Archivstand war nicht lesbar.",
+             "kompensation":"Den Aufruf mit istArchiviert true oder false wiederholen."}]}
+            """;
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.BadRequest, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.SchalteArchivierung(1, 8, new Archivierung(true));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.EqualTo("archiv-stand-unlesbar"));
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("nicht lesbar"));
+        });
+    }
+
+    [Test]
+    public void Wenn_die_WebApi_beim_Archivieren_nicht_erreichbar_ist_dann_bleibt_die_Ausnahme_sichtbar()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwortOhneRumpf(HttpStatusCode.InternalServerError);
+        var klient = new KartenApiKlient(fabrik);
+
+        Assert.That(async () => await klient.SchalteArchivierung(1, 8, new Archivierung(true)),
+            Throws.TypeOf<HttpRequestException>());
+    }
 }
