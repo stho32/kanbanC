@@ -465,6 +465,82 @@ public class KartenRepositoryTests
         Assert.That(geladen.Spalten.Select(spalte => spalte.Kartenzahl), Is.EqualTo(new[] { 2, 1, 0 }));
     }
 
+    [Test]
+    public void Wenn_die_Karten_einer_Spalte_geladen_werden_dann_kommen_alle_in_Positionsfolge_mit_ihrem_Erledigungsdatum()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var abschlussspalteId = board.Spalten[2].SpalteId;
+        var erste = repository.LegeAn(board.BoardId, abschlussspalteId, new KarteAnlegenAnfrage("Zuerst"))!;
+        repository.LegeAn(board.BoardId, abschlussspalteId, new KarteAnlegenAnfrage("Danach"));
+        SetzeErledigung(datenbank, erste.KarteId, "2026-09-01");
+
+        var karten = repository.LadeKartenDerSpalte(board.BoardId, abschlussspalteId);
+
+        Assert.That(karten, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(karten!.Select(karte => karte.Titel), Is.EqualTo(new[] { "Zuerst", "Danach" }));
+            Assert.That(karten[0].ErledigtAm, Is.EqualTo(new DateOnly(2026, 9, 1)));
+            Assert.That(karten[1].ErledigtAm, Is.EqualTo(DateOnly.FromDateTime(DateTime.Today)));
+        });
+    }
+
+    [Test]
+    public void Wenn_die_Spalte_keine_Karte_traegt_dann_liefert_LadeKartenDerSpalte_die_leere_Liste_statt_null()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+
+        var karten = repository.LadeKartenDerSpalte(board.BoardId, board.Spalten[1].SpalteId);
+
+        Assert.That(karten, Is.Not.Null);
+        Assert.That(karten, Is.Empty);
+    }
+
+    [Test]
+    public void Wenn_die_SpalteId_unbekannt_ist_dann_liefert_LadeKartenDerSpalte_null()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+
+        Assert.That(repository.LadeKartenDerSpalte(board.BoardId, 999), Is.Null);
+    }
+
+    [Test]
+    public void Wenn_die_Spalte_zu_einem_anderen_Board_gehoert_dann_liefert_LadeKartenDerSpalte_null()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var erstes = LegeBoardAn(datenbank);
+        var zweites = LegeBoardAn(datenbank);
+        repository.LegeAn(erstes.BoardId, erstes.Spalten[0].SpalteId, new KarteAnlegenAnfrage("A"));
+
+        Assert.That(repository.LadeKartenDerSpalte(zweites.BoardId, erstes.Spalten[0].SpalteId), Is.Null);
+    }
+
+    // Der Fall, um dessentwillen die Adresse entsteht: die Bahn ist ueber ihrer Grenze, das
+    // Repository liefert trotzdem alles.
+    [Test]
+    public void Wenn_die_Abschlussspalte_ueber_ihrer_Anzeigegrenze_liegt_dann_liefert_das_Repository_dennoch_alle_Karten()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var abschlussspalteId = board.Spalten[2].SpalteId;
+        for (var nummer = 1; nummer <= 23; nummer++)
+        {
+            repository.LegeAn(board.BoardId, abschlussspalteId, new KarteAnlegenAnfrage($"Fertig {nummer}"));
+        }
+
+        var karten = repository.LadeKartenDerSpalte(board.BoardId, abschlussspalteId);
+
+        Assert.That(karten, Has.Count.EqualTo(23));
+    }
+
     private static string HeuteAlsText => DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
     private static void SetzeErledigung(TemporaereDatenbank datenbank, long karteId, string erledigtAm)

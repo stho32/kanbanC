@@ -102,6 +102,20 @@ public sealed class KartenRepository : IKartenRepository
              WHERE k.KarteId = @KarteId", new { KarteId = karteId });
     }
 
+    // Ungekuerzt und in Anzeigereihenfolge: was die Oberflaeche kuerzt, bleibt hier vollstaendig.
+    public IReadOnlyList<Karte>? LadeKartenDerSpalte(long boardId, long spalteId)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+
+        var spalteGehoertNichtZumBoard = !GehoertSpalteZumBoard(verbindung, null, boardId, spalteId);
+        if (spalteGehoertNichtZumBoard)
+        {
+            return null; // stil-check: C25 null heisst "Spalte unbekannt oder fremd" (404)
+        }
+
+        return Kartenleser.LiesKartenEinerSpalte(verbindung, null, spalteId);
+    }
+
     // Die Uhr der WebApi, nicht UTC: „heute“ ist der Tag, den der Mensch vor dem Bildschirm meint.
     // Dieselbe Stelle wie bei der Stilllegung eines Kontributors.
     private static DateOnly Heute()
@@ -229,7 +243,7 @@ public sealed class KartenRepository : IKartenRepository
         }
     }
 
-    private static bool GehoertSpalteZumBoard(IDbConnection verbindung, IDbTransaction transaktion, long boardId, long spalteId)
+    private static bool GehoertSpalteZumBoard(IDbConnection verbindung, IDbTransaction? transaktion, long boardId, long spalteId)
     {
         var anzahl = verbindung.ExecuteScalar<long>(@"
             SELECT COUNT(*)

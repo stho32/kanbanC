@@ -24,6 +24,8 @@ public sealed class TestKartenRepository : IKartenRepository
 
     public bool WurdeVerschoben { get; private set; }
 
+    public bool WurdenKartenGelesen { get; private set; }
+
     public static TestKartenRepository Leer()
     {
         return new TestKartenRepository(spalteIstInzwischenVerschwunden: false);
@@ -65,6 +67,17 @@ public sealed class TestKartenRepository : IKartenRepository
         }
 
         return Ergebnis<IReadOnlyList<Spalte>>.Erfolg(_spaltenNachDemZug);
+    }
+
+    public IReadOnlyList<Karte>? LadeKartenDerSpalte(long boardId, long spalteId)
+    {
+        WurdenKartenGelesen = true;
+        if (!_kartenJeSpalte.TryGetValue(spalteId, out var karten))
+        {
+            return null;
+        }
+
+        return karten;
     }
 
     public long? BoardDerKarte(long karteId)
