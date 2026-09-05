@@ -7,7 +7,7 @@ namespace KanbanC.BL.Tests.Operations.Karten;
 
 public class KartenlageValidatorTests
 {
-    private static readonly Spalte InArbeit = new(7, "In Arbeit", 2, false, null, []);
+    private static readonly Spalte InArbeit = new(7, "In Arbeit", 2, false, null, [], Kartenzahl: 0);
 
     [Test]
     public void Wenn_die_Position_1_ist_dann_gibt_es_keinen_Befund()

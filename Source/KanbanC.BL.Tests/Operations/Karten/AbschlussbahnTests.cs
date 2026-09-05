@@ -108,7 +108,7 @@ public class AbschlussbahnTests
     [Test]
     public void Wenn_eine_Spalte_keine_Abschlussspalte_ist_dann_bleibt_sie_unveraendert()
     {
-        var arbeitsbahn = new Spalte(7, "In Arbeit", 2, false, 2, [Karte(3, null), Karte(1, null), Karte(2, null)]);
+        var arbeitsbahn = new Spalte(7, "In Arbeit", 2, false, 2, [Karte(3, null), Karte(1, null), Karte(2, null)], Kartenzahl: 3);
 
         var gekuerzt = Abschlussbahn.Gekuerzt([arbeitsbahn]);
 
@@ -119,7 +119,7 @@ public class AbschlussbahnTests
     [Test]
     public void Wenn_ein_Board_mehrere_Bahnen_hat_dann_wird_nur_die_Abschlussbahn_angefasst()
     {
-        var arbeitsbahn = new Spalte(1, "Zu erledigen", 1, false, null, [Karte(2, null), Karte(1, null)]);
+        var arbeitsbahn = new Spalte(1, "Zu erledigen", 1, false, null, [Karte(2, null), Karte(1, null)], Kartenzahl: 2);
         var abschlussbahn = Abschlussspalte(1, Karte(1, Gestern), Karte(2, Heute));
 
         var gekuerzt = Abschlussbahn.Gekuerzt([arbeitsbahn, abschlussbahn]);
@@ -131,9 +131,49 @@ public class AbschlussbahnTests
         });
     }
 
+    // Ohne diese Zusage waere die gekuerzte Liste eine stille Luege: 20 Karten ohne die Auskunft,
+    // dass es 23 sind.
+    [Test]
+    public void Wenn_eine_Abschlussbahn_gekuerzt_wird_dann_nennt_Kartenzahl_weiterhin_alle_Karten()
+    {
+        var spalten = new[] { Abschlussspalte(3, Karte(1, Heute), Karte(2, Heute), Karte(3, Heute), Karte(4, Heute)) };
+
+        var gekuerzt = Abschlussbahn.Gekuerzt(spalten);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(gekuerzt[0].Karten, Has.Count.EqualTo(3));
+            Assert.That(gekuerzt[0].Kartenzahl, Is.EqualTo(4));
+        });
+    }
+
+    [Test]
+    public void Wenn_eine_Abschlussbahn_nicht_gekuerzt_wird_dann_sind_Kartenzahl_und_Kartenliste_gleich_lang()
+    {
+        var spalten = new[] { Abschlussspalte(20, Karte(1, Heute), Karte(2, Gestern)) };
+
+        var gekuerzt = Abschlussbahn.Gekuerzt(spalten);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(gekuerzt[0].Karten, Has.Count.EqualTo(2));
+            Assert.That(gekuerzt[0].Kartenzahl, Is.EqualTo(2));
+        });
+    }
+
+    [Test]
+    public void Wenn_eine_Abschlussbahn_leer_ist_dann_steht_Kartenzahl_auf_null()
+    {
+        var spalten = new[] { Abschlussspalte(20) };
+
+        var gekuerzt = Abschlussbahn.Gekuerzt(spalten);
+
+        Assert.That(gekuerzt[0].Kartenzahl, Is.Zero);
+    }
+
     private static Spalte Abschlussspalte(int? anzeigegrenze, params Karte[] karten)
     {
-        return new Spalte(9, "Erledigt", 3, true, anzeigegrenze, karten);
+        return new Spalte(9, "Erledigt", 3, true, anzeigegrenze, karten, karten.Length);
     }
 
     private static Karte Karte(int position, DateOnly? erledigtAm)

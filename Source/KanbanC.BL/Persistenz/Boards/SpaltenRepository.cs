@@ -52,7 +52,7 @@ public sealed class SpaltenRepository : ISpaltenRepository
         {
             var spalteId = FuegeSpalteEin(verbindung, transaktion, boardId, bezeichnung, anfrage, position);
             transaktion.Commit();
-            return Ergebnis<Spalte>.Erfolg(new Spalte(spalteId, bezeichnung, position, anfrage.IstAbschlussspalte, anfrage.Anzeigegrenze, OhneKarten));
+            return Ergebnis<Spalte>.Erfolg(new Spalte(spalteId, bezeichnung, position, anfrage.IstAbschlussspalte, anfrage.Anzeigegrenze, OhneKarten, Kartenzahl: 0));
         }
         catch (SqliteException fehler) when (IstBezeichnungskonflikt(fehler))
         {
@@ -78,7 +78,7 @@ public sealed class SpaltenRepository : ISpaltenRepository
             var position = LiesPosition(verbindung, transaktion, spalteId);
             var karten = Kartenleser.LiesKartenEinerSpalte(verbindung, transaktion, spalteId);
             transaktion.Commit();
-            return Ergebnis<Spalte>.Erfolg(new Spalte(spalteId, bezeichnung, position, anfrage.IstAbschlussspalte, anfrage.Anzeigegrenze, karten));
+            return Ergebnis<Spalte>.Erfolg(new Spalte(spalteId, bezeichnung, position, anfrage.IstAbschlussspalte, anfrage.Anzeigegrenze, karten, karten.Count));
         }
         catch (SqliteException fehler) when (IstBezeichnungskonflikt(fehler))
         {

@@ -31,7 +31,7 @@ public sealed class BoardRepository : IBoardRepository
         foreach (var vorlage in standardspalten)
         {
             var spalteId = FuegeSpalteEin(verbindung, transaktion, boardId, vorlage);
-            spalten.Add(new Spalte(spalteId, vorlage.Bezeichnung, vorlage.Position, vorlage.IstAbschlussspalte, vorlage.Anzeigegrenze, OhneKarten));
+            spalten.Add(new Spalte(spalteId, vorlage.Bezeichnung, vorlage.Position, vorlage.IstAbschlussspalte, vorlage.Anzeigegrenze, OhneKarten, Kartenzahl: 0));
         }
 
         transaktion.Commit();

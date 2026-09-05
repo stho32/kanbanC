@@ -450,6 +450,21 @@ public class KartenRepositoryTests
         });
     }
 
+    [Test]
+    public void Wenn_das_Board_gelesen_wird_dann_nennt_jede_Spalte_die_Zahl_ihrer_Karten()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("A"));
+        repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("B"));
+        repository.LegeAn(board.BoardId, board.Spalten[1].SpalteId, new KarteAnlegenAnfrage("C"));
+
+        var geladen = new BoardRepository(datenbank.Verbindungsfabrik).Lade(board.BoardId)!;
+
+        Assert.That(geladen.Spalten.Select(spalte => spalte.Kartenzahl), Is.EqualTo(new[] { 2, 1, 0 }));
+    }
+
     private static string HeuteAlsText => DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
     private static void SetzeErledigung(TemporaereDatenbank datenbank, long karteId, string erledigtAm)

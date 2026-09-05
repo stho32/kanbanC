@@ -315,10 +315,10 @@ public class BoardEndpunkteTests
         });
     }
 
-    // Die angezeigte Zahl ist die Länge der gelieferten Kartenliste. Träte daneben ein Zählfeld,
-    // gäbe es einen zweiten Ort für dieselbe Wahrheit, der veralten könnte.
+    // Kartenzahl ist kein zweiter Ort für dieselbe Wahrheit, sondern für eine andere: karten kann
+    // gekürzt sein, kartenzahl nennt immer alle. Bei einer ungekürzten Bahn stimmen beide überein.
     [Test]
-    public async Task Wenn_ein_Board_mit_Karten_abgerufen_wird_dann_traegt_eine_Spalte_neben_ihren_Karten_keine_zweite_Zahl()
+    public async Task Wenn_ein_Board_mit_Karten_abgerufen_wird_dann_traegt_eine_ungekuerzte_Spalte_ebenso_viele_Karten_wie_ihre_Kartenzahl()
     {
         using var datenbank = new TemporaereDatenbank();
         using var webApi = new TestWebApi(datenbank.Dateipfad);
@@ -334,8 +334,9 @@ public class BoardEndpunkteTests
         Assert.Multiple(() =>
         {
             Assert.That(ersteSpalte.EnumerateObject().Select(feld => feld.Name),
-                Is.EqualTo(new[] { "spalteId", "bezeichnung", "position", "istAbschlussspalte", "anzeigegrenze", "karten" }));
+                Is.EqualTo(new[] { "spalteId", "bezeichnung", "position", "istAbschlussspalte", "anzeigegrenze", "karten", "kartenzahl" }));
             Assert.That(ersteSpalte.GetProperty("karten").GetArrayLength(), Is.EqualTo(2));
+            Assert.That(ersteSpalte.GetProperty("kartenzahl").GetInt32(), Is.EqualTo(2));
         });
     }
 

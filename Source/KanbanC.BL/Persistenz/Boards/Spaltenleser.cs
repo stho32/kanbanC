@@ -67,7 +67,7 @@ internal static class Spaltenleser
     private static Spalte AlsSpalte(Spaltenzeile zeile, IReadOnlyList<Karte> karten)
     {
         var istAbschlussspalte = zeile.IstAbschlussspalte != 0;
-        return new Spalte(zeile.SpalteId, zeile.Bezeichnung, (int)zeile.Position, istAbschlussspalte, (int?)zeile.Anzeigegrenze, karten);
+        return new Spalte(zeile.SpalteId, zeile.Bezeichnung, (int)zeile.Position, istAbschlussspalte, (int?)zeile.Anzeigegrenze, karten, karten.Count);
     }
 
     private sealed record Spaltenzeile(long SpalteId, string Bezeichnung, long Position, long IstAbschlussspalte, long? Anzeigegrenze);

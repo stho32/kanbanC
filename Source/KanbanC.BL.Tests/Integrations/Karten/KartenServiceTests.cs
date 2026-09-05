@@ -220,8 +220,8 @@ public class KartenServiceTests
         spaltenRepository.MitKarte(1, quellspalteId, 5, "Endpunkt bauen");
         var nachDemZug = new List<Spalte>
         {
-            new(quellspalteId, "Zu erledigen", 1, false, null, []),
-            new(zielspalteId, "In Arbeit", 2, false, null, [new Karte(5, "Endpunkt bauen", 1, ErledigtAm: null)]),
+            new(quellspalteId, "Zu erledigen", 1, false, null, [], Kartenzahl: 0),
+            new(zielspalteId, "In Arbeit", 2, false, null, [new Karte(5, "Endpunkt bauen", 1, ErledigtAm: null)], Kartenzahl: 1),
         };
         var kartenRepository = TestKartenRepository.Leer().MitSpaltenNachDemZug(nachDemZug);
         var service = new KartenService(spaltenRepository, kartenRepository);
