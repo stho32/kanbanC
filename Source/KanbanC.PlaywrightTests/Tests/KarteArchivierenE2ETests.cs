@@ -57,7 +57,7 @@ public class KarteArchivierenE2ETests : PageTest
         await Expect(seite.Kartenmenueschalter).ToHaveCountAsync(2);
         await Expect(seite.Kartenmenuelisten).ToHaveCountAsync(0);
         await seite.OeffneKartenmenue(seite.KarteMitTitel("C"));
-        await Expect(seite.MenuepunkteDerKarte(seite.KarteMitTitel("C"))).ToHaveTextAsync(["Archivieren"]);
+        await Expect(seite.MenuepunkteDerKarte(seite.KarteMitTitel("C"))).ToHaveTextAsync(["Details öffnen", "Archivieren"]);
     }
 
     // Der Zug bleibt, was er war: die neue Kopfzeile darf weder Kartenhaelften noch Einfuegelinie
@@ -101,7 +101,7 @@ public class KarteArchivierenE2ETests : PageTest
 
         await Expect(seite.Kartentitel).ToHaveTextAsync(["A", "B", "C"]);
         await seite.OeffneKartenmenue(seite.KarteMitTitel("B"));
-        await Expect(seite.MenuepunkteDerKarte(seite.KarteMitTitel("B"))).ToHaveTextAsync(["Archivieren"]);
+        await Expect(seite.MenuepunkteDerKarte(seite.KarteMitTitel("B"))).ToHaveTextAsync(["Details öffnen", "Archivieren"]);
     }
 
     // Die Karten der Abschlussbahn sind gewoehnliche Karten: eine Kopfzeile, die dort fehlte,

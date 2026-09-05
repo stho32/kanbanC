@@ -20,15 +20,15 @@ public class KartenmenueE2ETests : PageTest
 
     [Test]
     [Category("US-1")]
-    public async Task Wenn_der_Menueschalter_angeklickt_wird_dann_klappt_ein_Menue_mit_Archivieren_und_Erlaeuterung_auf()
+    public async Task Wenn_der_Menueschalter_angeklickt_wird_dann_klappt_ein_Menue_mit_zwei_Eintraegen_und_ihren_Erlaeuterungen_auf()
     {
         var seite = await BoardMitDreiKarten();
         var b = seite.KarteMitTitel("B");
 
         await seite.OeffneKartenmenue(b);
 
-        await Expect(seite.MenuepunkteDerKarte(b)).ToHaveTextAsync(["Archivieren"]);
-        await Expect(seite.MenuehinweisDerKarte(b)).ToHaveTextAsync("verschwindet vom Board, bleibt über API und Archiv auffindbar");
+        await Expect(seite.MenuepunkteDerKarte(b)).ToHaveTextAsync(["Details öffnen", "Archivieren"]);
+        await Expect(seite.MenuehinweisDerKarte(b)).ToHaveTextAsync(["Titel, Beschreibung, Verantwortlicher, Fälligkeit, Farbe und Etiketten", "verschwindet vom Board, bleibt über API und Archiv auffindbar"]);
     }
 
     [Test]

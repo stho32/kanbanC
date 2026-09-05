@@ -12,6 +12,13 @@
             @if (_menueIstOffen)
             {
                 <div class="kartenmenueliste">
+                    @* Derselbe Weg wie der Titelverweis, nur benannt. Er steht vor dem
+                       Archivieren, weil Ansehen die haeufigere Handlung ist. *@
+                    <a class="kartenmenuepunkt kartenmenuepunkt-details" href="/karten/@Kartendaten.KarteId">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"></path><path d="M4 12h10"></path><path d="M4 18h7"></path><path d="m15 15 5 5m0-5-5 5"></path></svg>
+                        Details öffnen
+                    </a>
+                    <span class="kartenmenuehinweis">Titel, Beschreibung, Verantwortlicher, Fälligkeit, Farbe und Etiketten</span>
                     <button type="button" class="kartenmenuepunkt kartenmenuepunkt-archivieren" @onclick="Archiviere">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="4" rx="1.5"></rect><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"></path><path d="M10 12h4"></path></svg>
                         Archivieren
@@ -21,7 +28,10 @@
             }
         </div>
     </div>
-    <p class="karte-titel">@Kartendaten.Titel</p>
+    @* Der zweite Weg auf die Kartenseite. Ein Klick bewegt die Maus nicht und beginnt deshalb
+       keinen Zug (KindZiehbarkeitProbeE2ETests); wird am Titel gezogen, zieht die Karte weiter
+       als Ganzes — belegt in VerweisInZiehbarerKarteProbeE2ETests. *@
+    <a class="karte-titel" href="/karten/@Kartendaten.KarteId">@Kartendaten.Titel</a>
     @if (NimmtAn)
     {
         <div class="kartenhaelfte kartenhaelfte-oben"

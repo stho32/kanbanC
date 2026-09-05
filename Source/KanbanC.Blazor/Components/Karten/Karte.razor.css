@@ -9,12 +9,29 @@
     box-shadow: var(--shadow-sm);
 }
 
+/* Der Titel ist der Weg auf die Kartenseite. Als Verweis traegt er die Grundfarbe weiter —
+   ein blauer Link stuende quer zum Klima — und zeigt seine Klickbarkeit ueber die
+   Unterstreichung in Akzentfarbe. */
 .karte-titel {
+    display: block;
     margin: 0;
     font-size: 13px;
     line-height: 1.35;
     text-wrap: pretty;
     overflow-wrap: anywhere;
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--color-accent) 50%, transparent);
+    text-underline-offset: 3px;
+}
+
+.karte-titel:hover {
+    text-decoration-color: var(--color-accent);
+}
+
+/* Der Menuepunkt ist einmal ein Verweis und einmal ein Schalter; beide sehen gleich aus. */
+.kartenmenuepunkt {
+    text-decoration: none;
 }
 
 .karte[draggable="true"] {

@@ -304,6 +304,31 @@ public sealed class BoardSeite
 
     public ILocator GezogeneKarten => _seite.Locator("#spaltenbahnen .karte-wird-gezogen");
 
+    public ILocator TitelverweisDerKarte(ILocator karte)
+    {
+        return karte.Locator(".karte-titel");
+    }
+
+    public ILocator DetailpunktDerKarte(ILocator karte)
+    {
+        return karte.Locator(".kartenmenuepunkt-details");
+    }
+
+    // Druecken und ziehen am Titelverweis statt zu klicken: nur so wird sichtbar, wie sich ein
+    // <a> als Kind einer ziehbaren Karte verhaelt (VerweisInZiehbarerKarteProbeE2ETests).
+    public async Task ZieheAmTitelverweis(ILocator karte)
+    {
+        var kasten = await TitelverweisDerKarte(karte).BoundingBoxAsync();
+        if (kasten is null)
+        {
+            throw new InvalidOperationException("Der Titelverweis der Karte ist nicht sichtbar.");
+        }
+
+        await _seite.Mouse.MoveAsync(kasten.X + kasten.Width / 2, kasten.Y + kasten.Height / 2);
+        await _seite.Mouse.DownAsync();
+        await _seite.Mouse.MoveAsync(kasten.X + kasten.Width / 2, kasten.Y + kasten.Height / 2 + 24, new MouseMoveOptions { Steps = 5 });
+    }
+
     public ILocator KarteMitTitel(string titel)
     {
         return _seite.Locator("#spaltenbahnen .karte").Filter(new LocatorFilterOptions { HasText = titel });
