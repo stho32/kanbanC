@@ -1,8 +1,10 @@
 using System.Data;
+using System.Globalization;
 using Dapper;
 using KanbanC.BL.Interfaces.Karten;
 using KanbanC.BL.Interfaces.Persistenz;
 using KanbanC.BL.Models;
+using KanbanC.BL.Models.Karten;
 using KanbanC.BL.Operations.Karten;
 using KanbanC.BL.Persistenz.Boards;
 using KanbanC.Contracts.Boards;
@@ -13,6 +15,7 @@ namespace KanbanC.BL.Persistenz.Karten;
 
 public sealed class KartenRepository : IKartenRepository
 {
+    private const string IsoDatumsformat = "yyyy-MM-dd";
     private readonly IDatenbankVerbindungsfabrik _verbindungsfabrik;
 
     public KartenRepository(IDatenbankVerbindungsfabrik verbindungsfabrik)
@@ -34,6 +37,11 @@ public sealed class KartenRepository : IKartenRepository
         var titel = Kartentitel.Normalisiert(anfrage.Titel);
         var position = NaechstePosition(verbindung, transaktion, spalteId);
         var karteId = FuegeKarteEin(verbindung, transaktion, spalteId, titel, position);
+
+        // Eine Karte, die direkt in der Abschlussspalte entsteht, ist mit ihrer Anlage erledigt.
+        var spalteIstAbschlussspalte = IstAbschlussspalte(verbindung, transaktion, spalteId);
+        var anlage = Erledigungsstand.NachDemZug(spalteIstAbschlussspalte, derZugBleibtInDerZielspalte: false, bisherigeErledigung: null, heute: Heute());
+        SchreibeErledigung(verbindung, transaktion, karteId, anlage);
         transaktion.Commit();
         return new Karte(karteId, titel, position);
     }
@@ -72,6 +80,12 @@ public sealed class KartenRepository : IKartenRepository
         SchreibeOrdnung(verbindung, transaktion, quellspalteId.Value, quellordnung);
         SchreibeOrdnung(verbindung, transaktion, lage.SpalteId, zielordnung);
 
+        var zielspalteIstAbschlussspalte = IstAbschlussspalte(verbindung, transaktion, lage.SpalteId);
+        var derZugBleibtInDerZielspalte = lage.SpalteId == quellspalteId.Value;
+        var bisherigeErledigung = LiesErledigung(verbindung, transaktion, karteId);
+        var aenderung = Erledigungsstand.NachDemZug(zielspalteIstAbschlussspalte, derZugBleibtInDerZielspalte, bisherigeErledigung, Heute());
+        SchreibeErledigung(verbindung, transaktion, karteId, aenderung);
+
         var kartenJeSpalte = Kartenleser.LiesKartenNachPosition(verbindung, transaktion, boardId);
         var spalten = Spaltenleser.LiesSpaltenNachPosition(verbindung, transaktion, boardId, kartenJeSpalte);
         transaktion.Commit();
@@ -86,6 +100,72 @@ public sealed class KartenRepository : IKartenRepository
               FROM Karte k
               JOIN Spalte s ON s.SpalteId = k.Spalte
              WHERE k.KarteId = @KarteId", new { KarteId = karteId });
+    }
+
+    // Die Uhr der WebApi, nicht UTC: „heute“ ist der Tag, den der Mensch vor dem Bildschirm meint.
+    // Dieselbe Stelle wie bei der Stilllegung eines Kontributors.
+    private static DateOnly Heute()
+    {
+        return DateOnly.FromDateTime(DateTime.Today);
+    }
+
+    private static void SchreibeErledigung(IDbConnection verbindung, IDbTransaction transaktion, long karteId, Erledigungsaenderung aenderung)
+    {
+        switch (aenderung.Art)
+        {
+            case Erledigungsart.Unveraendert:
+                return;
+            case Erledigungsart.Setzen:
+                SetzeErledigung(verbindung, transaktion, karteId, aenderung.Datum!.Value);
+                return;
+            case Erledigungsart.Loeschen:
+                LoescheErledigung(verbindung, transaktion, karteId);
+                return;
+            default:
+                throw new InvalidOperationException($"Die Erledigungsaenderung {aenderung.Art} ist nicht behandelt.");
+        }
+    }
+
+    // Das Datum geht als ISO-Text durch die Spalte: Dapper nimmt ein DateOnly nicht als
+    // Parameterwert an (belegt in SqliteEigenschaftenTests).
+    private static void SetzeErledigung(IDbConnection verbindung, IDbTransaction transaktion, long karteId, DateOnly erledigtAm)
+    {
+        var parameter = new { Karte = karteId, ErledigtAm = erledigtAm.ToString(IsoDatumsformat, CultureInfo.InvariantCulture) };
+        verbindung.Execute(@"
+            INSERT INTO Karteerledigung (Karte, ErledigtAm)
+            VALUES (@Karte, @ErledigtAm)
+            ON CONFLICT (Karte) DO UPDATE SET ErledigtAm = excluded.ErledigtAm", parameter, transaktion);
+    }
+
+    private static void LoescheErledigung(IDbConnection verbindung, IDbTransaction transaktion, long karteId)
+    {
+        verbindung.Execute(@"
+            DELETE
+              FROM Karteerledigung
+             WHERE Karte = @Karte", new { Karte = karteId }, transaktion);
+    }
+
+    private static DateOnly? LiesErledigung(IDbConnection verbindung, IDbTransaction transaktion, long karteId)
+    {
+        var isoText = verbindung.QuerySingleOrDefault<string?>(@"
+            SELECT ErledigtAm
+              FROM Karteerledigung
+             WHERE Karte = @Karte", new { Karte = karteId }, transaktion);
+        if (isoText is null)
+        {
+            return null;
+        }
+
+        return DateOnly.ParseExact(isoText, IsoDatumsformat, CultureInfo.InvariantCulture);
+    }
+
+    private static bool IstAbschlussspalte(IDbConnection verbindung, IDbTransaction transaktion, long spalteId)
+    {
+        var markierung = verbindung.ExecuteScalar<long>(@"
+            SELECT IstAbschlussspalte
+              FROM Spalte
+             WHERE SpalteId = @SpalteId", new { SpalteId = spalteId }, transaktion);
+        return markierung != 0;
     }
 
     private static Pruefbefunde BestandHatSichGeaendert(long boardId)

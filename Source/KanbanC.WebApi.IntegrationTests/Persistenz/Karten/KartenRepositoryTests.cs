@@ -1,3 +1,5 @@
+using System.Globalization;
+using Dapper;
 using KanbanC.BL.Operations.Boards;
 using KanbanC.BL.Persistenz.Boards;
 using KanbanC.BL.Persistenz.Karten;
@@ -276,6 +278,153 @@ public class KartenRepositoryTests
             Assert.That(repository.BoardDerKarte(karte.KarteId), Is.EqualTo(erstes.BoardId));
             Assert.That(repository.BoardDerKarte(999), Is.Null);
         });
+    }
+
+    [Test]
+    public void Wenn_eine_Karte_in_die_Abschlussspalte_gezogen_wird_dann_steht_das_heutige_Datum_in_Karteerledigung()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Migration schreiben"))!;
+        Assert.That(Erledigungszeilen(datenbank), Is.Empty);
+
+        repository.Verschiebe(board.BoardId, karte.KarteId, new Kartenlage(board.Spalten[2].SpalteId, 1));
+
+        Assert.That(Erledigungszeilen(datenbank), Is.EqualTo(new[] { (karte.KarteId, HeuteAlsText) }));
+    }
+
+    [Test]
+    public void Wenn_eine_erledigte_Karte_innerhalb_der_Abschlussspalte_gezogen_wird_dann_bleibt_ihr_Datum_stehen()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var abschlussspalteId = board.Spalten[2].SpalteId;
+        var erste = repository.LegeAn(board.BoardId, abschlussspalteId, new KarteAnlegenAnfrage("Am ersten September fertig"))!;
+        repository.LegeAn(board.BoardId, abschlussspalteId, new KarteAnlegenAnfrage("Heute fertig"));
+        SetzeErledigung(datenbank, erste.KarteId, "2026-09-01");
+
+        repository.Verschiebe(board.BoardId, erste.KarteId, new Kartenlage(abschlussspalteId, 2));
+
+        Assert.That(Erledigung(datenbank, erste.KarteId), Is.EqualTo("2026-09-01"));
+    }
+
+    [Test]
+    public void Wenn_eine_erledigte_Karte_die_Abschlussspalte_verlaesst_dann_steht_keine_Zeile_mehr_fuer_sie_da()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[2].SpalteId, new KarteAnlegenAnfrage("Doch nicht fertig"))!;
+        Assert.That(Erledigungszeilen(datenbank), Has.Length.EqualTo(1));
+
+        repository.Verschiebe(board.BoardId, karte.KarteId, new Kartenlage(board.Spalten[1].SpalteId, 1));
+
+        Assert.That(Erledigungszeilen(datenbank), Is.Empty);
+    }
+
+    [Test]
+    public void Wenn_eine_zurueckgeholte_Karte_erneut_abgelegt_wird_dann_traegt_sie_das_heutige_statt_des_frueheren_Datums()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var abschlussspalteId = board.Spalten[2].SpalteId;
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Wieder aufgemacht"))!;
+        repository.Verschiebe(board.BoardId, karte.KarteId, new Kartenlage(abschlussspalteId, 1));
+        SetzeErledigung(datenbank, karte.KarteId, "2026-09-01");
+        repository.Verschiebe(board.BoardId, karte.KarteId, new Kartenlage(board.Spalten[1].SpalteId, 1));
+
+        repository.Verschiebe(board.BoardId, karte.KarteId, new Kartenlage(abschlussspalteId, 1));
+
+        Assert.That(Erledigung(datenbank, karte.KarteId), Is.EqualTo(HeuteAlsText));
+    }
+
+    [Test]
+    public void Wenn_eine_Karte_direkt_in_der_Abschlussspalte_angelegt_wird_dann_ist_sie_sofort_erledigt()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[2].SpalteId, new KarteAnlegenAnfrage("Sofort fertig"))!;
+
+        Assert.That(Erledigungszeilen(datenbank), Is.EqualTo(new[] { (karte.KarteId, HeuteAlsText) }));
+    }
+
+    [Test]
+    public void Wenn_eine_Karte_in_einer_Arbeitsbahn_angelegt_wird_dann_traegt_sie_kein_Erledigungsdatum()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+
+        repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Noch offen"));
+
+        Assert.That(Erledigungszeilen(datenbank), Is.Empty);
+    }
+
+    // Die Erledigung haengt in derselben Transaktion wie die Ordnung: wird der Zug wegen einer
+    // unmoeglichen Position zurueckgewiesen, darf auch kein Datum stehenbleiben.
+    [Test]
+    public void Wenn_ein_Zug_wegen_unmoeglicher_Position_zurueckgewiesen_wird_dann_ist_kein_Datum_geschrieben()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Migration schreiben"))!;
+
+        var ergebnis = repository.Verschiebe(board.BoardId, karte.KarteId, new Kartenlage(board.Spalten[2].SpalteId, 99));
+
+        Assert.That(ergebnis!.IstErfolg, Is.False);
+        Assert.That(Erledigungszeilen(datenbank), Is.Empty);
+    }
+
+    [Test]
+    public void Wenn_ein_Zug_eine_erledigte_Karte_zurueckweist_dann_bleibt_ihr_Datum_unveraendert()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[2].SpalteId, new KarteAnlegenAnfrage("Fertig"))!;
+        SetzeErledigung(datenbank, karte.KarteId, "2026-09-01");
+
+        var ergebnis = repository.Verschiebe(board.BoardId, karte.KarteId, new Kartenlage(board.Spalten[1].SpalteId, 99));
+
+        Assert.That(ergebnis!.IstErfolg, Is.False);
+        Assert.That(Erledigung(datenbank, karte.KarteId), Is.EqualTo("2026-09-01"));
+    }
+
+    private static string HeuteAlsText => DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+    private static void SetzeErledigung(TemporaereDatenbank datenbank, long karteId, string erledigtAm)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Karteerledigung (Karte, ErledigtAm)
+            VALUES (@Karte, @ErledigtAm)
+            ON CONFLICT (Karte) DO UPDATE SET ErledigtAm = excluded.ErledigtAm",
+            new { Karte = karteId, ErledigtAm = erledigtAm });
+    }
+
+    private static string? Erledigung(TemporaereDatenbank datenbank, long karteId)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.QuerySingleOrDefault<string?>(@"
+            SELECT ErledigtAm
+              FROM Karteerledigung
+             WHERE Karte = @Karte", new { Karte = karteId });
+    }
+
+    private static (long Karte, string ErledigtAm)[] Erledigungszeilen(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        var zeilen = verbindung.Query<(long Karte, string ErledigtAm)>(@"
+            SELECT Karte, ErledigtAm
+              FROM Karteerledigung
+             ORDER BY Karte");
+        return zeilen.ToArray();
     }
 
     private static IReadOnlyList<int> GeladenePositionen(TemporaereDatenbank datenbank, long boardId, int spaltenstelle)
