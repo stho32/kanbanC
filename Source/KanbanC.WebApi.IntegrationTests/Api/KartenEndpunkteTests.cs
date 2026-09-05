@@ -1290,6 +1290,119 @@ public class KartenEndpunkteTests
         });
     }
 
+    [Test]
+    public async Task Wenn_PUT_etiketten_eine_Liste_setzt_dann_ist_sie_danach_exakt_die_Liste_der_Karte()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Migration schreiben");
+        await SetzeEtiketten(webApi, karte.KarteId, ["Import", "Doku"]);
+
+        var detail = await SetzeEtiketten(webApi, karte.KarteId, ["Doku", "Refactoring"]);
+
+        Assert.That(detail.Etiketten, Is.EqualTo(new[] { "Doku", "Refactoring" }));
+    }
+
+    [Test]
+    public async Task Wenn_PUT_etiketten_eine_leere_Liste_setzt_dann_traegt_die_Karte_danach_keine_Etiketten()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Migration schreiben");
+        await SetzeEtiketten(webApi, karte.KarteId, ["Import"]);
+
+        var detail = await SetzeEtiketten(webApi, karte.KarteId, []);
+
+        Assert.That(detail.Etiketten, Is.Empty);
+    }
+
+    // US-3: die Etiketten haengen am Kartendetail und nicht an der Karte — die Boardantwort
+    // bleibt unveraendert.
+    [Test]
+    public async Task Wenn_eine_Karte_Etiketten_traegt_dann_bekommt_die_Boardantwort_keine_Etikettenliste()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Migration schreiben");
+        await SetzeEtiketten(webApi, karte.KarteId, ["Import"]);
+
+        var rumpf = await webApi.Klient.GetStringAsync($"{BoardsRoute}/{board.BoardId}");
+
+        Assert.That(rumpf, Does.Not.Contain("etiketten"));
+        Assert.That(rumpf, Does.Not.Contain("Import"));
+    }
+
+    [Test]
+    public async Task Wenn_ein_Etikett_leer_ist_dann_antwortet_PUT_etiketten_mit_400_und_Befund_und_speichert_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Migration schreiben");
+        await SetzeEtiketten(webApi, karte.KarteId, ["Import"]);
+
+        using var antwort = await webApi.Klient.PutAsJsonAsync(Etikettenroute(karte.KarteId), new Kartenetiketten(["Import", "  "]));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "etikett-leer");
+        using var danach = await webApi.Klient.GetAsync(Kartendetailroute(karte.KarteId));
+        var detail = await danach.Content.ReadFromJsonAsync<Kartendetail>();
+        Assert.That(detail!.Etiketten, Is.EqualTo(new[] { "Import" }));
+    }
+
+    [Test]
+    public async Task Wenn_ein_Etikett_doppelt_uebergeben_wird_dann_antwortet_PUT_etiketten_mit_400_und_Befund()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Migration schreiben");
+
+        using var antwort = await webApi.Klient.PutAsJsonAsync(Etikettenroute(karte.KarteId), new Kartenetiketten(["Import", " Import "]));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "etikett-doppelt");
+    }
+
+    [Test]
+    public async Task Wenn_die_KarteId_unbekannt_ist_dann_antwortet_PUT_etiketten_mit_404_und_einem_Befund_ohne_Board()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        await LegeBoardAn(webApi);
+
+        using var antwort = await webApi.Klient.PutAsJsonAsync(Etikettenroute(9999), new Kartenetiketten(["Import"]));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Etiketten setzen mit unbekannter KarteId");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("karte-unbekannt"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Not.Contain("Board"));
+        });
+    }
+
+    private static string Etikettenroute(long karteId)
+    {
+        return $"/api/karten/{karteId}/etiketten";
+    }
+
+    private static async Task<Kartendetail> SetzeEtiketten(TestWebApi webApi, long karteId, IReadOnlyList<string> etiketten)
+    {
+        using var antwort = await webApi.Klient.PutAsJsonAsync(Etikettenroute(karteId), new Kartenetiketten(etiketten));
+        antwort.EnsureSuccessStatusCode();
+        var detail = await antwort.Content.ReadFromJsonAsync<Kartendetail>();
+        if (detail is null)
+        {
+            throw new InvalidOperationException("Die API hat kein Kartendetail zurückgegeben.");
+        }
+
+        return detail;
+    }
+
     private static async Task<Kontributor> LegeKontributorAn(TestWebApi webApi, string name, Kontributorart art)
     {
         var antwort = await webApi.Klient.PostAsJsonAsync("/api/kontributoren", new KontributorAnlegenAnfrage(name, art));

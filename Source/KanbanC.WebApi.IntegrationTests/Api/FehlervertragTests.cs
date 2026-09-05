@@ -232,6 +232,16 @@ public class FehlervertragTests
             "Karte ändern mit unbekannter KontributorId",
             await webApi.Klient.PutAsJsonAsync($"/api/karten/{aufbau.Karte.KarteId}", new KarteAendernAnfrage("Migration schreiben", null, null, Kartenfarbe.Ohne, Kontributor: 999))));
 
+        faelle.Add(new Fehlerfall(
+            "PUT /api/karten/{karteId:long}/etiketten",
+            "Etiketten setzen mit einem leeren Text",
+            await webApi.Klient.PutAsJsonAsync($"/api/karten/{aufbau.Karte.KarteId}/etiketten", new Kartenetiketten(["  "]))));
+
+        faelle.Add(new Fehlerfall(
+            "PUT /api/karten/{karteId:long}/etiketten",
+            "Etiketten setzen mit unbekannter KarteId",
+            await webApi.Klient.PutAsJsonAsync("/api/karten/999/etiketten", new Kartenetiketten(["Import"]))));
+
         return faelle;
     }
 

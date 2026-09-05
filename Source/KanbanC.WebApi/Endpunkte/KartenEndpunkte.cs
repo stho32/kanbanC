@@ -24,10 +24,14 @@ public static class KartenEndpunkte
     // dem Board bleiben unveraendert.
     private const string Kartenroute = "/api/karten/{karteId:long}";
 
+    // Unterressource derselben Kartenadresse wie die Lage und die Archivierung — hier ohne Board.
+    private const string Etikettenroute = "/api/karten/{karteId:long}/etiketten";
+
     public static void Registriere(IEndpointRouteBuilder routen)
     {
         routen.MapGet(Kartenroute, LiesKartendetail).WithName("KartendetailLesen");
         routen.MapPut(Kartenroute, AendereKarte).WithName("KarteAendern");
+        routen.MapPut(Etikettenroute, SetzeEtiketten).WithName("KartenetikettenSetzen");
         routen.MapGet(Basisroute, LiesKartenDerSpalte).WithName("KartenDerSpalteLesen");
         routen.MapPost(Basisroute, LegeKarteAn).WithName("KarteAnlegen");
         routen.MapPut(Lageroute, VerschiebeKarte).WithName("KarteVerschieben");
@@ -50,6 +54,19 @@ public static class KartenEndpunkte
     private static IResult AendereKarte(long karteId, KarteAendernAnfrage anfrage, KartenService kartenService)
     {
         var ergebnis = kartenService.AendereKarte(karteId, anfrage);
+        if (ergebnis.IstErfolg)
+        {
+            return Results.Ok(ergebnis.Wert);
+        }
+
+        return Zurueckweisungen.AlsFehlerantwort(ergebnis.Befunde);
+    }
+
+    // Dieselbe Antwortgestalt wie das Aendern: die Seite behaelt eine Quelle. Gesetzt wird die
+    // ganze Liste — eine leere nimmt der Karte alle Etiketten.
+    private static IResult SetzeEtiketten(long karteId, Kartenetiketten etiketten, KartenService kartenService)
+    {
+        var ergebnis = kartenService.SetzeEtiketten(karteId, etiketten);
         if (ergebnis.IstErfolg)
         {
             return Results.Ok(ergebnis.Wert);

@@ -95,6 +95,41 @@ public class WebApiNeustartTests
     }
 
     [Test]
+    public async Task Wenn_die_WebApi_nach_dem_Setzen_von_Verantwortlichem_und_Etiketten_neu_startet_dann_stehen_beide_unveraendert_da()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        long karteId;
+        long kontributorId;
+        using (var ersteInstanz = new TestWebApi(datenbank.Dateipfad))
+        {
+            var board = await LegeBoardAn(ersteInstanz, new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null));
+            var karte = await LegeKarteAn(ersteInstanz, board.BoardId, board.Spalten[0].SpalteId, "Migration schreiben");
+            karteId = karte.KarteId;
+            var eingetragen = await ersteInstanz.Klient.PostAsJsonAsync(KontributorenRoute, new KontributorAnlegenAnfrage("Claude-Agent", Kontributorart.Agent));
+            eingetragen.EnsureSuccessStatusCode();
+            var kontributor = await eingetragen.Content.ReadFromJsonAsync<Kontributor>();
+            kontributorId = kontributor!.KontributorId;
+            var geaendert = await ersteInstanz.Klient.PutAsJsonAsync(
+                $"/api/karten/{karteId}",
+                new KarteAendernAnfrage("Migration schreiben", null, null, Kartenfarbe.Ohne, kontributorId));
+            geaendert.EnsureSuccessStatusCode();
+            var etikettiert = await ersteInstanz.Klient.PutAsJsonAsync($"/api/karten/{karteId}/etiketten", new Kartenetiketten(["Import", "Doku"]));
+            etikettiert.EnsureSuccessStatusCode();
+        }
+
+        using var zweiteInstanz = new TestWebApi(datenbank.Dateipfad);
+
+        var detail = await zweiteInstanz.Klient.GetFromJsonAsync<Kartendetail>($"/api/karten/{karteId}");
+        Assert.That(detail, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail!.Verantwortlicher!.KontributorId, Is.EqualTo(kontributorId));
+            Assert.That(detail.Verantwortlicher.Name, Is.EqualTo("Claude-Agent"));
+            Assert.That(detail.Etiketten, Is.EqualTo(new[] { "Doku", "Import" }));
+        });
+    }
+
+    [Test]
     public async Task Wenn_die_WebApi_nach_dem_Einschalten_der_Kartenzahl_neu_startet_dann_steht_die_Einstellung_unveraendert_da()
     {
         using var datenbank = new TemporaereDatenbank();
