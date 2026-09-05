@@ -84,6 +84,18 @@ public sealed class WebApiKlient : IDisposable
         return karte;
     }
 
+    // Der Weg, auf dem ein Agent die ganze Bahn liest, waehrend die Oberflaeche kuerzt.
+    public async Task<IReadOnlyList<Karte>> LadeKartenDerSpalte(long boardId, long spalteId)
+    {
+        var karten = await _klient.GetFromJsonAsync<List<Karte>>($"{BoardsRoute}/{boardId}/spalten/{spalteId}/karten");
+        if (karten is null)
+        {
+            throw new InvalidOperationException("Die WebApi hat keine Kartenliste zurückgegeben.");
+        }
+
+        return karten;
+    }
+
     public async Task<IReadOnlyList<Spalte>> VerschiebeKarte(long boardId, long karteId, Kartenlage lage)
     {
         var antwort = await _klient.PutAsJsonAsync($"{BoardsRoute}/{boardId}/karten/{karteId}/lage", lage);

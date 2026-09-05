@@ -65,6 +65,81 @@ public class AeltereNachladenE2ETests : PageTest
         await Expect(seite.Kartenzahlstellen).ToHaveTextAsync(["0", "0", "23"]);
     }
 
+    // Die zweite Haelfte des Fertig-Kriteriums: waehrend die Oberflaeche 20 Karten zeigt, liest
+    // ein Agent dieselbe Bahn auf ihrer eigenen Adresse vollstaendig.
+    [Test]
+    [Category("US-4")]
+    public async Task Wenn_die_Oberflaeche_kuerzt_dann_liest_der_Agent_dieselbe_Spalte_ueber_die_API_vollstaendig()
+    {
+        var seite = await BoardMitErledigtenKarten(heute: 3, gestern: 20);
+        var erledigt = seite.SpaltenbahnAnStelle(2);
+        await Expect(seite.KartentitelDerBahn(erledigt)).ToHaveCountAsync(Anzeigegrenze);
+
+        using var webApi = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        var board = await webApi.LadeBoard(1);
+        var abschlussspalte = board.Spalten[2];
+        var alleKarten = await webApi.LadeKartenDerSpalte(1, abschlussspalte.SpalteId);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(abschlussspalte.Karten, Has.Count.EqualTo(Anzeigegrenze));
+            Assert.That(abschlussspalte.Kartenzahl, Is.EqualTo(23));
+            Assert.That(alleKarten, Has.Count.EqualTo(23));
+            Assert.That(alleKarten.Count(karte => karte.ErledigtAm is not null), Is.EqualTo(23));
+        });
+    }
+
+    [Test]
+    [Category("US-3")]
+    public async Task Wenn_die_Seite_nach_dem_Nachladen_neu_geladen_wird_dann_ist_die_Bahn_wieder_gekuerzt()
+    {
+        var seite = await BoardMitErledigtenKarten(heute: 3, gestern: 20);
+        var erledigt = seite.SpaltenbahnAnStelle(2);
+        await seite.LadeAeltereNach(erledigt);
+        await Expect(seite.KartentitelDerBahn(erledigt)).ToHaveCountAsync(23);
+
+        await seite.LadeNeu();
+
+        await seite.ErwarteGeoeffnet();
+        await Expect(seite.KartentitelDerBahn(seite.SpaltenbahnAnStelle(2))).ToHaveCountAsync(Anzeigegrenze);
+        await Expect(seite.NachladeKnoepfe).ToHaveCountAsync(1);
+    }
+
+    // Ein Board-Abruf setzt die Bahn ebenfalls zurueck: das Nachladen ist eine Handlung.
+    [Test]
+    [Category("US-3")]
+    public async Task Wenn_nach_dem_Nachladen_eine_Karte_angelegt_wird_dann_ist_die_Bahn_wieder_gekuerzt()
+    {
+        var seite = await BoardMitErledigtenKarten(heute: 3, gestern: 20);
+        var erledigt = seite.SpaltenbahnAnStelle(2);
+        await seite.LadeAeltereNach(erledigt);
+        await Expect(seite.KartentitelDerBahn(erledigt)).ToHaveCountAsync(23);
+
+        var rueckstand = seite.SpaltenbahnAnStelle(0);
+        await seite.OeffneKartenanlage(rueckstand);
+        await seite.LegeKarteAn(rueckstand, "Noch offen");
+
+        await Expect(seite.KartentitelDerBahn(rueckstand)).ToHaveTextAsync(["Noch offen"]);
+        await Expect(seite.KartentitelDerBahn(erledigt)).ToHaveCountAsync(Anzeigegrenze);
+        await Expect(seite.NachladeKnoepfe).ToHaveCountAsync(1);
+    }
+
+    [Test]
+    [Category("US-3")]
+    public async Task Wenn_die_WebApi_beim_Nachladen_nicht_erreichbar_ist_dann_erscheint_eine_lesbare_Ausfallmeldung()
+    {
+        var seite = await BoardMitErledigtenKarten(heute: 3, gestern: 20);
+        var erledigt = seite.SpaltenbahnAnStelle(2);
+
+        Testumgebung.Aktuelle.HalteWebApiAn();
+        await seite.LadeAeltereNach(erledigt);
+
+        await Expect(seite.NachladeFehlermeldungen).ToHaveCountAsync(1);
+        await Expect(seite.Ausnahmeanzeige).ToBeHiddenAsync();
+        await Expect(seite.KartentitelDerBahn(erledigt)).ToHaveCountAsync(Anzeigegrenze);
+        await Expect(seite.NachladeKnoepfe).ToHaveCountAsync(1);
+    }
+
     private async Task<BoardSeite> BoardMitErledigtenKarten(int heute, int gestern)
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
