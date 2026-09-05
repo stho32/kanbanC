@@ -188,3 +188,4 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-05 | R00015 Erledigte Karten gebündelt sehen | B0185 Erledigungsregel | Standard | 0,4h | 0,0h | 0,0h | autonom |
 | 2026-09-05 | R00015 Erledigte Karten gebündelt sehen | B0186 Erledigung schreiben und löschen | Standard | 2h | 0,0h | 0,0h | autonom |
 | 2026-09-05 | R00015 Erledigte Karten gebündelt sehen | B0187 Erledigungsdatum reist mit der Karte | Standard | 0,4-1,5h | 0,0h | 0,0h | autonom |
+| 2026-09-05 | R00015 Erledigte Karten gebündelt sehen | B0188 Erledigung über die API | Standard | 0,4h | 0,0h | 0,0h | autonom |

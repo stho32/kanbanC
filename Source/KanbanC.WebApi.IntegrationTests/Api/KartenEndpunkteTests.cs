@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using Dapper;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Fehler;
 using KanbanC.Contracts.Karten;
@@ -224,6 +225,150 @@ public class KartenEndpunkteTests
 
         var geladen = await LadeBoard(webApi, board.BoardId);
         Assert.That(geladen.Spalten[1].Karten, Is.EqualTo(new[] { karte }));
+    }
+
+    [Test]
+    public async Task Wenn_eine_Karte_per_PUT_in_die_Abschlussspalte_zieht_dann_liefert_GET_auf_das_Board_das_heutige_erledigtAm()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Migration schreiben");
+        Assert.That((await LadeBoard(webApi, board.BoardId)).Spalten[0].Karten[0].ErledigtAm, Is.Null);
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Lageroute(board.BoardId, karte.KarteId), new Kartenlage(board.Spalten[2].SpalteId, 1));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var geladen = await LadeBoard(webApi, board.BoardId);
+        Assert.That(geladen.Spalten[2].Karten[0].ErledigtAm, Is.EqualTo(DateOnly.FromDateTime(DateTime.Today)));
+    }
+
+    [Test]
+    public async Task Wenn_eine_erledigte_Karte_innerhalb_der_Abschlussspalte_zieht_dann_bleibt_ihr_erledigtAm_unveraendert()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var abschlussspalteId = board.Spalten[2].SpalteId;
+        var erste = await LegeKarteAn(webApi, board.BoardId, abschlussspalteId, "Zuerst fertig");
+        await LegeKarteAn(webApi, board.BoardId, abschlussspalteId, "Danach fertig");
+        SetzeErledigung(datenbank, erste.KarteId, "2026-09-01");
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Lageroute(board.BoardId, erste.KarteId), new Kartenlage(abschlussspalteId, 2));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var geladen = await LadeBoard(webApi, board.BoardId);
+        var zuerstFertig = geladen.Spalten[2].Karten.Single(karte => karte.KarteId == erste.KarteId);
+        Assert.That(zuerstFertig.ErledigtAm, Is.EqualTo(new DateOnly(2026, 9, 1)));
+    }
+
+    [Test]
+    public async Task Wenn_eine_erledigte_Karte_die_Abschlussspalte_verlaesst_dann_ist_ihr_erledigtAm_wieder_null()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[2].SpalteId, "Doch nicht fertig");
+        Assert.That((await LadeBoard(webApi, board.BoardId)).Spalten[2].Karten[0].ErledigtAm, Is.Not.Null);
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Lageroute(board.BoardId, karte.KarteId), new Kartenlage(board.Spalten[1].SpalteId, 1));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var geladen = await LadeBoard(webApi, board.BoardId);
+        Assert.Multiple(() =>
+        {
+            Assert.That(geladen.Spalten[1].Karten[0].ErledigtAm, Is.Null);
+            Assert.That(Erledigungszeilen(datenbank), Is.Empty);
+        });
+    }
+
+    [Test]
+    public async Task Wenn_eine_zurueckgeholte_Karte_erneut_abgelegt_wird_dann_nennt_die_API_das_heutige_statt_des_frueheren_Datums()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var abschlussspalteId = board.Spalten[2].SpalteId;
+        var karte = await LegeKarteAn(webApi, board.BoardId, abschlussspalteId, "Wieder aufgemacht");
+        SetzeErledigung(datenbank, karte.KarteId, "2026-09-01");
+        await webApi.Klient.PutAsJsonAsync(Lageroute(board.BoardId, karte.KarteId), new Kartenlage(board.Spalten[1].SpalteId, 1));
+
+        await webApi.Klient.PutAsJsonAsync(Lageroute(board.BoardId, karte.KarteId), new Kartenlage(abschlussspalteId, 1));
+
+        var geladen = await LadeBoard(webApi, board.BoardId);
+        Assert.That(geladen.Spalten[2].Karten[0].ErledigtAm, Is.EqualTo(DateOnly.FromDateTime(DateTime.Today)));
+    }
+
+    [Test]
+    public async Task Wenn_eine_Karte_direkt_in_der_Abschlussspalte_angelegt_wird_dann_traegt_schon_die_201_Antwort_das_heutige_Datum()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[2].SpalteId, "Sofort fertig");
+
+        Assert.That(karte.ErledigtAm, Is.EqualTo(DateOnly.FromDateTime(DateTime.Today)));
+    }
+
+    [Test]
+    public async Task Wenn_ein_Zug_zurueckgewiesen_wird_dann_ist_danach_kein_Erledigungsdatum_geschrieben()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Migration schreiben");
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Lageroute(board.BoardId, karte.KarteId), new Kartenlage(board.Spalten[2].SpalteId, 99));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        Assert.That(Erledigungszeilen(datenbank), Is.Empty);
+    }
+
+    // Karten, die vor dieser Anforderung in einer Abschlussspalte lagen, haben keine Zeile in
+    // Karteerledigung; das Arrange setzt sie deshalb per SQL an der Anlage vorbei.
+    [Test]
+    public async Task Wenn_eine_Bestandskarte_in_der_Abschlussspalte_liegt_dann_liefert_die_API_erledigtAm_null()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        FuegeKarteOhneErledigungEin(datenbank, board.Spalten[2].SpalteId, "Vor der Anforderung fertig", 1);
+
+        var geladen = await LadeBoard(webApi, board.BoardId);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(geladen.Spalten[2].Karten[0].Titel, Is.EqualTo("Vor der Anforderung fertig"));
+            Assert.That(geladen.Spalten[2].Karten[0].ErledigtAm, Is.Null);
+        });
+    }
+
+    private static void SetzeErledigung(TemporaereDatenbank datenbank, long karteId, string erledigtAm)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Karteerledigung (Karte, ErledigtAm)
+            VALUES (@Karte, @ErledigtAm)
+            ON CONFLICT (Karte) DO UPDATE SET ErledigtAm = excluded.ErledigtAm",
+            new { Karte = karteId, ErledigtAm = erledigtAm });
+    }
+
+    private static void FuegeKarteOhneErledigungEin(TemporaereDatenbank datenbank, long spalteId, string titel, int position)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Karte (Spalte, Titel, Position)
+            VALUES (@Spalte, @Titel, @Position)", new { Spalte = spalteId, Titel = titel, Position = position });
+    }
+
+    private static long[] Erledigungszeilen(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.Query<long>(@"
+            SELECT Karte
+              FROM Karteerledigung
+             ORDER BY Karte").ToArray();
     }
 
     private static string KartenRoute(long boardId, long spalteId)
