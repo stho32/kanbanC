@@ -197,6 +197,57 @@ public sealed class KartenService
         return Ergebnis<Kartendetail>.Erfolg(detail!);
     }
 
+    // Dieselbe Antwortgestalt wie AendereKarte und SetzeEtiketten, weil dieselbe Seite sie
+    // verbraucht: zurueck kommt die ganze Kartenseite und nicht die angelegte Zeile.
+    public Ergebnis<Kartendetail> LegeTeilaufgabeAn(long karteId, TeilaufgabeAnlegenAnfrage anfrage)
+    {
+        var befunde = TeilaufgabenValidator.Pruefe(karteId, anfrage);
+        var derTextIstUngueltig = !befunde.IstOhneBefund;
+        if (derTextIstUngueltig)
+        {
+            return Ergebnis<Kartendetail>.Zurueckgewiesen(befunde);
+        }
+
+        var detail = _kartenRepository.LegeTeilaufgabeAn(karteId, anfrage);
+        var dieKarteGibtEsNicht = detail is null;
+        if (dieKarteGibtEsNicht)
+        {
+            return Zurueckgewiesen<Kartendetail>(Nichtgefunden.Karte(karteId));
+        }
+
+        return Ergebnis<Kartendetail>.Erfolg(detail!);
+    }
+
+    // Kein Validator: ein Wahrheitswert hat keinen ungültigen Fall — dieselbe Überlegung wie bei
+    // SchalteArchivierung. Anders als dort kippt der Aufruf aber nicht, sondern setzt einen
+    // Zielzustand, und ein zweiter gleicher Aufruf ändert nichts.
+    public Ergebnis<Kartendetail> SetzeAbhakung(long karteId, long teilaufgabeId, Teilaufgabenstand stand)
+    {
+        var detail = _kartenRepository.SetzeAbhakung(karteId, teilaufgabeId, stand);
+        var dieTeilaufgabeLiegtNichtAnDieserKarte = detail is null;
+        if (dieTeilaufgabeLiegtNichtAnDieserKarte)
+        {
+            return Zurueckgewiesen<Kartendetail>(BefundZurFehlendenTeilaufgabe(karteId, teilaufgabeId));
+        }
+
+        return Ergebnis<Kartendetail>.Erfolg(detail!);
+    }
+
+    // Gibt es schon die Karte nicht, schickt ein Befund über die Teilaufgabe den Aufrufer auf eine
+    // Kartenadresse, die selbst 404 antwortet — die Kompensation wäre nicht ausführbar. Gelesen
+    // wird dafür erst auf dem Fehlerweg; der Erfolgsweg bleibt bei einem Zugriff. Dieselbe
+    // Trennung wie bei BefundZurFehlendenKarte.
+    private Fehlerbefund BefundZurFehlendenTeilaufgabe(long karteId, long teilaufgabeId)
+    {
+        var dieKarteGibtEsNicht = _kartenRepository.LiesKartendetail(karteId) is null;
+        if (dieKarteGibtEsNicht)
+        {
+            return Nichtgefunden.Karte(karteId);
+        }
+
+        return Nichtgefunden.Teilaufgabe(karteId, teilaufgabeId);
+    }
+
     // null heisst „mit diesem Verantwortlichen ist alles in Ordnung" — auch dann, wenn gar keiner
     // gesetzt wird: „niemand" ist ein gültiger Wert, kein Fehler.
     private Fehlerbefund? BefundZumVerantwortlichen(long? kontributorId)

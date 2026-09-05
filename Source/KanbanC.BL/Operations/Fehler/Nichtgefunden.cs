@@ -12,7 +12,8 @@ public static class Nichtgefunden
     private const string SpalteUnbekannt = "spalte-unbekannt";
     private const string SpalteFremd = "spalte-fremd";
     private const string KontributorUnbekannt = "kontributor-unbekannt";
-    private static readonly string[] AlleCodes = [BoardUnbekannt, KarteUnbekannt, KarteFremd, SpalteUnbekannt, SpalteFremd, KontributorUnbekannt];
+    private const string TeilaufgabeUnbekannt = "teilaufgabe-unbekannt";
+    private static readonly string[] AlleCodes = [BoardUnbekannt, KarteUnbekannt, KarteFremd, SpalteUnbekannt, SpalteFremd, KontributorUnbekannt, TeilaufgabeUnbekannt];
 
     public static Fehlerbefund Board(long boardId)
     {
@@ -38,6 +39,18 @@ public static class Nichtgefunden
             KarteUnbekannt,
             $"Eine Karte mit der Nummer {karteId} gibt es nicht.",
             "`GET /api/boards` abrufen, ein Board oeffnen und den Aufruf mit einer der dort genannten KarteIds wiederholen.");
+    }
+
+    // Die Schwester der boardlosen Karte, eine Ebene tiefer. Der Befund nennt beide Nummern, weil
+    // beide in der Adresse stehen — und weil eine TeilaufgabeId, die es anderswo gibt, an dieser
+    // Karte trotzdem keine ist. Der Weg zurueck ist deshalb die Karte selbst: dort stehen die
+    // Nummern, die hier gelten.
+    public static Fehlerbefund Teilaufgabe(long karteId, long teilaufgabeId)
+    {
+        return new Fehlerbefund(
+            TeilaufgabeUnbekannt,
+            $"Eine Teilaufgabe mit der Nummer {teilaufgabeId} gibt es an der Karte {karteId} nicht.",
+            $"`GET /api/karten/{karteId}` abrufen, die TeilaufgabeIds in „teilaufgaben“ ablesen und den Aufruf mit einer vorhandenen wiederholen.");
     }
 
     public static Fehlerbefund FremdeKarte(long boardId, long karteId, long boardIdDerKarte)

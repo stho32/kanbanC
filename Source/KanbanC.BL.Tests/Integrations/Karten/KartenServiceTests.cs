@@ -227,6 +227,123 @@ public class KartenServiceTests
         Befundpruefung.ErwarteVollstaendigenBefund(ergebnis.Befunde[0], "karte-unbekannt");
     }
 
+    [Test]
+    public void Wenn_der_Text_gueltig_ist_dann_reicht_LegeTeilaufgabeAn_das_zurueckgelesene_Detail_durch()
+    {
+        var detail = Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null))
+            with { Teilaufgaben = [new Teilaufgabe(3, "Lizenztext lesen", 1, Abgehakt: false)] };
+        var kartenRepository = TestKartenRepository.Leer().MitKartendetail(detail);
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, new TestKontributorenRepository());
+        var anfrage = new TeilaufgabeAnlegenAnfrage("Lizenztext lesen");
+
+        var ergebnis = service.LegeTeilaufgabeAn(7, anfrage);
+
+        Assert.That(ergebnis.IstErfolg, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Wert.Teilaufgaben.Select(teilaufgabe => teilaufgabe.Text), Is.EqualTo(new[] { "Lizenztext lesen" }));
+            Assert.That(kartenRepository.ErhalteneTeilaufgabe, Is.EqualTo(anfrage));
+            Assert.That(kartenRepository.GeaenderteKarteId, Is.EqualTo(7));
+        });
+    }
+
+    [Test]
+    public void Wenn_der_Text_leer_ist_dann_weist_LegeTeilaufgabeAn_ihn_zurueck_und_schreibt_nichts()
+    {
+        var kartenRepository = TestKartenRepository.Leer().MitKartendetail(Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null)));
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, new TestKontributorenRepository());
+
+        var ergebnis = service.LegeTeilaufgabeAn(7, new TeilaufgabeAnlegenAnfrage("   "));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Befundpruefung.ErwarteVollstaendigenBefund(ergebnis.Befunde[0], "teilaufgabe-leer");
+        Assert.That(kartenRepository.ErhalteneTeilaufgabe, Is.Null);
+    }
+
+    [Test]
+    public void Wenn_die_KarteId_unbekannt_ist_dann_weist_LegeTeilaufgabeAn_mit_einem_Befund_ohne_Board_zurueck()
+    {
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), TestKartenRepository.Leer().OhneDieseKarte(), new TestKontributorenRepository());
+
+        var ergebnis = service.LegeTeilaufgabeAn(9999, new TeilaufgabeAnlegenAnfrage("Lizenztext lesen"));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Befundpruefung.ErwarteVollstaendigenBefund(ergebnis.Befunde[0], "karte-unbekannt");
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("9999"));
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Not.Contain("Board"));
+        });
+    }
+
+    [Test]
+    public void Wenn_die_Teilaufgabe_bekannt_ist_dann_reicht_SetzeAbhakung_das_zurueckgelesene_Detail_durch()
+    {
+        var detail = Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null))
+            with { Teilaufgaben = [new Teilaufgabe(3, "Lizenztext lesen", 1, Abgehakt: true)] };
+        var kartenRepository = TestKartenRepository.Leer().MitKartendetail(detail);
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, new TestKontributorenRepository());
+
+        var ergebnis = service.SetzeAbhakung(7, 3, new Teilaufgabenstand(true));
+
+        Assert.That(ergebnis.IstErfolg, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Wert.Teilaufgaben[0].Abgehakt, Is.True);
+            Assert.That(kartenRepository.AbgehakteTeilaufgabeId, Is.EqualTo(3));
+            Assert.That(kartenRepository.ErhaltenerStand, Is.EqualTo(new Teilaufgabenstand(true)));
+        });
+    }
+
+    // Gibt es die Karte nicht, meldet der Befund sie und nicht die Teilaufgabe: eine Kompensation
+    // auf eine Kartenadresse, die selbst 404 antwortet, waere nicht ausfuehrbar.
+    [Test]
+    public void Wenn_die_KarteId_unbekannt_ist_dann_meldet_SetzeAbhakung_die_Karte()
+    {
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), TestKartenRepository.Leer().OhneDieseKarte(), new TestKontributorenRepository());
+
+        var ergebnis = service.SetzeAbhakung(9999, 3, new Teilaufgabenstand(true));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Befundpruefung.ErwarteVollstaendigenBefund(ergebnis.Befunde[0], "karte-unbekannt");
+        Assert.That(ergebnis.Befunde[0].Meldung, Does.Not.Contain("Board"));
+    }
+
+    // Die Karte gibt es, die Teilaufgabe gehoert zu einer anderen: der Befund nennt beide Nummern.
+    [Test]
+    public void Wenn_die_Teilaufgabe_zu_einer_anderen_Karte_gehoert_dann_nennt_der_Befund_beide_Nummern()
+    {
+        var kartenRepository = TestKartenRepository.Leer()
+            .MitKartendetail(Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null)))
+            .OhneDieseTeilaufgabe();
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, new TestKontributorenRepository());
+
+        var ergebnis = service.SetzeAbhakung(7, 4711, new Teilaufgabenstand(true));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Befundpruefung.ErwarteVollstaendigenBefund(ergebnis.Befunde[0], "teilaufgabe-unbekannt");
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("4711"));
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("7"));
+            Assert.That(ergebnis.Befunde[0].Kompensation, Does.Contain("GET /api/karten/7"));
+        });
+    }
+
+    // Beide neuen Befunde sind fehlende Dinge und damit 404, keine verletzten Regeln.
+    [Test]
+    public void Wenn_die_Teilaufgabe_fehlt_dann_meldet_der_Befund_ein_fehlendes_Ding()
+    {
+        var kartenRepository = TestKartenRepository.Leer()
+            .MitKartendetail(Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null)))
+            .OhneDieseTeilaufgabe();
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, new TestKontributorenRepository());
+
+        var ergebnis = service.SetzeAbhakung(7, 4711, new Teilaufgabenstand(true));
+
+        Assert.That(Nichtgefunden.MeldetEinFehlendesDing(ergebnis.Befunde[0]), Is.True);
+    }
+
     private static Kartendetail Kartendetail(Karte karte)
     {
         return new Kartendetail(karte, Board: 3, Boardname: "Entwicklung", Spalte: 5, Spaltenbezeichnung: "In Arbeit", Verantwortlicher: null, Etiketten: [], Etikettvorschlaege: [], Teilaufgaben: []);

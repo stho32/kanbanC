@@ -262,3 +262,4 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-05 | R00018 Karte gliedern | B0245 Teilaufgabentext pruefen | Standard | 0,4h | 0,1h | 0,1h | autonom |
 | 2026-09-05 | R00018 Karte gliedern | B0246 Teilaufgabe anlegen | Standard | 0,4h | 0,1h | 0,1h | autonom |
 | 2026-09-05 | R00018 Karte gliedern | B0247 Teilaufgabe abhaken | Standard | 0,4h | 0,1h | 0,1h | autonom |
+| 2026-09-05 | R00018 Karte gliedern | B0248 Teilaufgaben verdrahten | Standard | 0,4h | 0,1h | 0,1h | autonom |

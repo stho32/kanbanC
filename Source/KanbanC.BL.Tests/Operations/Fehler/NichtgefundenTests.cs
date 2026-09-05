@@ -80,6 +80,24 @@ public class NichtgefundenTests
         Assert.That(befund.Meldung, Does.Contain("Board 2"));
     }
 
+    // Die Kartenroute kennt kein Board — auch ihre Unterressource nennt keins. Genannt werden
+    // beide Nummern der Adresse, und der Weg zurueck fuehrt auf die Karte, an der sie gelten.
+    [Test]
+    public void Wenn_eine_Teilaufgabe_an_dieser_Karte_fehlt_dann_nennt_der_Befund_beide_Nummern_und_den_Weg_ueber_die_Karte()
+    {
+        var befund = Nichtgefunden.Teilaufgabe(14, 4711);
+
+        Befundpruefung.ErwarteVollstaendigenBefund(befund, "teilaufgabe-unbekannt");
+        Assert.Multiple(() =>
+        {
+            Assert.That(befund.Meldung, Does.Contain("4711"));
+            Assert.That(befund.Meldung, Does.Contain("14"));
+            Assert.That(befund.Meldung, Does.Not.Contain("Board"));
+            Assert.That(befund.Kompensation, Does.Contain("GET /api/karten/14"));
+            Assert.That(befund.Kompensation, Does.Contain("TeilaufgabeIds"));
+        });
+    }
+
     [Test]
     public void Wenn_ein_Kontributor_fehlt_dann_nennt_der_Befund_seine_Nummer_und_den_Weg_zur_Liste()
     {
@@ -107,6 +125,7 @@ public class NichtgefundenTests
             Assert.That(Nichtgefunden.MeldetEinFehlendesDing(Nichtgefunden.Spalte(1, 2)), Is.True);
             Assert.That(Nichtgefunden.MeldetEinFehlendesDing(Nichtgefunden.FremdeSpalte(1, 2, 3)), Is.True);
             Assert.That(Nichtgefunden.MeldetEinFehlendesDing(Nichtgefunden.Kontributor(999)), Is.True);
+            Assert.That(Nichtgefunden.MeldetEinFehlendesDing(Nichtgefunden.Teilaufgabe(14, 999)), Is.True);
             Assert.That(Nichtgefunden.MeldetEinFehlendesDing(verletzteRegel), Is.False);
         });
     }

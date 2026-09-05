@@ -19,6 +19,7 @@ public sealed class TestKartenRepository : IKartenRepository
     private bool _karteFehltAnDieserStelle;
     private long? _boardDerKarte;
     private Kartendetail? _kartendetail;
+    private bool _teilaufgabeLiegtNichtAnDieserKarte;
 
     private TestKartenRepository(bool spalteIstInzwischenVerschwunden)
     {
@@ -210,6 +211,14 @@ public sealed class TestKartenRepository : IKartenRepository
         return _kartendetail;
     }
 
+    // Die Karte gibt es, die Teilaufgabe gehoert aber zu einer anderen: der Fall, in dem der
+    // Befund die Teilaufgabe melden muss und nicht die Karte.
+    public TestKartenRepository OhneDieseTeilaufgabe()
+    {
+        _teilaufgabeLiegtNichtAnDieserKarte = true;
+        return this;
+    }
+
     public Teilaufgabenstand? ErhaltenerStand { get; private set; }
 
     public long? AbgehakteTeilaufgabeId { get; private set; }
@@ -221,7 +230,7 @@ public sealed class TestKartenRepository : IKartenRepository
         GeaenderteKarteId = karteId;
         AbgehakteTeilaufgabeId = teilaufgabeId;
         ErhaltenerStand = stand;
-        if (_karteFehltAnDieserStelle)
+        if (_karteFehltAnDieserStelle || _teilaufgabeLiegtNichtAnDieserKarte)
         {
             return null;
         }
