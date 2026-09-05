@@ -123,6 +123,46 @@ public sealed class KartendetailSeite
         await Etikett(text).Locator(".etikett-entfernen").ClickAsync();
     }
 
+    public ILocator Teilaufgabenabschnitt => _seite.Locator("#teilaufgabenabschnitt");
+
+    public ILocator Teilaufgabenstand => _seite.Locator("#teilaufgabenstand");
+
+    public ILocator Teilaufgabenbalken => _seite.Locator("#teilaufgabenbalken");
+
+    public ILocator Teilaufgaben => _seite.Locator("#teilaufgabenliste .teilaufgabe");
+
+    public ILocator AbgehakteTeilaufgaben => _seite.Locator("#teilaufgabenliste .teilaufgabe-abgehakt");
+
+    public ILocator TeilaufgabenLeerstand => _seite.Locator("#teilaufgaben-leerstand");
+
+    public ILocator Teilaufgabenfeld => _seite.Locator("#teilaufgabe-eingabe");
+
+    public ILocator TeilaufgabeHinzufuegen => _seite.Locator("#teilaufgabe-hinzufuegen");
+
+    public ILocator Teilaufgabe(string text)
+    {
+        return Teilaufgaben.Filter(new LocatorFilterOptions { HasText = text });
+    }
+
+    public ILocator Teilaufgabenkaestchen(string text)
+    {
+        return Teilaufgabe(text).Locator(".teilaufgabenkaestchen");
+    }
+
+    // Getippt wird Zeichen fuer Zeichen wie beim Etikettenfeld: FillAsync setzt den Wert in einem
+    // Zug und traefe damit nicht die Lage, in der jede Eingabe ueber die Leitung laeuft.
+    public async Task TippeTeilaufgabe(string text)
+    {
+        await Teilaufgabenfeld.ClickAsync();
+        await Teilaufgabenfeld.PressSequentiallyAsync(text);
+    }
+
+    public async Task LegeTeilaufgabeAn(string text)
+    {
+        await TippeTeilaufgabe(text);
+        await TeilaufgabeHinzufuegen.ClickAsync();
+    }
+
     public ILocator Farbpunkte => _seite.Locator("#farbpunkte .farbpunkt");
 
     public ILocator GewaehlterFarbpunkt => _seite.Locator("#farbpunkte .farbpunkt-gewaehlt");

@@ -267,3 +267,4 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-05 | R00018 Karte gliedern | B0250 API-Klient der Teilaufgaben | Standard | 2h | 0,1h | 0,1h | autonom |
 | 2026-09-05 | R00018 Karte gliedern | B0251 Teilaufgabenfortschritt rechnen | Standard | 0,4h | 0,1h | 0,1h | autonom |
 | 2026-09-05 | R00018 Karte gliedern | B0252 Teilaufgabenabschnitt der Kartenseite | Standard | 2h | 0,2h | 0,2h | autonom |
+| 2026-09-05 | R00018 Karte gliedern | B0253 E2E Karte gliedern | Standard | 2-4h | 0,3h | 0,3h | autonom |

@@ -135,6 +135,32 @@ public sealed class WebApiKlient : IDisposable
         return detail;
     }
 
+    // Der Weg des Agenten in die Gliederung: eine Zeile je Aufruf, angehaengt.
+    public async Task<Kartendetail> LegeTeilaufgabeAn(long karteId, string text)
+    {
+        var antwort = await _klient.PostAsJsonAsync($"api/karten/{karteId}/teilaufgaben", new TeilaufgabeAnlegenAnfrage(text));
+        antwort.EnsureSuccessStatusCode();
+        return await AlsKartendetail(antwort);
+    }
+
+    public async Task<Kartendetail> SetzeAbhakung(long karteId, long teilaufgabeId, bool abgehakt)
+    {
+        var antwort = await _klient.PutAsJsonAsync($"api/karten/{karteId}/teilaufgaben/{teilaufgabeId}", new Teilaufgabenstand(abgehakt));
+        antwort.EnsureSuccessStatusCode();
+        return await AlsKartendetail(antwort);
+    }
+
+    private static async Task<Kartendetail> AlsKartendetail(HttpResponseMessage antwort)
+    {
+        var detail = await antwort.Content.ReadFromJsonAsync<Kartendetail>();
+        if (detail is null)
+        {
+            throw new InvalidOperationException("Die WebApi hat kein Kartendetail zurückgegeben.");
+        }
+
+        return detail;
+    }
+
     public async Task<Kontributor> LegeKontributorAn(string name, Kontributorart art)
     {
         var antwort = await _klient.PostAsJsonAsync(KontributorenRoute, new KontributorAnlegenAnfrage(name, art));
