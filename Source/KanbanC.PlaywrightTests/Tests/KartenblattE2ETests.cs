@@ -60,6 +60,70 @@ public class KartenblattE2ETests : PageTest
         await Expect(seite.BlattZurueckweisung).ToHaveCountAsync(0);
     }
 
+    // Die offene Frage der Bubble: ist der Farbpunkt auch ueber die Tastatur erreichbar? Er ist
+    // ein <button>, also ja — und damit ist die Farbe keine Wahl, die nur ein Zeiger treffen kann.
+    [Test]
+    [Category("US-2")]
+    public async Task Wenn_ein_Farbpunkt_ueber_die_Tastatur_ausgeloest_wird_dann_traegt_die_Karte_danach_diese_Farbe()
+    {
+        var seite = await FrischeKarte();
+
+        await seite.Farbpunkt("Olive").FocusAsync();
+        await Page.Keyboard.PressAsync("Enter");
+        await Expect(seite.GewaehlterFarbpunkt).ToHaveAttributeAsync("id", "farbpunkt-Olive");
+
+        await seite.LadeNeu();
+
+        await Expect(seite.GewaehlterFarbpunkt).ToHaveAttributeAsync("id", "farbpunkt-Olive");
+    }
+
+    [Test]
+    [Category("US-2")]
+    public async Task Wenn_eine_vorhandene_Beschreibung_angeklickt_wird_dann_laesst_sie_sich_ueberschreiben()
+    {
+        var seite = await FrischeKarte();
+        await seite.SchreibeBeschreibung("erste Fassung");
+        await Expect(seite.Beschreibung).ToHaveTextAsync("erste Fassung");
+
+        await seite.Beschreibung.ClickAsync();
+        await seite.Beschreibungsfeld.FillAsync("zweite Fassung");
+        await seite.Beschreibungsfeld.BlurAsync();
+
+        await seite.LadeNeu();
+
+        await Expect(seite.Beschreibung).ToHaveTextAsync("zweite Fassung");
+    }
+
+    [Test]
+    [Category("US-2")]
+    public async Task Wenn_die_Faelligkeit_wieder_geleert_wird_dann_steht_danach_der_Gedankenstrich_da()
+    {
+        var seite = await FrischeKarte();
+        await seite.SetzeFaelligkeit("2026-09-02");
+        await Expect(seite.Faelligkeit).ToHaveTextAsync("2026-09-02");
+
+        await seite.SetzeFaelligkeit("");
+
+        await seite.LadeNeu();
+
+        await Expect(seite.Faelligkeit).ToHaveTextAsync("—");
+    }
+
+    // Der Rundlauf: was auf der Kartenseite geaendert wurde, steht danach auf der Bahn.
+    [Test]
+    [Category("US-2")]
+    public async Task Wenn_der_Titel_auf_der_Kartenseite_geaendert_wird_dann_traegt_die_Karte_auf_der_Bahn_ihn_ebenfalls()
+    {
+        var seite = await FrischeKarte();
+        await seite.SchreibeTitel("WBS-Import");
+        await Expect(seite.Ueberschrift).ToHaveTextAsync("WBS-Import");
+
+        await seite.Rueckpfeil.ClickAsync();
+
+        var board = new BoardSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await Expect(board.Kartentitel).ToHaveTextAsync(["WBS-Import"]);
+    }
+
     private async Task<KartendetailSeite> FrischeKarte()
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();

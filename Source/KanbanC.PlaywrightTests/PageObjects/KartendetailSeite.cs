@@ -80,11 +80,13 @@ public sealed class KartendetailSeite
         await Beschreibungsfeld.BlurAsync();
     }
 
+    // Ohne Blur: an einem input[type=date] loest FillAsync selbst schon change aus, das Feld
+    // schliesst damit sofort — ein anschliessendes Blur liefe in ein Element, das es nicht mehr
+    // gibt. An den Textfeldern oben ist es umgekehrt, dort kommt change erst mit dem Blur.
     public async Task SetzeFaelligkeit(string isoDatum)
     {
         await Faelligkeit.ClickAsync();
         await Faelligkeitsfeld.FillAsync(isoDatum);
-        await Faelligkeitsfeld.BlurAsync();
     }
 
     public ILocator Ausnahmeanzeige => _seite.Locator("#blazor-error-ui");
