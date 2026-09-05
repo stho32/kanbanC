@@ -211,6 +211,57 @@ public class KartenServiceTests
         });
     }
 
+    [Test]
+    public void Wenn_die_Spalte_zum_Board_gehoert_dann_liefert_LadeKartenDerSpalte_ihre_Karten()
+    {
+        var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen");
+        var spalteId = spaltenRepository.Spalten(1)[0].SpalteId;
+        var kartenRepository = TestKartenRepository.Leer();
+        kartenRepository.LegeAn(1, spalteId, new KarteAnlegenAnfrage("Migration schreiben"));
+        var service = new KartenService(spaltenRepository, kartenRepository);
+
+        var ergebnis = service.LadeKartenDerSpalte(1, spalteId);
+
+        Assert.That(ergebnis.IstErfolg, Is.True);
+        Assert.That(ergebnis.Wert.Select(karte => karte.Titel), Is.EqualTo(new[] { "Migration schreiben" }));
+    }
+
+    [Test]
+    public void Wenn_das_Board_unbekannt_ist_dann_weist_LadeKartenDerSpalte_zurueck_ohne_die_Karten_zu_lesen()
+    {
+        var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen");
+        var kartenRepository = TestKartenRepository.Leer();
+        var service = new KartenService(spaltenRepository, kartenRepository);
+
+        var ergebnis = service.LadeKartenDerSpalte(99, spaltenRepository.Spalten(1)[0].SpalteId);
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("board-unbekannt"));
+            Assert.That(kartenRepository.WurdenKartenGelesen, Is.False);
+        });
+    }
+
+    [Test]
+    public void Wenn_die_Spalte_zu_einem_anderen_Board_gehoert_dann_nennt_LadeKartenDerSpalte_dieses_Board_ohne_die_Karten_zu_lesen()
+    {
+        var spaltenRepository = TestSpaltenRepository.MitSpalten(1, "Zu erledigen").MitZusaetzlichemBoard(2, "Eingang");
+        var fremdeSpalteId = spaltenRepository.Spalten(2)[0].SpalteId;
+        var kartenRepository = TestKartenRepository.Leer();
+        var service = new KartenService(spaltenRepository, kartenRepository);
+
+        var ergebnis = service.LadeKartenDerSpalte(1, fremdeSpalteId);
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("spalte-fremd"));
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("Board 2"));
+            Assert.That(kartenRepository.WurdenKartenGelesen, Is.False);
+        });
+    }
+
     // Dieselbe Antwortgestalt wie beim Board lesen: gekuerzt am Ausgang, mit der wahren Kartenzahl.
     [Test]
     public void Wenn_die_Zielspalte_eine_volle_Abschlussbahn_ist_dann_kuerzt_VerschiebeKarte_sie_am_Ausgang()

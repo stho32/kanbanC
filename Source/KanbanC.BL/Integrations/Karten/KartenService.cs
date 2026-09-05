@@ -60,21 +60,21 @@ public sealed class KartenService
         var boardIstUnbekannt = spaltenDesBoards is null;
         if (boardIstUnbekannt)
         {
-            return Zurueckgewiesen(Nichtgefunden.Board(boardId));
+            return Zurueckgewiesen<IReadOnlyList<Spalte>>(Nichtgefunden.Board(boardId));
         }
 
         var quellspalte = SpalteDerKarte(spaltenDesBoards!, karteId);
         var karteLiegtInKeinerSpalteDesBoards = quellspalte is null;
         if (karteLiegtInKeinerSpalteDesBoards)
         {
-            return Zurueckgewiesen(BefundZurFehlendenKarte(boardId, karteId));
+            return Zurueckgewiesen<IReadOnlyList<Spalte>>(BefundZurFehlendenKarte(boardId, karteId));
         }
 
         var zielspalte = SpalteMitNummer(spaltenDesBoards!, lage.SpalteId);
         var zielspalteGehoertNichtZumBoard = zielspalte is null;
         if (zielspalteGehoertNichtZumBoard)
         {
-            return Zurueckgewiesen(BefundZurFehlendenSpalte(boardId, lage.SpalteId));
+            return Zurueckgewiesen<IReadOnlyList<Spalte>>(BefundZurFehlendenSpalte(boardId, lage.SpalteId));
         }
 
         var kartenzahlNachDemZug = KartenzahlNachDemZug(quellspalte!, zielspalte!);
@@ -89,7 +89,7 @@ public sealed class KartenService
         var karteIstInzwischenVerschwunden = ergebnis is null;
         if (karteIstInzwischenVerschwunden)
         {
-            return Zurueckgewiesen(Nichtgefunden.Karte(boardId, karteId));
+            return Zurueckgewiesen<IReadOnlyList<Spalte>>(Nichtgefunden.Karte(boardId, karteId));
         }
 
         var derZugWurdeVomBestandZurueckgewiesen = !ergebnis!.IstErfolg;
@@ -101,6 +101,34 @@ public sealed class KartenService
         // Derselbe Ausgang wie beim Board lesen: es gibt nicht zwei Antwortgestalten für dieselbe
         // Sache. Geprüft wurde oben gegen den ungekürzten Bestand.
         return Ergebnis<IReadOnlyList<Spalte>>.Erfolg(Abschlussbahn.Gekuerzt(ergebnis.Wert));
+    }
+
+    // Ungekürzt, anders als am Board: wer diese Adresse ruft, will die ganze Bahn. Geprüft wird
+    // erst das Board, dann die Spalte — ein Lesezugriff auf die Karten einer fremden Spalte fände
+    // sonst statt, bevor jemand merkt, dass sie fremd ist.
+    public Ergebnis<IReadOnlyList<Karte>> LadeKartenDerSpalte(long boardId, long spalteId)
+    {
+        var spaltenDesBoards = _spaltenRepository.LadeAlle(boardId);
+        var boardIstUnbekannt = spaltenDesBoards is null;
+        if (boardIstUnbekannt)
+        {
+            return Zurueckgewiesen<IReadOnlyList<Karte>>(Nichtgefunden.Board(boardId));
+        }
+
+        var spalteGehoertNichtZumBoard = !EnthaeltSpalte(spaltenDesBoards!, spalteId);
+        if (spalteGehoertNichtZumBoard)
+        {
+            return Zurueckgewiesen<IReadOnlyList<Karte>>(BefundZurFehlendenSpalte(boardId, spalteId));
+        }
+
+        var karten = _kartenRepository.LadeKartenDerSpalte(boardId, spalteId);
+        var spalteIstInzwischenVerschwunden = karten is null;
+        if (spalteIstInzwischenVerschwunden)
+        {
+            return Zurueckgewiesen<IReadOnlyList<Karte>>(Nichtgefunden.Spalte(boardId, spalteId));
+        }
+
+        return Ergebnis<IReadOnlyList<Karte>>.Erfolg(karten!);
     }
 
     // Zieht die Karte in ihre eigene Spalte, bleibt deren Kartenzahl gleich; kommt sie von
@@ -140,9 +168,9 @@ public sealed class KartenService
         return Nichtgefunden.FremdeSpalte(boardId, spalteId, boardDerSpalte!.Value);
     }
 
-    private static Ergebnis<IReadOnlyList<Spalte>> Zurueckgewiesen(Fehlerbefund befund)
+    private static Ergebnis<T> Zurueckgewiesen<T>(Fehlerbefund befund)
     {
-        return Ergebnis<IReadOnlyList<Spalte>>.Zurueckgewiesen(new Pruefbefunde([befund]));
+        return Ergebnis<T>.Zurueckgewiesen(new Pruefbefunde([befund]));
     }
 
     private static Spalte? SpalteDerKarte(IReadOnlyList<Spalte> spalten, long karteId)

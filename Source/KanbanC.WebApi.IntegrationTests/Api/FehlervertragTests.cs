@@ -158,6 +158,16 @@ public class FehlervertragTests
             await webApi.Klient.DeleteAsync($"{BoardsRoute}/{board.BoardId}/spalten/999")));
 
         faelle.Add(new Fehlerfall(
+            "GET /api/boards/{boardId:long}/spalten/{spalteId:long}/karten",
+            "Karten einer Spalte lesen an unbekanntem Board",
+            await webApi.Klient.GetAsync($"{BoardsRoute}/999/spalten/{spalteId}/karten")));
+
+        faelle.Add(new Fehlerfall(
+            "GET /api/boards/{boardId:long}/spalten/{spalteId:long}/karten",
+            "Karten einer unbekannten Spalte lesen",
+            await webApi.Klient.GetAsync($"{BoardsRoute}/{board.BoardId}/spalten/999/karten")));
+
+        faelle.Add(new Fehlerfall(
             "POST /api/boards/{boardId:long}/spalten/{spalteId:long}/karten",
             "Karte anlegen ohne Titel",
             await webApi.Klient.PostAsJsonAsync($"{BoardsRoute}/{board.BoardId}/spalten/{spalteId}/karten", new KarteAnlegenAnfrage(""))));

@@ -151,6 +151,150 @@ public class GekuerzteAbschlussspalteTests
         Assert.That(Kartenzahl(datenbank, abschlussspalteId), Is.EqualTo(24));
     }
 
+    [Test]
+    public async Task Wenn_die_Karten_einer_Spalte_abgerufen_werden_dann_antwortet_die_API_mit_200_und_allen_Karten()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var abschlussspalteId = board.Spalten[2].SpalteId;
+        FuelleAbschlussspalte(datenbank, board, 23);
+        Assert.That((await LadeBoard(webApi, board.BoardId)).Spalten[2].Karten, Has.Count.EqualTo(20));
+
+        var antwort = await webApi.Klient.GetAsync(Kartenroute(board.BoardId, abschlussspalteId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var karten = await antwort.Content.ReadFromJsonAsync<IReadOnlyList<Karte>>();
+        Assert.Multiple(() =>
+        {
+            Assert.That(karten, Has.Count.EqualTo(23));
+            Assert.That(karten!.Select(karte => karte.Position), Is.EqualTo(Enumerable.Range(1, 23)));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_Karten_einer_Spalte_abgerufen_werden_dann_traegt_jede_ihr_Erledigungsdatum()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var abschlussspalteId = board.Spalten[2].SpalteId;
+        FuegeKarteEin(datenbank, abschlussspalteId, "Gestern fertig", 1, "2026-09-04");
+        FuegeKarteEin(datenbank, abschlussspalteId, "Bestandskarte", 2, null);
+
+        var karten = await LadeKartenDerSpalte(webApi, board.BoardId, abschlussspalteId);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(karten[0].ErledigtAm, Is.EqualTo(new DateOnly(2026, 9, 4)));
+            Assert.That(karten[1].ErledigtAm, Is.Null);
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_Spalte_keine_Abschlussmarkierung_traegt_dann_liefert_dieselbe_Adresse_ebenso_alle_ihre_Karten()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var rueckstandId = board.Spalten[0].SpalteId;
+        FuegeKarteEin(datenbank, rueckstandId, "Migration schreiben", 1, null);
+        FuegeKarteEin(datenbank, rueckstandId, "Endpunkt bauen", 2, null);
+
+        var karten = await LadeKartenDerSpalte(webApi, board.BoardId, rueckstandId);
+
+        Assert.That(karten.Select(karte => karte.Titel), Is.EqualTo(new[] { "Migration schreiben", "Endpunkt bauen" }));
+    }
+
+    [Test]
+    public async Task Wenn_die_Spalte_leer_ist_dann_liefert_die_Adresse_200_mit_einer_leeren_Liste()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+
+        var karten = await LadeKartenDerSpalte(webApi, board.BoardId, board.Spalten[1].SpalteId);
+
+        Assert.That(karten, Is.Empty);
+    }
+
+    [Test]
+    public async Task Wenn_die_boardId_unbekannt_ist_dann_antwortet_die_Adresse_mit_404_und_einem_Befund()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+
+        var antwort = await webApi.Klient.GetAsync(Kartenroute(999, board.Spalten[0].SpalteId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Karten einer Spalte an unbekanntem Board");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("board-unbekannt"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain("999"));
+            Assert.That(zurueckweisung.Befunde[0].Kompensation, Does.Contain("GET /api/boards"));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_spalteId_unbekannt_ist_dann_antwortet_die_Adresse_mit_404_und_einem_Befund()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+
+        var antwort = await webApi.Klient.GetAsync(Kartenroute(board.BoardId, 999));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Karten einer unbekannten Spalte");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("spalte-unbekannt"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain("999"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain(board.BoardId.ToString()));
+            Assert.That(zurueckweisung.Befunde[0].Kompensation, Does.Contain($"GET /api/boards/{board.BoardId}"));
+        });
+    }
+
+    // US-5: der Befund sagt, welches Board die Spalte traegt.
+    [Test]
+    public async Task Wenn_die_Spalte_zu_einem_anderen_Board_gehoert_dann_nennt_der_Befund_dieses_Board()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var erstes = await LegeBoardAn(webApi);
+        var zweites = await LegeBoardAn(webApi);
+        var fremdeSpalteId = erstes.Spalten[0].SpalteId;
+
+        var antwort = await webApi.Klient.GetAsync(Kartenroute(zweites.BoardId, fremdeSpalteId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Karten einer fremden Spalte");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("spalte-fremd"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain($"Board {erstes.BoardId}"));
+            Assert.That(zurueckweisung.Befunde[0].Kompensation, Does.Contain($"GET /api/boards/{zweites.BoardId}"));
+        });
+    }
+
+    private static async Task<IReadOnlyList<Karte>> LadeKartenDerSpalte(TestWebApi webApi, long boardId, long spalteId)
+    {
+        var karten = await webApi.Klient.GetFromJsonAsync<IReadOnlyList<Karte>>(Kartenroute(boardId, spalteId));
+        if (karten is null)
+        {
+            throw new InvalidOperationException("Die API hat keine Kartenliste zurückgegeben.");
+        }
+
+        return karten;
+    }
+
+    private static string Kartenroute(long boardId, long spalteId)
+    {
+        return $"{BoardsRoute}/{boardId}/spalten/{spalteId}/karten";
+    }
+
     private static void FuelleAbschlussspalte(TemporaereDatenbank datenbank, Board board, int anzahl)
     {
         var abschlussspalteId = board.Spalten[2].SpalteId;

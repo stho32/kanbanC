@@ -15,8 +15,22 @@ public static class KartenEndpunkte
 
     public static void Registriere(IEndpointRouteBuilder routen)
     {
+        routen.MapGet(Basisroute, LiesKartenDerSpalte).WithName("KartenDerSpalteLesen");
         routen.MapPost(Basisroute, LegeKarteAn).WithName("KarteAnlegen");
         routen.MapPut(Lageroute, VerschiebeKarte).WithName("KarteVerschieben");
+    }
+
+    // Dieselbe Adresse wie das Anlegen: wer weiss, wo eine Karte entsteht, weiss damit auch, wo
+    // alle stehen. Ungekuerzt, auch wenn das Board dieselbe Spalte gekuerzt liefert.
+    private static IResult LiesKartenDerSpalte(long boardId, long spalteId, KartenService kartenService)
+    {
+        var ergebnis = kartenService.LadeKartenDerSpalte(boardId, spalteId);
+        if (ergebnis.IstErfolg)
+        {
+            return Results.Ok(ergebnis.Wert);
+        }
+
+        return Zurueckweisungen.AlsFehlerantwort(ergebnis.Befunde);
     }
 
     private static IResult LegeKarteAn(long boardId, long spalteId, KarteAnlegenAnfrage anfrage, KartenService kartenService)
