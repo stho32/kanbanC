@@ -537,6 +537,60 @@
     border-radius: var(--radius-lg);
 }
 
+/* Kopfzeile des Abschnitts: Überschrift und Anzahl nebeneinander auf gemeinsamer Grundlinie,
+   wie beim Teilaufgabenkopf. */
+.kommentarkopf {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+}
+
+.kommentarzahl {
+    font-size: 12px;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.kommentarliste {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+/* Eine Zeile: rundes Kürzel links, Text und Metazeile rechts daneben. Das Kürzel sitzt etwas
+   tiefer als die erste Textzeile, damit es auf ihrer Mitte steht statt auf ihrer Oberkante. */
+.kommentar {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.kommentar .kuerzel {
+    margin-top: 3px;
+}
+
+.kommentarinhalt {
+    flex: 1;
+    min-width: 0;
+}
+
+.kommentartext {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.45;
+    text-wrap: pretty;
+}
+
+.kommentarmeta {
+    margin: 0;
+    font-size: 11px;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.kommentarleerstand {
+    margin: 0;
+    font-size: 12px;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
 /* Die Schreibzeile des Kommentars: Kürzel des Gewählten, Feld über die Restbreite, „senden"
    rechts — wie im Artboard. Ohne gewählte Identität steht der leere Kreis für die leere Stelle,
    und der Knopf trägt die Sperre, die .btn:disabled im Token-Sheet zeichnet. */

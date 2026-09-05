@@ -194,7 +194,50 @@ else
                 </div>
             </section>
 
+            @* Der Abschnitt steht hinter „Teilaufgaben" in der linken Spalte, wie im Artboard.
+               **Eine bewusste Abweichung:** die Metazeile trägt keine „Quelle" (Oberfläche /
+               API). Die WebApi sieht in beiden Fällen denselben HTTP-Aufruf — die Oberfläche ist
+               selbst nur ein Klient —, und ein Feld, das den Kanal rät, wäre eine stille Lüge.
+               Mensch und Agent bleiben trotzdem auseinanderzuhalten: am Kürzel. *@
             <section class="blattabschnitt" id="kommentarabschnitt">
+                <div class="kommentarkopf">
+                    <h3 class="blattueberschrift">Kommentare</h3>
+                    @* Die Anzahl wird gerechnet und nicht mitgesendet — .Count an der gelieferten
+                       Liste. Ohne Kommentar bleibt sie fort: eine „0" wäre eine Aussage über
+                       nichts, und die Handlung steht schon darunter. *@
+                    @if (HatKommentare)
+                    {
+                        <span class="kommentarzahl" id="kommentarzahl">@Kommentarzahl</span>
+                    }
+                </div>
+
+                @if (HatKommentare)
+                {
+                    <div class="kommentarliste" id="kommentarliste">
+                        @* @key hält die Elementkennung über die Neuaufbauten hinweg fest: nach
+                           jedem Senden kommt die ganze Liste neu. *@
+                        @foreach (var kommentar in _detail.Kommentare)
+                        {
+                            <div class="kommentar" @key="kommentar.KommentarId" data-kommentar="@kommentar.KommentarId">
+                                <span class="kuerzel @Kontributorartform.Kuerzelklasse(kommentar.Urheber.Art)" title="@Kontributorartform.Beschriftung(kommentar.Urheber.Art)">@Kontributorartform.Kuerzel(kommentar.Urheber.Name)</span>
+                                <div class="kommentarinhalt">
+                                    <p class="kommentartext">@kommentar.Text</p>
+                                    <p class="kommentarmeta">@Metazeile(kommentar)</p>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    @* Die Handlung statt der Null, wie beim leeren Beschreibungsfeld und bei den
+                       Teilaufgaben. „schreiben" setzt den Cursor ins Feld darunter. *@
+                    <p class="kommentarleerstand" id="kommentar-leerstand">
+                        Noch kein Kommentar ·
+                        <button type="button" class="blatthandlung" id="kommentar-schreiben" @onclick="FokussiereKommentarfeld">schreiben</button>
+                    </p>
+                }
+
                 @* Die Schreibzeile liest die Identitätswahl neu, sobald jemand sie betritt — mit
                    dem Zeiger oder mit der Tabulatortaste. Die Kopfzeile ist eine eigene
                    Komponente und lässt diese Seite beim Wechseln nicht neu zeichnen; ohne dieses
@@ -594,6 +637,41 @@ else
         }
 
         _detail = ergebnis.Wert;
+    }
+
+    private bool HatKommentare
+    {
+        get
+        {
+            return _detail!.Kommentare.Count > 0;
+        }
+    }
+
+    private string Kommentarzahl
+    {
+        get
+        {
+            return _detail!.Kommentare.Count.ToString(CultureInfo.InvariantCulture);
+        }
+    }
+
+    // „Name · Zeitpunkt" — ohne die „Quelle" des Artboards. Ein stillgelegter Urheber bleibt an
+    // seinen alten Äußerungen stehen und trägt den Zusatz, damit die Geschichte der Karte lesbar
+    // bleibt, wenn jemand geht.
+    private static string Metazeile(Kommentar kommentar)
+    {
+        var name = kommentar.Urheber.Name;
+        if (kommentar.Urheber.StillgelegtAm is not null)
+        {
+            name = $"{name} (stillgelegt)";
+        }
+
+        return $"{name} · {Zeitpunktform.AlsText(kommentar.Zeitpunkt, DateTimeOffset.Now)}";
+    }
+
+    private async Task FokussiereKommentarfeld()
+    {
+        await _kommentarfeld.FocusAsync();
     }
 
     private string _kommentartext = string.Empty;
