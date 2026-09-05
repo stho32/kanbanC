@@ -233,6 +233,59 @@ public sealed class KartenService
         return Ergebnis<Kartendetail>.Erfolg(detail!);
     }
 
+    // Dieselbe Antwortgestalt wie AendereKarte, SetzeEtiketten und LegeTeilaufgabeAn, weil
+    // dieselbe Seite sie verbraucht. Geprüft wird in der Reihenfolge, in der die Kompensationen
+    // ausführbar sind: erst der Text (ohne jeden Zugriff), dann der Urheber, dann die Karte.
+    public Ergebnis<Kartendetail> SchreibeKommentar(long karteId, KommentarSchreibenAnfrage anfrage)
+    {
+        var befunde = KommentarValidator.Pruefe(karteId, anfrage);
+        var derTextIstUngueltig = !befunde.IstOhneBefund;
+        if (derTextIstUngueltig)
+        {
+            return Ergebnis<Kartendetail>.Zurueckgewiesen(befunde);
+        }
+
+        // Die Prüfung braucht den Kontributorenbestand und sitzt deshalb hier und nicht im
+        // Validator — dieselbe Trennung wie beim Verantwortlichen. Gelesen wird dafür, statt zu
+        // schreiben: eine Zurückweisung darf nichts hinterlassen.
+        var befundZumUrheber = BefundZumUrheber(anfrage.Kontributor);
+        if (befundZumUrheber is not null)
+        {
+            return Zurueckgewiesen<Kartendetail>(befundZumUrheber);
+        }
+
+        var detail = _kartenRepository.SchreibeKommentar(karteId, anfrage);
+        var dieKarteGibtEsNicht = detail is null;
+        if (dieKarteGibtEsNicht)
+        {
+            return Zurueckgewiesen<Kartendetail>(Nichtgefunden.Karte(karteId));
+        }
+
+        return Ergebnis<Kartendetail>.Erfolg(detail!);
+    }
+
+    // Dieselben zwei Regeln wie bei BefundZumVerantwortlichen, nur ohne den dritten Fall: beim
+    // Verantwortlichen ist „niemand" ein gültiger Wert, beim Urheber gibt es ihn nicht — die
+    // Anfrage führt den Kontributor deshalb als long und nicht als long?.
+    // null heißt „mit diesem Urheber ist alles in Ordnung".
+    private Fehlerbefund? BefundZumUrheber(long kontributorId)
+    {
+        var kontributor = _kontributorenRepository.LadeAlle().FirstOrDefault(eintrag => eintrag.KontributorId == kontributorId);
+        var denKontributorGibtEsNicht = kontributor is null;
+        if (denKontributorGibtEsNicht)
+        {
+            return Nichtgefunden.Kontributor(kontributorId);
+        }
+
+        var derKontributorArbeitetNichtMehrMit = kontributor!.StillgelegtAm is not null;
+        if (derKontributorArbeitetNichtMehrMit)
+        {
+            return Stillgelegt.Urheber(kontributorId);
+        }
+
+        return null;
+    }
+
     // Gibt es schon die Karte nicht, schickt ein Befund über die Teilaufgabe den Aufrufer auf eine
     // Kartenadresse, die selbst 404 antwortet — die Kompensation wäre nicht ausführbar. Gelesen
     // wird dafür erst auf dem Fehlerweg; der Erfolgsweg bleibt bei einem Zugriff. Dieselbe

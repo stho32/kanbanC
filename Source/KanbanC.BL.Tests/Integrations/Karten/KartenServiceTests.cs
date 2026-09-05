@@ -348,6 +348,123 @@ public class KartenServiceTests
         Assert.That(Nichtgefunden.MeldetEinFehlendesDing(ergebnis.Befunde[0]), Is.True);
     }
 
+    [Test]
+    public void Wenn_Text_und_Urheber_gueltig_sind_dann_reicht_SchreibeKommentar_das_Detail_des_Repositories_durch()
+    {
+        var kontributorenRepository = new TestKontributorenRepository();
+        var stefan = kontributorenRepository.LegeAn(new KontributorAnlegenAnfrage("Stefan", Kontributorart.Mensch));
+        var kartenRepository = TestKartenRepository.Leer().MitKartendetail(Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null)));
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, kontributorenRepository);
+
+        var ergebnis = service.SchreibeKommentar(7, new KommentarSchreibenAnfrage("Die Lizenz gilt nur pro Rechner.", stefan.KontributorId));
+
+        Assert.That(ergebnis.IstErfolg, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Wert.Karte.Titel, Is.EqualTo("Playwright-Lizenz klären"));
+            Assert.That(kartenRepository.ErhaltenerKommentar, Is.EqualTo(new KommentarSchreibenAnfrage("Die Lizenz gilt nur pro Rechner.", stefan.KontributorId)));
+            Assert.That(kartenRepository.GeaenderteKarteId, Is.EqualTo(7));
+        });
+    }
+
+    [Test]
+    public void Wenn_der_Kommentartext_leer_ist_dann_weist_SchreibeKommentar_ihn_zurueck_und_schreibt_nichts()
+    {
+        var kontributorenRepository = new TestKontributorenRepository();
+        var stefan = kontributorenRepository.LegeAn(new KontributorAnlegenAnfrage("Stefan", Kontributorart.Mensch));
+        var kartenRepository = TestKartenRepository.Leer().MitKartendetail(Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null)));
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, kontributorenRepository);
+
+        var ergebnis = service.SchreibeKommentar(7, new KommentarSchreibenAnfrage("   ", stefan.KontributorId));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Befundpruefung.ErwarteVollstaendigenBefund(ergebnis.Befunde[0], "kommentar-leer");
+        Assert.That(kartenRepository.ErhaltenerKommentar, Is.Null);
+    }
+
+    [Test]
+    public void Wenn_die_Karte_unbekannt_ist_dann_meldet_SchreibeKommentar_die_Karte_ohne_Board()
+    {
+        var kontributorenRepository = new TestKontributorenRepository();
+        var stefan = kontributorenRepository.LegeAn(new KontributorAnlegenAnfrage("Stefan", Kontributorart.Mensch));
+        var kartenRepository = TestKartenRepository.Leer().OhneDieseKarte();
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, kontributorenRepository);
+
+        var ergebnis = service.SchreibeKommentar(9999, new KommentarSchreibenAnfrage("Bitte prüfen", stefan.KontributorId));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Befundpruefung.ErwarteVollstaendigenBefund(ergebnis.Befunde[0], "karte-unbekannt");
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("9999"));
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Not.Contain("Board"));
+            Assert.That(Nichtgefunden.MeldetEinFehlendesDing(ergebnis.Befunde[0]), Is.True);
+        });
+    }
+
+    [Test]
+    public void Wenn_der_Urheber_unbekannt_ist_dann_weist_SchreibeKommentar_ihn_zurueck_und_schreibt_nichts()
+    {
+        var kartenRepository = TestKartenRepository.Leer().MitKartendetail(Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null)));
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, new TestKontributorenRepository());
+
+        var ergebnis = service.SchreibeKommentar(7, new KommentarSchreibenAnfrage("Bitte prüfen", 999));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Befundpruefung.ErwarteVollstaendigenBefund(ergebnis.Befunde[0], "kontributor-unbekannt");
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("999"));
+            Assert.That(ergebnis.Befunde[0].Kompensation, Does.Contain("GET /api/kontributoren"));
+            Assert.That(kartenRepository.ErhaltenerKommentar, Is.Null);
+        });
+    }
+
+    // Es fehlt kein Ding, es wurde eine Regel verletzt: derselbe Code wie beim Verantwortlichen
+    // und damit 400, nicht 404.
+    [Test]
+    public void Wenn_der_Urheber_stillgelegt_ist_dann_weist_SchreibeKommentar_ihn_mit_400_zurueck_und_schreibt_nichts()
+    {
+        var kontributorenRepository = new TestKontributorenRepository();
+        var maria = kontributorenRepository.LegeAn(new KontributorAnlegenAnfrage("Maria Lenz", Kontributorart.Mensch));
+        kontributorenRepository.SetzeStilllegung(maria.KontributorId, new Stilllegung(true));
+        var kartenRepository = TestKartenRepository.Leer().MitKartendetail(Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null)));
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, kontributorenRepository);
+
+        var ergebnis = service.SchreibeKommentar(7, new KommentarSchreibenAnfrage("Bitte prüfen", maria.KontributorId));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Befundpruefung.ErwarteVollstaendigenBefund(ergebnis.Befunde[0], "kontributor-stillgelegt");
+        Assert.Multiple(() =>
+        {
+            Assert.That(Nichtgefunden.MeldetEinFehlendesDing(ergebnis.Befunde[0]), Is.False);
+            Assert.That(kartenRepository.ErhaltenerKommentar, Is.Null);
+        });
+    }
+
+    // Die Meldung passt zum Kommentar: der Wortlaut „kann nicht verantwortlich sein" gehoert dem
+    // Verantwortlichen an der Karte und waere hier eine Falschaussage.
+    [Test]
+    public void Wenn_der_Urheber_stillgelegt_ist_dann_spricht_seine_Meldung_vom_Kommentar_und_nicht_von_Verantwortung()
+    {
+        var kontributorenRepository = new TestKontributorenRepository();
+        var maria = kontributorenRepository.LegeAn(new KontributorAnlegenAnfrage("Maria Lenz", Kontributorart.Mensch));
+        kontributorenRepository.SetzeStilllegung(maria.KontributorId, new Stilllegung(true));
+        var kartenRepository = TestKartenRepository.Leer().MitKartendetail(Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null)));
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, kontributorenRepository);
+
+        var amKommentar = service.SchreibeKommentar(7, new KommentarSchreibenAnfrage("Bitte prüfen", maria.KontributorId));
+        var anDerKarte = service.AendereKarte(7, new KarteAendernAnfrage("Playwright-Lizenz klären", null, null, Kartenfarbe.Ohne, maria.KontributorId));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(amKommentar.Befunde[0].Meldung, Does.Not.Contain("verantwortlich"));
+            Assert.That(amKommentar.Befunde[0].Meldung, Does.Contain("Kommentar"));
+            Assert.That(anDerKarte.Befunde[0].Meldung, Does.Contain("kann nicht verantwortlich sein"));
+            Assert.That(amKommentar.Befunde[0].Code, Is.EqualTo(anDerKarte.Befunde[0].Code));
+        });
+    }
+
     private static Kartendetail Kartendetail(Karte karte)
     {
         return new Kartendetail(karte, Board: 3, Boardname: "Entwicklung", Spalte: 5, Spaltenbezeichnung: "In Arbeit", Verantwortlicher: null, Etiketten: [], Etikettvorschlaege: [], Teilaufgaben: [], Kommentare: []);

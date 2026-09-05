@@ -8,11 +8,27 @@ namespace KanbanC.BL.Operations.Fehler;
 // bewusst nicht.
 public static class Stillgelegt
 {
+    private const string KontributorStillgelegt = "kontributor-stillgelegt";
+    private const string Kompensationsweg = "`GET /api/kontributoren` abrufen und den Aufruf mit einer KontributorId ohne „stillgelegtAm“ wiederholen — oder ihn über `PUT /api/kontributoren/{kontributorId}/stilllegung` mit „istStillgelegt“ = false zurückholen.";
+
     public static Fehlerbefund Kontributor(long kontributorId)
     {
         return new Fehlerbefund(
-            "kontributor-stillgelegt",
+            KontributorStillgelegt,
             $"Der Kontributor mit der Nummer {kontributorId} ist stillgelegt und kann nicht verantwortlich sein.",
-            "`GET /api/kontributoren` abrufen und den Aufruf mit einer KontributorId ohne „stillgelegtAm“ wiederholen — oder ihn über `PUT /api/kontributoren/{kontributorId}/stilllegung` mit „istStillgelegt“ = false zurückholen.");
+            Kompensationsweg);
+    }
+
+    // Die Schwester für den Urheber, mit **demselben** Code: die Lage ist dieselbe, und ein
+    // zweiter Code berührte Nichtgefunden.AlleCodes und die Statusabbildung, ohne dass sich etwas
+    // unterschiede. Eigen ist nur die Meldung — die Schwester oben sagt wörtlich „kann nicht
+    // verantwortlich sein", und das wäre am Kommentar eine Falschaussage: hier wird niemand
+    // zuständig gemacht, hier sagt jemand etwas.
+    public static Fehlerbefund Urheber(long kontributorId)
+    {
+        return new Fehlerbefund(
+            KontributorStillgelegt,
+            $"Der Kontributor mit der Nummer {kontributorId} ist stillgelegt und kann keinen Kommentar mehr schreiben.",
+            Kompensationsweg);
     }
 }
