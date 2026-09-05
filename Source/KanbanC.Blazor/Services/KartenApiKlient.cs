@@ -1,3 +1,4 @@
+using System.Net;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
 
@@ -7,11 +8,43 @@ public sealed class KartenApiKlient
 {
     private const string KlientName = "KanbanC";
     private const string BoardsRoute = "api/boards";
+
+    // Ohne Board in der Adresse: wer /karten/14 oeffnet, kennt das Board noch nicht.
+    private const string KartenRoute = "api/karten";
     private readonly IHttpClientFactory _klientFabrik;
 
     public KartenApiKlient(IHttpClientFactory klientFabrik)
     {
         _klientFabrik = klientFabrik;
+    }
+
+    public async Task<ApiErgebnis<Kartendetail>> LadeKartendetail(long karteId)
+    {
+        using var klient = _klientFabrik.CreateClient(KlientName);
+        using var antwort = await klient.GetAsync($"{KartenRoute}/{karteId}");
+        return await AlsKartendetail(antwort);
+    }
+
+    // 400 und 404 laufen denselben Weg, weil beide einen Befund der WebApi tragen.
+    // ApiAntwortleser waere die falsche Stelle: sein 404-Zweig ersetzt jeden Befund durch eine
+    // Board-Meldung, und diese Route kennt kein Board.
+    private static async Task<ApiErgebnis<Kartendetail>> AlsKartendetail(HttpResponseMessage antwort)
+    {
+        var dieWebApiHatDenAufrufZurueckgewiesen = antwort.StatusCode == HttpStatusCode.BadRequest || antwort.StatusCode == HttpStatusCode.NotFound;
+        if (dieWebApiHatDenAufrufZurueckgewiesen)
+        {
+            var zurueckweisung = await Zurueckweisungsleser.Lies(antwort);
+            return ApiErgebnis<Kartendetail>.Zurueckgewiesen(zurueckweisung);
+        }
+
+        antwort.EnsureSuccessStatusCode();
+        var detail = await antwort.Content.ReadFromJsonAsync<Kartendetail>();
+        if (detail is null)
+        {
+            throw new InvalidOperationException("Die WebApi hat kein Kartendetail zurückgegeben.");
+        }
+
+        return ApiErgebnis<Kartendetail>.Erfolg(detail);
     }
 
     public async Task<ApiErgebnis<Karte>> LegeKarteAn(long boardId, long spalteId, KarteAnlegenAnfrage anfrage)

@@ -10,6 +10,45 @@ namespace KanbanC.Blazor.Tests.Services;
 public class KartenApiKlientTests
 {
     [Test]
+    public async Task Wenn_die_WebApi_das_Kartendetail_liefert_dann_ruft_der_Klient_die_boardlose_Adresse_und_reicht_es_durch()
+    {
+        const string rumpf = """{"karte":{"karteId":14,"titel":"Migration schreiben","position":2},"board":3,"boardname":"Entwicklung","spalte":5,"spaltenbezeichnung":"In Arbeit"}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.LadeKartendetail(14);
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("GET http://webapi.test/api/karten/14"));
+            Assert.That(ergebnis.Wert.Karte.Titel, Is.EqualTo("Migration schreiben"));
+            Assert.That(ergebnis.Wert.Board, Is.EqualTo(3));
+            Assert.That(ergebnis.Wert.Boardname, Is.EqualTo("Entwicklung"));
+            Assert.That(ergebnis.Wert.Spaltenbezeichnung, Is.EqualTo("In Arbeit"));
+        });
+    }
+
+    // Der 404 dieser Route traegt einen eigenen Befund; er darf nicht durch die Board-Meldung
+    // des ApiAntwortlesers ersetzt werden, denn die Route kennt kein Board.
+    [Test]
+    public async Task Wenn_die_Karte_unbekannt_ist_dann_reicht_der_Klient_den_Befund_der_WebApi_durch()
+    {
+        const string rumpf = """{"befunde":[{"code":"karte-unbekannt","meldung":"Eine Karte mit der Nummer 9999 gibt es nicht.","kompensation":"`GET /api/boards` abrufen."}]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.NotFound, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.LadeKartendetail(9999);
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.EqualTo("karte-unbekannt"));
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("9999"));
+        });
+    }
+
+    [Test]
     public async Task Wenn_die_WebApi_die_Karte_anlegt_dann_liefert_der_Klient_sie_als_Erfolg()
     {
         const string rumpf = """{"karteId":7,"titel":"Migration schreiben","position":3}""";
