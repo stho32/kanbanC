@@ -3,6 +3,7 @@ using KanbanC.Blazor.Services;
 using KanbanC.Blazor.Tests.TestHelpers;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
+using KanbanC.Contracts.Kontributoren;
 
 namespace KanbanC.Blazor.Tests.Services;
 
@@ -541,5 +542,101 @@ public class KartenApiKlientTests
 
         Assert.That(async () => await klient.SchalteArchivierung(1, 8, new Archivierung(true)),
             Throws.TypeOf<HttpRequestException>());
+    }
+
+    // Der Rumpf traegt Text und KontributorId; die Query bleibt leer. Ueber den Browser ist nicht
+    // pruefbar, ob der Klient den Urheber am richtigen Ort mitschickt.
+    [Test]
+    public async Task Wenn_ein_Kommentar_geschrieben_wird_dann_setzt_der_Klient_ein_POST_auf_die_Unterressource_mit_Text_und_Urheber_im_Rumpf_ab()
+    {
+        const string rumpf = """{"karte":{"karteId":14,"titel":"Playwright-Lizenz klären","position":2},"board":3,"boardname":"Entwicklung","spalte":5,"spaltenbezeichnung":"In Arbeit","kommentare":[{"kommentarId":7,"text":"Bitte prüfen","urheber":{"kontributorId":3,"name":"Stefan","art":"Mensch","stillgelegtAm":null},"zeitpunkt":"2026-08-30T15:40:12+00:00"}]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.SchreibeKommentar(14, new KommentarSchreibenAnfrage("Der Parser liest jetzt auch Ebene 4.", 3));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("POST http://webapi.test/api/karten/14/kommentare"));
+            Assert.That(fabrik.AbgesetzterAufruf, Does.Not.Contain("?"), "Der Urheber gehoert in den Rumpf, nicht in die Query.");
+            Assert.That(fabrik.GesendeterRumpf, Does.Contain("\"kontributor\":3"));
+            Assert.That(fabrik.GesendeterRumpf, Does.Contain("Der Parser liest jetzt auch Ebene 4."));
+            Assert.That(fabrik.GesendeterRumpf, Does.Not.Contain("zeitpunkt"), "Den Zeitpunkt setzt die WebApi.");
+        });
+    }
+
+    // Der ganze Urheber und der Zeitpunkt kommen zurueck und werden durchgereicht.
+    [Test]
+    public async Task Wenn_die_WebApi_den_Kommentar_annimmt_dann_reicht_der_Klient_Urheber_und_Zeitpunkt_durch()
+    {
+        const string rumpf = """{"karte":{"karteId":14,"titel":"Playwright-Lizenz klären","position":2},"board":3,"boardname":"Entwicklung","spalte":5,"spaltenbezeichnung":"In Arbeit","kommentare":[{"kommentarId":7,"text":"Bitte prüfen","urheber":{"kontributorId":3,"name":"Claude-Agent","art":"Agent","stillgelegtAm":"2026-08-12"},"zeitpunkt":"2026-08-30T15:40:12+00:00"}]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.SchreibeKommentar(14, new KommentarSchreibenAnfrage("Bitte prüfen", 3));
+
+        var kommentar = ergebnis.Wert.Kommentare[0];
+        Assert.Multiple(() =>
+        {
+            Assert.That(kommentar.KommentarId, Is.EqualTo(7));
+            Assert.That(kommentar.Urheber, Is.EqualTo(new Kontributor(3, "Claude-Agent", Kontributorart.Agent, new DateOnly(2026, 8, 12))));
+            Assert.That(kommentar.Zeitpunkt, Is.EqualTo(new DateTimeOffset(2026, 8, 30, 15, 40, 12, TimeSpan.Zero)));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_WebApi_den_Kommentar_zurueckweist_dann_reicht_der_Klient_ihren_Befund_durch()
+    {
+        const string rumpf = """{"befunde":[{"code":"kommentar-leer","meldung":"Ein Kommentar darf nicht leer sein.","kompensation":"`POST /api/karten/14/kommentare` mit einem nichtleeren „text“ wiederholen."}]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.BadRequest, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.SchreibeKommentar(14, new KommentarSchreibenAnfrage("  ", 3));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.EqualTo("kommentar-leer"));
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Is.EqualTo("Ein Kommentar darf nicht leer sein."));
+        });
+    }
+
+    // Der 404 dieser Route traegt einen eigenen Befund und darf nicht durch eine Board-Meldung
+    // ersetzt werden — die Route kennt kein Board.
+    [Test]
+    public async Task Wenn_die_Karte_beim_Schreiben_des_Kommentars_unbekannt_ist_dann_reicht_der_Klient_den_Befund_der_WebApi_durch()
+    {
+        const string rumpf = """{"befunde":[{"code":"karte-unbekannt","meldung":"Eine Karte mit der Nummer 9999 gibt es nicht.","kompensation":"`GET /api/boards` abrufen."}]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.NotFound, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.SchreibeKommentar(9999, new KommentarSchreibenAnfrage("Bitte prüfen", 3));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.EqualTo("karte-unbekannt"));
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("9999"));
+        });
+    }
+
+    // Der stillgelegte Urheber kommt als 400 zurueck und laeuft denselben Weg wie der 404: beide
+    // tragen einen Befund.
+    [Test]
+    public async Task Wenn_der_Urheber_stillgelegt_ist_dann_reicht_der_Klient_den_Befund_mit_400_durch()
+    {
+        const string rumpf = """{"befunde":[{"code":"kontributor-stillgelegt","meldung":"Der Kontributor mit der Nummer 3 ist stillgelegt und kann keinen Kommentar mehr schreiben.","kompensation":"`GET /api/kontributoren` abrufen."}]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.BadRequest, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.SchreibeKommentar(14, new KommentarSchreibenAnfrage("Bitte prüfen", 3));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.EqualTo("kontributor-stillgelegt"));
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("Kommentar"));
+        });
     }
 }

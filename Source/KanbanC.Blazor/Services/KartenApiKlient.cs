@@ -57,6 +57,18 @@ public sealed class KartenApiKlient
         return await AlsKartendetail(antwort);
     }
 
+    // Eine Zeile, und zurueck kommt das ganze Kartendetail — wie beim Anlegen einer Teilaufgabe.
+    // Der Urheber reist im **Rumpf** der Anfrage und nicht als Query: der Rumpf ist der Ort, an
+    // dem dieses Projekt Kontributoren uebergibt, und zwei Wege fuer denselben Wert waeren
+    // Synonym-Wildwuchs an der Schnittstelle. Einen Zeitpunkt schickt der Klient nicht mit — den
+    // setzt die WebApi.
+    public async Task<ApiErgebnis<Kartendetail>> SchreibeKommentar(long karteId, KommentarSchreibenAnfrage anfrage)
+    {
+        using var klient = _klientFabrik.CreateClient(KlientName);
+        using var antwort = await klient.PostAsJsonAsync($"{KartenRoute}/{karteId}/kommentare", anfrage);
+        return await AlsKartendetail(antwort);
+    }
+
     // 400 und 404 laufen denselben Weg, weil beide einen Befund der WebApi tragen.
     // ApiAntwortleser waere die falsche Stelle: sein 404-Zweig ersetzt jeden Befund durch eine
     // Board-Meldung, und diese Route kennt kein Board.
