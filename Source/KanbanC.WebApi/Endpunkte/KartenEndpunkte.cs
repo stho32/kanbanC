@@ -19,12 +19,29 @@ public static class KartenEndpunkte
     // dieselbe Route seit R00010 archiviert und zurückholt.
     private const string Archivierungsroute = "/api/boards/{boardId:long}/karten/{karteId:long}/archivierung";
 
+    // Die erste Kartenroute ohne Board in der Adresse: ein Browser, der /karten/14 oeffnet,
+    // kennt das Board noch nicht — es steht erst in der Antwort. Die bestehenden Routen unter
+    // dem Board bleiben unveraendert.
+    private const string Kartenroute = "/api/karten/{karteId:long}";
+
     public static void Registriere(IEndpointRouteBuilder routen)
     {
+        routen.MapGet(Kartenroute, LiesKartendetail).WithName("KartendetailLesen");
         routen.MapGet(Basisroute, LiesKartenDerSpalte).WithName("KartenDerSpalteLesen");
         routen.MapPost(Basisroute, LegeKarteAn).WithName("KarteAnlegen");
         routen.MapPut(Lageroute, VerschiebeKarte).WithName("KarteVerschieben");
         routen.MapPut(Archivierungsroute, SchalteArchivierung).WithName("KartenarchivierungSchalten");
+    }
+
+    private static IResult LiesKartendetail(long karteId, KartenService kartenService)
+    {
+        var ergebnis = kartenService.LadeKartendetail(karteId);
+        if (ergebnis.IstErfolg)
+        {
+            return Results.Ok(ergebnis.Wert);
+        }
+
+        return Zurueckweisungen.AlsFehlerantwort(ergebnis.Befunde);
     }
 
     // Dieselbe Adresse wie das Anlegen: wer weiss, wo eine Karte entsteht, weiss damit auch, wo

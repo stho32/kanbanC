@@ -212,6 +212,11 @@ public class FehlervertragTests
             "Karte archivieren an unbekanntem Board",
             await webApi.Klient.PutAsJsonAsync($"{BoardsRoute}/999/karten/{aufbau.Karte.KarteId}/archivierung", new Archivierung(true))));
 
+        faelle.Add(new Fehlerfall(
+            "GET /api/karten/{karteId:long}",
+            "Kartendetail lesen mit unbekannter KarteId",
+            await webApi.Klient.GetAsync("/api/karten/999")));
+
         return faelle;
     }
 

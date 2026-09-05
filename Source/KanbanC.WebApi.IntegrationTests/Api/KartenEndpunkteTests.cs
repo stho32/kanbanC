@@ -1032,6 +1032,76 @@ public class KartenEndpunkteTests
         return $"{BoardsRoute}/{boardId}/karten/{karteId}/lage";
     }
 
+    [Test]
+    public async Task Wenn_die_KarteId_bekannt_ist_dann_liefert_GET_karten_das_Kartendetail_mit_Board_und_Spalte()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var spalte = board.Spalten[1];
+        var karte = await LegeKarteAn(webApi, board.BoardId, spalte.SpalteId, "Migration schreiben");
+
+        using var antwort = await webApi.Klient.GetAsync(Kartendetailroute(karte.KarteId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var detail = await antwort.Content.ReadFromJsonAsync<Kartendetail>();
+        Assert.That(detail, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail.Karte.KarteId, Is.EqualTo(karte.KarteId));
+            Assert.That(detail.Karte.Titel, Is.EqualTo("Migration schreiben"));
+            Assert.That(detail.Board, Is.EqualTo(board.BoardId));
+            Assert.That(detail.Boardname, Is.EqualTo("Entwicklung"));
+            Assert.That(detail.Spalte, Is.EqualTo(spalte.SpalteId));
+            Assert.That(detail.Spaltenbezeichnung, Is.EqualTo(spalte.Bezeichnung));
+        });
+    }
+
+    // US-7: eine archivierte Karte verschwindet vom Board, behaelt aber ihre Adresse.
+    [Test]
+    public async Task Wenn_die_Karte_archiviert_ist_dann_liefert_GET_karten_dasselbe_Kartendetail_wie_zuvor()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Migration schreiben");
+        using var vorher = await webApi.Klient.GetAsync(Kartendetailroute(karte.KarteId));
+        var detailVorher = await vorher.Content.ReadFromJsonAsync<Kartendetail>();
+        await Archiviere(webApi, board.BoardId, karte.KarteId, istArchiviert: true);
+        await ErwarteBoardOhneKarten(webApi, board.BoardId);
+
+        using var antwort = await webApi.Klient.GetAsync(Kartendetailroute(karte.KarteId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var detail = await antwort.Content.ReadFromJsonAsync<Kartendetail>();
+        Assert.That(detail, Is.EqualTo(detailVorher));
+    }
+
+    [Test]
+    public async Task Wenn_die_KarteId_unbekannt_ist_dann_antwortet_GET_karten_mit_404_und_einem_Befund_ohne_Board()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        await LegeBoardAn(webApi);
+
+        using var antwort = await webApi.Klient.GetAsync(Kartendetailroute(9999));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Kartendetail mit unbekannter KarteId");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("karte-unbekannt"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain("9999"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Not.Contain("Board"));
+            Assert.That(zurueckweisung.Befunde[0].Kompensation, Does.Contain("GET /api/boards"));
+        });
+    }
+
+    private static string Kartendetailroute(long karteId)
+    {
+        return $"/api/karten/{karteId}";
+    }
+
     private static async Task ErwarteBoardOhneKarten(TestWebApi webApi, long boardId)
     {
         var geladen = await LadeBoard(webApi, boardId);

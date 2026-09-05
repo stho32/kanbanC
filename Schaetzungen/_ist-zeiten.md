@@ -228,3 +228,4 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-05 | R00016 Karte archivieren | Lauf R00016 · S7 ausstehend | Nacharbeit | — | — | 0,2h | autonom |
 | 2026-09-05 | R00017 Kartendetails bearbeiten | B0213 Kartendetail lesen | Standard | 0,4h | 0,0h | 0,1h | autonom |
 | 2026-09-05 | R00017 Kartendetails bearbeiten | B0214 Kartendetail verdrahten | Standard | 0,4h | 0,0h | 0,0h | autonom |
+| 2026-09-05 | R00017 Kartendetails bearbeiten | B0215 Endpunkt des Kartendetails | Standard | 2h | 0,0h | 0,0h | autonom |
