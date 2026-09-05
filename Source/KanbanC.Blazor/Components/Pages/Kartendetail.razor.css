@@ -214,3 +214,121 @@
 .farbpunkt-gewaehlt {
     box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 3.5px var(--color-accent);
 }
+
+/* Die Wahl hängt am Feld und liegt über dem Blatt darunter. */
+.verantwortlichenfeld {
+    position: relative;
+}
+
+.blattchevron {
+    display: inline-flex;
+    margin-left: auto;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.verantwortlichenname {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* Gedämpft, nicht verborgen: wer eine Karte geführt hat, bleibt an ihr sichtbar. */
+.verantwortlicher-stillgelegt {
+    opacity: 0.45;
+}
+
+.verantwortlichenvermerk {
+    margin-left: auto;
+    font-size: 11px;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+/* Die Fläche fängt den Klick daneben ab und schließt die Wahl — dasselbe Mittel wie in der
+   Kopfzeile. */
+.verantwortlichen-auffangflaeche {
+    position: fixed;
+    inset: 0;
+    z-index: 5;
+}
+
+.verantwortlichenpopover {
+    position: absolute;
+    z-index: 6;
+    top: calc(100% + var(--space-1));
+    left: 0;
+    right: 0;
+    padding: var(--space-1);
+    background: var(--color-neutral-100);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+}
+
+.verantwortlichensuche {
+    width: calc(100% - 2 * var(--space-1));
+    margin: var(--space-1);
+    min-height: var(--space-6);
+    font-size: 13px;
+}
+
+.verantwortlichenliste {
+    margin: 0;
+    padding: 0;
+    max-height: 240px;
+    overflow-y: auto;
+    list-style: none;
+}
+
+.verantwortlichenzeile {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    padding: 6px var(--space-3);
+    font-family: inherit;
+    font-size: 14px;
+    text-align: left;
+    color: inherit;
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-xs);
+    cursor: pointer;
+}
+
+.verantwortlichenzeile:hover {
+    background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+}
+
+.verantwortlichenzeile-niemand {
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+/* Abgeblendet statt ausgeblendet, und kein Schalter: er ist zu sehen, aber nicht zu wählen. */
+.verantwortlichenzeile-stillgelegt {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.verantwortlichenzeile-stillgelegt:hover {
+    background: transparent;
+}
+
+.verantwortlichenname-stillgelegt {
+    text-decoration: line-through;
+    text-decoration-color: color-mix(in srgb, var(--color-text) 40%, transparent);
+}
+
+.verantwortlichentrenner {
+    margin: var(--space-1) var(--space-3);
+    border: 0;
+    border-top: 1px solid var(--color-divider);
+}
+
+.verantwortlichenabschnitt {
+    margin: 0;
+    padding: var(--space-3) var(--space-3) 2px;
+    font-family: var(--font-heading);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}

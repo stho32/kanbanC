@@ -3,7 +3,9 @@
 @using KanbanC.Blazor.Services
 @using KanbanC.Contracts.Fehler
 @using KanbanC.Contracts.Karten
+@using KanbanC.Contracts.Kontributoren
 @inject KartenApiKlient KartenKlient
+@inject KontributorenApiKlient KontributorenKlient
 
 <PageTitle>Karte @KarteId</PageTitle>
 
@@ -108,6 +110,91 @@ else
         <aside class="eigenschaftenblatt" id="eigenschaftenblatt">
             <h3 class="blattueberschrift">Eigenschaften</h3>
 
+            @* Die Wahl hängt am Feld und schließt über eine Auffangfläche — dasselbe Muster wie
+               die Identitätswahl in der Kopfzeile. *@
+            <div class="blattfeld verantwortlichenfeld">
+                <span class="blattmarke">Verantwortlich</span>
+                <button type="button"
+                        class="blattwert"
+                        id="verantwortlich"
+                        aria-haspopup="true"
+                        aria-expanded="@AlsAttributtext(IstOffen(Verantwortlichenfeld))"
+                        @onclick="OeffneVerantwortlichenwahl">
+                    @if (_detail.Verantwortlicher is null)
+                    {
+                        <span class="kuerzel kuerzel-niemand"></span>
+                        <span class="verantwortlichenname">niemand</span>
+                    }
+                    else
+                    {
+                        <span class="kuerzel @Kontributorartform.Kuerzelklasse(_detail.Verantwortlicher.Art) @Gedaempft()">@Kontributorartform.Kuerzel(_detail.Verantwortlicher.Name)</span>
+                        <span class="verantwortlichenname @Gedaempft()" id="verantwortlichenname">@_detail.Verantwortlicher.Name</span>
+                        @if (_detail.Verantwortlicher.StillgelegtAm is null)
+                        {
+                            <span class="tag @Kontributorartform.Plakettenklasse(_detail.Verantwortlicher.Art)" id="verantwortlichenart">@Kontributorartform.Beschriftung(_detail.Verantwortlicher.Art)</span>
+                        }
+                        else
+                        {
+                            @* Die Karte zeigt ihn weiter — die zweite Hälfte des Fertig-Kriteriums
+                               von I0009. Wählbar ist er nicht mehr. *@
+                            <span class="verantwortlichenvermerk" id="verantwortlich-stillgelegt-vermerk">stillgelegt</span>
+                        }
+                    }
+                    <span class="blattchevron" aria-hidden="true">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+                    </span>
+                </button>
+
+                @if (IstOffen(Verantwortlichenfeld))
+                {
+                    <div class="verantwortlichen-auffangflaeche" id="verantwortlichen-auffangflaeche" @onclick="SchliesseVerantwortlichenwahl"></div>
+                    <div class="verantwortlichenpopover" id="verantwortlichenpopover">
+                        <input class="input verantwortlichensuche"
+                               id="verantwortlichensuche"
+                               placeholder="Name suchen"
+                               value="@_verantwortlichensuche"
+                               @oninput="FiltereVerantwortliche" />
+
+                        <ul class="verantwortlichenliste" id="verantwortlichenliste">
+                            @foreach (var kontributor in Waehlbare)
+                            {
+                                <li>
+                                    <button type="button"
+                                            class="verantwortlichenzeile"
+                                            id="verantwortlich-waehlen-@kontributor.KontributorId"
+                                            @onclick="() => SetzeVerantwortlichen(kontributor.KontributorId)">
+                                        <span class="kuerzel @Kontributorartform.Kuerzelklasse(kontributor.Art)">@Kontributorartform.Kuerzel(kontributor.Name)</span>
+                                        <span class="verantwortlichenname">@kontributor.Name</span>
+                                        <span class="tag @Kontributorartform.Plakettenklasse(kontributor.Art)">@Kontributorartform.Beschriftung(kontributor.Art)</span>
+                                    </button>
+                                </li>
+                            }
+                        </ul>
+
+                        <hr class="verantwortlichentrenner" />
+
+                        @* „niemand" ist ein Eintrag der Liste, kein zweiter Knopf: eine Karte ohne
+                           Verantwortlichen ist der Normalfall nach dem Anlegen. *@
+                        <button type="button" class="verantwortlichenzeile verantwortlichenzeile-niemand" id="verantwortlich-niemand" @onclick="() => SetzeVerantwortlichen(null)">
+                            <span class="kuerzel kuerzel-niemand"></span>
+                            <span class="verantwortlichenname">niemand</span>
+                        </button>
+
+                        @if (StillgelegterTraeger is not null)
+                        {
+                            <p class="verantwortlichenabschnitt">stillgelegt · nicht wählbar</p>
+                            <div class="verantwortlichenzeile verantwortlichenzeile-stillgelegt"
+                                 id="verantwortlich-stillgelegt-@StillgelegterTraeger.KontributorId"
+                                 aria-disabled="true">
+                                <span class="kuerzel @Kontributorartform.Kuerzelklasse(StillgelegterTraeger.Art)">@Kontributorartform.Kuerzel(StillgelegterTraeger.Name)</span>
+                                <span class="verantwortlichenname verantwortlichenname-stillgelegt">@StillgelegterTraeger.Name</span>
+                                <span class="verantwortlichenvermerk">stillgelegt seit @Terminformatierer.AlsText(StillgelegterTraeger.StillgelegtAm)</span>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
             <div class="blattfeld">
                 <label class="blattmarke" for="faellig-feld">Fällig</label>
                 @if (IstOffen(Faelligkeitsfeld))
@@ -144,6 +231,7 @@ else
     private const string Titelfeld = "titel";
     private const string Beschreibungsfeld = "beschreibung";
     private const string Faelligkeitsfeld = "faellig";
+    private const string Verantwortlichenfeld = "verantwortlich";
 
     // Vollqualifiziert, weil der Komponentenname Kartendetail den gleichnamigen Vertragstyp
     // verdeckt — dieselbe Lage wie bei Board.razor und Karte.razor.
@@ -155,6 +243,8 @@ else
     // dieselbe Aussage mehrfach und ließe zwei offene Felder zu.
     private string? _offenesFeld;
     private Zurueckweisung? _zurueckweisung;
+    private IReadOnlyList<Kontributor> _kontributoren = [];
+    private string _verantwortlichensuche = string.Empty;
     private string? _ausfallmeldung;
 
     [Parameter]
@@ -174,6 +264,56 @@ else
         }
 
         _ladenIstAbgeschlossen = true;
+    }
+
+    // Wer die Wahl öffnet, will den heutigen Stand sehen: ein gerade stillgelegter Kontributor
+    // stünde sonst noch darin. Dieselbe Überlegung wie in der Kopfzeile.
+    private async Task OeffneVerantwortlichenwahl()
+    {
+        _verantwortlichensuche = string.Empty;
+        Oeffne(Verantwortlichenfeld);
+        _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(async () => _kontributoren = await KontributorenKlient.LadeAlle());
+    }
+
+    private void SchliesseVerantwortlichenwahl()
+    {
+        _offenesFeld = null;
+    }
+
+    private void FiltereVerantwortliche(ChangeEventArgs ereignis)
+    {
+        _verantwortlichensuche = Text(ereignis);
+    }
+
+    private IReadOnlyList<Kontributor> Waehlbare
+    {
+        get
+        {
+            return Verantwortlichenliste.Gefiltert(Verantwortlichenliste.Waehlbare(_kontributoren), _verantwortlichensuche);
+        }
+    }
+
+    private Kontributor? StillgelegterTraeger
+    {
+        get
+        {
+            return Verantwortlichenliste.StillgelegterTraeger(_kontributoren, _detail!.Verantwortlicher);
+        }
+    }
+
+    private string Gedaempft()
+    {
+        if (_detail!.Verantwortlicher?.StillgelegtAm is null)
+        {
+            return string.Empty;
+        }
+
+        return "verantwortlicher-stillgelegt";
+    }
+
+    private async Task SetzeVerantwortlichen(long? kontributorId)
+    {
+        await Speichere(_detail! with { Karte = _detail.Karte with { Kontributor = kontributorId } });
     }
 
     private bool IstOffen(string feld)

@@ -58,3 +58,40 @@ input[type="checkbox"] {
     width: 16px;
     height: 16px;
 }
+
+/* Die Initialen eines Kontributors tragen die Farbe seiner Art — daran ist sie auch ohne
+   Plakette erkennbar. Sie stehen hier und nicht in einer Komponente, weil zwei sie zeigen:
+   die Identitätswahl in der Kopfzeile und der Verantwortliche auf der Kartenseite. */
+.kuerzel {
+    display: inline-flex;
+    flex: 0 0 20px;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    font-size: 9px;
+    letter-spacing: 0.02em;
+    border-radius: 999px;
+}
+
+.kuerzel-mensch {
+    background: var(--color-accent-2-200);
+    color: var(--color-accent-2-800);
+}
+
+.kuerzel-agent {
+    background: var(--color-accent-200);
+    color: var(--color-accent-800);
+}
+
+/* Ein abgebildeter Kontributor ist kein Akteur: kein Akzent, dafür der gestrichelte Rand. */
+.kuerzel-abgebildet {
+    background: var(--color-neutral-100);
+    color: var(--color-neutral-800);
+    border: 1px dashed var(--color-neutral-300);
+}
+
+/* Niemand hat keine Initialen — der leere Kreis steht für die leere Stelle. */
+.kuerzel-niemand {
+    border: 1px dashed color-mix(in srgb, var(--color-text) 40%, transparent);
+}

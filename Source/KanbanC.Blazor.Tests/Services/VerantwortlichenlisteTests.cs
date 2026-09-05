@@ -36,6 +36,23 @@ public class VerantwortlichenlisteTests
     }
 
     [Test]
+    public void Wenn_das_Suchfeld_leer_ist_dann_bleibt_die_Liste_wie_sie_war()
+    {
+        Assert.That(Verantwortlichenliste.Gefiltert([Stefan, Agent, Maria], "   "), Is.EqualTo(new[] { Stefan, Agent, Maria }));
+    }
+
+    [Test]
+    public void Wenn_im_Suchfeld_ein_Namensteil_steht_dann_bleiben_nur_die_Treffer_stehen_unabhaengig_von_der_Schreibweise()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(Verantwortlichenliste.Gefiltert([Stefan, Agent, Maria], "len"), Is.EqualTo(new[] { Maria }));
+            Assert.That(Verantwortlichenliste.Gefiltert([Stefan, Agent, Maria], "CLAUDE"), Is.EqualTo(new[] { Agent }));
+            Assert.That(Verantwortlichenliste.Gefiltert([Stefan, Agent, Maria], "zora"), Is.Empty);
+        });
+    }
+
+    [Test]
     public void Wenn_die_Karte_einen_stillgelegten_Verantwortlichen_traegt_dann_wird_er_getrennt_ausgewiesen()
     {
         var traeger = Verantwortlichenliste.StillgelegterTraeger([Stefan, Agent, Maria, Jan], Jan);

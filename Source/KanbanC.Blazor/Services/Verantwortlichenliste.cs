@@ -32,6 +32,20 @@ public static class Verantwortlichenliste
         return verantwortlicher;
     }
 
+    // Das Suchfeld filtert nach Namensteilen, Gross- und Kleinschreibung egal; ein leerer
+    // Suchtext lässt alles stehen. Der Bestand wächst über Boards hinweg, deshalb steht es
+    // überhaupt da.
+    public static IReadOnlyList<Kontributor> Gefiltert(IReadOnlyList<Kontributor> kontributoren, string? suchtext)
+    {
+        if (string.IsNullOrWhiteSpace(suchtext))
+        {
+            return kontributoren;
+        }
+
+        var gesucht = suchtext.Trim();
+        return kontributoren.Where(kontributor => kontributor.Name.Contains(gesucht, StringComparison.OrdinalIgnoreCase)).ToList();
+    }
+
     private static bool IstAktiv(Kontributor kontributor)
     {
         return kontributor.StillgelegtAm is null;

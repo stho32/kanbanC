@@ -56,6 +56,38 @@ public sealed class KartendetailSeite
 
     public ILocator Faelligkeitsfeld => _seite.Locator("#faellig-feld");
 
+    public ILocator Verantwortlich => _seite.Locator("#verantwortlich");
+
+    public ILocator Verantwortlichenname => _seite.Locator("#verantwortlichenname");
+
+    public ILocator Verantwortlichenart => _seite.Locator("#verantwortlichenart");
+
+    public ILocator StillgelegtVermerk => _seite.Locator("#verantwortlich-stillgelegt-vermerk");
+
+    public ILocator Verantwortlichenpopover => _seite.Locator("#verantwortlichenpopover");
+
+    public ILocator Verantwortlichensuche => _seite.Locator("#verantwortlichensuche");
+
+    public ILocator Verantwortlichenzeilen => _seite.Locator("#verantwortlichenliste .verantwortlichenzeile");
+
+    public ILocator VerantwortlichenzeileVon(long kontributorId)
+    {
+        return _seite.Locator($"#verantwortlich-waehlen-{kontributorId}");
+    }
+
+    public ILocator StillgelegteZeileVon(long kontributorId)
+    {
+        return _seite.Locator($"#verantwortlich-stillgelegt-{kontributorId}");
+    }
+
+    public ILocator Niemand => _seite.Locator("#verantwortlich-niemand");
+
+    public async Task OeffneVerantwortlichenwahl()
+    {
+        await Verantwortlich.ClickAsync();
+        await Assertions.Expect(Verantwortlichenpopover).ToBeVisibleAsync();
+    }
+
     public ILocator Farbpunkte => _seite.Locator("#farbpunkte .farbpunkt");
 
     public ILocator GewaehlterFarbpunkt => _seite.Locator("#farbpunkte .farbpunkt-gewaehlt");

@@ -42,37 +42,7 @@
     color: var(--color-accent);
 }
 
-/* Die Initialen tragen die Farbe der Art — daran ist sie auch ohne Plakette erkennbar. Im
-   Popover stehen sie kleiner als in der Liste auf /kontributoren: dieselbe Form, nicht
-   dieselbe Größe. */
-.kuerzel {
-    display: inline-flex;
-    flex: 0 0 20px;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    font-size: 9px;
-    letter-spacing: 0.02em;
-    border-radius: 999px;
-}
-
-.kuerzel-mensch {
-    background: var(--color-accent-2-200);
-    color: var(--color-accent-2-800);
-}
-
-.kuerzel-agent {
-    background: var(--color-accent-200);
-    color: var(--color-accent-800);
-}
-
-/* Ein abgebildeter Kontributor ist kein Akteur: kein Akzent, dafür der gestrichelte Rand. */
-.kuerzel-abgebildet {
-    background: var(--color-neutral-100);
-    color: var(--color-neutral-800);
-    border: 1px dashed var(--color-neutral-300);
-}
+/* Die Initialen stehen in oberflaeche.css: die Kartenseite trägt dieselbe Form. */
 
 /* Abgeblendet statt ausgeblendet — wer am Board mitschreibt, bleibt sichtbar. */
 .identitaetszeile-gesperrt {
