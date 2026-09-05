@@ -30,7 +30,7 @@ public static class KartenEndpunkte
     // alle stehen. Ungekuerzt, auch wenn das Board dieselbe Spalte gekuerzt liefert.
     private static IResult LiesKartenDerSpalte(long boardId, long spalteId, KartenService kartenService)
     {
-        var ergebnis = kartenService.LadeKartenDerSpalte(boardId, spalteId);
+        var ergebnis = kartenService.LadeKartenDerSpalte(boardId, spalteId, new Archivierung(false));
         if (ergebnis.IstErfolg)
         {
             return Results.Ok(ergebnis.Wert);

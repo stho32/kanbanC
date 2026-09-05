@@ -149,7 +149,7 @@ public sealed class KartenRepository : IKartenRepository
     }
 
     // Ungekuerzt und in Anzeigereihenfolge: was die Oberflaeche kuerzt, bleibt hier vollstaendig.
-    public IReadOnlyList<Karte>? LadeKartenDerSpalte(long boardId, long spalteId)
+    public IReadOnlyList<Karte>? LadeKartenDerSpalte(long boardId, long spalteId, Archivierung archivstand)
     {
         using var verbindung = _verbindungsfabrik.Oeffne();
 
@@ -159,7 +159,7 @@ public sealed class KartenRepository : IKartenRepository
             return null; // stil-check: C25 null heisst "Spalte unbekannt oder fremd" (404)
         }
 
-        return Kartenleser.LiesKartenEinerSpalte(verbindung, null, spalteId);
+        return Kartenleser.LiesKartenEinerSpalte(verbindung, null, spalteId, archivstand);
     }
 
     // Die Uhr der WebApi, nicht UTC: „heute“ ist der Tag, den der Mensch vor dem Bildschirm meint.

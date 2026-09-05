@@ -222,3 +222,4 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-05 | R00016 Karte archivieren | B0207 ⋯-Menü auf der Karte | Standard | 2h | 0,4h | 0,4h | autonom |
 | 2026-09-05 | R00016 Karte archivieren | B0208 Archivieren in der Bahn | Standard | 2h | 0,2h | 0,2h | autonom |
 | 2026-09-05 | R00016 Karte archivieren | B0209 E2E Karte archivieren | Standard | 2-4h | 0,2h | 0,2h | autonom |
+| 2026-09-05 | R00016 Karte archivieren | B0210 Archivierte Karten einer Spalte lesen | Standard | 0,4h | 0,2h | 0,2h | autonom |

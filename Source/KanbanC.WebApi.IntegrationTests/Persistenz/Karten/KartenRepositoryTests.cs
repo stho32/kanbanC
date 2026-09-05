@@ -476,7 +476,7 @@ public class KartenRepositoryTests
         repository.LegeAn(board.BoardId, abschlussspalteId, new KarteAnlegenAnfrage("Danach"));
         SetzeErledigung(datenbank, erste.KarteId, "2026-09-01");
 
-        var karten = repository.LadeKartenDerSpalte(board.BoardId, abschlussspalteId);
+        var karten = repository.LadeKartenDerSpalte(board.BoardId, abschlussspalteId, new Archivierung(false));
 
         Assert.That(karten, Is.Not.Null);
         Assert.Multiple(() =>
@@ -494,7 +494,7 @@ public class KartenRepositoryTests
         var repository = new KartenRepository(datenbank.Verbindungsfabrik);
         var board = LegeBoardAn(datenbank);
 
-        var karten = repository.LadeKartenDerSpalte(board.BoardId, board.Spalten[1].SpalteId);
+        var karten = repository.LadeKartenDerSpalte(board.BoardId, board.Spalten[1].SpalteId, new Archivierung(false));
 
         Assert.That(karten, Is.Not.Null);
         Assert.That(karten, Is.Empty);
@@ -507,7 +507,7 @@ public class KartenRepositoryTests
         var repository = new KartenRepository(datenbank.Verbindungsfabrik);
         var board = LegeBoardAn(datenbank);
 
-        Assert.That(repository.LadeKartenDerSpalte(board.BoardId, 999), Is.Null);
+        Assert.That(repository.LadeKartenDerSpalte(board.BoardId, 999, new Archivierung(false)), Is.Null);
     }
 
     [Test]
@@ -519,7 +519,7 @@ public class KartenRepositoryTests
         var zweites = LegeBoardAn(datenbank);
         repository.LegeAn(erstes.BoardId, erstes.Spalten[0].SpalteId, new KarteAnlegenAnfrage("A"));
 
-        Assert.That(repository.LadeKartenDerSpalte(zweites.BoardId, erstes.Spalten[0].SpalteId), Is.Null);
+        Assert.That(repository.LadeKartenDerSpalte(zweites.BoardId, erstes.Spalten[0].SpalteId, new Archivierung(false)), Is.Null);
     }
 
     // Der Fall, um dessentwillen die Adresse entsteht: die Bahn ist ueber ihrer Grenze, das
@@ -536,7 +536,7 @@ public class KartenRepositoryTests
             repository.LegeAn(board.BoardId, abschlussspalteId, new KarteAnlegenAnfrage($"Fertig {nummer}"));
         }
 
-        var karten = repository.LadeKartenDerSpalte(board.BoardId, abschlussspalteId);
+        var karten = repository.LadeKartenDerSpalte(board.BoardId, abschlussspalteId, new Archivierung(false));
 
         Assert.That(karten, Has.Count.EqualTo(23));
     }
@@ -585,7 +585,7 @@ public class KartenRepositoryTests
 
         ArchiviereKarte(datenbank, b!.KarteId);
 
-        var karten = repository.LadeKartenDerSpalte(board.BoardId, spalteId);
+        var karten = repository.LadeKartenDerSpalte(board.BoardId, spalteId, new Archivierung(false));
         Assert.That(karten!.Select(karte => karte.Titel), Is.EqualTo(new[] { "A" }));
     }
 
@@ -766,6 +766,54 @@ public class KartenRepositoryTests
             Assert.That(Archivstaende(datenbank), Is.Empty);
             Assert.That(GeladenePositionen(datenbank, erstes.BoardId, 0), Is.EqualTo(new[] { 1 }));
         });
+    }
+
+    [Test]
+    public void Wenn_der_Archivstand_archiviert_lautet_dann_liefert_LadeKartenDerSpalte_genau_die_archivierten_Karten()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var spalteId = board.Spalten[0].SpalteId;
+        repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage("A"));
+        var b = repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage("B"));
+        repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage("C"));
+        repository.SetzeArchivierung(board.BoardId, b!.KarteId, new Archivierung(true));
+
+        var archivierte = repository.LadeKartenDerSpalte(board.BoardId, spalteId, new Archivierung(true));
+
+        Assert.That(archivierte!.Select(karte => karte.Titel), Is.EqualTo(new[] { "B" }));
+    }
+
+    [Test]
+    public void Wenn_die_Spalte_keine_archivierte_Karte_traegt_dann_liefert_LadeKartenDerSpalte_die_leere_Liste_statt_null()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var spalteId = board.Spalten[0].SpalteId;
+        repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage("A"));
+
+        var archivierte = repository.LadeKartenDerSpalte(board.BoardId, spalteId, new Archivierung(true));
+
+        Assert.That(archivierte, Is.Empty);
+    }
+
+    // Die archivierte Karte behaelt ihr Erledigungsdatum: es ist eine Aussage ueber die Karte,
+    // nicht ueber ihre Sichtbarkeit.
+    [Test]
+    public void Wenn_eine_erledigte_Karte_archiviert_ist_dann_traegt_sie_im_Archiv_weiterhin_ihr_Erledigungsdatum()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var abschlussspalteId = board.Spalten[2].SpalteId;
+        var fertig = repository.LegeAn(board.BoardId, abschlussspalteId, new KarteAnlegenAnfrage("Fertig"));
+        repository.SetzeArchivierung(board.BoardId, fertig!.KarteId, new Archivierung(true));
+
+        var archivierte = repository.LadeKartenDerSpalte(board.BoardId, abschlussspalteId, new Archivierung(true));
+
+        Assert.That(archivierte![0].ErledigtAm, Is.EqualTo(DateOnly.FromDateTime(DateTime.Today)));
     }
 
     private static long[] Archivstaende(TemporaereDatenbank datenbank)

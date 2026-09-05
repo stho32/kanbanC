@@ -220,7 +220,7 @@ public class KartenServiceTests
         kartenRepository.LegeAn(1, spalteId, new KarteAnlegenAnfrage("Migration schreiben"));
         var service = new KartenService(spaltenRepository, kartenRepository);
 
-        var ergebnis = service.LadeKartenDerSpalte(1, spalteId);
+        var ergebnis = service.LadeKartenDerSpalte(1, spalteId, new Archivierung(false));
 
         Assert.That(ergebnis.IstErfolg, Is.True);
         Assert.That(ergebnis.Wert.Select(karte => karte.Titel), Is.EqualTo(new[] { "Migration schreiben" }));
@@ -233,7 +233,7 @@ public class KartenServiceTests
         var kartenRepository = TestKartenRepository.Leer();
         var service = new KartenService(spaltenRepository, kartenRepository);
 
-        var ergebnis = service.LadeKartenDerSpalte(99, spaltenRepository.Spalten(1)[0].SpalteId);
+        var ergebnis = service.LadeKartenDerSpalte(99, spaltenRepository.Spalten(1)[0].SpalteId, new Archivierung(false));
 
         Assert.That(ergebnis.IstErfolg, Is.False);
         Assert.Multiple(() =>
@@ -251,7 +251,7 @@ public class KartenServiceTests
         var kartenRepository = TestKartenRepository.Leer();
         var service = new KartenService(spaltenRepository, kartenRepository);
 
-        var ergebnis = service.LadeKartenDerSpalte(1, fremdeSpalteId);
+        var ergebnis = service.LadeKartenDerSpalte(1, fremdeSpalteId, new Archivierung(false));
 
         Assert.That(ergebnis.IstErfolg, Is.False);
         Assert.Multiple(() =>
@@ -289,7 +289,7 @@ public class KartenServiceTests
         var spalteId = spaltenRepository.Spalten(1)[0].SpalteId;
         var service = new KartenService(spaltenRepository, TestKartenRepository.MitVerschwundenerSpalte());
 
-        var ergebnis = service.LadeKartenDerSpalte(1, spalteId);
+        var ergebnis = service.LadeKartenDerSpalte(1, spalteId, new Archivierung(false));
 
         Assert.That(ergebnis.IstErfolg, Is.False);
         Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("spalte-unbekannt"));
@@ -302,7 +302,7 @@ public class KartenServiceTests
         var spalteId = spaltenRepository.Spalten(1)[0].SpalteId;
         var service = new KartenService(spaltenRepository, TestKartenRepository.Leer());
 
-        var ergebnis = service.LadeKartenDerSpalte(1, spalteId);
+        var ergebnis = service.LadeKartenDerSpalte(1, spalteId, new Archivierung(false));
 
         Assert.That(ergebnis.IstErfolg, Is.True);
         Assert.That(ergebnis.Wert, Is.Empty);

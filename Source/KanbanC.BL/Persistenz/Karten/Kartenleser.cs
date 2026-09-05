@@ -1,6 +1,7 @@
 using System.Data;
 using System.Globalization;
 using Dapper;
+using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
 
 namespace KanbanC.BL.Persistenz.Karten;
@@ -32,16 +33,20 @@ internal static class Kartenleser
         return kartenJeSpalte;
     }
 
-    public static IReadOnlyList<Karte> LiesKartenEinerSpalte(IDbConnection verbindung, IDbTransaction? transaktion, long spalteId)
+    // Die Spalte zeigt entweder ihre aktiven oder ihre archivierten Karten, nie beide; die
+    // Reihenfolge bleibt in beiden Fällen dieselbe.
+    public static IReadOnlyList<Karte> LiesKartenEinerSpalte(IDbConnection verbindung, IDbTransaction? transaktion, long spalteId, Archivierung archivstand)
     {
+        var parameter = new { SpalteId = spalteId, archivstand.IstArchiviert };
         var zeilen = verbindung.Query<Kartenzeile>(@"
             SELECT k.KarteId, k.Spalte, k.Titel, k.Position, e.ErledigtAm
               FROM Karte k
               LEFT JOIN Karteerledigung e ON e.Karte = k.KarteId
               LEFT JOIN Kartenarchivierung a ON a.Karte = k.KarteId
              WHERE k.Spalte = @SpalteId
-               AND a.Karte IS NULL
-             ORDER BY k.Position", new { SpalteId = spalteId }, transaktion);
+               AND ((@IstArchiviert = 0 AND a.Karte IS NULL)
+                 OR (@IstArchiviert = 1 AND a.Karte IS NOT NULL))
+             ORDER BY k.Position", parameter, transaktion);
         return zeilen.Select(AlsKarte).ToList();
     }
 

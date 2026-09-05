@@ -15,6 +15,8 @@ namespace KanbanC.BL.Persistenz.Boards;
 public sealed class SpaltenRepository : ISpaltenRepository
 {
     private const int UniqueConstraintFehlercode = 2067;
+    private static readonly Archivierung Aktive = new(false);
+    private static readonly Archivierung Archivierte = new(true);
     private static readonly Pruefbefunde SpaltenbestandHatSichGeaendert = new([
         new Fehlerbefund(
             "spaltenbestand-geaendert",
@@ -76,7 +78,7 @@ public sealed class SpaltenRepository : ISpaltenRepository
             }
 
             var position = LiesPosition(verbindung, transaktion, spalteId);
-            var karten = Kartenleser.LiesKartenEinerSpalte(verbindung, transaktion, spalteId);
+            var karten = Kartenleser.LiesKartenEinerSpalte(verbindung, transaktion, spalteId, Aktive);
             transaktion.Commit();
             return Ergebnis<Spalte>.Erfolg(new Spalte(spalteId, bezeichnung, position, anfrage.IstAbschlussspalte, anfrage.Anzeigegrenze, karten, karten.Count));
         }
@@ -143,7 +145,7 @@ public sealed class SpaltenRepository : ISpaltenRepository
         using var verbindung = _verbindungsfabrik.Oeffne();
         using var transaktion = verbindung.BeginTransaction();
 
-        var karten = Kartenleser.LiesKartenEinerSpalte(verbindung, transaktion, spalteId);
+        var karten = Kartenleser.LiesKartenEinerSpalte(verbindung, transaktion, spalteId, Aktive);
         var zuEntfernendeSpalte = Spaltenleser.LiesSpalteDesBoards(verbindung, transaktion, boardId, spalteId, karten);
         var spalteGehoertNichtZumBoard = zuEntfernendeSpalte is null;
         if (spalteGehoertNichtZumBoard)
@@ -151,10 +153,15 @@ public sealed class SpaltenRepository : ISpaltenRepository
             return null; // stil-check: C25 null heisst "Spalte unbekannt oder fremd" (404); die Zurückweisung heißt "Spalte trägt Karten" (400)
         }
 
-        var spalteTraegtNochKarten = karten.Count > 0;
+        // Eine archivierte Karte ist kein Bestand mehr, hängt aber weiter an dieser Spalte: würde
+        // die Spalte entfernt, bräche der Fremdschlüssel der Karte mit einer Ausnahme statt mit
+        // einem Befund.
+        var archivierte = Kartenleser.LiesKartenEinerSpalte(verbindung, transaktion, spalteId, Archivierte);
+        var kartenanzahl = karten.Count + archivierte.Count;
+        var spalteTraegtNochKarten = kartenanzahl > 0;
         if (spalteTraegtNochKarten)
         {
-            return Ergebnis<Spalte>.Zurueckgewiesen(SpalteTraegtNochKarten(zuEntfernendeSpalte!));
+            return Ergebnis<Spalte>.Zurueckgewiesen(SpalteTraegtNochKarten(zuEntfernendeSpalte!, kartenanzahl));
         }
 
         LoescheSpalte(verbindung, transaktion, boardId, spalteId);
@@ -163,14 +170,14 @@ public sealed class SpaltenRepository : ISpaltenRepository
         return Ergebnis<Spalte>.Erfolg(zuEntfernendeSpalte!);
     }
 
-    private static Pruefbefunde SpalteTraegtNochKarten(Spalte spalte)
+    private static Pruefbefunde SpalteTraegtNochKarten(Spalte spalte, int kartenanzahl)
     {
-        var kartenwort = Kartenwort(spalte.Karten.Count);
+        var kartenwort = Kartenwort(kartenanzahl);
         return new Pruefbefunde([
             new Fehlerbefund(
                 "spalte-traegt-karten",
-                $"Die Spalte „{spalte.Bezeichnung}“ enthält noch {spalte.Karten.Count} {kartenwort} und lässt sich deshalb nicht entfernen.",
-                $"Die {spalte.Karten.Count} {kartenwort} mit `PUT /api/boards/{{boardId}}/karten/{{karteId}}/lage` in eine andere Spalte verschieben und das Entfernen wiederholen."),
+                $"Die Spalte „{spalte.Bezeichnung}“ enthält noch {kartenanzahl} {kartenwort} und lässt sich deshalb nicht entfernen.",
+                $"Die {kartenanzahl} {kartenwort} mit `PUT /api/boards/{{boardId}}/karten/{{karteId}}/lage` in eine andere Spalte verschieben und das Entfernen wiederholen."),
         ]);
     }
 

@@ -122,7 +122,7 @@ public sealed class KartenService
     // Ungekürzt, anders als am Board: wer diese Adresse ruft, will die ganze Bahn. Geprüft wird
     // erst das Board, dann die Spalte — ein Lesezugriff auf die Karten einer fremden Spalte fände
     // sonst statt, bevor jemand merkt, dass sie fremd ist.
-    public Ergebnis<IReadOnlyList<Karte>> LadeKartenDerSpalte(long boardId, long spalteId)
+    public Ergebnis<IReadOnlyList<Karte>> LadeKartenDerSpalte(long boardId, long spalteId, Archivierung archivstand)
     {
         var spaltenDesBoards = _spaltenRepository.LadeAlle(boardId);
         var boardIstUnbekannt = spaltenDesBoards is null;
@@ -138,7 +138,7 @@ public sealed class KartenService
             return Zurueckgewiesen<IReadOnlyList<Karte>>(BefundZurFehlendenSpalte(boardId, spalteId));
         }
 
-        var karten = _kartenRepository.LadeKartenDerSpalte(boardId, spalteId);
+        var karten = _kartenRepository.LadeKartenDerSpalte(boardId, spalteId, archivstand);
         var spalteIstInzwischenVerschwunden = karten is null;
         if (spalteIstInzwischenVerschwunden)
         {

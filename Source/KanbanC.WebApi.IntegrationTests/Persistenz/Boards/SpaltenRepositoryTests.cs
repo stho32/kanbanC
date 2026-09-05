@@ -434,6 +434,31 @@ public class SpaltenRepositoryTests
         Assert.That(GespeicherteBezeichnungenNachPosition(datenbank, boardId), Is.EqualTo(new[] { "Zu erledigen", "Erledigt" }));
     }
 
+    // Eine archivierte Karte ist kein Bestand mehr, haengt aber weiter an ihrer Spalte: wuerde die
+    // Spalte entfernt, braeche der Fremdschluessel der Karte mit einer Ausnahme statt einem Befund.
+    [Test]
+    public void Wenn_die_Spalte_nur_noch_eine_archivierte_Karte_traegt_dann_weist_Entferne_sie_trotzdem_zurueck()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var repository = new SpaltenRepository(datenbank.Verbindungsfabrik);
+        var kartenRepository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var zuErledigen = SpalteIdAnPosition(datenbank, boardId, 1);
+        var karte = kartenRepository.LegeAn(boardId, zuErledigen, new KarteAnlegenAnfrage("Migration schreiben"));
+        kartenRepository.SetzeArchivierung(boardId, karte!.KarteId, new Archivierung(true));
+
+        var ergebnis = repository.Entferne(boardId, zuErledigen);
+
+        Assert.That(ergebnis, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.IstErfolg, Is.False);
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("spalte-traegt-karten"));
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("1 Karte"));
+        });
+        Assert.That(GespeicherteBezeichnungenNachPosition(datenbank, boardId), Does.Contain("Zu erledigen"));
+    }
+
     private static long LegeBoardAn(TemporaereDatenbank datenbank)
     {
         var repository = new BoardRepository(datenbank.Verbindungsfabrik);

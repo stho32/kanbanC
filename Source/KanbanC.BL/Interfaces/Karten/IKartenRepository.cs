@@ -18,5 +18,5 @@ public interface IKartenRepository
 
     // null heisst „diese Spalte gibt es an dieser Stelle nicht"; eine Spalte ohne Karten liefert
     // die leere Liste.
-    IReadOnlyList<Karte>? LadeKartenDerSpalte(long boardId, long spalteId);
+    IReadOnlyList<Karte>? LadeKartenDerSpalte(long boardId, long spalteId, Archivierung archivstand);
 }

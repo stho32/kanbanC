@@ -32,6 +32,8 @@ public sealed class TestKartenRepository : IKartenRepository
 
     public bool WurdeArchiviert { get; private set; }
 
+    public Archivierung? GelesenerArchivstand { get; private set; }
+
     public static TestKartenRepository Leer()
     {
         return new TestKartenRepository(spalteIstInzwischenVerschwunden: false);
@@ -120,9 +122,10 @@ public sealed class TestKartenRepository : IKartenRepository
 
     // Wie das echte Repository: null heisst „diese Spalte gibt es an dieser Stelle nicht", eine
     // Spalte ohne Karten liefert die leere Liste.
-    public IReadOnlyList<Karte>? LadeKartenDerSpalte(long boardId, long spalteId)
+    public IReadOnlyList<Karte>? LadeKartenDerSpalte(long boardId, long spalteId, Archivierung archivstand)
     {
         WurdenKartenGelesen = true;
+        GelesenerArchivstand = archivstand;
         if (_spalteIstInzwischenVerschwunden)
         {
             return null;
