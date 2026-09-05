@@ -155,6 +155,55 @@ public sealed class KartenRepository : IKartenRepository
         return detail;
     }
 
+    // Die ganze Liste ersetzen statt einzelner Zugaenge und Abgaenge — dasselbe Muster wie
+    // SpaltenRepository.SetzeReihenfolge. Ein Text, den danach keine Karte mehr traegt,
+    // verschwindet damit von selbst aus dem Bestand des Boards, ohne eigenen Aufraeumschritt.
+    public Kartendetail? SetzeEtiketten(long karteId, Kartenetiketten etiketten)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+        using var transaktion = verbindung.BeginTransaction();
+
+        var dieKarteGibtEsNicht = !GibtEsDieKarte(verbindung, transaktion, karteId);
+        if (dieKarteGibtEsNicht)
+        {
+            return null; // stil-check: C25 null heisst "diese Karte gibt es nicht" (404)
+        }
+
+        LoescheEtiketten(verbindung, transaktion, karteId);
+        SchreibeEtiketten(verbindung, transaktion, karteId, etiketten);
+        var detail = Kartenleser.LiesKartendetail(verbindung, transaktion, karteId);
+        transaktion.Commit();
+        return detail;
+    }
+
+    private static bool GibtEsDieKarte(IDbConnection verbindung, IDbTransaction transaktion, long karteId)
+    {
+        var anzahl = verbindung.ExecuteScalar<long>(@"
+            SELECT COUNT(*)
+              FROM Karte
+             WHERE KarteId = @KarteId", new { KarteId = karteId }, transaktion);
+        return anzahl > 0;
+    }
+
+    private static void LoescheEtiketten(IDbConnection verbindung, IDbTransaction transaktion, long karteId)
+    {
+        verbindung.Execute(@"
+            DELETE
+              FROM Etikett
+             WHERE Karte = @Karte", new { Karte = karteId }, transaktion);
+    }
+
+    private static void SchreibeEtiketten(IDbConnection verbindung, IDbTransaction transaktion, long karteId, Kartenetiketten etiketten)
+    {
+        foreach (var text in etiketten.Etiketten)
+        {
+            var parameter = new { Karte = karteId, Text = Etikettentext.Normalisiert(text) };
+            verbindung.Execute(@"
+                INSERT INTO Etikett (Karte, Text)
+                VALUES (@Karte, @Text)", parameter, transaktion);
+        }
+    }
+
     // Die Zahl der geaenderten Zeilen ist zugleich die Auskunft, ob es die Karte gibt: ein
     // zweiter Zaehlaufruf davor waere dieselbe Frage ein zweites Mal.
     private static bool SchreibeTitel(IDbConnection verbindung, IDbTransaction transaktion, long karteId, string titel)

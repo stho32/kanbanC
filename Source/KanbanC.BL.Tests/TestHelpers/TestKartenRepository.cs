@@ -173,6 +173,22 @@ public sealed class TestKartenRepository : IKartenRepository
 
     public long? GeaenderteKarteId { get; private set; }
 
+    public Kartenetiketten? ErhalteneEtiketten { get; private set; }
+
+    // Wie das echte Repository: die ganze Liste wird gesetzt, zurueck kommt das gelesene Detail;
+    // null heisst „diese KarteId gibt es nicht".
+    public Kartendetail? SetzeEtiketten(long karteId, Kartenetiketten etiketten)
+    {
+        GeaenderteKarteId = karteId;
+        ErhalteneEtiketten = etiketten;
+        if (_karteFehltAnDieserStelle)
+        {
+            return null;
+        }
+
+        return _kartendetail;
+    }
+
     public IReadOnlyList<Karte> Karten(long spalteId)
     {
         if (!_kartenJeSpalte.TryGetValue(spalteId, out var karten))

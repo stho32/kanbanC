@@ -24,6 +24,10 @@ public interface IKartenRepository
     // Seite eine Quelle behaelt und nach dem Schreiben nicht nachladen muss.
     Kartendetail? Aendere(long karteId, KarteAendernAnfrage anfrage);
 
+    // Setzt die **ganze** Liste: was uebergeben wird, ist danach die Liste der Karte.
+    // null heisst: diese KarteId gibt es nicht.
+    Kartendetail? SetzeEtiketten(long karteId, Kartenetiketten etiketten);
+
     // null heisst „diese Spalte gibt es an dieser Stelle nicht"; eine Spalte ohne Karten liefert
     // die leere Liste.
     IReadOnlyList<Karte>? LadeKartenDerSpalte(long boardId, long spalteId, Archivierung archivstand);

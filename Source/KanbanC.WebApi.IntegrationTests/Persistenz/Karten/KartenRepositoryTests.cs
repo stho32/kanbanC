@@ -1093,6 +1093,88 @@ public class KartenRepositoryTests
         Assert.That(detail!.Etikettvorschlaege.Select(vorschlag => vorschlag.Text), Is.EqualTo(new[] { "Import" }));
     }
 
+    // Das Rechenbeispiel der Anforderung: Import + Doku, dann PUT mit Doku + Refactoring —
+    // danach traegt die Karte zwei Etiketten, nicht drei.
+    [Test]
+    public void Wenn_SetzeEtiketten_eine_andere_Liste_uebergibt_dann_ist_sie_danach_exakt_die_Liste_der_Karte()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Migration schreiben"));
+        repository.SetzeEtiketten(karte!.KarteId, new Kartenetiketten(["Import", "Doku"]));
+
+        var detail = repository.SetzeEtiketten(karte.KarteId, new Kartenetiketten(["Doku", "Refactoring"]));
+
+        Assert.That(detail!.Etiketten, Is.EqualTo(new[] { "Doku", "Refactoring" }));
+    }
+
+    [Test]
+    public void Wenn_SetzeEtiketten_eine_leere_Liste_uebergibt_dann_traegt_die_Karte_danach_keine_Etiketten()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Migration schreiben"));
+        repository.SetzeEtiketten(karte!.KarteId, new Kartenetiketten(["Import", "Doku"]));
+
+        var detail = repository.SetzeEtiketten(karte.KarteId, new Kartenetiketten([]));
+
+        Assert.That(detail!.Etiketten, Is.Empty);
+    }
+
+    // Ein Text, den keine Karte mehr traegt, ist aus dem Bestand fort — ohne Aufraeumschritt.
+    [Test]
+    public void Wenn_das_letzte_Etikett_eines_Textes_entfernt_wird_dann_fehlt_er_danach_in_den_Vorschlaegen_der_anderen_Karte()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var spalteId = board.Spalten[0].SpalteId;
+        var a = repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage("A"));
+        var b = repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage("B"));
+        repository.SetzeEtiketten(a!.KarteId, new Kartenetiketten(["Import", "Doku"]));
+        repository.SetzeEtiketten(b!.KarteId, new Kartenetiketten(["Doku"]));
+        Assert.That(repository.LiesKartendetail(b.KarteId)!.Etikettvorschlaege.Select(vorschlag => vorschlag.Text),
+            Is.EqualTo(new[] { "Doku", "Import" }));
+
+        repository.SetzeEtiketten(a.KarteId, new Kartenetiketten(["Doku"]));
+
+        Assert.That(repository.LiesKartendetail(b.KarteId)!.Etikettvorschlaege,
+            Is.EqualTo(new[] { new Etikettvorschlag("Doku", 2) }));
+    }
+
+    // Die Randleerzeichen fallen beim Schreiben weg, wie beim Kartentitel.
+    [Test]
+    public void Wenn_ein_Etikett_mit_Randleerzeichen_uebergeben_wird_dann_steht_es_normalisiert_in_der_Spalte()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Migration schreiben"));
+
+        var detail = repository.SetzeEtiketten(karte!.KarteId, new Kartenetiketten(["  Import  "]));
+
+        Assert.That(detail!.Etiketten, Is.EqualTo(new[] { "Import" }));
+    }
+
+    [Test]
+    public void Wenn_die_KarteId_unbekannt_ist_dann_liefert_SetzeEtiketten_null_und_schreibt_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        LegeBoardAn(datenbank);
+
+        Assert.That(repository.SetzeEtiketten(999, new Kartenetiketten(["Import"])), Is.Null);
+        Assert.That(Etikettzeilen(datenbank), Is.EqualTo(0));
+    }
+
+    private static long Etikettzeilen(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.ExecuteScalar<long>("SELECT COUNT(*) FROM Etikett");
+    }
+
     private static void FuegeEtikettEin(TemporaereDatenbank datenbank, long karteId, string text)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
