@@ -20,6 +20,10 @@ namespace KanbanC.Contracts.Karten;
 // Board-Abruf zahlte sonst eine zweite Abfrage je Karte. Auch hier kein Zählfeld und keine
 // Ordnungszahl daneben — die Anzahl ist .Count an der gelieferten Liste, und die Ordnung liefert
 // der Zeitpunkt jeder Zeile.
+// Und aus denselben Gründen die Anhänge: auf der Bahn ist kein Anhangzeichen gezeichnet, und ein
+// Board-Abruf zahlte sonst eine zweite Abfrage je Karte. Auch hier kein Zählfeld und keine
+// Ordnungszahl daneben. Die Bytes reisen nicht mit — sie holt der Browser über eine eigene Route
+// direkt von der WebApi.
 public record Kartendetail(
     Karte Karte,
     long Board,
@@ -30,4 +34,5 @@ public record Kartendetail(
     IReadOnlyList<string> Etiketten,
     IReadOnlyList<Etikettvorschlag> Etikettvorschlaege,
     IReadOnlyList<Teilaufgabe> Teilaufgaben,
-    IReadOnlyList<Kommentar> Kommentare);
+    IReadOnlyList<Kommentar> Kommentare,
+    IReadOnlyList<Anhang> Anhaenge);

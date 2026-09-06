@@ -1691,6 +1691,134 @@ public class KartenRepositoryTests
         Assert.That(Kommentarzeilen(datenbank), Is.Zero);
     }
 
+    // Die Reihenfolge ist die Zeitordnung und nicht die des Schreibens: die drei Zeilen werden
+    // absichtlich in verkehrter Zeitfolge eingefuegt, die aeltere kommt trotzdem oben zurueck.
+    [Test]
+    public void Wenn_Anhaenge_verschieden_datiert_sind_dann_liefert_das_Kartendetail_sie_in_Zeitordnung()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+        FuegeAnhangEin(datenbank, karte!.KarteId, stefan, "gestern.md", 41000, "2026-08-30T17:40:12.0000000Z");
+        FuegeAnhangEin(datenbank, karte.KarteId, stefan, "vorgestern.md", 118000, "2026-08-29T09:05:00.0000000Z");
+        FuegeAnhangEin(datenbank, karte.KarteId, stefan, "heute.md", 1200000, "2026-08-31T11:38:00.0000000Z");
+
+        var detail = repository.LiesKartendetail(karte.KarteId);
+
+        Assert.That(detail!.Anhaenge.Select(anhang => anhang.Dateiname), Is.EqualTo(new[] { "vorgestern.md", "gestern.md", "heute.md" }));
+        Assert.That(detail.Anhaenge.Select(anhang => anhang.Zeitpunkt), Is.Ordered);
+    }
+
+    [Test]
+    public void Wenn_ein_Anhang_gelesen_wird_dann_traegt_er_Groesse_Nummer_und_Zeitpunkt_mit_Uhrzeit_in_UTC()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+        FuegeAnhangEin(datenbank, karte!.KarteId, stefan, "wbs-export.md", 41000, "2026-08-30T17:40:12.0000000Z");
+
+        var detail = repository.LiesKartendetail(karte.KarteId);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail!.Anhaenge[0].Dateiname, Is.EqualTo("wbs-export.md"));
+            Assert.That(detail.Anhaenge[0].Dateigroesse, Is.EqualTo(41000));
+            Assert.That(detail.Anhaenge[0].AnhangId, Is.GreaterThan(0));
+            Assert.That(detail.Anhaenge[0].Zeitpunkt, Is.EqualTo(new DateTimeOffset(2026, 8, 30, 17, 40, 12, TimeSpan.Zero)));
+        });
+    }
+
+    [Test]
+    public void Wenn_ein_Anhang_gelesen_wird_dann_traegt_er_den_ganzen_Urheber()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var agent = LegeKontributorAn(datenbank, "Claude-Agent", Kontributorart.Agent);
+        FuegeAnhangEin(datenbank, karte!.KarteId, agent, "wbs-export.md", 41000, "2026-08-30T17:40:12.0000000Z");
+
+        var detail = repository.LiesKartendetail(karte.KarteId);
+
+        Assert.That(detail!.Anhaenge[0].Urheber, Is.EqualTo(new Kontributor(agent, "Claude-Agent", Kontributorart.Agent, StillgelegtAm: null)));
+    }
+
+    // Wer geht, bleibt an seinen alten Anhaengen sichtbar — mit Name und Stilllegungsstand.
+    [Test]
+    public void Wenn_der_Urheber_inzwischen_stillgelegt_ist_dann_bleibt_er_am_Anhang_sichtbar()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var maria = LegeKontributorAn(datenbank, "Maria Lenz", Kontributorart.Mensch);
+        FuegeAnhangEin(datenbank, karte!.KarteId, maria, "wbs-export.md", 41000, "2026-08-30T17:40:12.0000000Z");
+        LegeKontributorStill(datenbank, maria, "2026-08-31");
+
+        var detail = repository.LiesKartendetail(karte.KarteId);
+
+        Assert.That(detail!.Anhaenge, Has.Count.EqualTo(1));
+        Assert.That(detail.Anhaenge[0].Urheber, Is.EqualTo(new Kontributor(maria, "Maria Lenz", Kontributorart.Mensch, new DateOnly(2026, 8, 31))));
+    }
+
+    [Test]
+    public void Wenn_die_Karte_keinen_Anhang_traegt_dann_liefert_das_Kartendetail_die_leere_Liste()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+
+        Assert.That(repository.LiesKartendetail(karte!.KarteId)!.Anhaenge, Is.Empty);
+    }
+
+    // Die Anhaenge einer Karte und nur die: die Zeilen einer fremden Karte kommen nicht mit.
+    [Test]
+    public void Wenn_eine_andere_Karte_Anhaenge_traegt_dann_liefert_das_Kartendetail_nur_die_eigenen()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var eigene = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var fremde = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Migration schreiben"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+        FuegeAnhangEin(datenbank, fremde!.KarteId, stefan, "nur-woanders.md", 41000, "2026-08-30T17:40:12.0000000Z");
+        FuegeAnhangEin(datenbank, eigene!.KarteId, stefan, "wbs-export.md", 41000, "2026-08-30T17:41:12.0000000Z");
+
+        var detail = repository.LiesKartendetail(eigene.KarteId);
+
+        Assert.That(detail!.Anhaenge.Select(anhang => anhang.Dateiname), Is.EqualTo(new[] { "wbs-export.md" }));
+    }
+
+    [Test]
+    public void Wenn_die_Karte_archiviert_ist_dann_liefert_das_Kartendetail_ihre_Anhaenge_weiterhin()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+        FuegeAnhangEin(datenbank, karte!.KarteId, stefan, "wbs-export.md", 41000, "2026-08-30T17:40:12.0000000Z");
+        repository.SetzeArchivierung(board.BoardId, karte.KarteId, new Archivierung(true));
+
+        var detail = repository.LiesKartendetail(karte.KarteId);
+
+        Assert.That(detail!.Anhaenge.Select(anhang => anhang.Dateiname), Is.EqualTo(new[] { "wbs-export.md" }));
+    }
+
+    private static void FuegeAnhangEin(TemporaereDatenbank datenbank, long karteId, long kontributorId, string dateiname, long dateigroesse, string zeitpunkt)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Anhang (Karte, Kontributor, Dateiname, Dateigroesse, Zeitpunkt)
+            VALUES (@Karte, @Kontributor, @Dateiname, @Dateigroesse, @Zeitpunkt)",
+            new { Karte = karteId, Kontributor = kontributorId, Dateiname = dateiname, Dateigroesse = dateigroesse, Zeitpunkt = zeitpunkt });
+    }
+
     private static long Kommentarzeilen(TemporaereDatenbank datenbank)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();

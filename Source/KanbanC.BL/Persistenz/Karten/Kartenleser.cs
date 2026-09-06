@@ -100,7 +100,8 @@ internal static class Kartenleser
             Etikettenleser.LiesEtikettenDerKarte(verbindung, transaktion, karteId),
             Etikettenleser.LiesVorschlaegeDesBoards(verbindung, transaktion, zeile.Board),
             Teilaufgabenleser.LiesTeilaufgabenDerKarte(verbindung, transaktion, karteId),
-            Kommentarleser.LiesKommentareDerKarte(verbindung, transaktion, karteId));
+            Kommentarleser.LiesKommentareDerKarte(verbindung, transaktion, karteId),
+            Anhangleser.LiesAnhaengeDerKarte(verbindung, transaktion, karteId));
     }
 
     private static Karte AlsKarte(Kartenzeile zeile)
