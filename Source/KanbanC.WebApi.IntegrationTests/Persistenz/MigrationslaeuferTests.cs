@@ -964,6 +964,142 @@ public class MigrationslaeuferTests
         });
     }
 
+    [Test]
+    public void Wenn_die_Migration_gelaufen_ist_dann_traegt_das_Schema_die_Tabelle_Zeiteintrag_mit_ihren_fuenf_Spalten()
+    {
+        using var datenbank = new TemporaereDatenbank();
+
+        new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus();
+
+        Assert.That(Tabellennamen(datenbank), Does.Contain("Zeiteintrag"));
+        Assert.That(Spaltennamen(datenbank, "Zeiteintrag"),
+            Is.EqualTo(new[] { "ZeiteintragId", "Karte", "Kontributor", "Beginn", "Ende" }));
+    }
+
+    // **Ende steht von Anfang an**, obwohl erst I0024 sie fuellt: der Migrationslaeufer kennt kein
+    // Journal, und ein nachtraegliches ALTER TABLE ADD COLUMN scheiterte im zweiten Lauf.
+    [Test]
+    public void Wenn_die_Migration_gelaufen_ist_dann_nimmt_die_Spalte_Ende_einen_Nullwert_und_die_uebrigen_nicht()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "Timer starten", 1);
+        LegeKontributorAn(datenbank, "Stefan");
+
+        FuegeZeiteintragEin(datenbank, karteId: 1, kontributorId: 1, beginn: "2026-09-06T08:04:00.0000000+00:00", ende: null);
+
+        Assert.That(Zeiteintragszeilen(datenbank), Is.EqualTo(new[] { (1L, 1L, 1L, "2026-09-06T08:04:00.0000000+00:00", (string?)null) }));
+        Assert.Throws<SqliteException>(() => FuegeZeiteintragEin(datenbank, karteId: 1, kontributorId: 1, beginn: null, ende: null));
+    }
+
+    // Der Index, ueber den die Lesewege dieser Tabelle gehen: der Primaerschluessel fuehrt mit
+    // ZeiteintragId, seine fuehrende Spalte ist also nicht Karte.
+    [Test]
+    public void Wenn_die_Migration_gelaufen_ist_dann_traegt_das_Schema_den_Index_auf_der_Karte_des_Zeiteintrags()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+
+        Assert.That(Indexdefinition(datenbank, "IX_Zeiteintrag_Karte"), Is.Not.Null);
+    }
+
+    // Die einzige Obergrenze dieses Gegenstands steht im Schema und nicht nur im Dienst: derselbe
+    // Kontributor bekommt auf derselben Karte keinen zweiten **offenen** Eintrag.
+    [Test]
+    public void Wenn_ein_zweiter_offener_Eintrag_desselben_Paares_geschrieben_wird_dann_scheitert_er_an_der_Datenbank()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "Timer starten", 1);
+        LegeKontributorAn(datenbank, "Stefan");
+        FuegeZeiteintragEin(datenbank, karteId: 1, kontributorId: 1, beginn: "2026-09-06T08:04:00.0000000+00:00", ende: null);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Indexdefinition(datenbank, "UX_Zeiteintrag_Karte_Kontributor_Laufend"), Is.Not.Null);
+            Assert.That(
+                () => FuegeZeiteintragEin(datenbank, karteId: 1, kontributorId: 1, beginn: "2026-09-06T09:12:00.0000000+00:00", ende: null),
+                Throws.TypeOf<SqliteException>());
+        });
+        Assert.That(Zeiteintragszeilen(datenbank), Has.Length.EqualTo(1));
+    }
+
+    // Der Index ist **partiell**: ein zweiter Kontributor auf derselben Karte geht durch, und
+    // derselbe Kontributor auf einer zweiten Karte auch.
+    [Test]
+    public void Wenn_ein_zweiter_Kontributor_auf_derselben_Karte_startet_dann_laesst_der_partielle_Index_ihn_durch()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "Timer starten", 1);
+        FuegeKarteEin(datenbank, spalteId, "Timer stoppen", 2);
+        LegeKontributorAn(datenbank, "Stefan");
+        LegeKontributorAn(datenbank, "Nina Barth");
+        FuegeZeiteintragEin(datenbank, karteId: 1, kontributorId: 1, beginn: "2026-09-06T08:04:00.0000000+00:00", ende: null);
+
+        FuegeZeiteintragEin(datenbank, karteId: 1, kontributorId: 2, beginn: "2026-09-06T08:10:00.0000000+00:00", ende: null);
+        FuegeZeiteintragEin(datenbank, karteId: 2, kontributorId: 1, beginn: "2026-09-06T08:20:00.0000000+00:00", ende: null);
+
+        Assert.That(Zeiteintragszeilen(datenbank), Has.Length.EqualTo(3));
+    }
+
+    // Der zweite Teil der Partialitaet: ein **abgeschlossener** Eintrag desselben Paares steht
+    // einem neuen offenen nicht im Weg — genau der Pfad, den I0024 braucht.
+    [Test]
+    public void Wenn_der_offene_Eintrag_ein_Ende_bekommen_hat_dann_laesst_der_partielle_Index_einen_neuen_offenen_zu()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "Timer starten", 1);
+        LegeKontributorAn(datenbank, "Stefan");
+        FuegeZeiteintragEin(datenbank, karteId: 1, kontributorId: 1, beginn: "2026-09-06T08:04:00.0000000+00:00", ende: "2026-09-06T09:00:00.0000000+00:00");
+
+        FuegeZeiteintragEin(datenbank, karteId: 1, kontributorId: 1, beginn: "2026-09-06T09:12:00.0000000+00:00", ende: null);
+
+        Assert.That(Zeiteintragszeilen(datenbank), Has.Length.EqualTo(2));
+    }
+
+    [Test]
+    public void Wenn_die_Migration_ein_zweites_Mal_laeuft_dann_bleiben_Schema_und_Zeiteintraege_unveraendert()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "Timer starten", 1);
+        LegeKontributorAn(datenbank, "Stefan");
+        FuegeZeiteintragEin(datenbank, karteId: 1, kontributorId: 1, beginn: "2026-09-06T08:04:00.0000000+00:00", ende: null);
+        var schemaVorher = SchemaDefinitionen(datenbank);
+
+        Assert.That(() => new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus(), Throws.Nothing);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(SchemaDefinitionen(datenbank), Is.EqualTo(schemaVorher));
+            Assert.That(Zeiteintragszeilen(datenbank), Is.EqualTo(new[] { (1L, 1L, 1L, "2026-09-06T08:04:00.0000000+00:00", (string?)null) }));
+        });
+    }
+
+    private static void FuegeZeiteintragEin(TemporaereDatenbank datenbank, long karteId, long kontributorId, string? beginn, string? ende)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Zeiteintrag (Karte, Kontributor, Beginn, Ende)
+            VALUES (@Karte, @Kontributor, @Beginn, @Ende)",
+            new { Karte = karteId, Kontributor = kontributorId, Beginn = beginn, Ende = ende });
+    }
+
+    private static (long ZeiteintragId, long Karte, long Kontributor, string Beginn, string? Ende)[] Zeiteintragszeilen(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.Query<(long ZeiteintragId, long Karte, long Kontributor, string Beginn, string? Ende)>(@"
+            SELECT ZeiteintragId, Karte, Kontributor, Beginn, Ende
+              FROM Zeiteintrag
+             ORDER BY ZeiteintragId").ToArray();
+    }
+
     private static void FuegeKartenklassenzuordnungEin(TemporaereDatenbank datenbank, long karteId, long kartenklasseId, long zaehlerstand)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();

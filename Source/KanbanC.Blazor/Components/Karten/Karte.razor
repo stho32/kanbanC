@@ -1,3 +1,5 @@
+@using KanbanC.Blazor.Services
+@using KanbanC.Contracts.Zeiten
 <article class="@Klassen" data-karte-id="@Kartendaten.KarteId" draggable="@Ziehbarkeit"
          @ondragstart="BeginneZug" @ondragend="BeendeZug">
     <div class="kartenkopf">
@@ -28,12 +30,25 @@
             }
         </div>
     </div>
-    @* Die Plakette steht **ueber** dem Titelverweis und nicht in ihm: der Titel bleibt der Weg
-       auf die Kartenseite, und die beiden Ziehproben pruefen genau das. Eine Karte ohne Klasse
-       zeigt hier nichts — die Stelle kostet dann keine Zeile. *@
-    @if (Kartendaten.Kartennummer is not null)
+    @* Die Plaketten stehen **ueber** dem Titelverweis und nicht in ihm: der Titel bleibt der Weg
+       auf die Kartenseite, und die beiden Ziehproben pruefen genau das. Links die Nummer, rechts
+       der laufende Timer. Traegt die Karte weder Klasse noch Timer, kostet die Stelle keine
+       Zeile. *@
+    @if (Kartendaten.Kartennummer is not null || _laufplakette is not null)
     {
-        <span class="tag tag-neutral karte-nummer" data-kartennummer="@Kartendaten.Kartennummer">@Kartendaten.Kartennummer</span>
+        <div class="karte-plaketten">
+            @if (Kartendaten.Kartennummer is not null)
+            {
+                <span class="tag tag-neutral karte-nummer" data-kartennummer="@Kartendaten.Kartennummer">@Kartendaten.Kartennummer</span>
+            }
+            @if (_laufplakette is not null)
+            {
+                <span class="tag karte-timer @_laufplakette.Fuellungsklasse" data-karte-timer="@Kartendaten.KarteId" title="@_laufplakette.Titel">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3.5 2"></path></svg>
+                    @_laufplakette.Beschriftung
+                </span>
+            }
+        </div>
     }
     @* Der zweite Weg auf die Kartenseite. Ein Klick bewegt die Maus nicht und beginnt deshalb
        keinen Zug (KindZiehbarkeitProbeE2ETests); wird am Titel gezogen, zieht die Karte weiter
@@ -61,11 +76,26 @@
 @code {
     private bool _menueIstOffen;
     private string _menuezustand = "false";
+    private Laufplakette? _laufplakette;
 
     // Vollqualifiziert, weil der Komponentenname Karte den gleichnamigen Vertragstyp verdeckt.
     [Parameter]
     [EditorRequired]
     public KanbanC.Contracts.Karten.Karte Kartendaten { get; set; } = null!;
+
+    // Die laufenden Zeiteintraege **dieser** Karte, von der Bahn zugeordnet: das Board liefert sie
+    // flach ueber alle Spalten.
+    [Parameter]
+    public IReadOnlyList<Zeiteintrag> LaufendeZeiteintraege { get; set; } = [];
+
+    // Ohne gewaehlte Identitaet gibt es kein „mich": jeder laufende Timer ist dann ein fremder.
+    [Parameter]
+    public long? GewaehlteKontributorId { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _laufplakette = Laufplakette.Fuer(LaufendeZeiteintraege, GewaehlteKontributorId);
+    }
 
     [Parameter]
     public bool IstZiehbar { get; set; }

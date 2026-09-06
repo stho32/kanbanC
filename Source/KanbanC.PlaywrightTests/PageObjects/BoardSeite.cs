@@ -60,6 +60,18 @@ public sealed class BoardSeite
     // Die Nummernplakette steht **über** dem Titelverweis, nicht in ihm.
     public ILocator Kartennummern => _seite.Locator("#spaltenbahnen .karte-nummer");
 
+    // Die Laufplakette steht in derselben Zeile rechts neben der Nummer.
+    public ILocator Laufplaketten => _seite.Locator("#spaltenbahnen .karte-timer");
+
+    public ILocator EigeneLaufplaketten => _seite.Locator("#spaltenbahnen .karte-timer-eigen");
+
+    public ILocator FremdeLaufplaketten => _seite.Locator("#spaltenbahnen .karte-timer-fremd");
+
+    public ILocator LaufplaketteDerKarte(ILocator karte)
+    {
+        return karte.Locator(".karte-timer");
+    }
+
     public ILocator LeerhinweiseDerBahnen => _seite.Locator("#spaltenbahnen .spaltenbahn-leer");
 
     public ILocator Datumsgruppen => _seite.Locator("#spaltenbahnen .spaltenbahn-datumsgruppe");

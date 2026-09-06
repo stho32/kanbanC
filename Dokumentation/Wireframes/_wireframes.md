@@ -12,16 +12,17 @@ zurueckgeholt: 2026-09-03
 
 # Wireframes — KanbanC
 
-Der Canvas trägt sechs Artboards: `Main.dc.html`, den Screen-Flow über alle neun
-Dialogs, sowie `D0001.dc.html`, `D0002.dc.html`, `D0003.dc.html`, `D0004.dc.html`
-und `D0005.dc.html`, die fünf ausdetaillierten Bildschirme. Die übrigen Dialogs
-bleiben Kästen im Flow; ihr Detail-Artboard entsteht mit
+Der Canvas trägt sieben Artboards: `Main.dc.html`, den Screen-Flow über alle neun
+Dialogs, sowie `D0001.dc.html`, `D0002.dc.html`, `D0003.dc.html`, `D0004.dc.html`,
+`D0005.dc.html` und `D0006.dc.html`, die sechs ausdetaillierten Bildschirme. Die
+übrigen Dialogs bleiben Kästen im Flow; ihr Detail-Artboard entsteht mit
 `/wireframe verfeinern <dialog>`, wenn der Dialog dran ist (Rolling Wave). Woraus
 ein solcher Lauf schöpft, sagt die
 [Zuordnung Schirm → Dialog](#zuordnung-schirm--dialog).
 
 Reife je Dialog wird aus dem Dateibestand gerechnet: `D0001`, `D0002`, `D0003`,
-`D0004` und `D0005` stehen auf `wireframe`, die vier übrigen auf `flow`.
+`D0004`, `D0005` und `D0006` stehen auf `wireframe`, die drei übrigen (`D0007`,
+`D0008`, `D0009`) auf `flow`.
 
 | Datei | Was |
 | --- | --- |
@@ -31,7 +32,8 @@ Reife je Dialog wird aus dem Dateibestand gerechnet: `D0001`, `D0002`, `D0003`,
 | `D0003.dc.html` | **Board bedienen**, Fenster 1440×900, Rahmen 1100 (die Lesehilfe steht unter dem Fenster) — gefüllte Spaltenbahnen mit der Kartenform; die fünf Interactions I0010–I0014 als Zustände im selben Schirm, dazu drei Randfälle. **Am 2026-09-02 auf den gebauten Stand nachgezogen** |
 | `D0004.dc.html` | **Karteninhalt pflegen**, Rahmen 1440×2960 (gemessen 2815,2) — die Karte als **eigene Seite** (`/karten/14`, Variante C): Hauptzustand als echtes Fenster 1440×900, dazu Verantwortlichenwahl, Etiketten und Farbe, die frisch angelegte Karte als Leerzustand, drei Ränder und der Einstieg vom Board. Alle fünf Interactions I0015–I0019 sind sichtbar; nichts davon ist gebaut, das ganze Artboard ist Zielform |
 | `D0005.dc.html` | **Karten-Klassen**, Rahmen 1440×1980 (gemessen 1877,5) — der Klassenbereich sitzt **im Layout-Modus des Boards**, unter der Zeile für die neue Spalte: Hauptzustand mit Liste und Anlegezeile (I0020), Leerzustand, drei Ränder, die Zuordnung an der Karte (I0021) und der Abruf als API-Aufruf (I0022). Alle drei Interactions sind sichtbar; nichts davon ist gebaut, das ganze Artboard ist Zielform |
-| `canvas.json` | Layout des Canvas: der Flow oben, D0003, D0002, D0001, D0004 und D0005 in der Reihe darunter, Start in der Canvas-Ansicht |
+| `D0006.dc.html` | **Zeiterfassung**, Rahmen 1440×3480 (gemessen 3304,1) — die Zeiterfassung sitzt **auf der Kartenseite**, in dem Kasten, den `D0004.dc.html` dafür freihält: Hauptzustand als echtes Fenster 1440×900, der Zeitenblock in seinen übrigen Fassungen (mein Timer läuft, leer, Anatomie eines Eintrags), die Karte in der Bahn in drei Fassungen (I0023), die laufenden Timer in **Zone 3 der Kopfzeile** (I0027), Nachtragen und Ändern (I0025) und drei Ränder. Alle fünf Interactions I0023–I0027 sind sichtbar; nichts davon ist gebaut, das ganze Artboard ist Zielform |
+| `canvas.json` | Layout des Canvas: der Flow oben, D0003, D0002, D0001, D0004, D0005 und D0006 in der Reihe darunter, Start in der Canvas-Ansicht |
 | `kanbanc-wireframes.html`, `wireframes.js`, `styles.css`, `README.md` | **älterer Satz, unangetastet** — acht gezeichnete Schirme mit Varianten, aus denen `verfeinern` schöpft; siehe Offene Fragen |
 
 ## Richtung
@@ -180,6 +182,14 @@ gehört in eine Anforderung, nicht ins Bild.
 | 2026-09-06 | Tragen die Klassenzeilen ✎ und ✕, wie der ältere Satz sie zeichnet? | **nein — als Befund in die Fragen, nicht ins Bild** | Die WBS führt unter D0005 nur Anlegen (I0020), Zuordnen (I0021) und Abrufen (I0022). Ändern und Entfernen haben keinen Knoten; ein Bedienelement ohne Knoten wäre gegen den Kontrakt („Keine Dialogs erfinden"). Dieselbe Antwort wie beim Verlauf der Karte in D0004 (Frage 15) — und aus demselben Grund: das ist ein Befund für `/planung`, keine Lücke zum Auffüllen. Siehe Frage 17. |
 | 2026-09-06 | Wie wird **I0022** sichtbar, wenn es keinen Schirm hat? | **der Aufruf selbst wird gezeichnet**, der Klassenfilter als markierte Lücke | Der Kontrakt verlangt zu jeder Interaction ein sichtbares Bedienelement. Für I0022 ist das der Aufruf: „Über die API liefert eine Klasse genau ihre Karten" — für einen Agenten, den gleichberechtigten Akteur der Vision, ist der Aufruf das Bedienelement. Einen Filter danebenzuzeichnen hieße, eine Oberfläche zu erfinden, die das Fertig-Kriterium nicht verlangt und die eigene Fragen aufwirft (was zeigt eine gefilterte Bahn als Kartenzahl, was heißt Ziehen in einer gefilterten Ansicht). Die Route folgt dem gebauten Muster `/api/boards/{boardId}/spalten/{spalteId}/karten` und ist Entwurf, keine Zusage. |
 | 2026-09-06 | Feldbeschriftung der Anlegezeile: „Bezeichnung" wie bei der Spalte? | **„Name" und „Nummernkreis-Präfix"** | Das Fertig-Kriterium von I0020 sagt „mit Name und Nummernkreis-Präfix"; das Board heißt ebenfalls mit „Name". „Bezeichnung" trägt im Stack bisher nur die Spalte (`Spalte.Bezeichnung`). Das Artboard nimmt die Wörter des Kriteriums, statt eine dritte Schreibweise zu setzen. |
+| 2026-09-06 | **D0006** — wo sitzt die Zeiterfassung? | **auf der Kartenseite**, im Kasten, den `D0004.dc.html` dafür freihält | Vier der fünf Interactions hängen an **einer Karte**: I0023 „Timer läuft **auf einer Karte**", I0024 der Eintrag dazu, I0025 dessen Korrektur, I0026 „**die Karte** zeigt ihre Zeiteinträge". `D0004.dc.html` trägt an dieser Stelle bereits einen gestrichelten Kasten „Zeiten und Timer · D0006 · I0023–I0026", und der ältere Satz zeichnet die Zeitentabelle in **allen drei** Kartendetail-Varianten in dieselbe Spalte (`wireframes.js`, `zeitenTab`). Ein eigener Schirm hätte für diese vier keinen Gegenstand — und die WBS kennt zu D0006 auch keinen. |
+| 2026-09-06 | Wo sitzt **I0027**, die einzige Interaction ohne Karte? | **Zone 3 der Kopfzeile**, als Plakette neben dem Identitätsplatz, aufklappbar wie die Identitätswahl | Das Fertig-Kriterium sagt „**alle** gerade laufenden Timer … **auf einen Blick**" — das schließt jeden Platz aus, den man erst aufsuchen muss. Drei Alternativen sind geprüft und verworfen: (1) **eine Zone im Board** zeigte nur die Timer des offenen Boards, ein Timer hängt aber an einer Karte, nicht am gerade offenen Board; (2) **das Banner der Board-Übersicht** aus dem älteren Satz („Start B", `wireframes.js:60`) hat kein Zuhause mehr, weil für die Übersicht **Variante A gesetzt** ist, und die rechte Ereignisspur aus „Board A" gehört `D0007`, dessen Form erst `I0028` entscheidet — `I0027` braucht laut WBS aber nur `I0023`; (3) **ein eigener Schirm** wäre eine erfundene Interaction. Zone 3 dagegen ist gebaut, steht auf jeder Seite und trägt schon Identitätsplatz samt Popover (`Kopfzeile.razor`). Sie ist zudem das Gegenmittel gegen den benannten Preis von Variante C — laufende Zeit und der Name, für den sie läuft, stehen nebeneinander. Die Plakette gehört **neben** `identitaetsplatz`, nicht in `kopfzeile-bedienung`: das füllt die offene Seite. |
+| 2026-09-06 | Woran sieht man, dass ein Timer für **mich** läuft und nicht für jemand anderen? | **Füllung und Handlung**, nie die Farbe allein: eigene Plakette gefüllt im Akzentton mit Stoppquadrat, fremde ruhig im Olivton mit den Initialen | Olive und Terrakotta sind in diesem Canvas vergeben — sie tragen die **Art** des Kontributors (D0002: Mensch olive, Agent terrakotta, abgebildet neutral). Wer „für mich" über die Farbe erzählte, sagte zugleich etwas Falsches über die Art. Die gefüllte Akzentbehandlung ist im ganzen System die der Hauptaktion (`.btn-haupt`) und sagt hier genau das: hier läuft meine Zeit, und ich kann sie von hier beenden. Die Artfarbe bleibt im runden Initialenkreis. Die Plakette in `D0003.dc.html` bleibt damit richtig: dessen Kopfzeile zeigt „nicht gewählt", also ist jeder laufende Timer dort ein fremder. |
+| 2026-09-06 | Ein zweiter Timer, während einer läuft — was passiert? | **nicht entschieden; der Moment ist gezeichnet, beide Lesarten stehen nebeneinander** | Das Fertig-Kriterium von I0023 sagt „**ein** Timer läuft auf einer Karte" — es sagt nicht, ob ein Kontributor mehrere zugleich haben darf. Ein Mensch arbeitet an einer Sache; ein Agent kann sehr wohl an zweien arbeiten, und die Vision stellt beide gleich. Eine stille Setzung hier wäre eine Entscheidung über Fachlichkeit am Bild vorbei; das Artboard zeigt deshalb den Moment mit „Umschalten" und „Beide laufen lassen" und markiert die Stelle als offen. Entschieden wird beim Zerlegen von I0023 in Bubbles. Siehe Frage 20. |
+| 2026-09-06 | Darf man einen **fremden** Timer stoppen? | **ja — die erlaubende Fassung ist gezeichnet, als Befund benannt** | I0024 sagt nicht, wer stoppen darf. Full Trust ohne Anmeldung ist eine Leitplanke der Vision, und ein Agenten-Timer, der über Nacht weiterläuft, muss von jemandem beendet werden können — eine Sperre wäre die stärkere Setzung und hätte keinen Beleg. Der Eintrag behält dabei den Kontributor, für den er läuft: gestoppt wird der Timer, nicht die Urheberschaft. Siehe Frage 21. |
+| 2026-09-06 | Trägt das Änderungsformular „Eintrag löschen"? | **ja im Bild, als Befund benannt** | I0025 nennt „nachtragen und ändern", nicht löschen. Anders als bei den Klassen (Frage 17) ist hier aber ein Schaden absehbar, den kein Ändern behebt: ein Nachtrag auf der falschen Karte lässt sich nicht wegkorrigieren, weil das Formular die Karte nicht wechselt. Gezeichnet ist deshalb der Knopf, und die Frage steht im Index — anders als bei D0005 sitzt das Bedienelement nicht auf einem eigenen Knoten, sondern in einem, den es schon gibt. |
+| 2026-09-06 | Ist der Zeitenschirm des älteren Satzes („Zeiten je Kontributor", A/B) die Vorlage? | **nein — keine der beiden Varianten wird ein Schirm** | Beide zeichnen eine Auswertung über Kontributoren hinweg: **A** die Kreuztabelle Karte × Kontributor mit Soll-Spalte, **B** den Stundenzettel je Person und Tag. Kein Fertig-Kriterium von I0023–I0027 verlangt das; der eigene Hinweistext des Schirms nennt als vierte Quelle `I0036` „Zeiten exportieren" — und der gehört **D0009**. Übernommen sind aus dem Schirm die **Bausteine**, nicht der Rahmen: der laufende Eintrag mit Beginn, Ende und Quelle, das Nachtragen als Zeile, das Banner der laufenden Timer. Die Kreuztabelle bleibt für `D0009` liegen, wo sie hingehört. |
+| 2026-09-06 | Rahmenhöhe und Platz von `D0006` auf dem Canvas | **1440×3480** bei `x` 7800, `y` 1300 | Gemessen, nicht geschätzt (Chromium, Google-Fonts-Fassung derselben Schriften): 3304,1 px. 3480 gibt 5,3 % Reserve; der Überschuss trägt die Grundfarbe `#ebddc5` der Lesehilfe und ist deshalb unsichtbar. Der Platz setzt die Dialogreihe nach rechts fort, 120 px hinter `D0005`; Positionen der übrigen Artboards bleiben unverändert. |
 | 2026-09-06 | Rahmenhöhe und Platz von `D0005` auf dem Canvas | **1440×1980** bei `x` 6240, `y` 1300 | Gemessen, nicht geschätzt (Chromium, Google-Fonts-Fassung derselben Schriften): 1877,5 px. 1980 gibt 5,5 % Reserve; der Überschuss trägt die Grundfarbe `#ebddc5` der Lesehilfe und ist deshalb unsichtbar. Der Platz setzt die Dialogreihe nach rechts fort, 120 px hinter `D0004`; Positionen der übrigen Artboards bleiben unverändert. |
 
 ## Zuordnung Schirm → Dialog
@@ -203,7 +213,7 @@ Auffüllen.
 | **D0003** Board bedienen | „Board" (Bahnen, Karten, Abschlussspalte) | Bahnen **A/B** — dort deckungsgleich; **C** wäre eine spätere Zweitansicht | **I0014** Karte archivieren — der alte Satz kennt nur *Board* archivieren (I0005). Im Artboard als ⋯-Menü ergänzt, siehe Frage 6. |
 | **D0004** Karteninhalt pflegen | „Kartendetail" (ganz) | **C** — eigene Seite, entschieden 2026-09-05 bei I0015 | **Verlauf** — alle drei Varianten des alten Satzes zeichnen eine Verlaufsspur („wer, wann, über welche Grenze"); die WBS kennt dazu keinen Knoten. Seit 2026-09-05 als `D0004.dc.html` gezeichnet; der Verlauf steht dort **nicht** im Bild, sondern als Frage 13. |
 | **D0005** Karten-Klassen | „Board anlegen & gestalten" **B**, Abschnitt *Klassen* (I0020) · „Kartendetail" und die Kartenform in „Board" (I0021, Nummer auf der Karte) | Klassen-Teil aus **B** gesetzt | **I0022** — reine API-Zusage, absichtlich ohne Schirm; die Oberflächenentsprechung wäre der Klassenfilter, der mit R00005 aus dem Boardkopf nach Zone 3 gewandert ist. Seit 2026-09-06 als `D0005.dc.html` gezeichnet: der Aufruf steht im Bild, der Filter als markierte Lücke. **Ändern und Entfernen einer Klasse** hat keinen Knoten — Frage 17 |
-| **D0006** Zeiterfassung | „Zeiten je Kontributor" (ganz) · „Kartendetail" (I0026, Zeiten der Karte) · „Board A" rechte Spur und „Start B" Banner (I0027, laufende Timer) | **offen** — A oder B, Wahl bei I0023–I0027 | — |
+| **D0006** Zeiterfassung | „Kartendetail" (Zeitentabelle und Timerzeile, in allen drei Varianten dieselbe Spalte) · „Zeiten je Kontributor" (nur die **Bausteine**: laufender Eintrag mit Beginn/Ende/Quelle, Nachtragezeile, Banner der laufenden Timer) · „Start B" Banner (I0027, als Inhalt — nicht als Ort) | **keine der beiden** Zeiten-Varianten wird ein Schirm, entschieden 2026-09-06 — A und B sind Auswertungen über Kontributoren hinweg und gehören zu **D0009** | — alle fünf gezeichnet; seit 2026-09-06 als `D0006.dc.html`. Ohne Vorlage im alten Satz waren der **erzwungene Identitätsschritt** vor dem ersten Timer (in D0002 nur als Preis von Variante C benannt) und der **zweite Timer während einer läuft** — beide stehen jetzt als Rand im Bild, der zweite ausdrücklich unentschieden (Frage 20) |
 | **D0007** Live-Aktualisierung | **kein eigener Schirm** — nur als Merkmal *innerhalb* von „Board": Ereignisspur rechts (**A**) oder Laufband oben (**B**), dazu die Marke „● live" in der Kopfzeile und der Live-Punkt in „Start B" | Spur oder Laufband entscheidet **I0028**, nicht vorher | **I0029** Aufschließen nach Verbindungsabbruch — weder Zustand noch Meldung gezeichnet |
 | **D0008** WBS-Import | „WBS-Import" (ganz) | **offen** — A oder B, Wahl bei I0030–I0032 | — |
 | **D0009** Auswertungen | „Auswertungen" (ganz) | **offen** — A oder B, Wahl bei I0033–I0037 | **I0037** — reine API-Zusage, absichtlich ohne Schirm |
@@ -427,3 +437,40 @@ Die Gegenrichtung, Schirm → Dialogs, in Kurzform:
     aufwirft: was die Kartenzahl im Bahnenkopf dann zählt (Frage zu I0004 hängt
     daran), und was Ziehen in einer gefilterten Bahn für die Position bedeutet
     (`I0012`). Das gehört in den Slice, nicht ins Bild.
+
+20. **Darf ein Kontributor zwei Timer zugleich laufen lassen?** Das
+    Fertig-Kriterium von `I0023` sagt „**ein** Timer läuft auf einer Karte für den
+    gewählten Kontributor" — das beschreibt den Timer, nicht die Obergrenze je
+    Kontributor. Für einen Menschen wäre „einer zur Zeit" die richtige Annahme;
+    ein Agent kann sehr wohl an zwei Karten arbeiten, und die Vision stellt beide
+    gleich. `D0006.dc.html` zeichnet den Moment des Konflikts (Rand B) mit beiden
+    Lesarten — „Umschalten" und „Beide laufen lassen" — und entscheidet ihn
+    **nicht**. Entschieden wird beim Zerlegen von `I0023` in Bubbles; die Wahl
+    wirkt auf `I0027` (eine oder mehrere eigene Zeilen) und auf die Zusage der
+    Plakette, dass es höchstens eine gefüllte je Bahnenbild gibt.
+
+21. **Wer darf einen laufenden Timer stoppen, und darf er überlappen?** `I0024`
+    sagt nur, was ein gestoppter Timer hinterlässt. Zwei Stellen bleiben offen:
+    ob ein **fremder** Timer gestoppt werden darf — `D0006.dc.html` zeichnet die
+    erlaubende Fassung, weil Full Trust ohne Anmeldung eine Leitplanke der Vision
+    ist und ein über Nacht weiterlaufender Agenten-Timer sonst niemanden fände,
+    der ihn beendet — und ob sich zwei Zeiteinträge desselben Kontributors
+    **überlappen** dürfen. Gezeichnet ist nur die eine Zurückweisung, die aus
+    „Beginn und Ende" zwingend folgt: das Ende liegt vor dem Beginn.
+
+22. **„Eintrag löschen" hat keinen Knoten.** `I0025` nennt „nachtragen und
+    ändern". Anders als bei den Klassen (Frage 17) steht der Knopf trotzdem im
+    Bild, weil ein absehbarer Schaden ohne ihn bleibt: ein Nachtrag auf der
+    falschen Karte lässt sich nicht wegkorrigieren, denn das Formular wechselt
+    die Karte nicht. Er sitzt in einem Bedienelement, das es schon gibt, nicht in
+    einem erfundenen — trotzdem ist er ein Befund für `/planung` und nicht Teil
+    des Fertig-Kriteriums von `I0025`.
+
+23. **Woher kommt das Soll je Karte?** `D0006.dc.html` zeigt neben dem Ist die
+    Zeile „von 5:00 Soll" — sie steht so im älteren Satz (Kartendetail C, Board C)
+    und ist die Grundlage der Schätz-Rückkopplung, die die Vision will. Einen
+    Knoten hat sie nicht: `I0015` zählt Titel, Beschreibung, Verantwortlicher,
+    Fälligkeit, Farbe und Etiketten auf, keine Sollzeit, und `D0009` setzt sie in
+    `I0033` bereits voraus („der erfassten Zeit steht die WBS-Zählung gegenüber").
+    Ob das Soll ein Feld der Karte ist oder aus dem WBS-Import (`D0008`) kommt,
+    ist nicht entschieden — im Bild steht es als Zahl, im Index als Frage.

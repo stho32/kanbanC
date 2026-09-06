@@ -413,4 +413,18 @@ public sealed class KartendetailSeite
     {
         await _seite.ReloadAsync();
     }
+
+    public ILocator Zeitenabschnitt => _seite.Locator("#zeitenabschnitt");
+
+    public ILocator TimerStarten => _seite.Locator("#timer-starten");
+
+    // Die stille Zeile statt des Stoppknopfes: gestoppt wird in diesem Slice nicht.
+    public ILocator ZeitenLaeuft => _seite.Locator("#zeiten-laeuft");
+
+    public ILocator ZeitenIdentitaetspopover => _seite.Locator("#zeiten-identitaetspopover");
+
+    public ILocator ZeitenIdentitaetszeile(long kontributorId)
+    {
+        return _seite.Locator($"#zeiten-identitaetspopover #identitaet-waehlen-{kontributorId}");
+    }
 }

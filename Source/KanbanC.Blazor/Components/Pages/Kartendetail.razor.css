@@ -856,3 +856,56 @@
     font-size: 12px;
     color: color-mix(in srgb, var(--color-text) 55%, transparent);
 }
+
+/* Der Zeitenblock traegt das Popover der Identitaetswahl: es haengt an diesem Feld, nicht am
+   Blatt — sonst stuende es beim Scrollen neben dem Knopf, der es geoeffnet hat. */
+.zeitenfeld {
+    position: relative;
+}
+
+/* Der Knopf steht auf eigener Zeile unter der Marke, wie die uebrigen Blattwerte. */
+.zeitenknopf {
+    align-self: flex-start;
+}
+
+/* „laeuft seit 08:04" statt einer mitlaufenden Dauer: eine gerenderte Dauer waere ohne
+   Live-Kanal ab der ersten Sekunde falsch. Kein Knopf — gestoppt wird in diesem Slice nicht. */
+.zeitenlauf {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.35;
+    color: var(--color-accent-700);
+}
+
+/* Dieselbe Popoverform wie in der Kopfzeile; die Werte kommen aus gestaltung.css. Es steht hier
+   ein zweites Mal, statt aus Kopfzeile.razor herauszuwandern — die Kopfzeile bleibt unberuehrt. */
+.identitaetspopover {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    z-index: 3;
+    width: 268px;
+    margin-top: var(--space-1);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-3);
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+}
+
+.identitaetspopover-titel {
+    margin: 0;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+}
+
+/* Ein Klick daneben schliesst die Wahl. */
+.identitaets-auffangflaeche {
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+}

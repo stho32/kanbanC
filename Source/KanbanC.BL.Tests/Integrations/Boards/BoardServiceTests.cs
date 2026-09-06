@@ -68,8 +68,8 @@ public class BoardServiceTests
     public void Wenn_alle_Boards_geladen_werden_dann_kommen_die_gespeicherten_als_Uebersicht()
     {
         var repository = new TestBoardRepository();
-        repository.Speichere(new Board(1, "Entwicklung", BoardArt.Linie, null, null, [], false, false));
-        repository.Speichere(new Board(2, "KanbanC 1.0", BoardArt.Projekt, null, null, [], false, false));
+        repository.Speichere(new Board(1, "Entwicklung", BoardArt.Linie, null, null, [], false, false, []));
+        repository.Speichere(new Board(2, "KanbanC 1.0", BoardArt.Projekt, null, null, [], false, false, []));
         var service = new BoardService(repository);
 
         var boards = service.LadeAlleBoards(Aktive);
@@ -81,7 +81,7 @@ public class BoardServiceTests
     public void Wenn_ein_Board_geladen_wird_dann_fragt_der_Service_das_Repository_nach_genau_dieser_BoardId()
     {
         var repository = new TestBoardRepository();
-        var gespeichert = repository.Speichere(new Board(7, "Entwicklung", BoardArt.Linie, null, null, [], false, false));
+        var gespeichert = repository.Speichere(new Board(7, "Entwicklung", BoardArt.Linie, null, null, [], false, false, []));
         var service = new BoardService(repository);
 
         var geladen = service.LadeBoard(7);
@@ -110,7 +110,7 @@ public class BoardServiceTests
             new Karte(2, "Heute", 2, new DateOnly(2026, 9, 5), Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne, Kontributor: null, Kartennummer: null),
             new Karte(3, "Gestern", 3, new DateOnly(2026, 9, 4), Beschreibung: null, FaelligAm: null, Farbe: Kartenfarbe.Ohne, Kontributor: null, Kartennummer: null),
         ], Kartenzahl: 3);
-        repository.Speichere(new Board(7, "Entwicklung", BoardArt.Linie, null, null, [abschlussbahn], false, false));
+        repository.Speichere(new Board(7, "Entwicklung", BoardArt.Linie, null, null, [abschlussbahn], false, false, []));
         var service = new BoardService(repository);
 
         var geladen = service.LadeBoard(7);
@@ -126,7 +126,7 @@ public class BoardServiceTests
     public void Wenn_ein_Board_umbenannt_wird_dann_traegt_das_gelieferte_Board_den_neuen_Namen()
     {
         var repository = new TestBoardRepository();
-        repository.Speichere(new Board(7, "KanbanC — Release 1", BoardArt.Projekt, null, null, [], false, false));
+        repository.Speichere(new Board(7, "KanbanC — Release 1", BoardArt.Projekt, null, null, [], false, false, []));
         var service = new BoardService(repository);
 
         var ergebnis = service.BenenneBoardUm(7, new BoardUmbenennenAnfrage("KanbanC — Release 2"));
@@ -145,7 +145,7 @@ public class BoardServiceTests
     public void Wenn_der_neue_Name_leer_ist_dann_wird_zurueckgewiesen_und_das_Repository_schreibt_nichts()
     {
         var repository = new TestBoardRepository();
-        repository.Speichere(new Board(7, "Entwicklung", BoardArt.Linie, null, null, [], false, false));
+        repository.Speichere(new Board(7, "Entwicklung", BoardArt.Linie, null, null, [], false, false, []));
         var service = new BoardService(repository);
 
         var ergebnis = service.BenenneBoardUm(7, new BoardUmbenennenAnfrage("   "));
@@ -163,7 +163,7 @@ public class BoardServiceTests
     public void Wenn_die_BoardId_beim_Umbenennen_unbekannt_ist_dann_meldet_der_Service_den_Nichtgefunden_Befund()
     {
         var repository = new TestBoardRepository();
-        repository.Speichere(new Board(1, "Entwicklung", BoardArt.Linie, null, null, [], false, false));
+        repository.Speichere(new Board(1, "Entwicklung", BoardArt.Linie, null, null, [], false, false, []));
         var service = new BoardService(repository);
 
         var ergebnis = service.BenenneBoardUm(99, new BoardUmbenennenAnfrage("Betrieb"));
@@ -195,7 +195,7 @@ public class BoardServiceTests
     public void Wenn_die_Kartenzahl_geschaltet_wird_dann_traegt_das_gelieferte_Board_den_gewuenschten_Wert()
     {
         var repository = new TestBoardRepository();
-        repository.Speichere(new Board(7, "Entwicklung", BoardArt.Linie, null, null, [], false, false));
+        repository.Speichere(new Board(7, "Entwicklung", BoardArt.Linie, null, null, [], false, false, []));
         var service = new BoardService(repository);
 
         var geschaltet = service.SchalteKartenzahl(7, new Kartenzahlanzeige(true));
@@ -213,7 +213,7 @@ public class BoardServiceTests
     public void Wenn_die_Kartenzahl_wieder_ausgeschaltet_wird_dann_steht_das_Board_wieder_ohne_sie_da()
     {
         var repository = new TestBoardRepository();
-        repository.Speichere(new Board(7, "Entwicklung", BoardArt.Linie, null, null, [], false, false));
+        repository.Speichere(new Board(7, "Entwicklung", BoardArt.Linie, null, null, [], false, false, []));
         var service = new BoardService(repository);
         service.SchalteKartenzahl(7, new Kartenzahlanzeige(true));
 
@@ -228,7 +228,7 @@ public class BoardServiceTests
     public void Wenn_die_BoardId_unbekannt_ist_dann_schaltet_der_Service_nichts_und_liefert_null()
     {
         var repository = new TestBoardRepository();
-        repository.Speichere(new Board(1, "Entwicklung", BoardArt.Linie, null, null, [], false, false));
+        repository.Speichere(new Board(1, "Entwicklung", BoardArt.Linie, null, null, [], false, false, []));
         var service = new BoardService(repository);
 
         var geschaltet = service.SchalteKartenzahl(2, new Kartenzahlanzeige(true));
@@ -245,8 +245,8 @@ public class BoardServiceTests
     public void Wenn_ein_Board_archiviert_wird_dann_fehlt_es_in_der_Standardliste_und_steht_in_der_archivierten()
     {
         var repository = new TestBoardRepository();
-        repository.Speichere(new Board(1, "Entwicklung", BoardArt.Linie, null, null, [], false, false));
-        repository.Speichere(new Board(2, "KanbanC — Release 1", BoardArt.Projekt, null, null, [], false, false));
+        repository.Speichere(new Board(1, "Entwicklung", BoardArt.Linie, null, null, [], false, false, []));
+        repository.Speichere(new Board(2, "KanbanC — Release 1", BoardArt.Projekt, null, null, [], false, false, []));
         var service = new BoardService(repository);
 
         var archiviert = service.SchalteArchivierung(2, Archivierte);
@@ -266,7 +266,7 @@ public class BoardServiceTests
     public void Wenn_ein_archiviertes_Board_zurueckgeholt_wird_dann_steht_es_wieder_in_der_Standardliste()
     {
         var repository = new TestBoardRepository();
-        repository.Speichere(new Board(2, "KanbanC — Release 1", BoardArt.Projekt, null, null, [], false, false));
+        repository.Speichere(new Board(2, "KanbanC — Release 1", BoardArt.Projekt, null, null, [], false, false, []));
         var service = new BoardService(repository);
         service.SchalteArchivierung(2, Archivierte);
 
@@ -285,7 +285,7 @@ public class BoardServiceTests
     public void Wenn_die_BoardId_beim_Archivieren_unbekannt_ist_dann_schreibt_der_Service_nichts_und_liefert_null()
     {
         var repository = new TestBoardRepository();
-        repository.Speichere(new Board(1, "Entwicklung", BoardArt.Linie, null, null, [], false, false));
+        repository.Speichere(new Board(1, "Entwicklung", BoardArt.Linie, null, null, [], false, false, []));
         var service = new BoardService(repository);
 
         var archiviert = service.SchalteArchivierung(99, Archivierte);
@@ -302,7 +302,7 @@ public class BoardServiceTests
     public void Wenn_die_BoardId_unbekannt_ist_dann_liefert_LadeBoard_null()
     {
         var repository = new TestBoardRepository();
-        repository.Speichere(new Board(1, "Entwicklung", BoardArt.Linie, null, null, [], false, false));
+        repository.Speichere(new Board(1, "Entwicklung", BoardArt.Linie, null, null, [], false, false, []));
         var service = new BoardService(repository);
 
         var geladen = service.LadeBoard(2);

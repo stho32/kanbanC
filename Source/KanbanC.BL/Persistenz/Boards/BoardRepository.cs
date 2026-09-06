@@ -5,8 +5,10 @@ using KanbanC.BL.Interfaces.Boards;
 using KanbanC.BL.Interfaces.Persistenz;
 using KanbanC.BL.Models.Boards;
 using KanbanC.BL.Persistenz.Karten;
+using KanbanC.BL.Persistenz.Zeiten;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
+using KanbanC.Contracts.Zeiten;
 
 namespace KanbanC.BL.Persistenz.Boards;
 
@@ -14,6 +16,7 @@ public sealed class BoardRepository : IBoardRepository
 {
     private const string IsoDatumsformat = "yyyy-MM-dd";
     private static readonly IReadOnlyList<Karte> OhneKarten = [];
+    private static readonly IReadOnlyList<Zeiteintrag> OhneLaufendeZeiteintraege = [];
     private readonly IDatenbankVerbindungsfabrik _verbindungsfabrik;
 
     public BoardRepository(IDatenbankVerbindungsfabrik verbindungsfabrik)
@@ -36,8 +39,9 @@ public sealed class BoardRepository : IBoardRepository
 
         transaktion.Commit();
         // Ein neues Board bekommt weder Einstellungs- noch Archivzeile: die Abwesenheit der Zeile
-        // ist die Voreinstellung, und die heißt aus beziehungsweise aktiv.
-        return new Board(boardId, anfrage.Name, anfrage.Art, anfrage.Starttermin, anfrage.Zieltermin, spalten, false, false);
+        // ist die Voreinstellung, und die heißt aus beziehungsweise aktiv. Und es hat noch keine
+        // Karte, auf der ein Timer laufen könnte.
+        return new Board(boardId, anfrage.Name, anfrage.Art, anfrage.Starttermin, anfrage.Zieltermin, spalten, false, false, OhneLaufendeZeiteintraege);
     }
 
     // Die Liste zeigt entweder die aktiven oder die archivierten Boards, nie beide; die
@@ -165,7 +169,8 @@ public sealed class BoardRepository : IBoardRepository
 
         var kartenJeSpalte = Kartenleser.LiesKartenNachPosition(verbindung, transaktion, boardId);
         var spalten = Spaltenleser.LiesSpaltenNachPosition(verbindung, transaktion, boardId, kartenJeSpalte);
-        return AlsBoard(boardZeile, spalten);
+        var laufendeZeiteintraege = Zeitenleser.LiesLaufendeZeiteintraegeDesBoards(verbindung, transaktion, boardId);
+        return AlsBoard(boardZeile, spalten, laufendeZeiteintraege);
     }
 
     // Fehlt die Einstellungszeile, gilt die Voreinstellung aus; fehlt die Archivzeile, ist das
@@ -241,10 +246,10 @@ public sealed class BoardRepository : IBoardRepository
 
     private sealed record BoardZeile(long BoardId, string Name, string Art, string? Starttermin, string? Zieltermin, long ZeigtKartenzahl, long IstArchiviert);
 
-    private static Board AlsBoard(BoardZeile zeile, IReadOnlyList<Spalte> spalten)
+    private static Board AlsBoard(BoardZeile zeile, IReadOnlyList<Spalte> spalten, IReadOnlyList<Zeiteintrag> laufendeZeiteintraege)
     {
         var zeigtKartenzahl = zeile.ZeigtKartenzahl != 0;
         var istArchiviert = zeile.IstArchiviert != 0;
-        return new Board(zeile.BoardId, zeile.Name, Enum.Parse<BoardArt>(zeile.Art), AlsTermin(zeile.Starttermin), AlsTermin(zeile.Zieltermin), spalten, zeigtKartenzahl, istArchiviert);
+        return new Board(zeile.BoardId, zeile.Name, Enum.Parse<BoardArt>(zeile.Art), AlsTermin(zeile.Starttermin), AlsTermin(zeile.Zieltermin), spalten, zeigtKartenzahl, istArchiviert, laufendeZeiteintraege);
     }
 }

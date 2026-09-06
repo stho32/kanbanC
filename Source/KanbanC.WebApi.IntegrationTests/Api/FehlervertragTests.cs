@@ -6,6 +6,7 @@ using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
 using KanbanC.Contracts.Klassen;
 using KanbanC.Contracts.Kontributoren;
+using KanbanC.Contracts.Zeiten;
 using KanbanC.WebApi.IntegrationTests.Infrastructure;
 
 namespace KanbanC.WebApi.IntegrationTests.Api;
@@ -352,6 +353,21 @@ public class FehlervertragTests
             "DELETE /api/karten/{karteId:long}/anhaenge/{anhangId:long}",
             "Anhang entfernen mit unbekannter AnhangId",
             await webApi.Klient.DeleteAsync($"/api/karten/{aufbau.Karte.KarteId}/anhaenge/999")));
+
+        faelle.Add(new Fehlerfall(
+            "POST /api/karten/{karteId:long}/zeiten/laufend",
+            "Zeitmessung starten mit unbekannter KarteId",
+            await webApi.Klient.PostAsJsonAsync("/api/karten/999/zeiten/laufend", new ZeitmessungStartenAnfrage(aufbau.Kontributor.KontributorId))));
+
+        faelle.Add(new Fehlerfall(
+            "POST /api/karten/{karteId:long}/zeiten/laufend",
+            "Zeitmessung starten mit unbekannter KontributorId",
+            await webApi.Klient.PostAsJsonAsync($"/api/karten/{aufbau.Karte.KarteId}/zeiten/laufend", new ZeitmessungStartenAnfrage(999))));
+
+        faelle.Add(new Fehlerfall(
+            "POST /api/karten/{karteId:long}/zeiten/laufend",
+            "Zeitmessung starten mit stillgelegter KontributorId",
+            await webApi.Klient.PostAsJsonAsync($"/api/karten/{aufbau.Karte.KarteId}/zeiten/laufend", new ZeitmessungStartenAnfrage(aufbau.Stillgelegter.KontributorId))));
 
         faelle.Add(new Fehlerfall(
             "POST /api/boards/{boardId:long}/kartenklassen",

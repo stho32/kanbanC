@@ -17,6 +17,14 @@ public static class Zeitpunktform
     private const string Tageszeitformat = "HH:mm";
     private const int MinutenEinerStunde = 60;
 
+    // Nur die Tageszeit, ohne Bezug auf „jetzt": „läuft seit 08:04" bleibt wahr, wie lange die
+    // Seite auch offen steht — anders als eine verstrichene Dauer, die ab der ersten Sekunde
+    // falsch wäre, solange kein Live-Kanal sie nachführt.
+    public static string AlsTageszeit(DateTimeOffset zeitpunkt)
+    {
+        return zeitpunkt.ToLocalTime().ToString(Tageszeitformat, CultureInfo.InvariantCulture);
+    }
+
     public static string AlsText(DateTimeOffset zeitpunkt, DateTimeOffset jetzt)
     {
         var ortszeit = zeitpunkt.ToLocalTime();

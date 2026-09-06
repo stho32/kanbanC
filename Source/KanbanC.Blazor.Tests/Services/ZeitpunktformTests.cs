@@ -6,6 +6,29 @@ namespace KanbanC.Blazor.Tests.Services;
 // Zeitmanipulation pruefbar.
 public class ZeitpunktformTests
 {
+    // Die Startzeit der Laufplakette: nur die Tageszeit, ohne Bezug auf „jetzt" — „laeuft seit
+    // 08:04" bleibt wahr, wie lange die Seite auch offen steht.
+    [Test]
+    public void Wenn_ein_Zeitpunkt_als_Tageszeit_erscheint_dann_steht_dort_die_Ortszeit_in_Stunden_und_Minuten()
+    {
+        var wanduhr = new DateTime(2026, 9, 6, 8, 4, 0, DateTimeKind.Unspecified);
+        var zeitpunkt = new DateTimeOffset(wanduhr, TimeZoneInfo.Local.GetUtcOffset(wanduhr));
+
+        Assert.That(Zeitpunktform.AlsTageszeit(zeitpunkt), Is.EqualTo("08:04"));
+    }
+
+    // Gerechnet wird von UTC in die Ortszeit: derselbe Moment, mit einem anderen Versatz
+    // geschrieben, ergibt dieselbe Tageszeit.
+    [Test]
+    public void Wenn_derselbe_Moment_mit_einem_anderen_Versatz_kommt_dann_steht_dieselbe_Tageszeit()
+    {
+        var wanduhr = new DateTime(2026, 9, 6, 8, 4, 0, DateTimeKind.Unspecified);
+        var alsOrtszeit = new DateTimeOffset(wanduhr, TimeZoneInfo.Local.GetUtcOffset(wanduhr));
+        var alsUtc = alsOrtszeit.ToUniversalTime();
+
+        Assert.That(Zeitpunktform.AlsTageszeit(alsUtc), Is.EqualTo(Zeitpunktform.AlsTageszeit(alsOrtszeit)));
+    }
+
     // Alle Werte in Ortszeit gebaut: die Form rechnet von UTC in die Ortszeit, und ein in UTC
     // gebauter Testwert traefe je nach Zeitzone des Laufs einen anderen Kalendertag.
     private static readonly DateTimeOffset Jetzt = Ortszeit(2026, 8, 31, 12, 0);

@@ -6,10 +6,12 @@
 @using KanbanC.Contracts.Karten
 @using KanbanC.Contracts.Klassen
 @using KanbanC.Contracts.Kontributoren
+@using KanbanC.Contracts.Zeiten
 @using Microsoft.AspNetCore.Components.Forms
 @inject KartenApiKlient KartenKlient
 @inject KartenklassenApiKlient KartenklassenKlient
 @inject KontributorenApiKlient KontributorenKlient
+@inject ZeitenApiKlient ZeitenKlient
 @inject Identitaetsspeicher Identitaetsspeicher
 @inject Pfadkopie Pfadkopie
 @inject Anhangbasisadresse Anhangbasis
@@ -487,6 +489,43 @@ else
                     {
                         <p class="klassenhinweis" id="klasse-hinweis">Trägt <span class="tag tag-neutral" id="klasse-nummer">@_detail.Karte.Kartennummer</span></p>
                     }
+                }
+            </div>
+
+            @* Der Zeitenblock steht unter „Klasse und Nummer", wo D0004.dc.html den gestrichelten
+               Kasten „Zeiten und Timer" schon freihält. **Der Slice baut den Block, nicht seinen
+               Inhalt:** die Einträgeliste und die Summe je Kontributor gehören I0026, der Nachtrag
+               I0025. Aus dem Stoppknopf des Bildes wird hier die stille Zeile „läuft seit" —
+               beendet wird in diesem Slice nichts, und eine gerenderte Dauer wäre ohne Live-Kanal
+               ab der ersten Sekunde falsch. *@
+            <div class="blattfeld zeitenfeld" id="zeitenabschnitt">
+                <span class="blattmarke">Zeiten</span>
+                @if (LaufenderEigenerZeiteintrag is not null)
+                {
+                    <p class="zeitenlauf" id="zeiten-laeuft">läuft seit @Zeitpunktform.AlsTageszeit(LaufenderEigenerZeiteintrag.Beginn)</p>
+                }
+                else
+                {
+                    <button type="button" class="btn btn-haupt zeitenknopf" id="timer-starten" @onclick="StarteTimer">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M8 5.5 18 12 8 18.5z"></path></svg>
+                        Timer starten
+                    </button>
+                }
+
+                @* Ohne gewählte Identität wird nicht gemeckert, sondern gefragt: „nicht gewählt"
+                   ist keine Regelverletzung, sondern eine fehlende Angabe — und die Wahl ist die
+                   Kompensationsaktion. Nach der Wahl läuft der Timer unmittelbar. *@
+                @if (_identitaetswahlIstOffen)
+                {
+                    <div class="identitaets-auffangflaeche" id="zeiten-identitaet-auffangflaeche" @onclick="SchliesseIdentitaetswahl"></div>
+                    @* tabindex="-1": ein Klick im Popover setzt den Fokus damit auf das Popover
+                       statt auf den Rumpf — sonst liefe Escape danach ins Leere. *@
+                    <div class="identitaetspopover" id="zeiten-identitaetspopover" tabindex="-1" @onkeydown="AufIdentitaetstaste">
+                        <p class="identitaetspopover-titel">Ich bin …</p>
+                        <Identitaetswahl Kontributoren="_kontributoren"
+                                         GewaehlteKontributorId="_urheber?.KontributorId"
+                                         Gewaehlt="UebernimmIdentitaetUndStarte" />
+                    </div>
                 }
             </div>
 
@@ -1016,6 +1055,106 @@ else
         }
 
         return gewaehlter;
+    }
+
+    private bool _identitaetswahlIstOffen;
+
+    // Der laufende Eintrag der **gewählten** Identität auf dieser Karte. Ein laufender Eintrag ist
+    // der ohne Ende; ohne gewählte Identität gibt es keinen eigenen.
+    private Zeiteintrag? LaufenderEigenerZeiteintrag
+    {
+        get
+        {
+            var esGibtNochNichtsZuZeigen = _detail is null || _urheber is null;
+            if (esGibtNochNichtsZuZeigen)
+            {
+                return null;
+            }
+
+            return _detail!.Zeiteintraege.FirstOrDefault(EntsprichtDemEigenenLauf);
+        }
+    }
+
+    private bool EntsprichtDemEigenenLauf(Zeiteintrag eintrag)
+    {
+        return eintrag.Ende is null && eintrag.Kontributor.KontributorId == _urheber!.KontributorId;
+    }
+
+    // Die Wahl wird hier ein letztes Mal gelesen und nicht aus _urheber genommen: zwischen dem
+    // letzten Nachlesen und dem Klick kann sie in der Kopfzeile gewechselt haben.
+    private async Task StarteTimer()
+    {
+        _zurueckweisung = null;
+        _urheber = await GewaehlterUrheber();
+        if (_urheber is null)
+        {
+            await OeffneIdentitaetswahl();
+            return;
+        }
+
+        _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(() => SendeZeitmessungsstart(_urheber.KontributorId));
+    }
+
+    // Wer die Wahl öffnet, will den heutigen Stand sehen — dieselbe Antwort wie in der Kopfzeile.
+    private async Task OeffneIdentitaetswahl()
+    {
+        _identitaetswahlIstOffen = true;
+        _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(async () => _kontributoren = await KontributorenKlient.LadeAlle());
+    }
+
+    // **Ohne zweiten Klick:** die Wahl war die fehlende Angabe, nicht eine zweite Handlung.
+    // Gemerkt wird über denselben Identitätsspeicher wie in der Kopfzeile — es entsteht kein
+    // zweiter Identitätsbegriff, und der Platz in der Kopfzeile zieht von selbst nach.
+    private async Task UebernimmIdentitaetUndStarte(long kontributorId)
+    {
+        _identitaetswahlIstOffen = false;
+        await Identitaetsspeicher.Merke(kontributorId);
+        _urheber = await GewaehlterUrheber();
+        if (_urheber is null)
+        {
+            return;
+        }
+
+        _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(() => SendeZeitmessungsstart(_urheber.KontributorId));
+    }
+
+    // Zurück kommt der Zeiteintrag und nicht die ganze Seite: die Route legt eine Zeile an, und
+    // ein zweiter Abruf des Kartendetails fände denselben Stand.
+    private async Task SendeZeitmessungsstart(long kontributorId)
+    {
+        var ergebnis = await ZeitenKlient.StarteZeitmessung(KarteId, new ZeitmessungStartenAnfrage(kontributorId));
+        if (ergebnis.WurdeZurueckgewiesen)
+        {
+            _zurueckweisung = ergebnis.Zurueckweisung;
+            return;
+        }
+
+        _detail = _detail! with { Zeiteintraege = MitEintrag(_detail.Zeiteintraege, ergebnis.Wert) };
+    }
+
+    // Ersetzen statt anhängen: ein zweiter Start auf derselben Karte liefert **denselben** Eintrag
+    // zurück, und angehängt stünde er zweimal in der Liste.
+    private static IReadOnlyList<Zeiteintrag> MitEintrag(IReadOnlyList<Zeiteintrag> vorhandene, Zeiteintrag eintrag)
+    {
+        var uebrige = vorhandene.Where(vorhandener => vorhandener.ZeiteintragId != eintrag.ZeiteintragId).ToList();
+        uebrige.Add(eintrag);
+        return uebrige.OrderBy(zeiteintrag => zeiteintrag.Beginn).ThenBy(zeiteintrag => zeiteintrag.ZeiteintragId).ToList();
+    }
+
+    private void AufIdentitaetstaste(KeyboardEventArgs taste)
+    {
+        var dieTasteSchliesstDieWahl = taste.Key == "Escape";
+        if (!dieTasteSchliesstDieWahl)
+        {
+            return;
+        }
+
+        SchliesseIdentitaetswahl();
+    }
+
+    private void SchliesseIdentitaetswahl()
+    {
+        _identitaetswahlIstOffen = false;
     }
 
     private void TippeKommentar(ChangeEventArgs ereignis)

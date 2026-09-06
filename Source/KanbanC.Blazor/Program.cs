@@ -44,6 +44,7 @@ builder.Services.AddScoped<SpaltenApiKlient>();
 builder.Services.AddScoped<KartenApiKlient>();
 builder.Services.AddScoped<KontributorenApiKlient>();
 builder.Services.AddScoped<KartenklassenApiKlient>();
+builder.Services.AddScoped<ZeitenApiKlient>();
 builder.Services.AddScoped<Identitaetsspeicher>();
 builder.Services.AddScoped<Pfadkopie>();
 

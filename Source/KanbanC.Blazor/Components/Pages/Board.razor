@@ -7,6 +7,7 @@
 @using KanbanC.Contracts.Karten
 @inject BoardApiKlient ApiKlient
 @inject KartenApiKlient KartenKlient
+@inject Identitaetsspeicher Identitaetsspeicher
 
 <PageTitle>Board @BoardId</PageTitle>
 
@@ -91,6 +92,8 @@ else
             <Spaltenbahnen BoardId="BoardId"
                            Spalten="_board.Spalten"
                            ZeigtKartenzahl="_board.ZeigtKartenzahl"
+                           LaufendeZeiteintraege="_board.LaufendeZeiteintraege"
+                           GewaehlteKontributorId="_gewaehlteKontributorId"
                            KarteWurdeAngelegt="LadeBoard"
                            KarteWurdeAbgelegt="LegeKarteAb"
                            SpaltenWurdenGeliefert="UebernimmSpalten" />
@@ -115,6 +118,11 @@ else
     // hat das Häkchen dann schon umgelegt, und ein unveränderter Wert erzeugt keinen Diff.
     private bool _kartenzahlIstEingeschaltet;
     private string? _kartenzahlFehlermeldung;
+
+    // Die Wahl der Kopfzeile, gelesen ueber denselben Dienst wie dort: er ist AddScoped und je
+    // Blazor-Kreislauf dieselbe Instanz. Sie entscheidet allein, welche Laufplakette gefuellt
+    // steht — ohne Wahl ist jeder laufende Timer ein fremder.
+    private long? _gewaehlteKontributorId;
 
     [Parameter]
     public long BoardId { get; set; }
@@ -194,8 +202,11 @@ else
         await LadeBoard();
     }
 
+    // Gelesen wird bei jedem Laden neu und nicht nur einmal: eine Wahl, die waehrend des offenen
+    // Boards in der Kopfzeile wechselt, gilt damit ab dem naechsten Abruf.
     private async Task LadeBoard()
     {
+        _gewaehlteKontributorId = await Identitaetsspeicher.Lies();
         _board = await ApiKlient.LadeBoard(BoardId);
         _kartenzahlIstEingeschaltet = _board is not null && _board.ZeigtKartenzahl;
     }

@@ -54,4 +54,16 @@ public static class Stillgelegt
             $"Der Kontributor mit der Nummer {kontributorId} ist stillgelegt und kann keinen Dateiverweis mehr eintragen.",
             Kompensationsweg);
     }
+
+    // Die fünfte Schwester, wieder mit demselben Code und wieder mit eigener Meldung: „kann nicht
+    // verantwortlich sein", „kann keinen Kommentar mehr schreiben", „kann keine Datei mehr
+    // anhängen" und „kann auf keine Datei mehr verweisen" wären an der Zeitmessung alle vier eine
+    // Falschaussage — hier wird nichts gesagt und nichts abgelegt, hier wird Arbeitszeit erfasst.
+    public static Fehlerbefund Zeitmesser(long kontributorId)
+    {
+        return new Fehlerbefund(
+            KontributorStillgelegt,
+            $"Der Kontributor mit der Nummer {kontributorId} ist stillgelegt und kann keine Zeit mehr erfassen.",
+            Kompensationsweg);
+    }
 }

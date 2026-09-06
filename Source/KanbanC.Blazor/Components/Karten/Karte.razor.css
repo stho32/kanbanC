@@ -9,10 +9,43 @@
     box-shadow: var(--shadow-sm);
 }
 
+/* Nummer links, laufender Timer rechts — dieselbe Zeile, wie im Artboard gezeichnet. Die Zeile
+   steht in einer Flex-Spalte und zoege sich sonst ueber die ganze Kartenbreite. */
+.karte-plaketten {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
 /* Die Nummernplakette traegt ihre Gestaltung aus .tag im Token-Sheet; hier steht nur, dass sie
-   sich nicht ueber die Kartenbreite zieht — die Karte ist eine Flex-Spalte. */
+   sich nicht ueber die Kartenbreite zieht. */
 .karte-nummer {
     align-self: flex-start;
+}
+
+/* Die Laufplakette steht rechts, auch wenn die Karte keine Nummer traegt. */
+.karte-timer {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    margin-left: auto;
+}
+
+.karte-timer svg {
+    display: block;
+}
+
+/* Gefuellt fuer den eigenen Timer, ruhig fuer einen fremden. Unterschieden wird ueber die
+   **Fuellung**, nicht ueber den Farbton: Olive und Terrakotta tragen in diesem Canvas die Art des
+   Kontributors, und „fuer mich" ueber den Ton zu erzaehlen sagte etwas Falsches ueber die Art. */
+.karte-timer-eigen {
+    background: var(--color-accent);
+    color: var(--color-bg);
+}
+
+.karte-timer-fremd {
+    background: var(--color-neutral-100);
+    color: var(--color-neutral-800);
 }
 
 /* Der Titel ist der Weg auf die Kartenseite. Als Verweis traegt er die Grundfarbe weiter —

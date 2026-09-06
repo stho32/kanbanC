@@ -1,5 +1,6 @@
 using KanbanC.Contracts.Klassen;
 using KanbanC.Contracts.Kontributoren;
+using KanbanC.Contracts.Zeiten;
 
 namespace KanbanC.Contracts.Karten;
 
@@ -34,6 +35,10 @@ namespace KanbanC.Contracts.Karten;
 // Kontributor trägt: das Feld im Eigenschaftenblock zeigt Name, Präfix und Zählerstand ohne
 // zweite Abfrage. null heißt „ohne Klasse". **Keine siebte Liste** — die Klassenliste des Boards
 // hat seit R00022 eine eigene Route, anders als die Etikettvorschläge, die keine hatten.
+// Und aus denselben Gründen die Zeiteinträge als **siebte** Liste: auf der Bahn steht nur eine
+// Plakette für den laufenden Timer, die das Board schon flach mitliefert, und ein Board-Abruf
+// zahlte sonst eine zweite Abfrage je Karte. Ein laufender Eintrag ist der ohne Ende — kein
+// zweites Feld daneben, das dasselbe noch einmal sagte.
 public record Kartendetail(
     Karte Karte,
     long Board,
@@ -47,4 +52,5 @@ public record Kartendetail(
     IReadOnlyList<Kommentar> Kommentare,
     IReadOnlyList<Anhang> Anhaenge,
     IReadOnlyList<Dateiverweis> Dateiverweise,
-    Kartenklasse? Kartenklasse);
+    Kartenklasse? Kartenklasse,
+    IReadOnlyList<Zeiteintrag> Zeiteintraege);

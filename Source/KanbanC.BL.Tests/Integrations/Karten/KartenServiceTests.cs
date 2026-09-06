@@ -875,7 +875,7 @@ public class KartenServiceTests
 
     private static Kartendetail Kartendetail(Karte karte)
     {
-        return new Kartendetail(karte, Board: 3, Boardname: "Entwicklung", Spalte: 5, Spaltenbezeichnung: "In Arbeit", Verantwortlicher: null, Etiketten: [], Etikettvorschlaege: [], Teilaufgaben: [], Kommentare: [], Anhaenge: [], Dateiverweise: [], Kartenklasse: null);
+        return new Kartendetail(karte, Board: 3, Boardname: "Entwicklung", Spalte: 5, Spaltenbezeichnung: "In Arbeit", Verantwortlicher: null, Etiketten: [], Etikettvorschlaege: [], Teilaufgaben: [], Kommentare: [], Anhaenge: [], Dateiverweise: [], Kartenklasse: null, Zeiteintraege: []);
     }
 
     [Test]

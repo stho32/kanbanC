@@ -1,6 +1,7 @@
 @using KanbanC.Blazor.Components.Karten
 @using KanbanC.Blazor.Services
 @using KanbanC.Contracts.Boards
+@using KanbanC.Contracts.Zeiten
 @inject KartenApiKlient KartenKlient
 
 <div class="spaltenbahnen" id="spaltenbahnen" @ondragenter="VerlasseZiel">
@@ -126,6 +127,8 @@
         @Einfuegelinie(spalteId, index)
         <Karte @key="kartendaten.KarteId"
                Kartendaten="kartendaten"
+               LaufendeZeiteintraege="LaufendeDerKarte(kartendaten.KarteId)"
+               GewaehlteKontributorId="GewaehlteKontributorId"
                IstZiehbar="ZeigtZiehbareKarten"
                WirdGezogen="WirdGezogen(kartendaten.KarteId)"
                NimmtAn="ZeigtAblageziele"
@@ -145,6 +148,8 @@
         }
         <Karte @key="erledigte.KarteId"
                Kartendaten="erledigte"
+               LaufendeZeiteintraege="LaufendeDerKarte(erledigte.KarteId)"
+               GewaehlteKontributorId="GewaehlteKontributorId"
                IstZiehbar="ZeigtZiehbareKarten"
                WirdGezogen="WirdGezogen(erledigte.KarteId)"
                NimmtAn="false"
@@ -178,6 +183,20 @@
 
     [Parameter]
     public bool ZeigtKartenzahl { get; set; }
+
+    // Flach ueber alle Spalten, wie das Board sie liefert: welcher Eintrag zu welcher Karte
+    // gehoert, ordnet die Bahn hier zu — das war der Preis dafuer, dass die Auskunft am Board
+    // haengt und nicht an jeder Karte.
+    [Parameter]
+    public IReadOnlyList<Zeiteintrag> LaufendeZeiteintraege { get; set; } = [];
+
+    [Parameter]
+    public long? GewaehlteKontributorId { get; set; }
+
+    private IReadOnlyList<Zeiteintrag> LaufendeDerKarte(long karteId)
+    {
+        return Laufplakette.DerKarte(LaufendeZeiteintraege, karteId);
+    }
 
     [Parameter]
     public EventCallback KarteWurdeAngelegt { get; set; }

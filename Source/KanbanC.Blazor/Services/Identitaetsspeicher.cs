@@ -19,6 +19,15 @@ public sealed class Identitaetsspeicher
         _browser = browser;
     }
 
+    // Die Wahl wird an zwei Stellen getroffen — in der Kopfzeile und auf der Kartenseite, wenn
+    // der Timer sie erzwingt. Damit daraus kein zweiter Identitätsbegriff wird, meldet der
+    // Speicher den Wechsel: der Dienst ist AddScoped und je Blazor-Kreislauf dieselbe Instanz,
+    // die Kopfzeile hört also genau den Wechsel, den die Kartenseite ausgelöst hat.
+    // Die gewählte KontributorId reist **mit** der Meldung und wird nicht zurückgelesen: bei
+    // gesperrtem Browser-Speicher ist nichts abgelegt, und ein Nachlesen machte aus der eben
+    // getroffenen Wahl wieder „nicht gewählt". null heißt „niemand mehr gewählt".
+    public event Action<long?>? Gewechselt;
+
     public async Task<long?> Lies()
     {
         var gemerkterWert = await LiesEintrag();
@@ -52,11 +61,13 @@ public sealed class Identitaetsspeicher
     {
         var gemerkterWert = kontributorId.ToString(CultureInfo.InvariantCulture);
         await SchreibeEintrag(EintragSetzen, Schluessel, gemerkterWert);
+        Gewechselt?.Invoke(kontributorId);
     }
 
     public async Task Vergiss()
     {
         await SchreibeEintrag(EintragEntfernen, Schluessel);
+        Gewechselt?.Invoke(null);
     }
 
     private async Task SchreibeEintrag(string browserbefehl, params object?[] argumente)

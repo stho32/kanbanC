@@ -78,6 +78,7 @@
     {
         UebernimmAdresse();
         Navigation.LocationChanged += AufAdresswechsel;
+        Identitaetsspeicher.Gewechselt += AufIdentitaetswechsel;
         // App.razor rendert mit prerender: false — der Kreislauf steht hier schon, ein
         // Interop-Aufruf trägt (belegt in SessionStorageProbeE2ETests).
         _gewaehlteKontributorId = await Identitaetsspeicher.Lies();
@@ -94,6 +95,17 @@
     public void Dispose()
     {
         Navigation.LocationChanged -= AufAdresswechsel;
+        Identitaetsspeicher.Gewechselt -= AufIdentitaetswechsel;
+    }
+
+    // Gewählt wird auch auf der Kartenseite, wenn der Timer die Wahl erzwingt. Der Platz nennt
+    // danach denselben Namen wie nach einer Wahl hier — es gibt eine Identität, nicht zwei.
+    // Übernommen wird der gemeldete Wert, nicht der abgelegte: bei gesperrtem Browser-Speicher
+    // gilt die Wahl für diese Sitzung weiter, sie überlebt dann nur den Reload nicht.
+    private void AufIdentitaetswechsel(long? gewaehlteKontributorId)
+    {
+        _gewaehlteKontributorId = gewaehlteKontributorId;
+        _ = InvokeAsync(StateHasChanged);
     }
 
     private void AufAdresswechsel(object? absender, LocationChangedEventArgs ereignis)

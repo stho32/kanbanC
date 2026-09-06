@@ -5,6 +5,7 @@ using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
 using KanbanC.Contracts.Klassen;
 using KanbanC.Contracts.Kontributoren;
+using KanbanC.Contracts.Zeiten;
 
 namespace KanbanC.PlaywrightTests.Infrastructure;
 
@@ -168,6 +169,28 @@ public sealed class WebApiKlient : IDisposable
         var antwort = await _klient.PostAsJsonAsync($"api/karten/{karteId}/dateiverweise", new DateiverweisEintragenAnfrage(pfad, kontributorId));
         antwort.EnsureSuccessStatusCode();
         return await AlsKartendetail(antwort);
+    }
+
+    // Der Weg des Agenten in die Zeiterfassung: eine Zeile je Aufruf, mit dem Kontributor im
+    // Rumpf. Einen Beginn schickt er nicht mit — den setzt die WebApi.
+    public async Task<Zeiteintrag> StarteZeitmessung(long karteId, long kontributorId)
+    {
+        var antwort = await _klient.PostAsJsonAsync($"api/karten/{karteId}/zeiten/laufend", new ZeitmessungStartenAnfrage(kontributorId));
+        antwort.EnsureSuccessStatusCode();
+        var zeiteintrag = await antwort.Content.ReadFromJsonAsync<Zeiteintrag>();
+        if (zeiteintrag is null)
+        {
+            throw new InvalidOperationException("Die WebApi hat keinen Zeiteintrag zurückgegeben.");
+        }
+
+        return zeiteintrag;
+    }
+
+    // Derselbe Aufruf ohne EnsureSuccessStatusCode: der Test will die Zurueckweisung sehen, statt
+    // an ihr zu scheitern.
+    public async Task<HttpResponseMessage> VersucheZeitmessungZuStarten(long karteId, long kontributorId)
+    {
+        return await _klient.PostAsJsonAsync($"api/karten/{karteId}/zeiten/laufend", new ZeitmessungStartenAnfrage(kontributorId));
     }
 
     public async Task<Kartendetail> LadeKartendetail(long karteId)

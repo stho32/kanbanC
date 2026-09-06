@@ -1,6 +1,7 @@
 using System.Data;
 using System.Globalization;
 using Dapper;
+using KanbanC.BL.Persistenz.Zeiten;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
 using KanbanC.Contracts.Klassen;
@@ -143,7 +144,8 @@ internal static class Kartenleser
             Kommentarleser.LiesKommentareDerKarte(verbindung, transaktion, karteId),
             Anhangleser.LiesAnhaengeDerKarte(verbindung, transaktion, karteId),
             Dateiverweisleser.LiesDateiverweiseDerKarte(verbindung, transaktion, karteId),
-            AlsKartenklasse(zeile));
+            AlsKartenklasse(zeile),
+            Zeitenleser.LiesZeiteintraegeDerKarte(verbindung, transaktion, karteId));
     }
 
     private static Karte AlsKarte(Kartenzeile zeile)
