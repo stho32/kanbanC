@@ -838,6 +838,72 @@ public class MigrationslaeuferTests
         Assert.That(Archivzeilen(datenbank), Is.Empty);
     }
 
+    [Test]
+    public void Wenn_die_Migration_gelaufen_ist_dann_traegt_das_Schema_die_Tabelle_Kartenklasse_mit_ihren_fuenf_Spalten()
+    {
+        using var datenbank = new TemporaereDatenbank();
+
+        new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus();
+
+        Assert.That(Tabellennamen(datenbank), Does.Contain("Kartenklasse"));
+        Assert.That(Spaltennamen(datenbank, "Kartenklasse"),
+            Is.EqualTo(new[] { "KartenklasseId", "Board", "Name", "Praefix", "Zaehlerstand" }));
+    }
+
+    // Der Zaehlerstand steht in dieser Migration und nicht erst in der des Zuordnens: eine
+    // bestehende CREATE TABLE IF NOT EXISTS waechst nicht nachtraeglich um eine Spalte.
+    [Test]
+    public void Wenn_die_Migration_gelaufen_ist_dann_traegt_die_Kartenklasse_ihre_Indizes_und_den_Anfangsstand_0()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+
+        FuegeKartenklasseEin(datenbank, boardId, "WBS", "WBS-");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Indexdefinition(datenbank, "IX_Kartenklasse_Board"), Is.Not.Null);
+            Assert.That(Indexdefinition(datenbank, "UX_Kartenklasse_Board_Praefix"), Does.Contain("COLLATE NOCASE"));
+            Assert.That(Kartenklassenzeilen(datenbank), Is.EqualTo(new[] { (1L, "WBS", "WBS-", 0L) }));
+        });
+    }
+
+    [Test]
+    public void Wenn_die_Migration_ein_zweites_Mal_laeuft_dann_bleiben_Schema_und_Kartenklassen_unveraendert()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        FuegeKartenklasseEin(datenbank, boardId, "WBS", "WBS-");
+        FuegeKartenklasseEin(datenbank, boardId, "Bugmeldungen", "BUG-");
+        var schemaVorher = SchemaDefinitionen(datenbank);
+
+        Assert.That(() => new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus(), Throws.Nothing);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(SchemaDefinitionen(datenbank), Is.EqualTo(schemaVorher));
+            Assert.That(Kartenklassenzeilen(datenbank), Is.EqualTo(new[] { (1L, "WBS", "WBS-", 0L), (2L, "Bugmeldungen", "BUG-", 0L) }));
+        });
+    }
+
+    private static void FuegeKartenklasseEin(TemporaereDatenbank datenbank, long boardId, string name, string praefix)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Kartenklasse (Board, Name, Praefix)
+            VALUES (@Board, @Name, @Praefix)", new { Board = boardId, Name = name, Praefix = praefix });
+    }
+
+    private static (long KartenklasseId, string Name, string Praefix, long Zaehlerstand)[] Kartenklassenzeilen(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        var zeilen = verbindung.Query<(long KartenklasseId, string Name, string Praefix, long Zaehlerstand)>(@"
+            SELECT KartenklasseId, Name, Praefix, Zaehlerstand
+              FROM Kartenklasse
+             ORDER BY KartenklasseId");
+        return zeilen.ToArray();
+    }
+
     private static void ArchiviereKarte(TemporaereDatenbank datenbank, long karteId)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();

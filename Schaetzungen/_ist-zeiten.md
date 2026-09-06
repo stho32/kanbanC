@@ -312,3 +312,4 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-06 | R00021 Karte auf Dateien verweisen lassen | B0292 Gemeinsame Leerzeile ueber beide Haelften | Standard | 0,4-1,5h | 0,1h | 0,1h | autonom |
 | 2026-09-06 | R00021 Karte auf Dateien verweisen lassen | B0293 E2E Karte auf Dateien verweisen lassen | Standard | 2-4h | 0,2h | 0,2h | autonom |
 | 2026-09-06 | R00021 Karte auf Dateien verweisen lassen | Lauf R00021 · S7 ausstehend | Nacharbeit | — | — | 0,7h | autonom |
+| 2026-09-06 | R00022 Kartenklasse anlegen | I0020 Lauf gesamt, 10 Bubbles B0294-B0303 (Station S6 ohne Bubble-Commits) | Standard | 10,4-12,4h | 0,4h | 0,4h | autonom |

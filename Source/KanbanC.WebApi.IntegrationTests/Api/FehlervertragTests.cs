@@ -4,6 +4,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
+using KanbanC.Contracts.Klassen;
 using KanbanC.Contracts.Kontributoren;
 using KanbanC.WebApi.IntegrationTests.Infrastructure;
 
@@ -351,6 +352,16 @@ public class FehlervertragTests
             "DELETE /api/karten/{karteId:long}/anhaenge/{anhangId:long}",
             "Anhang entfernen mit unbekannter AnhangId",
             await webApi.Klient.DeleteAsync($"/api/karten/{aufbau.Karte.KarteId}/anhaenge/999")));
+
+        faelle.Add(new Fehlerfall(
+            "POST /api/boards/{boardId:long}/kartenklassen",
+            "Kartenklasse anlegen an unbekanntem Board",
+            await webApi.Klient.PostAsJsonAsync($"{BoardsRoute}/999/kartenklassen", new KartenklasseAnlegenAnfrage("WBS", "WBS-"))));
+
+        faelle.Add(new Fehlerfall(
+            "GET /api/boards/{boardId:long}/kartenklassen",
+            "Kartenklassen lesen an unbekanntem Board",
+            await webApi.Klient.GetAsync($"{BoardsRoute}/999/kartenklassen")));
 
         return faelle;
     }

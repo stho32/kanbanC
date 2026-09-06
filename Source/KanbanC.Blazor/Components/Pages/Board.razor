@@ -1,5 +1,6 @@
 @page "/boards/{BoardId:long}"
 @using KanbanC.Blazor.Components.Karten
+@using KanbanC.Blazor.Components.Klassen
 @using KanbanC.Blazor.Services
 @using KanbanC.Contracts.Boards
 @using KanbanC.Contracts.Fehler
@@ -83,6 +84,7 @@ else
         @if (_layoutModusIstAktiv)
         {
             <Spaltenpflege BoardId="BoardId" Spalten="_board.Spalten" SpaltenHabenSichGeaendert="LadeBoard" />
+            <Klassenpflege BoardId="BoardId" />
         }
         else
         {

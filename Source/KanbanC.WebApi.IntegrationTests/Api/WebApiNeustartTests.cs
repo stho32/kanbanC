@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
+using KanbanC.Contracts.Klassen;
 using KanbanC.Contracts.Kontributoren;
 using KanbanC.WebApi.IntegrationTests.Infrastructure;
 
@@ -304,6 +305,35 @@ public class WebApiNeustartTests
         Assert.That(antwort.StatusCode, Is.EqualTo(System.Net.HttpStatusCode.BadRequest));
         var detail = await zweiteInstanz.Klient.GetFromJsonAsync<Kartendetail>($"/api/karten/{karteId}");
         Assert.That(detail!.Dateiverweise, Has.Count.EqualTo(1));
+    }
+
+    [Test]
+    public async Task Wenn_die_WebApi_neu_startet_dann_stehen_Namen_Praefixe_Zaehlerstaende_und_Reihenfolge_der_Kartenklassen_unveraendert_da()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using (var ersteInstanz = new TestWebApi(datenbank.Dateipfad))
+        {
+            var board = await LegeBoardAn(ersteInstanz, new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null));
+            await LegeKartenklasseAn(ersteInstanz, board.BoardId, "WBS", "WBS-");
+            await LegeKartenklasseAn(ersteInstanz, board.BoardId, "Bugmeldungen", "BUG-");
+            await LegeKartenklasseAn(ersteInstanz, board.BoardId, "Beschaffung", "bes_");
+        }
+
+        using var zweiteInstanz = new TestWebApi(datenbank.Dateipfad);
+
+        var kartenklassen = await zweiteInstanz.Klient.GetFromJsonAsync<List<Kartenklasse>>($"{BoardsRoute}/1/kartenklassen");
+        Assert.That(kartenklassen, Is.EqualTo(new[]
+        {
+            new Kartenklasse(1, "WBS", "WBS-", 0),
+            new Kartenklasse(2, "Bugmeldungen", "BUG-", 0),
+            new Kartenklasse(3, "Beschaffung", "bes_", 0),
+        }));
+    }
+
+    private static async Task LegeKartenklasseAn(TestWebApi webApi, long boardId, string name, string praefix)
+    {
+        var antwort = await webApi.Klient.PostAsJsonAsync($"{BoardsRoute}/{boardId}/kartenklassen", new KartenklasseAnlegenAnfrage(name, praefix));
+        antwort.EnsureSuccessStatusCode();
     }
 
     private static async Task<Kartendetail> TrageDateiverweisEin(TestWebApi webApi, long karteId, string pfad, long kontributorId)

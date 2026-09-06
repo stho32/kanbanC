@@ -1,0 +1,124 @@
+@using KanbanC.Blazor.Services
+@using KanbanC.Contracts.Fehler
+@using KanbanC.Contracts.Klassen
+@inject KartenklassenApiKlient KartenklassenKlient
+
+<hr class="hr" />
+
+<div id="klassenpflege">
+    <div class="klassenpflege-kopf">
+        <h3 class="klassenpflege-titel">Klassen</h3>
+        <span class="klassenpflege-hinweis">Name und Nummernkreis-Präfix — daraus entsteht WBS-14, BUG-07</span>
+    </div>
+
+    @if (_kartenklassen.Count == 0)
+    {
+        <p id="keine-klassen">Dieses Board hat keine Klasse.</p>
+    }
+    else
+    {
+        <div class="klassenliste" id="klassenliste">
+            @foreach (var kartenklasse in _kartenklassen)
+            {
+                <div class="klassenzeile">
+                    <span class="klassenname">@kartenklasse.Name</span>
+                    <span class="tag tag-neutral klassenpraefix">@kartenklasse.Praefix</span>
+                    <span class="klassenstand">
+                        @kartenklasse.Zaehlerstand vergeben · nächste <span class="klassennummer">@NaechsteNummer(kartenklasse)</span>
+                    </span>
+                </div>
+            }
+        </div>
+    }
+
+    @if (_fehlermeldung is not null)
+    {
+        <div class="meldung" role="alert" id="klassen-fehlermeldung">@_fehlermeldung</div>
+    }
+
+    @if (_zurueckweisung is not null)
+    {
+        <div class="meldung meldung-abweisung" role="alert" id="klassen-zurueckweisung">
+            <p>Die Klasse wurde nicht angelegt:</p>
+            <ul>
+                @foreach (var befund in _zurueckweisung.Befunde)
+                {
+                    <li>@befund.Meldung</li>
+                }
+            </ul>
+        </div>
+    }
+
+    <div class="klassenpflege-neu" id="neue-klasse">
+        <div class="field klassenpflege-namensfeld">
+            <label for="neue-klasse-name">Name</label>
+            <input id="neue-klasse-name" class="input" @bind="_neueKlasse.Name" />
+        </div>
+        <div class="field klassenpflege-praefixfeld">
+            <label for="neue-klasse-praefix">Nummernkreis-Präfix</label>
+            <input id="neue-klasse-praefix" class="input" @bind="_neueKlasse.Praefix" />
+        </div>
+        <button type="button" class="btn btn-haupt" @onclick="LegeKartenklasseAn">Klasse anlegen</button>
+    </div>
+</div>
+
+@code {
+    private readonly KlassenFormular _neueKlasse = new();
+    private IReadOnlyList<Kartenklasse> _kartenklassen = [];
+    private Zurueckweisung? _zurueckweisung;
+    private string? _fehlermeldung;
+
+    [Parameter]
+    [EditorRequired]
+    public long BoardId { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await MitErreichbarerWebApi(LadeKartenklassen);
+    }
+
+    // Die Liste kommt über die eigene Route und nicht über das Board: die Kartenklassen hängen
+    // bewusst nicht am Board-Vertrag.
+    private async Task LadeKartenklassen()
+    {
+        var ergebnis = await KartenklassenKlient.LadeKartenklassen(BoardId);
+        if (ergebnis.WurdeZurueckgewiesen)
+        {
+            _kartenklassen = [];
+            return;
+        }
+
+        _kartenklassen = ergebnis.Wert;
+    }
+
+    private async Task LegeKartenklasseAn()
+    {
+        await MitErreichbarerWebApi(LegeNeueKartenklasseAn);
+    }
+
+    private async Task LegeNeueKartenklasseAn()
+    {
+        // Der Befund des vorigen Versuchs geht mit dem Versuch selbst: sonst stünde nach einem
+        // Ausfall der WebApi die alte Abweisung neben dem Ausfallsatz.
+        _zurueckweisung = null;
+        var ergebnis = await KartenklassenKlient.LegeKartenklasseAn(BoardId, _neueKlasse.AlsAnlegenAnfrage());
+        if (ergebnis.WurdeZurueckgewiesen)
+        {
+            _zurueckweisung = ergebnis.Zurueckweisung;
+            return;
+        }
+
+        _neueKlasse.Leere();
+        await LadeKartenklassen();
+    }
+
+    private async Task MitErreichbarerWebApi(Func<Task> aufruf)
+    {
+        _fehlermeldung = await WebApiAufruf.MitAusfallmeldung(aufruf);
+    }
+
+    private static string NaechsteNummer(Kartenklasse kartenklasse)
+    {
+        return Kartennummer.Aus(kartenklasse.Praefix, kartenklasse.Zaehlerstand + 1);
+    }
+}

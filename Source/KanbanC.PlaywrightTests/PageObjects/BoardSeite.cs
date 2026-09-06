@@ -139,6 +139,41 @@ public sealed class BoardSeite
         await Assertions.Expect(Anlegeformular).ToBeHiddenAsync();
     }
 
+    // Der Klassenbereich traegt eigene Kennungen: kein Element von ihm faellt unter
+    // #spaltenbahnen oder #neue-spalte, an denen die Zaehlzusagen des Layout-Modus haengen.
+    public ILocator Klassenbereich => _seite.Locator("#klassenpflege");
+
+    public ILocator Klassenzeilen => _seite.Locator("#klassenliste .klassenzeile");
+
+    public ILocator Klassennamen => _seite.Locator("#klassenliste .klassenname");
+
+    public ILocator Klassenpraefixe => _seite.Locator("#klassenliste .klassenpraefix");
+
+    public ILocator Klassenstaende => _seite.Locator("#klassenliste .klassenstand");
+
+    public ILocator HinweisKeineKlassen => _seite.Locator("#keine-klassen");
+
+    public ILocator KlassenAnlegezeile => _seite.Locator("#neue-klasse");
+
+    public ILocator KlassenNamensfeld => _seite.Locator("#neue-klasse-name");
+
+    public ILocator KlassenPraefixfeld => _seite.Locator("#neue-klasse-praefix");
+
+    public ILocator KlassenZurueckweisung => _seite.Locator("#klassen-zurueckweisung");
+
+    public ILocator KlassenFehlermeldung => _seite.Locator("#klassen-fehlermeldung");
+
+    public async Task FuelleNeueKlasse(string name, string praefix)
+    {
+        await KlassenNamensfeld.FillAsync(name);
+        await KlassenPraefixfeld.FillAsync(praefix);
+    }
+
+    public async Task LegeKlasseAn()
+    {
+        await _seite.GetByRole(AriaRole.Button, new() { Name = "Klasse anlegen" }).ClickAsync();
+    }
+
     public ILocator SpaltenZurueckweisung => _seite.Locator("#spalten-zurueckweisung");
 
     public ILocator SpaltenFehlermeldung => _seite.Locator("#spalten-fehlermeldung");

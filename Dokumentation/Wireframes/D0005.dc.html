@@ -1,0 +1,398 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@300..900&display=swap">
+  <style>
+    /* D0005 „Karten-Klassen" — Werte exakt aus dem Bestand uebernommen, nichts gerundet:
+       Source/KanbanC.Blazor/wwwroot/gestaltung.css und oberflaeche.css (Tokens und Formen),
+       Components/Layout/Kopfzeile.razor(.css) (Navigationszeile, drei Zonen, min-height 35.2px),
+       Components/Pages/Board.razor (Layout-Schalter in Zone 3, Kopfdaten, Meldungen),
+       Components/Spalten/Spaltenpflege.razor (die Zeile #neue-spalte, an die sich der
+       Klassenbereich anlegt; Wortlaut „Dieses Board hat keine Spalte."),
+       Components/Spalten/Spaltenbahnen.razor(.css) (Bahn, Bahnenkopf, Kartenform).
+       Formsprache uebernommen aus D0001.dc.html (Layout-Modus, Zustand 3), D0003.dc.html
+       (Bahn und Karte samt Klassennummer-Chip) und D0004.dc.html (Eigenschaftenblock,
+       gestrichelter Kasten fuer fremde Dialogs).
+       Beispieldaten aus wireframes.js (S.gestalten, Variante B: WBS/BUG/BES) und aus
+       D0001.dc.html (Karten WBS-31, WBS-28, WBS-09).
+       D0005 ist vollstaendig rot — das ganze Artboard ist Zielform, nichts davon gebaut. */
+    :root {
+      --color-bg: #f5ead8;
+      --color-surface: #ebddc5;
+      --color-text: #201e1d;
+      --color-accent: #c67139;
+      --color-accent-2: #7a8a5e;
+      --color-divider: color-mix(in srgb, #201e1d 16%, transparent);
+
+      --color-neutral-100: #f9f4ed;
+      --color-neutral-200: #eee7db;
+      --color-neutral-300: #dcd3c4;
+      --color-neutral-800: #474238;
+
+      --color-accent-100: #fff2eb;
+      --color-accent-200: #ffe1d0;
+      --color-accent-700: #8c491a;
+      --color-accent-800: #643312;
+
+      --color-accent-2-100: #f0fae1;
+      --color-accent-2-200: #e1eecc;
+      --color-accent-2-800: #3d472b;
+
+      --font-heading: "Caprasimo", system-ui, sans-serif;
+      --font-body: "Figtree", system-ui, sans-serif;
+
+      --space-1: 4.4px;
+      --space-2: 8.8px;
+      --space-3: 13.2px;
+      --space-4: 17.6px;
+      --space-6: 26.4px;
+
+      --radius-xs: 4px;
+      --radius-md: 16px;
+      --radius-lg: 28px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-family: var(--font-body);
+      font-size: 15px;
+      line-height: 1.55;
+      font-weight: 400;
+    }
+    h1, h2, h3 {
+      font-family: var(--font-heading);
+      font-weight: 400;
+      line-height: 1.12;
+      letter-spacing: -0.015em;
+      margin: 0;
+    }
+    a { color: var(--color-accent); text-underline-offset: 3px; text-decoration: none; }
+    a:hover { color: #8c491a; }
+    svg { display: block; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #ebddc5; display: flex; flex-direction: column">
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 1 — Klassen im Layout-Modus des Boards (I0020), der laufende Slice.
+     Der aeltere Satz setzt die Klassenpflege in „Gestalten unter dem Board"
+     (wireframes.js:230) — genau die Flaeche, die der gebaute Layout-Modus heute
+     einnimmt. Der Bereich legt sich unter die Zeile #neue-spalte und traegt
+     eigene Klassennamen, damit die 17 Zaehlzusagen der LayoutModusE2ETests
+     (#spaltenbahnen .spaltenbahn / .spaltenbahn-bearbeitung / .spaltenbahn-vermerk
+     und #neue-spalte) unberuehrt bleiben.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 17.6px 26.4px 8.8px">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 1 · Hauptzustand · Klassen im Layout-Modus · /boards/2 · Ausschnitt · Zielform, nichts davon gebaut</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Eine Kartenklasse gehört <span style="color: #201e1d">einem Board</span> — das Präfix ist nur innerhalb dieses Boards eindeutig. Also wird sie dort gepflegt, wo das Board gestaltet wird: im <span style="color: #201e1d">Layout-Modus</span>, unter der Zeile für die neue Spalte. Die Bahnen darüber gehören D0001 (Zustand 3) und stehen hier nur als Band. Beschriftet ist der Bereich mit <span style="color: #201e1d">Klassen</span>; <span style="color: #201e1d">Kartenklasse</span> ist der Begriff im Code.</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; overflow: hidden; display: flex; flex-direction: column">
+
+  <!-- ══ Navigationszeile — Layout/Kopfzeile.razor(.css), drei Zonen ══════════
+       Unveraendert aus D0001.dc.html Zustand 3: der Layout-Modus ist aktiv,
+       Zone 3 traegt daher das ✓ „Layout fertig". ══════════════════════════ -->
+  <header style="display: flex; align-items: stretch; gap: 17.6px; min-height: 35.2px; padding: 0 17.6px; overflow: hidden; background: #ebddc5; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent); flex: 0 0 auto">
+    <div style="display: flex; flex: none; align-items: center; gap: 8.8px; min-width: 0; max-width: 45%">
+      <span style="display: flex; flex: none; align-items: center; justify-content: center; width: 26.4px; height: 26.4px; font-size: 15px; line-height: 1; color: color-mix(in srgb, #201e1d 60%, transparent); border-radius: 4px">←</span>
+      <h1 style="margin: 0; font-size: 17px; line-height: 1.2; white-space: nowrap">KanbanC — Release 2</h1>
+      <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #fff2eb; color: #643312">Projekt</span>
+      <span style="overflow: hidden; white-space: nowrap; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">Start 2026-08-01 · Ziel 2026-09-30</span>
+    </div>
+    <div style="display: flex; flex: 1; align-items: center; gap: 17.6px; min-width: 0; padding-left: 17.6px; border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+      <nav style="display: flex; align-self: stretch; align-items: stretch; gap: 13.2px">
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: color-mix(in srgb, #201e1d 35%, transparent); border-bottom: 2px solid transparent">Auswertungen</span>
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: color-mix(in srgb, #201e1d 35%, transparent); border-bottom: 2px solid transparent">Kontributoren</span>
+      </nav>
+    </div>
+    <div style="display: flex; flex: none; align-items: center; gap: 8.8px">
+      <span style="display: inline-flex; align-items: center; justify-content: center; width: 26.4px; height: 26.4px; padding: 0; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1; color: #f5ead8; background: #c67139; border: 1px solid transparent; border-radius: 4px">✓</span>
+      <span style="padding-left: 8.8px; font-size: 13px; color: color-mix(in srgb, #201e1d 55%, transparent); border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">nicht gewählt</span>
+    </div>
+  </header>
+
+  <main style="display: flex; flex-direction: column; padding: 13.2px 17.6px 26.4px">
+
+    <!-- Die Spaltenbahnen im Layout-Modus — hier nur als Band. Gezeichnet sind
+         sie in D0001.dc.html, Zustand 3; sie zweimal zu zeichnen hiesse, zwei
+         Fassungen derselben Flaeche zu pflegen. -->
+    <div style="display: flex; align-items: center; gap: 13.2px; min-height: 52.8px; padding: 8.8px 13.2px; background: #ebddc5; border: 1px dashed color-mix(in srgb, #201e1d 35%, transparent)">
+      <span style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">Spaltenbahnen im Layout-Modus</span>
+      <span style="font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">fünf Bahnen mit Bezeichnung, Abschlussspalte, Anzeigegrenze, Reihenfolge und Entfernen — gebaut, gezeichnet in <span style="color: #201e1d">D0001.dc.html · Zustand 3</span></span>
+      <span style="margin-left: auto; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: #f9f4ed; color: #474238">D0001 · I0003</span>
+    </div>
+
+    <!-- .spaltenpflege-neu — gebaut, hier nur die Zeile selbst: sie ist der
+         unmittelbare Nachbar und setzt den vertikalen Rhythmus, an den sich der
+         Klassenbereich anlegt. -->
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 13.2px; margin-top: 17.6px">
+      <div style="flex: 0 1 256px">
+        <label style="display: block; font-size: 12px; margin-bottom: 5px; color: color-mix(in srgb, #201e1d 70%, transparent)">Bezeichnung</label>
+        <div style="width: 100%; min-height: 36px; padding: 6px 14px; font-size: 14px; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px; display: flex; align-items: center; color: color-mix(in srgb, #201e1d 45%, transparent)">Abnahme</div>
+      </div>
+      <span style="display: inline-flex; align-items: center; gap: 8.8px; font-size: 14px; height: 36px">
+        <span style="width: 16px; height: 16px; flex: none; border: 1px solid color-mix(in srgb, #201e1d 45%, transparent); border-radius: 3px; background: #f5ead8"></span>
+        Abschlussspalte
+      </span>
+      <div style="flex: 0 1 256px">
+        <label style="display: block; font-size: 12px; margin-bottom: 5px; color: color-mix(in srgb, #201e1d 70%, transparent)">Anzeigegrenze</label>
+        <div style="width: 100%; min-height: 36px; padding: 6px 14px; font-size: 14px; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px; display: flex; align-items: center; color: color-mix(in srgb, #201e1d 45%, transparent)">0</div>
+      </div>
+      <span style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #f5ead8; background: #c67139; border: 1px solid transparent; padding: 8.8px 15.84px; border-radius: 999px">Spalte anlegen</span>
+    </div>
+
+    <!-- ══ Der neue Bereich · #klassenpflege ═══════════════════════════════
+         Eigene Kennung und eigene Klassennamen — kein Element dieses Bereichs
+         faellt unter #spaltenbahnen oder #neue-spalte, an denen die
+         LayoutModusE2ETests zaehlen. Getrennt wird mit derselben Linie, die
+         .hr im Token-Sheet zieht. ═══════════════════════════════════════ -->
+    <div style="margin-top: 26.4px; padding-top: 26.4px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent); display: flex; flex-direction: column; gap: 13.2px">
+
+      <div style="display: flex; align-items: baseline; gap: 8.8px">
+        <h3 style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">Klassen</h3>
+        <span style="font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">Name und Nummernkreis-Präfix — daraus entsteht WBS-14, BUG-07</span>
+        <span style="margin-left: auto; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: #ffe1d0; color: #643312">I0020 · laufender Slice</span>
+      </div>
+
+      <!-- Die vorhandenen Klassen. Eine Zeile ist eine Zeile: Name links,
+           Praefix als Plakette in genau der Form, die die Karte traegt
+           (D0003/D0001: .tag auf #f9f4ed), rechts der Stand des Zaehlers. -->
+      <div style="display: flex; flex-direction: column; gap: 4.4px">
+        <div style="display: flex; align-items: center; gap: 13.2px; min-height: 36px; padding: 4.4px 13.2px; background: #ebddc5; border-radius: 4px">
+          <span style="flex: 0 1 256px; font-size: 14px">WBS</span>
+          <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-</span>
+          <span style="margin-left: auto; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">31 vergeben · nächste <span style="color: #201e1d">WBS-32</span></span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 13.2px; min-height: 36px; padding: 4.4px 13.2px; background: #ebddc5; border-radius: 4px">
+          <span style="flex: 0 1 256px; font-size: 14px">Bugmeldungen</span>
+          <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">BUG-</span>
+          <span style="margin-left: auto; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">7 vergeben · nächste <span style="color: #201e1d">BUG-08</span></span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 13.2px; min-height: 36px; padding: 4.4px 13.2px; background: #ebddc5; border-radius: 4px">
+          <span style="flex: 0 1 256px; font-size: 14px">Beschaffung</span>
+          <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">BES-</span>
+          <span style="margin-left: auto; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">4 vergeben · nächste <span style="color: #201e1d">BES-05</span></span>
+        </div>
+      </div>
+
+      <!-- Die Anlegezeile — Form und Rhythmus von .spaltenpflege-neu. Zwei
+           Felder und ein Knopf, genau die zwei Angaben des Fertig-Kriteriums. -->
+      <div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 13.2px; margin-top: 4.4px">
+        <div style="flex: 0 1 256px">
+          <label style="display: block; font-size: 12px; margin-bottom: 5px; color: color-mix(in srgb, #201e1d 70%, transparent)">Name</label>
+          <div style="width: 100%; min-height: 36px; padding: 6px 14px; font-size: 14px; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px; display: flex; align-items: center; color: color-mix(in srgb, #201e1d 45%, transparent)">Dokumentation</div>
+        </div>
+        <div style="flex: 0 1 176px">
+          <label style="display: block; font-size: 12px; margin-bottom: 5px; color: color-mix(in srgb, #201e1d 70%, transparent)">Nummernkreis-Präfix</label>
+          <div style="width: 100%; min-height: 36px; padding: 6px 14px; font-size: 14px; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px; display: flex; align-items: center; color: color-mix(in srgb, #201e1d 45%, transparent)">DOK-</div>
+        </div>
+        <span style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #f5ead8; background: #c67139; border: 1px solid transparent; padding: 8.8px 15.84px; border-radius: 999px">Klasse anlegen</span>
+        <span style="margin-left: auto; align-self: center; font-family: ui-monospace, monospace; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">gleiche Wirkung: POST /api/boards/2/klassen</span>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 2 — das Board ohne jede Klasse. Der Leerzustand nimmt Wortlaut und
+     Form von #keine-spalten in Spaltenpflege.razor: ein Satz, kein Kasten.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 17.6px 26.4px 8.8px">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 2 · Leerzustand · Board ohne Klasse · Ausschnitt</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Der Normalfall am ersten Tag: eine Klasse ist <span style="color: #201e1d">optional</span> (Vision, „Karte mit optionaler Klasse"). Ein Board ohne Klasse ist kein Fehler, also auch keine Meldung — ein Satz und die Anlegezeile, wie bei den Spalten.</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; padding: 26.4px; display: flex; flex-direction: column; gap: 13.2px">
+  <div style="display: flex; align-items: baseline; gap: 8.8px">
+    <h3 style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">Klassen</h3>
+    <span style="font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">Name und Nummernkreis-Präfix — daraus entsteht WBS-14, BUG-07</span>
+  </div>
+  <p style="margin: 0; font-size: 15px">Dieses Board hat keine Klasse.</p>
+  <div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 13.2px">
+    <div style="flex: 0 1 256px">
+      <label style="display: block; font-size: 12px; margin-bottom: 5px; color: color-mix(in srgb, #201e1d 70%, transparent)">Name</label>
+      <div style="width: 100%; min-height: 36px; padding: 6px 14px; font-size: 14px; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px; display: flex; align-items: center; color: color-mix(in srgb, #201e1d 45%, transparent)">Name der Klasse</div>
+    </div>
+    <div style="flex: 0 1 176px">
+      <label style="display: block; font-size: 12px; margin-bottom: 5px; color: color-mix(in srgb, #201e1d 70%, transparent)">Nummernkreis-Präfix</label>
+      <div style="width: 100%; min-height: 36px; padding: 6px 14px; font-size: 14px; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px; display: flex; align-items: center; color: color-mix(in srgb, #201e1d 45%, transparent)">Präfix</div>
+    </div>
+    <span style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 14px; line-height: 1.2; color: #f5ead8; background: #c67139; border: 1px solid transparent; padding: 8.8px 15.84px; border-radius: 999px">Klasse anlegen</span>
+  </div>
+  <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Karten ohne Klasse tragen keine Nummer und keine Plakette — sie zeigen nur ihren Titel, so wie <span style="color: #201e1d">B0071</span> die Bahn heute füllt.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 3 — die Raender des Anlegens (I0020). Form und Wortlaut folgen
+     .meldung.meldung-abweisung und dem Muster der Spaltenzurueckweisung
+     (Spaltenpflege.razor: „Die Spaltenaenderung wurde abgelehnt:" plus Liste).
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 17.6px 26.4px 8.8px">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Ränder · I0020 · Zielform</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Zurückweisungen, keine Serverfehler — mit Grund und Kompensationsaktion, damit ein Agent daraus handeln kann. Die Eindeutigkeit des Präfix gilt <span style="color: #201e1d">je Board</span>, nicht global: ein zweites Board darf wieder <span style="color: #201e1d">WBS-</span> führen.</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; padding: 0 26.4px 26.4px; display: flex; gap: 26.4px; align-items: flex-start">
+
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; color: color-mix(in srgb, #201e1d 55%, transparent)">ohne Namen</p>
+    <div style="margin: 0; padding: 13.2px; border-left: 3px solid #8c491a; border-radius: 16px; background: #ebddc5">
+      <p style="margin: 0 0 4.4px; font-size: 15px">Die Klasse wurde nicht angelegt:</p>
+      <ul style="margin: 0; padding-left: 17.6px; font-size: 15px">
+        <li>Eine Klasse braucht einen Namen.</li>
+      </ul>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent)">Derselbe Bau wie die Spaltenzurückweisung; der Wortlaut gehört in den Validator und damit in die Anforderung, nicht ins Bild.</p>
+  </div>
+
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; color: color-mix(in srgb, #201e1d 55%, transparent)">Präfix auf diesem Board schon vergeben</p>
+    <div style="margin: 0; padding: 13.2px; border-left: 3px solid #8c491a; border-radius: 16px; background: #ebddc5">
+      <p style="margin: 0 0 4.4px; font-size: 15px">Die Klasse wurde nicht angelegt:</p>
+      <ul style="margin: 0; padding-left: 17.6px; font-size: 15px">
+        <li>Das Präfix WBS- führt auf diesem Board schon die Klasse „WBS". Wähle ein anderes Präfix.</li>
+      </ul>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent)">Der Satz nennt Grund <span style="color: #201e1d">und</span> Kompensationsaktion — die Regel für Fehlerantworten an Agenten.</p>
+  </div>
+
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; color: color-mix(in srgb, #201e1d 55%, transparent)">WebApi nicht erreichbar</p>
+    <div style="margin: 0; padding: 13.2px; border-left: 3px solid #c67139; border-radius: 16px; background: #ebddc5">
+      <p style="margin: 0; font-size: 15px">Die WebApi ist nicht erreichbar. Bitte später erneut versuchen.</p>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent)">Wie überall: <span style="color: #201e1d">WebApiAusfall.Meldung</span>, derselbe Satz auf allen Seiten.</p>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 4 — I0021 „Karte einer Klasse zuordnen". Die Interaction gehoert
+     D0005, sichtbar wird sie auf zwei fremden Flaechen: im Eigenschaftenblock
+     der Kartenseite (D0004 hat den Platz am 2026-09-05 gestrichelt reserviert)
+     und als Plakette auf der Karte in der Bahn (D0003). Gezeichnet ist nur der
+     Ausschnitt, den I0021 selbst besetzt — die beiden Schirme bleiben ihren
+     Artboards.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 17.6px 26.4px 8.8px">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 4 · Karte einer Klasse zuordnen · I0021 · noch nicht dran</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Die Zuordnung geschieht an der Karte, nicht an der Klasse: ein Feld im Eigenschaftenblock der Kartenseite. Mit der Wahl vergibt die Klasse ihre <span style="color: #201e1d">nächste</span> Nummer — WBS-32 — und die Karte trägt sie fortan in der Bahn. Der Platz dafür steht in <span style="color: #201e1d">D0004.dc.html</span> als gestrichelter Kasten „Klasse und Nummer".</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; padding: 0 26.4px 26.4px; display: flex; gap: 26.4px; align-items: flex-start">
+
+  <!-- Das Feld auf der Kartenseite — Form aus dem Eigenschaftenblock von D0004 -->
+  <div style="flex: 0 0 372px; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; color: color-mix(in srgb, #201e1d 55%, transparent)">auf der Kartenseite · /karten/14</p>
+    <section style="display: flex; flex-direction: column; gap: 13.2px; padding: 13.2px; border-radius: 32.2px; background: #ebddc5; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+      <div style="display: flex; align-items: baseline; gap: 8.8px">
+        <h3 style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">Eigenschaften</h3>
+        <span style="margin-left: auto; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: #f9f4ed; color: #474238">D0004 · I0021</span>
+      </div>
+      <div>
+        <label style="display: block; font-size: 12px; margin-bottom: 5px; color: color-mix(in srgb, #201e1d 70%, transparent)">Klasse</label>
+        <div style="display: flex; align-items: center; gap: 8.8px; min-height: 36px; padding: 4px 14px; font-size: 14px; background: #f5ead8; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px">
+          <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-</span>WBS
+          <span style="margin-left: auto; color: color-mix(in srgb, #201e1d 55%, transparent)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+        </div>
+        <p style="margin: 5px 0 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent)">Vergibt beim Speichern <span style="color: #201e1d">WBS-32</span>. Die Liste führt die Klassen dieses Boards und den Eintrag <span style="color: #201e1d">ohne Klasse</span> — der Normalfall nach I0011.</p>
+      </div>
+    </section>
+  </div>
+
+  <!-- Die Karte in der Bahn — vorher und nachher, Form aus D0001/D0003 -->
+  <div style="flex: 0 0 256px; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; color: color-mix(in srgb, #201e1d 55%, transparent)">vorher · ohne Klasse</p>
+    <div style="padding: 8.8px; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+      <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+        <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty">Klassenfilter über die API</p>
+      </div>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent)">Nur der Titel — die Stelle der Plakette bleibt leer, sie kostet keine Zeile.</p>
+  </div>
+
+  <div style="flex: 0 0 256px; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; color: color-mix(in srgb, #201e1d 55%, transparent)">nachher · WBS-32</p>
+    <div style="padding: 8.8px; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+      <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+        <span style="align-self: flex-start; display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-32</span>
+        <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty">Klassenfilter über die API</p>
+      </div>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent)">Dieselbe Plakette, die <span style="color: #201e1d">D0003</span> und <span style="color: #201e1d">D0001</span> schon zeichnen (WBS-31, WBS-28, WBS-09).</p>
+  </div>
+
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; color: color-mix(in srgb, #201e1d 55%, transparent)">was I0021 offen lässt</p>
+    <div style="display: flex; flex-direction: column; gap: 4.4px; padding: 13.2px; border-radius: 32.2px; border: 1px dashed color-mix(in srgb, #201e1d 35%, transparent)">
+      <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Das Fertig-Kriterium sagt „erhält eine Klasse und damit die <span style="color: #201e1d">nächste</span> Nummer". Was beim <span style="color: #201e1d">Wechsel</span> der Klasse geschieht — neue Nummer, alte Nummer verfällt, beide bleiben ablesbar —, sagt es nicht. Ebenso wenig, ob eine Karte mehr als eine Klasse tragen kann; die Vision spricht von der Karte „mit optionaler Klasse", Einzahl. Das Artboard zeigt den Erstfall und entscheidet den Wechsel nicht.</p>
+      <p style="margin: 4.4px 0 0; font-family: ui-monospace, monospace; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">gleiche Wirkung: PUT /api/karten/14/klasse</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 5 — I0022 „Karten einer Klasse abrufen". Der Index haelt fest:
+     reine API-Zusage, absichtlich ohne Schirm. Gezeichnet ist deshalb der
+     Aufruf, nicht ein erfundenes Bedienelement — fuer einen Agenten ist der
+     Aufruf das Bedienelement. Die Oberflaechenentsprechung (Klassenfilter im
+     Boardkopf) steht daneben als markierte Luecke.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 17.6px 26.4px 8.8px">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 5 · Karten einer Klasse abrufen · I0022 · noch nicht dran</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Die Kernzusage der Vision: „gezielt das richtige Set greifen <span style="color: #201e1d">statt des ganzen Boards</span>". Das ist kein Klickweg, sondern ein Aufruf — der einzige Zustand dieses Dialogs, dessen Bedienelement kein Bild hat. Die Route folgt dem gebauten Muster (<span style="color: #201e1d">/api/boards/{boardId}/spalten/{spalteId}/karten</span>) und ist Entwurf, keine Zusage.</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; padding: 0 26.4px 26.4px; display: flex; gap: 26.4px; align-items: flex-start">
+
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; color: color-mix(in srgb, #201e1d 55%, transparent)">der Aufruf · das Bedienelement des Agenten</p>
+    <div style="display: flex; flex-direction: column; gap: 4.4px; padding: 8.8px 13.2px; font-family: ui-monospace, monospace; font-size: 12px; line-height: 1.5; background: #ebddc5; border-radius: 4px; border-left: 3px solid #7a8a5e">
+      <span><span style="color: #7a8a5e">GET</span> /api/boards/2/klassen/1/karten</span>
+      <span style="color: color-mix(in srgb, #201e1d 55%, transparent)">200 — genau die Karten der Klasse WBS, aus allen Spalten, ohne die übrigen</span>
+      <span>[ { "karteId": 31, "nummer": "WBS-31", "titel": "Klassen-Nummerierung über die API", "spalte": "Rückstand" },</span>
+      <span>&nbsp;&nbsp;{ "karteId": 28, "nummer": "WBS-28", "titel": "Anzeigegrenze im Spaltenkopf", "spalte": "Bereit" },</span>
+      <span>&nbsp;&nbsp;{ "karteId": 9, "nummer": "WBS-09", "titel": "Boards anlegen", "spalte": "Fertig" } ]</span>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Die Beispielkarten stehen so in <span style="color: #201e1d">D0001.dc.html</span> und <span style="color: #201e1d">D0003.dc.html</span>; der Aufruf sammelt sie über die Spaltengrenze hinweg — genau das, was ein Board-Abruf nicht leistet. Ob der Aufruf die Klasse über ihre Kennung oder über ihr Präfix nimmt, entscheidet der Slice.</p>
+  </div>
+
+  <div style="flex: 0 0 484px; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; color: color-mix(in srgb, #201e1d 55%, transparent)">nicht gezeichnet · die Oberflächenentsprechung</p>
+    <div style="display: flex; flex-direction: column; gap: 4.4px; padding: 13.2px; border-radius: 32.2px; border: 1px dashed color-mix(in srgb, #201e1d 35%, transparent)">
+      <div style="display: flex; align-items: baseline; gap: 8.8px">
+        <h3 style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">Klassenfilter in Zone 3</h3>
+        <span style="margin-left: auto; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">D0005 · I0022</span>
+      </div>
+      <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Der ältere Satz zeichnet einen Klassenfilter im Boardkopf; mit R00005 ist der Boardkopf entfallen, seine Bedienelemente sitzen in <span style="color: #201e1d">Zone 3</span> der Navigationszeile — dort, wo Kartenzahl und Layout-Schalter stehen (<span style="color: #201e1d">D0001.dc.html</span>, Zustand 4). Gezeichnet wird er hier <span style="color: #201e1d">nicht</span>: das Fertig-Kriterium von I0022 nennt nur die API („Über die API liefert eine Klasse genau ihre Karten"), und ein Filter, der das Board sichtbar beschneidet, wirft eine eigene Frage auf — was zeigt eine gefilterte Bahn in ihrer Kartenzahl, und was heißt Ziehen in einer gefilterten Ansicht. Das ist eine Entscheidung ihres Slice, keine Beigabe.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     Lesehilfe — gehoert zum Wireframe, nicht zum Schirm
+     ══════════════════════════════════════════════════════════════════════ -->
+<footer style="display: flex; flex-direction: column; gap: 4.4px; padding: 17.6px 26.4px; background: #ebddc5; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent); font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent)">
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">D0005 zeigt hier:</span> <span style="color: #8c491a">I0020</span> der Klassenbereich im Layout-Modus mit Liste, Anlegezeile, Leerzustand und drei Rändern · <span style="color: #8c491a">I0021</span> das Feld „Klasse" auf der Kartenseite und die Plakette auf der Karte, vorher und nachher · <span style="color: #8c491a">I0022</span> der Aufruf selbst, weil er das Bedienelement des Agenten ist. <span style="color: #201e1d">Nichts davon ist gebaut</span> — das ganze Artboard ist Zielform.</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Wo der Bereich sitzt und warum:</span> eine Kartenklasse ist an ihr Board gebunden, ihr Präfix nur dort eindeutig — also gehört sie ins Board und nicht in einen eigenen Schirm, den die WBS auch nicht kennt. Der ältere Satz setzt sie in „Gestalten unter dem Board" (<span style="color: #201e1d">wireframes.js</span>, Variante B); diese Fläche ist heute der gebaute Layout-Modus. Der Bereich legt sich unter <span style="color: #201e1d">#neue-spalte</span> und trägt eigene Kennungen (<span style="color: #201e1d">#klassenpflege</span>), damit die siebzehn Zählzusagen von <span style="color: #201e1d">LayoutModusE2ETests</span> — sie zählen unter <span style="color: #201e1d">#spaltenbahnen</span> und <span style="color: #201e1d">#neue-spalte</span> — von ihm nicht berührt werden.</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Beschriftet ist „Klassen", benannt wird „Kartenklasse".</span> Im Board steht das Wort neben „Spalten“ und ist dort so eindeutig wie dieses; die Vision und der ältere Satz sagen ebenfalls „Klassen". Im Code dagegen ist „Klasse" belegt, deshalb heißen Typ, Tabelle und Vertrag <span style="color: #201e1d">Kartenklasse</span> (C06) — mit <span style="color: #201e1d">Kartenklasse.Board</span> als Fremdschlüssel.</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Nicht gezeichnet und bewusst so:</span> <span style="color: #201e1d">Ändern und Entfernen einer Klasse</span> — die WBS führt unter D0005 nur Anlegen (I0020), Zuordnen (I0021) und Abrufen (I0022); der ältere Satz zeichnet ✎ und ✕ je Zeile, aber dazu gibt es keinen Knoten. Ein Bedienelement ohne Knoten wäre gegen den Kontrakt, also steht es als Befund im Index, nicht im Bild. Ebenso wenig gezeichnet: der Klassenfilter (siehe Zustand 5) und die Bahnen selbst, die D0001 und D0003 gehören.</p>
+</footer>
+
+</div>
+</x-dc>
+</body>
+</html>

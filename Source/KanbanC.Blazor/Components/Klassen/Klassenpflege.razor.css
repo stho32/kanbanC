@@ -1,0 +1,78 @@
+/* Der Klassenbereich sitzt im Layout-Modus unter der Spaltenpflege. Eigene Kennungen und eigene
+   Klassennamen: kein Element hier faellt unter #spaltenbahnen oder #neue-spalte, an denen die
+   Zaehlzusagen des Layout-Modus haengen. Jeder Wert kommt aus einer Variablen von
+   gestaltung.css — hier steht kein Farb-, Abstands- oder Radius-Literal. */
+
+#klassenpflege {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.klassenpflege-kopf {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2);
+}
+
+.klassenpflege-titel {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin: 0;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.klassenpflege-hinweis {
+    font-size: 12px;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.klassenliste {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.klassenzeile {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-xs);
+    background: var(--color-surface);
+}
+
+/* Dieselbe Bahn wie das Namensfeld der Anlegezeile: Liste und Eingabe stehen untereinander auf
+   einer Kante. */
+.klassenname {
+    flex: 0 1 16rem;
+    font-size: 14px;
+}
+
+.klassenstand {
+    margin-left: auto;
+    font-size: 12px;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.klassennummer {
+    color: var(--color-text);
+}
+
+.klassenpflege-neu {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-3);
+}
+
+.klassenpflege-namensfeld {
+    flex: 0 1 16rem;
+}
+
+.klassenpflege-praefixfeld {
+    flex: 0 1 11rem;
+}

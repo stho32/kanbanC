@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
+using KanbanC.Contracts.Klassen;
 using KanbanC.Contracts.Kontributoren;
 
 namespace KanbanC.PlaywrightTests.Infrastructure;
@@ -202,6 +203,21 @@ public sealed class WebApiKlient : IDisposable
         }
 
         return detail;
+    }
+
+    // Der Weg des Agenten an den Nummernkreis: Name und Praefix im Rumpf, die angelegte
+    // Kartenklasse zurück.
+    public async Task<Kartenklasse> LegeKartenklasseAn(long boardId, string name, string praefix)
+    {
+        var antwort = await _klient.PostAsJsonAsync($"{BoardsRoute}/{boardId}/kartenklassen", new KartenklasseAnlegenAnfrage(name, praefix));
+        antwort.EnsureSuccessStatusCode();
+        var kartenklasse = await antwort.Content.ReadFromJsonAsync<Kartenklasse>();
+        if (kartenklasse is null)
+        {
+            throw new InvalidOperationException("Die WebApi hat keine Kartenklasse zurückgegeben.");
+        }
+
+        return kartenklasse;
     }
 
     public async Task<Kontributor> LegeKontributorAn(string name, Kontributorart art)

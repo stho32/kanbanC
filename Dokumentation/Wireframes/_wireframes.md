@@ -6,21 +6,22 @@ canvas: https://claude.ai/code/artifact/b61e3007-056d-44e0-9cf5-7350c22f858a
 seed: .claude/wireframes/kanbanc.html
 art: mockup
 richtung: aus dem Bestand — gestaltung.css (Caprasimo/Figtree, warmes Sandklima, runde Formen)
-stand: 2026-09-05
+stand: 2026-09-06
 zurueckgeholt: 2026-09-03
 ---
 
 # Wireframes — KanbanC
 
-Der Canvas trägt fünf Artboards: `Main.dc.html`, den Screen-Flow über alle neun
-Dialogs, sowie `D0001.dc.html`, `D0002.dc.html`, `D0003.dc.html` und
-`D0004.dc.html`, die vier ausdetaillierten Bildschirme. Die übrigen Dialogs bleiben
-Kästen im Flow; ihr Detail-Artboard entsteht mit `/wireframe verfeinern <dialog>`,
-wenn der Dialog dran ist (Rolling Wave). Woraus ein solcher Lauf schöpft, sagt die
+Der Canvas trägt sechs Artboards: `Main.dc.html`, den Screen-Flow über alle neun
+Dialogs, sowie `D0001.dc.html`, `D0002.dc.html`, `D0003.dc.html`, `D0004.dc.html`
+und `D0005.dc.html`, die fünf ausdetaillierten Bildschirme. Die übrigen Dialogs
+bleiben Kästen im Flow; ihr Detail-Artboard entsteht mit
+`/wireframe verfeinern <dialog>`, wenn der Dialog dran ist (Rolling Wave). Woraus
+ein solcher Lauf schöpft, sagt die
 [Zuordnung Schirm → Dialog](#zuordnung-schirm--dialog).
 
-Reife je Dialog wird aus dem Dateibestand gerechnet: `D0001`, `D0002`, `D0003` und
-`D0004` stehen auf `wireframe`, die fünf übrigen auf `flow`.
+Reife je Dialog wird aus dem Dateibestand gerechnet: `D0001`, `D0002`, `D0003`,
+`D0004` und `D0005` stehen auf `wireframe`, die vier übrigen auf `flow`.
 
 | Datei | Was |
 | --- | --- |
@@ -29,7 +30,8 @@ Reife je Dialog wird aus dem Dateibestand gerechnet: `D0001`, `D0002`, `D0003` u
 | `D0002.dc.html` | **Kontributoren führen**, 1440×1560 — die Liste mit den drei Arten als Hauptzustand (I0006, I0007, I0009); darunter die Identitätswahl I0008 als **zwei nebeneinander gestellte Alternativen** B und C, damit die Entscheidung am Bild fällt |
 | `D0003.dc.html` | **Board bedienen**, Fenster 1440×900, Rahmen 1100 (die Lesehilfe steht unter dem Fenster) — gefüllte Spaltenbahnen mit der Kartenform; die fünf Interactions I0010–I0014 als Zustände im selben Schirm, dazu drei Randfälle. **Am 2026-09-02 auf den gebauten Stand nachgezogen** |
 | `D0004.dc.html` | **Karteninhalt pflegen**, Rahmen 1440×2960 (gemessen 2815,2) — die Karte als **eigene Seite** (`/karten/14`, Variante C): Hauptzustand als echtes Fenster 1440×900, dazu Verantwortlichenwahl, Etiketten und Farbe, die frisch angelegte Karte als Leerzustand, drei Ränder und der Einstieg vom Board. Alle fünf Interactions I0015–I0019 sind sichtbar; nichts davon ist gebaut, das ganze Artboard ist Zielform |
-| `canvas.json` | Layout des Canvas: der Flow oben, D0003, D0002, D0001 und D0004 in der Reihe darunter, Start in der Canvas-Ansicht |
+| `D0005.dc.html` | **Karten-Klassen**, Rahmen 1440×1980 (gemessen 1877,5) — der Klassenbereich sitzt **im Layout-Modus des Boards**, unter der Zeile für die neue Spalte: Hauptzustand mit Liste und Anlegezeile (I0020), Leerzustand, drei Ränder, die Zuordnung an der Karte (I0021) und der Abruf als API-Aufruf (I0022). Alle drei Interactions sind sichtbar; nichts davon ist gebaut, das ganze Artboard ist Zielform |
+| `canvas.json` | Layout des Canvas: der Flow oben, D0003, D0002, D0001, D0004 und D0005 in der Reihe darunter, Start in der Canvas-Ansicht |
 | `kanbanc-wireframes.html`, `wireframes.js`, `styles.css`, `README.md` | **älterer Satz, unangetastet** — acht gezeichnete Schirme mit Varianten, aus denen `verfeinern` schöpft; siehe Offene Fragen |
 
 ## Richtung
@@ -172,6 +174,13 @@ gehört in eine Anforderung, nicht ins Bild.
 | 2026-09-05 | Titel: Überschrift der Seite oder Feld im Eigenschaftenblock? | **Überschrift**, 32 px, mit Stift daneben | Der Titel ist die Identität der Karte und steht dort, wo man ihn liest — geändert wird er an derselben Stelle. Die Navigationszeile trägt statt dessen den **Boardnamen**, weil ihr Rückpfeil dorthin führt; ein zweites Mal denselben Titel zu zeigen wäre Wiederholung ohne Nutzen. |
 | 2026-09-05 | Rahmenhöhe und Platz von `D0004` auf dem Canvas | **1440×2960** bei `x` 4680, `y` 1300 | Gemessen, nicht geschätzt (Chromium, Google-Fonts-Fassung derselben Schriften): 2815,2 px. 2960 gibt 5,1 % Reserve, der Überschuss trägt die Grundfarbe `#ebddc5`. Der Platz setzt die Dialogreihe nach rechts fort, 120 px hinter `D0001` — Positionen der übrigen Artboards bleiben unverändert. |
 | 2026-09-02 | Eingabefeld der Kartenanlage steht auf der Bahn in derselben Farbe wie die Bahn | **so gezeichnet**, nicht korrigiert | `.input` trägt `background: var(--color-surface)`, und die Bahn ist `--color-surface`: das Feld zeigt sich nur als umrandete Pille. `.karte` und `.meldung` sind für diesen Fall auf `--color-bg` gedreht worden, `.input` nicht. Ob das Absicht ist, entscheidet nicht das Artboard — es zeigt, was gebaut ist. Als Befund unter Offene Fragen 11. |
+| 2026-09-06 | **D0005** — wo sitzt die Klassenpflege? | **im Layout-Modus des Boards**, als eigener Bereich unter der Zeile für die neue Spalte | Eine Kartenklasse ist an ihr Board gebunden — das Präfix ist nur dort eindeutig, und die Vision will „gezielt das richtige Set greifen **statt des ganzen Boards**". Ein eigener Schirm hätte deshalb keinen Gegenstand, und die WBS kennt zu D0005 auch keinen Dialog außerhalb des Boards. Der ältere Satz setzt die Klassen in „Gestalten unter dem Board" (`wireframes.js:230`); diese Fläche ist heute der gebaute Layout-Modus. **Der Befund, der aufzulösen war:** der gebaute Layout-Modus (`D0001.dc.html`, Zustand 3) hat keinen Klassenbereich — es gab einen Platz im alten Entwurf, aber keinen im gebauten Schirm. Er kommt jetzt hinzu, unter `#neue-spalte`, getrennt durch dieselbe Linie, die `.hr` zieht. |
+| 2026-09-06 | Stört der neue Bereich die siebzehn Zählzusagen des Layout-Modus? | **nein — eigene Kennungen** (`#klassenpflege`, eigene Klassennamen) | `LayoutModusE2ETests` zählt ausschließlich unter `#spaltenbahnen` (`.spaltenbahn`, `.spaltenbahn-bearbeitung`, `.spaltenbahn-vermerk`) und auf `#neue-spalte` (`BoardSeite.cs:29,35,37,122`). Kein Element des Klassenbereichs fällt darunter, solange er keinen dieser Namen borgt. Das ist dieselbe Lage, in der bei I0019 ein Klassenname als Vertragsschutz diente — und der Grund, warum die Anlegezeile der Klasse **nicht** `.spaltenpflege-neu` heißt, obwohl sie so aussieht. |
+| 2026-09-06 | Beschriftung: „Klassen" oder „Kartenklassen"? | **„Klassen" in der Oberfläche, `Kartenklasse` im Code** | Im Board steht das Wort neben „Spalten" und ist dort so eindeutig wie dieses; niemand liest im Kanban-Board eine Programmierklasse. Vision (`R00000-vision.md:52`), älterer Satz und WBS sagen ebenfalls „Klasse". Im Code dagegen ist „Klasse" belegt, deshalb heißen Typ, Tabelle, DTO und Vertrag `Kartenklasse` (C06 der Projekt-CLAUDE.md) — mit `Kartenklasse.Board` als Fremdschlüssel nach der Id-Regel. Die Beschriftung folgt der Lesart am Ort, der Bezeichner der Eindeutigkeit im Stack; beide Regeln gelten, sie gelten nur an verschiedenen Stellen. |
+| 2026-09-06 | Tragen die Klassenzeilen ✎ und ✕, wie der ältere Satz sie zeichnet? | **nein — als Befund in die Fragen, nicht ins Bild** | Die WBS führt unter D0005 nur Anlegen (I0020), Zuordnen (I0021) und Abrufen (I0022). Ändern und Entfernen haben keinen Knoten; ein Bedienelement ohne Knoten wäre gegen den Kontrakt („Keine Dialogs erfinden"). Dieselbe Antwort wie beim Verlauf der Karte in D0004 (Frage 15) — und aus demselben Grund: das ist ein Befund für `/planung`, keine Lücke zum Auffüllen. Siehe Frage 17. |
+| 2026-09-06 | Wie wird **I0022** sichtbar, wenn es keinen Schirm hat? | **der Aufruf selbst wird gezeichnet**, der Klassenfilter als markierte Lücke | Der Kontrakt verlangt zu jeder Interaction ein sichtbares Bedienelement. Für I0022 ist das der Aufruf: „Über die API liefert eine Klasse genau ihre Karten" — für einen Agenten, den gleichberechtigten Akteur der Vision, ist der Aufruf das Bedienelement. Einen Filter danebenzuzeichnen hieße, eine Oberfläche zu erfinden, die das Fertig-Kriterium nicht verlangt und die eigene Fragen aufwirft (was zeigt eine gefilterte Bahn als Kartenzahl, was heißt Ziehen in einer gefilterten Ansicht). Die Route folgt dem gebauten Muster `/api/boards/{boardId}/spalten/{spalteId}/karten` und ist Entwurf, keine Zusage. |
+| 2026-09-06 | Feldbeschriftung der Anlegezeile: „Bezeichnung" wie bei der Spalte? | **„Name" und „Nummernkreis-Präfix"** | Das Fertig-Kriterium von I0020 sagt „mit Name und Nummernkreis-Präfix"; das Board heißt ebenfalls mit „Name". „Bezeichnung" trägt im Stack bisher nur die Spalte (`Spalte.Bezeichnung`). Das Artboard nimmt die Wörter des Kriteriums, statt eine dritte Schreibweise zu setzen. |
+| 2026-09-06 | Rahmenhöhe und Platz von `D0005` auf dem Canvas | **1440×1980** bei `x` 6240, `y` 1300 | Gemessen, nicht geschätzt (Chromium, Google-Fonts-Fassung derselben Schriften): 1877,5 px. 1980 gibt 5,5 % Reserve; der Überschuss trägt die Grundfarbe `#ebddc5` der Lesehilfe und ist deshalb unsichtbar. Der Platz setzt die Dialogreihe nach rechts fort, 120 px hinter `D0004`; Positionen der übrigen Artboards bleiben unverändert. |
 
 ## Zuordnung Schirm → Dialog
 
@@ -193,7 +202,7 @@ Auffüllen.
 | **D0002** Kontributoren führen | „Kontributoren & Identität" (ganz) | Liste **A** gesetzt · Identitätswahl **B oder C offen** (Frage 4) | — vollständig; seit 2026-08-31 als `D0002.dc.html` gezeichnet |
 | **D0003** Board bedienen | „Board" (Bahnen, Karten, Abschlussspalte) | Bahnen **A/B** — dort deckungsgleich; **C** wäre eine spätere Zweitansicht | **I0014** Karte archivieren — der alte Satz kennt nur *Board* archivieren (I0005). Im Artboard als ⋯-Menü ergänzt, siehe Frage 6. |
 | **D0004** Karteninhalt pflegen | „Kartendetail" (ganz) | **C** — eigene Seite, entschieden 2026-09-05 bei I0015 | **Verlauf** — alle drei Varianten des alten Satzes zeichnen eine Verlaufsspur („wer, wann, über welche Grenze"); die WBS kennt dazu keinen Knoten. Seit 2026-09-05 als `D0004.dc.html` gezeichnet; der Verlauf steht dort **nicht** im Bild, sondern als Frage 13. |
-| **D0005** Karten-Klassen | „Board anlegen & gestalten" **B**, Abschnitt *Klassen* (I0020) · „Kartendetail" und die Kartenform in „Board" (I0021, Nummer auf der Karte) | Klassen-Teil aus **B** gesetzt | **I0022** — reine API-Zusage, absichtlich ohne Schirm; die Oberflächenentsprechung ist der Klassenfilter im Boardkopf |
+| **D0005** Karten-Klassen | „Board anlegen & gestalten" **B**, Abschnitt *Klassen* (I0020) · „Kartendetail" und die Kartenform in „Board" (I0021, Nummer auf der Karte) | Klassen-Teil aus **B** gesetzt | **I0022** — reine API-Zusage, absichtlich ohne Schirm; die Oberflächenentsprechung wäre der Klassenfilter, der mit R00005 aus dem Boardkopf nach Zone 3 gewandert ist. Seit 2026-09-06 als `D0005.dc.html` gezeichnet: der Aufruf steht im Bild, der Filter als markierte Lücke. **Ändern und Entfernen einer Klasse** hat keinen Knoten — Frage 17 |
 | **D0006** Zeiterfassung | „Zeiten je Kontributor" (ganz) · „Kartendetail" (I0026, Zeiten der Karte) · „Board A" rechte Spur und „Start B" Banner (I0027, laufende Timer) | **offen** — A oder B, Wahl bei I0023–I0027 | — |
 | **D0007** Live-Aktualisierung | **kein eigener Schirm** — nur als Merkmal *innerhalb* von „Board": Ereignisspur rechts (**A**) oder Laufband oben (**B**), dazu die Marke „● live" in der Kopfzeile und der Live-Punkt in „Start B" | Spur oder Laufband entscheidet **I0028**, nicht vorher | **I0029** Aufschließen nach Verbindungsabbruch — weder Zustand noch Meldung gezeichnet |
 | **D0008** WBS-Import | „WBS-Import" (ganz) | **offen** — A oder B, Wahl bei I0030–I0032 | — |
@@ -390,3 +399,31 @@ Die Gegenrichtung, Schirm → Dialogs, in Kurzform:
     Satz bräuchte darüber hinaus einen Pflegeschirm und damit einen WBS-Knoten,
     den es nicht gibt. Wer den verwalteten Satz will, geht über `/planung`, nicht
     über das Artboard.
+
+17. **Ändern und Entfernen einer Klasse haben keinen Knoten.** Der ältere Satz
+    zeichnet je Klassenzeile ✎ und ✕ (`wireframes.js:236`), die WBS führt unter
+    D0005 aber nur `I0020` Anlegen, `I0021` Zuordnen und `I0022` Abrufen. Bei den
+    Spalten ist beides gedeckt (`I0003` nennt „anlegen/umbenennen/umsortieren/
+    entfernen"), bei den Klassen nicht. `D0005.dc.html` zeichnet die Bedienelemente
+    deshalb **nicht** — dieselbe Antwort wie beim Verlauf der Karte (Frage 15).
+    Das ist ein Befund für `/planung`, nicht eine Lücke zum Auffüllen: entweder
+    Klassen sind unveränderlich, sobald Nummern vergeben sind (dann fehlt nichts),
+    oder es braucht eine Interaction. Die zweite Frage hängt daran — was mit den
+    vergebenen Nummern geschieht, wenn eine Klasse verschwindet, sagt bisher nichts.
+
+18. **Was beim Wechsel der Klasse mit der Nummer geschieht, ist offen.** Das
+    Fertig-Kriterium von `I0021` sagt „erhält eine Klasse und damit die *nächste*
+    Nummer dieser Klasse" — für den Erstfall. Ob ein Wechsel eine zweite Nummer
+    vergibt, die alte verfallen lässt oder beide ablesbar hält, steht nirgends;
+    ebenso wenig, ob eine Karte mehr als eine Klasse tragen kann (die Vision sagt
+    „mit optionaler Klasse", Einzahl — `R00000-vision.md:52`). `D0005.dc.html`
+    zeigt den Erstfall und benennt die offene Stelle im Bild. Entschieden wird es
+    in der Anforderung zu I0021, nicht am Artboard.
+
+19. **Ob der Klassenfilter überhaupt gebaut wird, ist offen.** `I0022` ist eine
+    API-Zusage; die Oberflächenentsprechung — ein Filter in Zone 3, wo mit R00005
+    die Bedienelemente des Boardkopfs gelandet sind — hat kein Fertig-Kriterium.
+    Wer ihn will, klärt zuerst zwei Folgefragen, die eine gefilterte Ansicht
+    aufwirft: was die Kartenzahl im Bahnenkopf dann zählt (Frage zu I0004 hängt
+    daran), und was Ziehen in einer gefilterten Bahn für die Position bedeutet
+    (`I0012`). Das gehört in den Slice, nicht ins Bild.
