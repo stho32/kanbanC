@@ -19,6 +19,13 @@ if (webApiBasisAdresse is null)
     throw new InvalidOperationException("WebApi:BasisAdresse fehlt in der Konfiguration.");
 }
 
+// Die Adresse, die in den href des Download-Symbols geht. Voreinstellung ist die interne
+// Basisadresse: auf einem Rechner ist sie richtig, und der Einzelrechnerbetrieb funktioniert damit
+// ohne Zutun. Im LAN wird sie gesetzt, weil der Browser eines zweiten Rechners „localhost" nicht
+// erreicht.
+var oeffentlicheBasisAdresse = builder.Configuration["WebApi:OeffentlicheBasisAdresse"] ?? webApiBasisAdresse;
+builder.Services.AddSingleton(new Anhangbasisadresse(oeffentlicheBasisAdresse));
+
 builder.Services.AddHttpClient("KanbanC", client =>
 {
     client.BaseAddress = new Uri(webApiBasisAdresse);
