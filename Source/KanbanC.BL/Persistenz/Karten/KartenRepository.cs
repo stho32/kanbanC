@@ -386,6 +386,66 @@ public sealed class KartenRepository : IKartenRepository
              WHERE AnhangId = @AnhangId", new { AnhangId = anhangId, Dateigroesse = dateigroesse }, transaktion);
     }
 
+    // Nur lesend, deshalb ohne Transaktion. **Beide** Nummern stehen in der Bedingung: eine
+    // AnhangId, die es gibt, aber zu einer anderen Karte gehoert, liefert hier nichts — sie wird
+    // damit zu 404, statt die Datei einer fremden Karte herauszugeben.
+    public Anhanginhalt? LiesAnhang(long karteId, long anhangId)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+
+        var dateiname = LiesAnhangdateinamen(verbindung, null, karteId, anhangId);
+        var derAnhangGehoertNichtZuDieserKarte = dateiname is null;
+        if (derAnhangGehoertNichtZuDieserKarte)
+        {
+            return null; // stil-check: C25 null heisst "diesen Anhang gibt es an dieser Karte nicht" (404)
+        }
+
+        var ablagepfad = Anhangpfad.FuerAnhang(verbindung.ConnectionString, karteId, anhangId);
+        return new Anhanginhalt(dateiname!, Anhangablage.Oeffne(ablagepfad));
+    }
+
+    // **Zuerst die Zeile, Commit, dann die Datei** — spiegelbildlich zum Anhaengen und aus
+    // demselben Grund: eine verwaiste Datei ist unsichtbar und behebbar, eine Zeile ohne Bytes
+    // zerbricht beim Klick.
+    public Kartendetail? EntferneAnhang(long karteId, long anhangId)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+        using var transaktion = verbindung.BeginTransaction();
+
+        var ablagepfad = Anhangpfad.FuerAnhang(verbindung.ConnectionString, karteId, anhangId);
+        var derAnhangGehoertNichtZuDieserKarte = !LoescheAnhangzeile(verbindung, transaktion, karteId, anhangId);
+        if (derAnhangGehoertNichtZuDieserKarte)
+        {
+            return null; // stil-check: C25 null heisst "diesen Anhang gibt es an dieser Karte nicht" (404)
+        }
+
+        var detail = Kartenleser.LiesKartendetail(verbindung, transaktion, karteId);
+        transaktion.Commit();
+        Anhangablage.Entferne(ablagepfad);
+        return detail;
+    }
+
+    private static string? LiesAnhangdateinamen(IDbConnection verbindung, IDbTransaction? transaktion, long karteId, long anhangId)
+    {
+        return verbindung.QuerySingleOrDefault<string?>(@"
+            SELECT Dateiname
+              FROM Anhang
+             WHERE AnhangId = @AnhangId
+               AND Karte = @Karte", new { AnhangId = anhangId, Karte = karteId }, transaktion);
+    }
+
+    // Die Zahl der geloeschten Zeilen ist zugleich die Auskunft, ob der Anhang zu dieser Karte
+    // gehoert — wie bei SchreibeAbhakung.
+    private static bool LoescheAnhangzeile(IDbConnection verbindung, IDbTransaction transaktion, long karteId, long anhangId)
+    {
+        var geloeschteZeilen = verbindung.Execute(@"
+            DELETE
+              FROM Anhang
+             WHERE AnhangId = @AnhangId
+               AND Karte = @Karte", new { AnhangId = anhangId, Karte = karteId }, transaktion);
+        return geloeschteZeilen > 0;
+    }
+
     // Die Zahl der geaenderten Zeilen ist zugleich die Auskunft, ob es die Karte gibt: ein
     // zweiter Zaehlaufruf davor waere dieselbe Frage ein zweites Mal.
     private static bool SchreibeTitel(IDbConnection verbindung, IDbTransaction transaktion, long karteId, string titel)

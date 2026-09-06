@@ -2000,6 +2000,128 @@ public class KartenRepositoryTests
         Assert.That(repository.LiesKartendetail(karte!.KarteId)!.Anhaenge, Is.Empty);
     }
 
+    [Test]
+    public void Wenn_ein_Anhang_gelesen_wird_dann_kommen_Originalname_und_dieselben_Bytes_zurueck()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        using var ablage = new Ablageordner(datenbank);
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+        var inhalt = Bytes(41000);
+        var angehaengt = repository.HaengeAnhangAn(karte!.KarteId, new AnhangAnlegenAnfrage("wbs-export.md", 41000, stefan), new MemoryStream(inhalt));
+
+        var gelesen = repository.LiesAnhang(karte.KarteId, angehaengt!.Anhaenge[0].AnhangId);
+
+        Assert.That(gelesen!.Dateiname, Is.EqualTo("wbs-export.md"));
+        using var gepuffert = new MemoryStream();
+        gelesen.Inhalt.CopyTo(gepuffert);
+        gelesen.Inhalt.Dispose();
+        Assert.That(gepuffert.ToArray(), Is.EqualTo(inhalt));
+    }
+
+    // Eine AnhangId, die es gibt, aber an einer anderen Karte, liefert nichts — und die andere
+    // Karte behaelt ihren Anhang.
+    [Test]
+    public void Wenn_die_AnhangId_zu_einer_anderen_Karte_gehoert_dann_liefert_LiesAnhang_null()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        using var ablage = new Ablageordner(datenbank);
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var eigene = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var fremde = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Migration schreiben"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+        var angehaengt = repository.HaengeAnhangAn(fremde!.KarteId, new AnhangAnlegenAnfrage("wbs-export.md", 10, stefan), new MemoryStream(Bytes(10)));
+
+        Assert.That(repository.LiesAnhang(eigene!.KarteId, angehaengt!.Anhaenge[0].AnhangId), Is.Null);
+        Assert.That(repository.LiesKartendetail(fremde.KarteId)!.Anhaenge, Has.Count.EqualTo(1));
+    }
+
+    // Der Fall aus US-2: die Zeile steht, die Datei ist weg. Das scheitert sichtbar.
+    [Test]
+    public void Wenn_die_Datei_zu_einer_vorhandenen_Zeile_fehlt_dann_scheitert_LiesAnhang_sichtbar()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        using var ablage = new Ablageordner(datenbank);
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+        var angehaengt = repository.HaengeAnhangAn(karte!.KarteId, new AnhangAnlegenAnfrage("wbs-export.md", 10, stefan), new MemoryStream(Bytes(10)));
+        var anhangId = angehaengt!.Anhaenge[0].AnhangId;
+        File.Delete(Path.Combine(ablage.Pfad, karte.KarteId.ToString(CultureInfo.InvariantCulture), anhangId.ToString(CultureInfo.InvariantCulture)));
+
+        Assert.Throws<FileNotFoundException>(() => repository.LiesAnhang(karte.KarteId, anhangId));
+    }
+
+    // Entfernt wird Zeile **und** Datei — geprueft am Ablageordner, nicht an der Antwort.
+    [Test]
+    public void Wenn_ein_Anhang_entfernt_wird_dann_sind_Zeile_und_Datei_weg_und_die_Nachbarn_bleiben()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        using var ablage = new Ablageordner(datenbank);
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+        repository.HaengeAnhangAn(karte!.KarteId, new AnhangAnlegenAnfrage("wbs-export.md", 10, stefan), new MemoryStream(Bytes(10)));
+        var zweiter = repository.HaengeAnhangAn(karte.KarteId, new AnhangAnlegenAnfrage("burndown-r2.png", 20, stefan), new MemoryStream(Bytes(20)));
+        var ersterId = zweiter!.Anhaenge[0].AnhangId;
+        var zweiterId = zweiter.Anhaenge[1].AnhangId;
+
+        var detail = repository.EntferneAnhang(karte.KarteId, ersterId);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail!.Anhaenge.Select(anhang => anhang.Dateiname), Is.EqualTo(new[] { "burndown-r2.png" }));
+            Assert.That(File.Exists(Anhangdatei(ablage, karte.KarteId, ersterId)), Is.False, "Die Datei liegt noch in der Ablage.");
+            Assert.That(File.ReadAllBytes(Anhangdatei(ablage, karte.KarteId, zweiterId)), Is.EqualTo(Bytes(20)));
+        });
+    }
+
+    [Test]
+    public void Wenn_derselbe_Anhang_ein_zweites_Mal_entfernt_wird_dann_liefert_EntferneAnhang_null()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        using var ablage = new Ablageordner(datenbank);
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+        var angehaengt = repository.HaengeAnhangAn(karte!.KarteId, new AnhangAnlegenAnfrage("wbs-export.md", 10, stefan), new MemoryStream(Bytes(10)));
+        var anhangId = angehaengt!.Anhaenge[0].AnhangId;
+
+        repository.EntferneAnhang(karte.KarteId, anhangId);
+
+        Assert.That(repository.EntferneAnhang(karte.KarteId, anhangId), Is.Null);
+    }
+
+    [Test]
+    public void Wenn_die_AnhangId_zu_einer_anderen_Karte_gehoert_dann_entfernt_EntferneAnhang_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        using var ablage = new Ablageordner(datenbank);
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var eigene = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var fremde = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Migration schreiben"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+        var angehaengt = repository.HaengeAnhangAn(fremde!.KarteId, new AnhangAnlegenAnfrage("wbs-export.md", 10, stefan), new MemoryStream(Bytes(10)));
+        var anhangId = angehaengt!.Anhaenge[0].AnhangId;
+
+        Assert.That(repository.EntferneAnhang(eigene!.KarteId, anhangId), Is.Null);
+
+        Assert.That(repository.LiesKartendetail(fremde.KarteId)!.Anhaenge, Has.Count.EqualTo(1));
+        Assert.That(File.Exists(Anhangdatei(ablage, fremde.KarteId, anhangId)), Is.True);
+    }
+
+    private static string Anhangdatei(Ablageordner ablage, long karteId, long anhangId)
+    {
+        return Path.Combine(ablage.Pfad, karteId.ToString(CultureInfo.InvariantCulture), anhangId.ToString(CultureInfo.InvariantCulture));
+    }
+
     private static long Anhangzeilen(TemporaereDatenbank datenbank)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();

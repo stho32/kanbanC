@@ -46,6 +46,15 @@ public interface IKartenRepository
     // null heisst: diese KarteId gibt es nicht. Der Urheber ist Pflicht und steckt in der Anfrage.
     Kartendetail? HaengeAnhangAn(long karteId, AnhangAnlegenAnfrage anfrage, Stream inhalt);
 
+    // Liefert Name und Lesestrom **eines** Anhangs; die Bedingung nennt beide Nummern.
+    // null heisst: diesen Anhang gibt es an dieser Karte nicht. Fehlt die Datei zu einer
+    // vorhandenen Zeile, wirft der Aufruf — ein leerer Download waere die schlechtere Antwort.
+    Anhanginhalt? LiesAnhang(long karteId, long anhangId);
+
+    // Entfernt Zeile **und** Datei, in dieser Reihenfolge; zurueck kommt das ganze Kartendetail.
+    // null heisst: diesen Anhang gibt es an dieser Karte nicht, und entfernt wurde nichts.
+    Kartendetail? EntferneAnhang(long karteId, long anhangId);
+
     // null heisst „diese Spalte gibt es an dieser Stelle nicht"; eine Spalte ohne Karten liefert
     // die leere Liste.
     IReadOnlyList<Karte>? LadeKartenDerSpalte(long boardId, long spalteId, Archivierung archivstand);

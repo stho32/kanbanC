@@ -20,6 +20,8 @@ public sealed class TestKartenRepository : IKartenRepository
     private long? _boardDerKarte;
     private Kartendetail? _kartendetail;
     private bool _teilaufgabeLiegtNichtAnDieserKarte;
+    private bool _anhangLiegtNichtAnDieserKarte;
+    private bool _dieBytesFehlenInDerAblage;
 
     private TestKartenRepository(bool spalteIstInzwischenVerschwunden)
     {
@@ -267,6 +269,59 @@ public sealed class TestKartenRepository : IKartenRepository
         ErhaltenerAnhang = anfrage;
         AbgelegteBytes = inhalt.Length;
         if (_karteFehltAnDieserStelle)
+        {
+            return null;
+        }
+
+        return _kartendetail;
+    }
+
+    // Die Karte gibt es, der Anhang gehoert aber zu einer anderen: der Fall, in dem der Befund den
+    // Anhang melden muss und nicht die Karte.
+    public TestKartenRepository OhneDiesenAnhang()
+    {
+        _anhangLiegtNichtAnDieserKarte = true;
+        return this;
+    }
+
+    // Die Zeile steht, die Datei fehlt: der Fall aus US-2, in dem der Abruf sichtbar scheitern
+    // muss statt eine leere Datei zu liefern.
+    public TestKartenRepository OhneDieBytesDesAnhangs()
+    {
+        _dieBytesFehlenInDerAblage = true;
+        return this;
+    }
+
+    public long? GeleseneAnhangId { get; private set; }
+
+    // Wie das echte Repository: null heisst „diesen Anhang gibt es an dieser Karte nicht"; fehlt
+    // die Datei zu einer vorhandenen Zeile, wirft der Aufruf.
+    public Anhanginhalt? LiesAnhang(long karteId, long anhangId)
+    {
+        GeleseneKarteId = karteId;
+        GeleseneAnhangId = anhangId;
+        if (_karteFehltAnDieserStelle || _anhangLiegtNichtAnDieserKarte)
+        {
+            return null;
+        }
+
+        if (_dieBytesFehlenInDerAblage)
+        {
+            throw new FileNotFoundException("Zu dieser Zeile liegt in der Anhangablage keine Datei.");
+        }
+
+        return new Anhanginhalt("wbs-export.md", new MemoryStream([1, 2, 3]));
+    }
+
+    public long? EntfernterAnhangId { get; private set; }
+
+    // Wie das echte Repository: Zeile und Datei gehen, zurueck kommt das gelesene Detail; null
+    // heisst „diesen Anhang gibt es an dieser Karte nicht".
+    public Kartendetail? EntferneAnhang(long karteId, long anhangId)
+    {
+        GeaenderteKarteId = karteId;
+        EntfernterAnhangId = anhangId;
+        if (_karteFehltAnDieserStelle || _anhangLiegtNichtAnDieserKarte)
         {
             return null;
         }
