@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
@@ -154,6 +156,30 @@ public sealed class WebApiKlient : IDisposable
     public async Task<Kartendetail> SchreibeKommentar(long karteId, string text, long kontributorId)
     {
         var antwort = await _klient.PostAsJsonAsync($"api/karten/{karteId}/kommentare", new KommentarSchreibenAnfrage(text, kontributorId));
+        antwort.EnsureSuccessStatusCode();
+        return await AlsKartendetail(antwort);
+    }
+
+    public async Task<Kartendetail> LadeKartendetail(long karteId)
+    {
+        var detail = await _klient.GetFromJsonAsync<Kartendetail>($"api/karten/{karteId}");
+        if (detail is null)
+        {
+            throw new InvalidOperationException("Die WebApi hat kein Kartendetail zurückgegeben.");
+        }
+
+        return detail;
+    }
+
+    // Der Weg des Agenten in die Ablage: Datei und Urheber im selben multipart-Rumpf.
+    public async Task<Kartendetail> HaengeAnhangAn(long karteId, string dateiname, byte[] inhalt, long kontributorId)
+    {
+        using var rumpf = new MultipartFormDataContent();
+        var datei = new ByteArrayContent(inhalt);
+        datei.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+        rumpf.Add(datei, "datei", dateiname);
+        rumpf.Add(new StringContent(kontributorId.ToString(CultureInfo.InvariantCulture)), "kontributor");
+        var antwort = await _klient.PostAsync($"api/karten/{karteId}/anhaenge", rumpf);
         antwort.EnsureSuccessStatusCode();
         return await AlsKartendetail(antwort);
     }

@@ -20,13 +20,23 @@ public class AnhangbasisadresseTests
         });
     }
 
+    // Der Schluessel steht in appsettings.json, damit man ihn findet — und bleibt dort leer, damit
+    // die Voreinstellung ueberhaupt greift. Eine Adresse darin machte die Voreinstellung tot.
+    [Test]
+    public void Wenn_appsettings_gelesen_wird_dann_bleibt_die_oeffentliche_Adresse_leer()
+    {
+        var einstellungen = File.ReadAllText(Quelltextbaum.BlazorDatei("appsettings.json"));
+
+        Assert.That(einstellungen, Does.Contain("\"OeffentlicheBasisAdresse\": \"\""));
+    }
+
     [Test]
     public void Wenn_Program_cs_gelesen_wird_dann_faellt_die_oeffentliche_Adresse_auf_die_interne_zurueck()
     {
         var programm = File.ReadAllText(Quelltextbaum.BlazorDatei("Program.cs"));
 
         Assert.That(programm, Does.Contain("WebApi:OeffentlicheBasisAdresse"));
-        Assert.That(programm, Does.Contain("?? webApiBasisAdresse"));
+        Assert.That(programm, Does.Contain("var oeffentlicheBasisAdresse = webApiBasisAdresse;"));
     }
 
     [Test]

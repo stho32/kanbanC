@@ -913,6 +913,18 @@ else
         }
 
         var datei = ereignis.File;
+
+        // Der Waechter vor dem Strom, mit **derselben** Konstante wie Validator und Route: ohne ihn
+        // wirft OpenReadStream, und statt einer lesbaren Meldung bekäme der Mensch einen
+        // abgerissenen Kreislauf zu sehen. Die Regel selbst liegt weiter in der WebApi — sie gilt
+        // auch für den Agenten, der hier gar nicht vorbeikommt.
+        var dieDateiIstZuGross = datei.Size > Anhangsgrenze.HoechsteDateigroesse;
+        if (dieDateiIstZuGross)
+        {
+            _ausfallmeldung = $"„{datei.Name}“ ist {Dateigroesseform.AlsText(datei.Size)} groß; höchstens {Dateigroesseform.AlsText(Anhangsgrenze.HoechsteDateigroesse)} sind möglich.";
+            return;
+        }
+
         _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(() => UebernimmAnhang(datei, _urheber.KontributorId));
     }
 

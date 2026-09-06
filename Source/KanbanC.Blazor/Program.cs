@@ -23,7 +23,16 @@ if (webApiBasisAdresse is null)
 // Basisadresse: auf einem Rechner ist sie richtig, und der Einzelrechnerbetrieb funktioniert damit
 // ohne Zutun. Im LAN wird sie gesetzt, weil der Browser eines zweiten Rechners „localhost" nicht
 // erreicht.
-var oeffentlicheBasisAdresse = builder.Configuration["WebApi:OeffentlicheBasisAdresse"] ?? webApiBasisAdresse;
+// Leer heisst „nicht gesetzt": der Schluessel steht in appsettings.json, damit man ihn findet, und
+// bleibt dort leer, damit der Einzelrechnerbetrieb ohne Zutun funktioniert. Stuende dort eine
+// Adresse, griffe die Voreinstellung nie.
+var gesetzteOeffentlicheAdresse = builder.Configuration["WebApi:OeffentlicheBasisAdresse"];
+var oeffentlicheBasisAdresse = webApiBasisAdresse;
+if (!string.IsNullOrWhiteSpace(gesetzteOeffentlicheAdresse))
+{
+    oeffentlicheBasisAdresse = gesetzteOeffentlicheAdresse;
+}
+
 builder.Services.AddSingleton(new Anhangbasisadresse(oeffentlicheBasisAdresse));
 
 builder.Services.AddHttpClient("KanbanC", client =>

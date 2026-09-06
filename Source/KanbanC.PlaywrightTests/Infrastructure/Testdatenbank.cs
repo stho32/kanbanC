@@ -9,10 +9,22 @@ namespace KanbanC.PlaywrightTests.Infrastructure;
 public sealed class Testdatenbank
 {
     private readonly SqliteVerbindungsfabrik _verbindungsfabrik;
+    private readonly string _dateipfad;
 
     public Testdatenbank(string dateipfad)
     {
+        _dateipfad = dateipfad;
         _verbindungsfabrik = new SqliteVerbindungsfabrik($"Data Source={dateipfad}");
+    }
+
+    // Der Ablageordner der Anhänge liegt neben der Datenbankdatei; die Anwendung rechnet ihn aus
+    // der Verbindungszeichenfolge. Der Test kennt denselben Weg, damit „entfernt" nicht nur die
+    // verschwundene Zeile heißt.
+    public string Ablageordner => _dateipfad + "-Files";
+
+    public bool LiegtAnhangdatei(long karteId, long anhangId)
+    {
+        return File.Exists(Path.Combine(_dateipfad + "-Files", karteId.ToString(CultureInfo.InvariantCulture), anhangId.ToString(CultureInfo.InvariantCulture)));
     }
 
     // Bildet eine Bestandskarte nach: in der Abschlussspalte, aber ohne Zeile in Karteerledigung.

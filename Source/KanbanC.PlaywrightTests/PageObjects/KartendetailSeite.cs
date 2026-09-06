@@ -185,6 +185,51 @@ public sealed class KartendetailSeite
 
     public ILocator KommentarHinweis => _seite.Locator("#kommentar-hinweis");
 
+    public ILocator Anhangabschnitt => _seite.Locator("#anhangabschnitt");
+
+    public ILocator Anhaenge => _seite.Locator("#anhangliste .anhang");
+
+    public ILocator Anhangnamen => _seite.Locator("#anhangliste .anhangname");
+
+    public ILocator Anhanggroessen => _seite.Locator("#anhangliste .anhanggroesse");
+
+    public ILocator AnhangLeerstand => _seite.Locator("#anhang-leerstand");
+
+    public ILocator Ablegeflaeche => _seite.Locator("#anhang-ablegeflaeche");
+
+    public ILocator Anhangdateifeld => _seite.Locator("#anhang-datei");
+
+    public ILocator AnhangHinweis => _seite.Locator("#anhang-hinweis");
+
+    public ILocator Verweisplatz => _seite.Locator("#verweisplatz");
+
+    public ILocator Anhang(string dateiname)
+    {
+        return Anhaenge.Filter(new LocatorFilterOptions { HasText = dateiname });
+    }
+
+    public ILocator AnhangHerunterladen(string dateiname)
+    {
+        return Anhang(dateiname).Locator(".anhangladen");
+    }
+
+    public ILocator AnhangEntfernen(string dateiname)
+    {
+        return Anhang(dateiname).Locator(".anhang-entfernen");
+    }
+
+    // Ueber das verborgene Dateifeld und nicht ueber den Ziehweg: Playwright setzt Dateien am
+    // input, und der gezeichnete Ziehweg fuehrt in dasselbe Feld.
+    public async Task HaengeDateiAn(string dateiname, byte[] inhalt)
+    {
+        await Anhangdateifeld.SetInputFilesAsync(new FilePayload
+        {
+            Name = dateiname,
+            MimeType = "application/octet-stream",
+            Buffer = inhalt,
+        });
+    }
+
     public ILocator Kartenblatt => _seite.Locator(".kartenblatt");
 
     // Was ein Mensch tut, nachdem er in der Kopfzeile gewaehlt hat: er kehrt mit dem Zeiger zur

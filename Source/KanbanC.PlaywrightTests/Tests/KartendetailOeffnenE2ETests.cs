@@ -85,7 +85,7 @@ public class KartendetailOeffnenE2ETests : PageTest
     // Handlung statt einer Null.
     [Test]
     [Category("US-7")]
-    public async Task Wenn_eine_frische_Karte_geoeffnet_wird_dann_tragen_Teilaufgaben_und_Kommentare_die_Handlung_statt_einer_Null()
+    public async Task Wenn_eine_frische_Karte_geoeffnet_wird_dann_tragen_Teilaufgaben_Kommentare_und_Anhaenge_die_Handlung_statt_einer_Null()
     {
         var aufbau = await BoardMitDreiKarten();
 
@@ -93,6 +93,9 @@ public class KartendetailOeffnenE2ETests : PageTest
 
         await Expect(aufbau.Detail.TeilaufgabenLeerstand).ToHaveTextAsync("Keine Teilaufgaben · anlegen");
         await Expect(aufbau.Detail.KommentarLeerstand).ToHaveTextAsync("Noch kein Kommentar · schreiben");
+        // Halb, wie im Artboard vorgesehen: die gemeinsame Zeile „Keine Anhänge, keine Verweise"
+        // entsteht erst mit I0019, das die rechte Hälfte der Sektion füllt.
+        await Expect(aufbau.Detail.AnhangLeerstand).ToHaveTextAsync("Keine Anhänge · hinzufügen");
     }
 
     private async Task<Aufbau> BoardMitDreiKarten()
