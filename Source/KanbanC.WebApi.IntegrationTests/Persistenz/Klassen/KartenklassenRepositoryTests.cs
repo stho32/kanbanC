@@ -437,6 +437,168 @@ public class KartenklassenRepositoryTests
         });
     }
 
+    [Test]
+    public void Wenn_die_Karten_einer_Kartenklasse_in_drei_Spalten_liegen_dann_kommen_sie_in_einer_Antwort()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalten = SpaltenDesBoards(datenbank, boardId);
+        var kartenklasseId = FuegeKartenklasseEin(datenbank, boardId, "WBS", "WBS-");
+        OrdneKarteZu(datenbank, LegeKarteInSpalteAn(datenbank, spalten[0].SpalteId, "Erste", 1), kartenklasseId, 1);
+        OrdneKarteZu(datenbank, LegeKarteInSpalteAn(datenbank, spalten[1].SpalteId, "Zweite", 1), kartenklasseId, 2);
+        OrdneKarteZu(datenbank, LegeKarteInSpalteAn(datenbank, spalten[2].SpalteId, "Dritte", 1), kartenklasseId, 3);
+        var repository = new KartenklassenRepository(datenbank.Verbindungsfabrik);
+
+        var karten = repository.LadeKartenDerKartenklasse(boardId, kartenklasseId, new Archivierung(false));
+
+        Assert.That(karten, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(karten!.Select(klassenkarte => klassenkarte.Karte.Titel), Is.EqualTo(new[] { "Erste", "Zweite", "Dritte" }));
+            Assert.That(karten.Select(klassenkarte => klassenkarte.Spalte), Is.EqualTo(new[] { spalten[0].SpalteId, spalten[1].SpalteId, spalten[2].SpalteId }));
+            Assert.That(karten.Select(klassenkarte => klassenkarte.Spaltenbezeichnung), Is.EqualTo(new[] { spalten[0].Bezeichnung, spalten[1].Bezeichnung, spalten[2].Bezeichnung }));
+            Assert.That(karten.Select(klassenkarte => klassenkarte.Karte.Kartennummer), Is.EqualTo(new[] { "WBS-01", "WBS-02", "WBS-03" }));
+        });
+    }
+
+    // Genau ihre Karten heisst: keine der anderen Klasse, keine ohne Klasse und keine eines
+    // zweiten Boards — auch dann nicht, wenn dieses dasselbe Praefix fuehrt.
+    [Test]
+    public void Wenn_daneben_andere_Klassen_klassenlose_Karten_und_ein_zweites_Board_liegen_dann_kommen_sie_nicht_mit()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalten = SpaltenDesBoards(datenbank, boardId);
+        var wbsId = FuegeKartenklasseEin(datenbank, boardId, "WBS", "WBS-");
+        var bugId = FuegeKartenklasseEin(datenbank, boardId, "Bugmeldungen", "BUG-");
+        OrdneKarteZu(datenbank, LegeKarteInSpalteAn(datenbank, spalten[0].SpalteId, "WBS eins", 1), wbsId, 1);
+        OrdneKarteZu(datenbank, LegeKarteInSpalteAn(datenbank, spalten[1].SpalteId, "BUG eins", 1), bugId, 1);
+        LegeKarteInSpalteAn(datenbank, spalten[0].SpalteId, "Ohne Klasse", 2);
+        var zweitesBoardId = LegeBoardAn(datenbank);
+        var fremdeWbsId = FuegeKartenklasseEin(datenbank, zweitesBoardId, "WBS", "WBS-");
+        var fremdeSpalten = SpaltenDesBoards(datenbank, zweitesBoardId);
+        OrdneKarteZu(datenbank, LegeKarteInSpalteAn(datenbank, fremdeSpalten[0].SpalteId, "Fremde WBS", 1), fremdeWbsId, 1);
+        var repository = new KartenklassenRepository(datenbank.Verbindungsfabrik);
+
+        var karten = repository.LadeKartenDerKartenklasse(boardId, wbsId, new Archivierung(false));
+
+        Assert.That(karten!.Select(klassenkarte => klassenkarte.Karte.Titel), Is.EqualTo(new[] { "WBS eins" }));
+    }
+
+    // Der Zaehlerstand ist dieselbe Ordnung wie die Nummer, nur exakt: als Text staende WBS-100
+    // vor WBS-99, weil die Nummer nur auf zwei Stellen auffuellt.
+    [Test]
+    public void Wenn_die_Staende_99_und_100_vergeben_sind_dann_steht_WBS_99_vor_WBS_100()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalten = SpaltenDesBoards(datenbank, boardId);
+        var kartenklasseId = FuegeKartenklasseEin(datenbank, boardId, "WBS", "WBS-");
+        OrdneKarteZu(datenbank, LegeKarteInSpalteAn(datenbank, spalten[2].SpalteId, "Hundert", 1), kartenklasseId, 100);
+        OrdneKarteZu(datenbank, LegeKarteInSpalteAn(datenbank, spalten[0].SpalteId, "Neunundneunzig", 1), kartenklasseId, 99);
+        var repository = new KartenklassenRepository(datenbank.Verbindungsfabrik);
+
+        var karten = repository.LadeKartenDerKartenklasse(boardId, kartenklasseId, new Archivierung(false));
+
+        Assert.That(karten!.Select(klassenkarte => klassenkarte.Karte.Kartennummer), Is.EqualTo(new[] { "WBS-99", "WBS-100" }));
+    }
+
+    // Die Anzeigegrenze ist eine Anzeigeregel des Boards; dieser Abruf kuerzt nicht.
+    [Test]
+    public void Wenn_zwei_Karten_in_einer_Abschlussspalte_mit_Anzeigegrenze_1_liegen_dann_kommen_beide()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalten = SpaltenDesBoards(datenbank, boardId);
+        SetzeAnzeigegrenze(datenbank, spalten[2].SpalteId, 1);
+        var kartenklasseId = FuegeKartenklasseEin(datenbank, boardId, "WBS", "WBS-");
+        OrdneKarteZu(datenbank, LegeKarteInSpalteAn(datenbank, spalten[2].SpalteId, "Fertig eins", 1), kartenklasseId, 1);
+        OrdneKarteZu(datenbank, LegeKarteInSpalteAn(datenbank, spalten[2].SpalteId, "Fertig zwei", 2), kartenklasseId, 2);
+        var repository = new KartenklassenRepository(datenbank.Verbindungsfabrik);
+
+        var karten = repository.LadeKartenDerKartenklasse(boardId, kartenklasseId, new Archivierung(false));
+
+        Assert.That(karten!.Select(klassenkarte => klassenkarte.Karte.Titel), Is.EqualTo(new[] { "Fertig eins", "Fertig zwei" }));
+    }
+
+    [Test]
+    public void Wenn_der_Abruf_ohne_Archivfilter_laeuft_dann_fehlen_die_archivierten_Karten()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalten = SpaltenDesBoards(datenbank, boardId);
+        var kartenklasseId = FuegeKartenklasseEin(datenbank, boardId, "WBS", "WBS-");
+        OrdneKarteZu(datenbank, LegeKarteInSpalteAn(datenbank, spalten[0].SpalteId, "Aktiv eins", 1), kartenklasseId, 1);
+        OrdneKarteZu(datenbank, LegeKarteInSpalteAn(datenbank, spalten[0].SpalteId, "Aktiv zwei", 2), kartenklasseId, 2);
+        var archivierte = LegeKarteInSpalteAn(datenbank, spalten[1].SpalteId, "Archiviert", 1);
+        OrdneKarteZu(datenbank, archivierte, kartenklasseId, 3);
+        Archiviere(datenbank, archivierte);
+        var repository = new KartenklassenRepository(datenbank.Verbindungsfabrik);
+
+        var karten = repository.LadeKartenDerKartenklasse(boardId, kartenklasseId, new Archivierung(false));
+
+        Assert.That(karten!.Select(klassenkarte => klassenkarte.Karte.Titel), Is.EqualTo(new[] { "Aktiv eins", "Aktiv zwei" }));
+    }
+
+    [Test]
+    public void Wenn_der_Abruf_die_archivierten_verlangt_dann_kommen_genau_sie()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalten = SpaltenDesBoards(datenbank, boardId);
+        var kartenklasseId = FuegeKartenklasseEin(datenbank, boardId, "WBS", "WBS-");
+        OrdneKarteZu(datenbank, LegeKarteInSpalteAn(datenbank, spalten[0].SpalteId, "Aktiv eins", 1), kartenklasseId, 1);
+        var archivierte = LegeKarteInSpalteAn(datenbank, spalten[1].SpalteId, "Archiviert", 1);
+        OrdneKarteZu(datenbank, archivierte, kartenklasseId, 2);
+        Archiviere(datenbank, archivierte);
+        var repository = new KartenklassenRepository(datenbank.Verbindungsfabrik);
+
+        var karten = repository.LadeKartenDerKartenklasse(boardId, kartenklasseId, new Archivierung(true));
+
+        Assert.That(karten!.Select(klassenkarte => klassenkarte.Karte.Titel), Is.EqualTo(new[] { "Archiviert" }));
+    }
+
+    // Eine Kartenklasse ohne Karten ist kein Fehler: die leere Liste ist die Antwort, nicht null.
+    [Test]
+    public void Wenn_die_Kartenklasse_noch_keine_Karte_traegt_dann_liefert_der_Abruf_eine_leere_Liste()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var kartenklasseId = FuegeKartenklasseEin(datenbank, boardId, "WBS", "WBS-");
+        var repository = new KartenklassenRepository(datenbank.Verbindungsfabrik);
+
+        var karten = repository.LadeKartenDerKartenklasse(boardId, kartenklasseId, new Archivierung(false));
+
+        Assert.That(karten, Is.Not.Null);
+        Assert.That(karten, Is.Empty);
+    }
+
+    [Test]
+    public void Wenn_die_Kartenklasse_zu_einem_anderen_Board_gehoert_dann_liefert_der_Abruf_null()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var zweitesBoardId = LegeBoardAn(datenbank);
+        var fremdeKartenklasseId = FuegeKartenklasseEin(datenbank, zweitesBoardId, "WBS", "WBS-");
+        var repository = new KartenklassenRepository(datenbank.Verbindungsfabrik);
+
+        var karten = repository.LadeKartenDerKartenklasse(boardId, fremdeKartenklasseId, new Archivierung(false));
+
+        Assert.That(karten, Is.Null);
+    }
+
+    [Test]
+    public void Wenn_es_die_Kartenklasse_nirgends_gibt_dann_liefert_der_Abruf_null()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var repository = new KartenklassenRepository(datenbank.Verbindungsfabrik);
+
+        var karten = repository.LadeKartenDerKartenklasse(boardId, 999, new Archivierung(false));
+
+        Assert.That(karten, Is.Null);
+    }
+
     private static void SetzeZaehlerstand(TemporaereDatenbank datenbank, long kartenklasseId, long stand)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
@@ -485,6 +647,63 @@ public class KartenklassenRepositoryTests
             INSERT INTO Karte (Spalte, Titel, Position)
             VALUES (@Spalte, @Titel, 1);
             SELECT last_insert_rowid();", new { Spalte = spalteId, Titel = titel });
+    }
+
+    private static IReadOnlyList<(long SpalteId, string Bezeichnung)> SpaltenDesBoards(TemporaereDatenbank datenbank, long boardId)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.Query<(long SpalteId, string Bezeichnung)>(@"
+            SELECT SpalteId, Bezeichnung
+              FROM Spalte
+             WHERE Board = @BoardId
+             ORDER BY Position", new { BoardId = boardId }).ToList();
+    }
+
+    private static long LegeKarteInSpalteAn(TemporaereDatenbank datenbank, long spalteId, string titel, long position)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        var parameter = new { Spalte = spalteId, Titel = titel, Position = position };
+        return verbindung.ExecuteScalar<long>(@"
+            INSERT INTO Karte (Spalte, Titel, Position)
+            VALUES (@Spalte, @Titel, @Position);
+            SELECT last_insert_rowid();", parameter);
+    }
+
+    private static long FuegeKartenklasseEin(TemporaereDatenbank datenbank, long boardId, string name, string praefix)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        var parameter = new { Board = boardId, Name = name, Praefix = praefix };
+        return verbindung.ExecuteScalar<long>(@"
+            INSERT INTO Kartenklasse (Board, Name, Praefix)
+            VALUES (@Board, @Name, @Praefix);
+            SELECT last_insert_rowid();", parameter);
+    }
+
+    private static void OrdneKarteZu(TemporaereDatenbank datenbank, long karteId, long kartenklasseId, long zaehlerstand)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        var parameter = new { Karte = karteId, Kartenklasse = kartenklasseId, Zaehlerstand = zaehlerstand };
+        verbindung.Execute(@"
+            INSERT INTO Kartenklassenzuordnung (Karte, Kartenklasse, Zaehlerstand)
+            VALUES (@Karte, @Kartenklasse, @Zaehlerstand)", parameter);
+    }
+
+    private static void Archiviere(TemporaereDatenbank datenbank, long karteId)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Kartenarchivierung (Karte)
+            VALUES (@Karte)", new { Karte = karteId });
+    }
+
+    private static void SetzeAnzeigegrenze(TemporaereDatenbank datenbank, long spalteId, long anzeigegrenze)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            UPDATE Spalte
+               SET IstAbschlussspalte = 1,
+                   Anzeigegrenze = @Anzeigegrenze
+             WHERE SpalteId = @SpalteId", new { Anzeigegrenze = anzeigegrenze, SpalteId = spalteId });
     }
 
     private static void FuegeKartenklasseDirektEin(TemporaereDatenbank datenbank, long boardId, string name, string praefix)

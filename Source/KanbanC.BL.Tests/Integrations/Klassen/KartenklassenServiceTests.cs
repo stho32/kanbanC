@@ -1,5 +1,7 @@
 using KanbanC.BL.Integrations.Klassen;
 using KanbanC.BL.Tests.TestHelpers;
+using KanbanC.Contracts.Boards;
+using KanbanC.Contracts.Karten;
 using KanbanC.Contracts.Klassen;
 
 namespace KanbanC.BL.Tests.Integrations.Klassen;
@@ -7,6 +9,9 @@ namespace KanbanC.BL.Tests.Integrations.Klassen;
 public class KartenklassenServiceTests
 {
     private const long BoardId = 2;
+
+    // Die erste angelegte Kartenklasse des Testrepositorys traegt immer die 1.
+    private const long WbsKartenklasseId = 1;
 
     [Test]
     public void Wenn_das_Board_unbekannt_ist_dann_liefert_das_Anlegen_null()
@@ -114,5 +119,96 @@ public class KartenklassenServiceTests
         var kartenklassen = dienst.LadeKartenklassen(BoardId);
 
         Assert.That(kartenklassen!.Select(kartenklasse => kartenklasse.Name), Is.EqualTo(new[] { "WBS", "Bugmeldungen", "Beschaffung" }));
+    }
+
+    [Test]
+    public void Wenn_das_Board_unbekannt_ist_dann_meldet_der_Kartenabruf_board_unbekannt()
+    {
+        var repository = TestKartenklassenRepository.MitKartenklassen(BoardId, ("WBS", "WBS-"));
+        var dienst = new KartenklassenService(repository);
+
+        var ergebnis = dienst.LadeKartenDerKartenklasse(999, WbsKartenklasseId, new Archivierung(false));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("board-unbekannt"));
+        Assert.That(repository.WurdenKartenGelesen, Is.False);
+    }
+
+    [Test]
+    public void Wenn_es_die_Kartenklasse_nirgends_gibt_dann_meldet_der_Kartenabruf_kartenklasse_unbekannt()
+    {
+        var repository = TestKartenklassenRepository.MitKartenklassen(BoardId, ("WBS", "WBS-"));
+        var dienst = new KartenklassenService(repository);
+
+        var ergebnis = dienst.LadeKartenDerKartenklasse(BoardId, 999, new Archivierung(false));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("kartenklasse-unbekannt"));
+        Assert.That(repository.WurdenKartenGelesen, Is.False);
+    }
+
+    // Die Unterscheidung ist der ganze Zweck des zweiten Codes: es gibt sie, nur nicht hier.
+    [Test]
+    public void Wenn_die_Kartenklasse_einem_anderen_Board_gehoert_dann_meldet_der_Kartenabruf_kartenklasse_fremd()
+    {
+        var repository = TestKartenklassenRepository.MitKartenklassen(BoardId, ("WBS", "WBS-")).MitZusaetzlichemBoard(7);
+        var dienst = new KartenklassenService(repository);
+
+        var ergebnis = dienst.LadeKartenDerKartenklasse(7, WbsKartenklasseId, new Archivierung(false));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("kartenklasse-fremd"));
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("7").And.Contain($"{BoardId}"));
+        });
+        Assert.That(repository.WurdenKartenGelesen, Is.False);
+    }
+
+    [Test]
+    public void Wenn_die_Kartenklasse_Karten_traegt_dann_reicht_der_Dienst_sie_unveraendert_durch()
+    {
+        var repository = TestKartenklassenRepository.MitKartenklassen(BoardId, ("WBS", "WBS-"))
+            .MitKartenDerKartenklasse(WbsKartenklasseId, Klassenkarte("Erste", "WBS-01"), Klassenkarte("Zweite", "WBS-02"));
+        var dienst = new KartenklassenService(repository);
+
+        var ergebnis = dienst.LadeKartenDerKartenklasse(BoardId, WbsKartenklasseId, new Archivierung(false));
+
+        Assert.That(ergebnis.IstErfolg, Is.True);
+        Assert.That(ergebnis.Wert.Select(klassenkarte => klassenkarte.Karte.Kartennummer), Is.EqualTo(new[] { "WBS-01", "WBS-02" }));
+    }
+
+    // Eine Kartenklasse ohne Karten ist kein Fehler: die leere Liste ist die Antwort.
+    [Test]
+    public void Wenn_die_Kartenklasse_noch_keine_Karte_traegt_dann_liefert_der_Dienst_eine_leere_Liste()
+    {
+        var repository = TestKartenklassenRepository.MitKartenklassen(BoardId, ("WBS", "WBS-"));
+        var dienst = new KartenklassenService(repository);
+
+        var ergebnis = dienst.LadeKartenDerKartenklasse(BoardId, WbsKartenklasseId, new Archivierung(false));
+
+        Assert.That(ergebnis.IstErfolg, Is.True);
+        Assert.That(ergebnis.Wert, Is.Empty);
+    }
+
+    // Der Rennfall: zwischen der Zugehörigkeitsprüfung des Dienstes und dem Lesen der Karten
+    // fällt die Kartenklasse weg. Ohne den Befund käme eine leere Liste als Erfolg heraus.
+    [Test]
+    public void Wenn_die_Kartenklasse_zwischen_Pruefung_und_Lesen_verschwindet_dann_meldet_der_Abruf_kartenklasse_unbekannt()
+    {
+        var repository = TestKartenklassenRepository.MitKartenklassen(BoardId, ("WBS", "WBS-")).MitVerschwundenerKartenklasse();
+        var dienst = new KartenklassenService(repository);
+
+        var ergebnis = dienst.LadeKartenDerKartenklasse(BoardId, WbsKartenklasseId, new Archivierung(false));
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("kartenklasse-unbekannt"));
+        Assert.That(repository.WurdenKartenGelesen, Is.True);
+    }
+
+    private static Klassenkarte Klassenkarte(string titel, string kartennummer)
+    {
+        var karte = new Karte(1, titel, 1, null, null, null, Kartenfarbe.Ohne, null, kartennummer);
+        return new Klassenkarte(karte, Spalte: 5, Spaltenbezeichnung: "Rückstand");
     }
 }

@@ -62,6 +62,33 @@ internal static class Kartenleser
         return zeilen.Select(AlsKarte).ToList();
     }
 
+    // Der JOIN auf die Zuordnung ist der Filter: er lässt die klassenlosen Karten und die anderer
+    // Kartenklassen liegen, und der Board-Skopus fällt über die Kartenklasse ohnehin. Geordnet
+    // wird nach dem vergebenen Zaehlerstand und nicht nach der Kartennummer als Text — die Nummer
+    // füllt nur auf zwei Stellen auf, WBS-100 stünde sonst vor WBS-99. Gekürzt wird hier nichts:
+    // die Anzeigegrenze einer Abschlussspalte ist eine Anzeigeregel des Boards.
+    public static IReadOnlyList<Klassenkarte> LiesKartenDerKartenklasse(IDbConnection verbindung, IDbTransaction? transaktion, long kartenklasseId, Archivierung archivstand)
+    {
+        var parameter = new { KartenklasseId = kartenklasseId, archivstand.IstArchiviert };
+        var zeilen = verbindung.Query<Klassenkartenzeile>(@"
+            SELECT k.KarteId, k.Spalte, k.Titel, k.Position, e.ErledigtAm,
+                   p.Beschreibung, p.FaelligAm, p.Farbe, p.Kontributor,
+                   n.Praefix AS Kartenklassenpraefix, z.Zaehlerstand AS VergebenerZaehlerstand,
+                   s.Bezeichnung AS Spaltenbezeichnung
+              FROM Karte k
+              JOIN Kartenklassenzuordnung z ON z.Karte = k.KarteId
+              JOIN Spalte s ON s.SpalteId = k.Spalte
+              LEFT JOIN Karteerledigung e ON e.Karte = k.KarteId
+              LEFT JOIN Kartenarchivierung a ON a.Karte = k.KarteId
+              LEFT JOIN Karteneigenschaft p ON p.Karte = k.KarteId
+              LEFT JOIN Kartenklasse n ON n.KartenklasseId = z.Kartenklasse
+             WHERE z.Kartenklasse = @KartenklasseId
+               AND ((@IstArchiviert = 0 AND a.Karte IS NULL)
+                 OR (@IstArchiviert = 1 AND a.Karte IS NOT NULL))
+             ORDER BY z.Zaehlerstand", parameter, transaktion);
+        return zeilen.Select(AlsKlassenkarte).ToList();
+    }
+
     // Die einzige Leseabfrage ohne Archivfilter, und das mit Absicht: eine archivierte Karte ist
     // kein Bestand mehr, behält aber ihre Adresse — I0014 hat zugesagt, dass sie „über API und
     // Archiv auffindbar“ bleibt. Ihr Board kennt die Karte nur über Spalte → Board, daher zwei
@@ -131,6 +158,24 @@ internal static class Kartenleser
             AlsKartenfarbe(zeile.Farbe),
             zeile.Kontributor,
             AlsKartennummer(zeile.Kartenklassenpraefix, zeile.VergebenerZaehlerstand));
+    }
+
+    // Die Karte bleibt dieselbe Gestalt wie überall; der Umschlag legt nur den Ort dazu.
+    private static Klassenkarte AlsKlassenkarte(Klassenkartenzeile zeile)
+    {
+        var karte = AlsKarte(new Kartenzeile(
+            zeile.KarteId,
+            zeile.Spalte,
+            zeile.Titel,
+            zeile.Position,
+            zeile.ErledigtAm,
+            zeile.Beschreibung,
+            zeile.FaelligAm,
+            zeile.Farbe,
+            zeile.Kontributor,
+            zeile.Kartenklassenpraefix,
+            zeile.VergebenerZaehlerstand));
+        return new Klassenkarte(karte, zeile.Spalte, zeile.Spaltenbezeichnung);
     }
 
     // Gebildet, nicht abgelegt: die Nummer entsteht überall aus Präfix und dem Zählerstand, den
@@ -211,6 +256,20 @@ internal static class Kartenleser
         long? Kontributor,
         string? Kartenklassenpraefix,
         long? VergebenerZaehlerstand);
+
+    private sealed record Klassenkartenzeile(
+        long KarteId,
+        long Spalte,
+        string Titel,
+        long Position,
+        string? ErledigtAm,
+        string? Beschreibung,
+        string? FaelligAm,
+        string? Farbe,
+        long? Kontributor,
+        string? Kartenklassenpraefix,
+        long? VergebenerZaehlerstand,
+        string Spaltenbezeichnung);
 
     private sealed record Kartendetailzeile(
         long KarteId,

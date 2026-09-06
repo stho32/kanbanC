@@ -364,6 +364,26 @@ public class FehlervertragTests
             await webApi.Klient.GetAsync($"{BoardsRoute}/999/kartenklassen")));
 
         faelle.Add(new Fehlerfall(
+            "GET /api/boards/{boardId:long}/kartenklassen/{kartenklasseId:long}/karten",
+            "Karten einer Kartenklasse lesen an unbekanntem Board",
+            await webApi.Klient.GetAsync($"{BoardsRoute}/999/kartenklassen/{aufbau.FremdeKartenklasse.KartenklasseId}/karten")));
+
+        faelle.Add(new Fehlerfall(
+            "GET /api/boards/{boardId:long}/kartenklassen/{kartenklasseId:long}/karten",
+            "Karten einer Kartenklasse lesen mit unbekannter KartenklasseId",
+            await webApi.Klient.GetAsync($"{BoardsRoute}/{board.BoardId}/kartenklassen/999/karten")));
+
+        faelle.Add(new Fehlerfall(
+            "GET /api/boards/{boardId:long}/kartenklassen/{kartenklasseId:long}/karten",
+            "Karten der Kartenklasse eines fremden Boards lesen",
+            await webApi.Klient.GetAsync($"{BoardsRoute}/{board.BoardId}/kartenklassen/{aufbau.FremdeKartenklasse.KartenklasseId}/karten")));
+
+        faelle.Add(new Fehlerfall(
+            "GET /api/boards/{boardId:long}/kartenklassen/{kartenklasseId:long}/karten",
+            "Karten einer Kartenklasse lesen mit unlesbarem Archiv-Filter",
+            await webApi.Klient.GetAsync($"{BoardsRoute}/{board.BoardId}/kartenklassen/999/karten?archiviert=vielleicht")));
+
+        faelle.Add(new Fehlerfall(
             "PUT /api/karten/{karteId:long}/kartenklasse",
             "Kartenklasse zuordnen an unbekannter Karte",
             await webApi.Klient.PutAsJsonAsync("/api/karten/999/kartenklasse", new KartenklasseZuordnenAnfrage(1))));

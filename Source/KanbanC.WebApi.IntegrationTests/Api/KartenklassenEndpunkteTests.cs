@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using KanbanC.Contracts.Boards;
+using KanbanC.Contracts.Karten;
 using KanbanC.Contracts.Klassen;
 using KanbanC.WebApi.IntegrationTests.Infrastructure;
 
@@ -262,6 +263,167 @@ public class KartenklassenEndpunkteTests
         Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
     }
 
+    [Test]
+    public async Task Wenn_die_Kartenklasse_Karten_traegt_dann_antwortet_der_Abruf_mit_200_den_Karten_und_ihrem_Ort()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardMitSpaltenAn(webApi, "Entwicklung");
+        var kartenklasse = await LegeKartenklasseAn(webApi, board.BoardId, "WBS", "WBS-");
+        await OrdneNeueKarteZu(webApi, board, board.Spalten[0].SpalteId, "Erste", kartenklasse.KartenklasseId);
+        await OrdneNeueKarteZu(webApi, board, board.Spalten[1].SpalteId, "Zweite", kartenklasse.KartenklasseId);
+
+        var antwort = await webApi.Klient.GetAsync(KartenDerKartenklasseRoute(board.BoardId, kartenklasse.KartenklasseId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var karten = await antwort.Content.ReadFromJsonAsync<List<Klassenkarte>>();
+        Assert.That(karten, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(karten!.Select(klassenkarte => klassenkarte.Karte.Titel), Is.EqualTo(new[] { "Erste", "Zweite" }));
+            Assert.That(karten.Select(klassenkarte => klassenkarte.Karte.Kartennummer), Is.EqualTo(new[] { "WBS-01", "WBS-02" }));
+            Assert.That(karten.Select(klassenkarte => klassenkarte.Spalte), Is.EqualTo(new[] { board.Spalten[0].SpalteId, board.Spalten[1].SpalteId }));
+            Assert.That(karten.Select(klassenkarte => klassenkarte.Spaltenbezeichnung), Is.EqualTo(new[] { board.Spalten[0].Bezeichnung, board.Spalten[1].Bezeichnung }));
+        });
+    }
+
+    // Board und Boardname stehen in der Adresse; sie in jeder Zeile zu wiederholen hieße, dem
+    // Aufrufer zurückzugeben, was er selbst eingetippt hat.
+    [Test]
+    public async Task Wenn_die_Karten_einer_Kartenklasse_abgerufen_werden_dann_traegt_die_Antwort_weder_Board_noch_Boardname()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardMitSpaltenAn(webApi, "Entwicklung");
+        var kartenklasse = await LegeKartenklasseAn(webApi, board.BoardId, "WBS", "WBS-");
+        await OrdneNeueKarteZu(webApi, board, board.Spalten[0].SpalteId, "Erste", kartenklasse.KartenklasseId);
+
+        var rumpf = await webApi.Klient.GetStringAsync(KartenDerKartenklasseRoute(board.BoardId, kartenklasse.KartenklasseId));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(rumpf, Does.Not.Contain("\"board\"").IgnoreCase);
+            Assert.That(rumpf, Does.Not.Contain("\"boardname\"").IgnoreCase);
+            Assert.That(rumpf, Does.Contain("\"spaltenbezeichnung\"").IgnoreCase);
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_Kartenklasse_noch_keine_Karte_traegt_dann_antwortet_der_Abruf_mit_200_und_leerer_Liste()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardMitSpaltenAn(webApi, "Entwicklung");
+        var kartenklasse = await LegeKartenklasseAn(webApi, board.BoardId, "WBS", "WBS-");
+
+        var antwort = await webApi.Klient.GetAsync(KartenDerKartenklasseRoute(board.BoardId, kartenklasse.KartenklasseId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var karten = await antwort.Content.ReadFromJsonAsync<List<Klassenkarte>>();
+        Assert.That(karten, Is.Empty);
+    }
+
+    [Test]
+    public async Task Wenn_archiviert_true_gefordert_wird_dann_kommen_genau_die_archivierten_Karten_der_Kartenklasse()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardMitSpaltenAn(webApi, "Entwicklung");
+        var kartenklasse = await LegeKartenklasseAn(webApi, board.BoardId, "WBS", "WBS-");
+        await OrdneNeueKarteZu(webApi, board, board.Spalten[0].SpalteId, "Aktiv", kartenklasse.KartenklasseId);
+        var archivierte = await OrdneNeueKarteZu(webApi, board, board.Spalten[1].SpalteId, "Archiviert", kartenklasse.KartenklasseId);
+        await Archiviere(webApi, board.BoardId, archivierte.KarteId);
+
+        var aktive = await LadeKartenDerKartenklasse(webApi, board.BoardId, kartenklasse.KartenklasseId, string.Empty);
+        var archiv = await LadeKartenDerKartenklasse(webApi, board.BoardId, kartenklasse.KartenklasseId, "?archiviert=true");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(aktive.Select(klassenkarte => klassenkarte.Karte.Titel), Is.EqualTo(new[] { "Aktiv" }));
+            Assert.That(archiv.Select(klassenkarte => klassenkarte.Karte.Titel), Is.EqualTo(new[] { "Archiviert" }));
+        });
+    }
+
+    // Die Kompensation nennt die Adresse, die der Aufrufer wirklich gerufen hat.
+    [Test]
+    public async Task Wenn_der_Archivfilter_unlesbar_ist_dann_antwortet_der_Abruf_mit_400_und_der_aufgerufenen_Adresse()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardMitSpaltenAn(webApi, "Entwicklung");
+        var kartenklasse = await LegeKartenklasseAn(webApi, board.BoardId, "WBS", "WBS-");
+
+        var antwort = await webApi.Klient.GetAsync($"{KartenDerKartenklasseRoute(board.BoardId, kartenklasse.KartenklasseId)}?archiviert=vielleicht");
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Abruf mit unlesbarem Archivfilter");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("archiv-filter-unlesbar"));
+            Assert.That(zurueckweisung.Befunde[0].Kompensation, Does.Contain($"/api/boards/{board.BoardId}/kartenklassen/{kartenklasse.KartenklasseId}/karten"));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_das_Board_unbekannt_ist_dann_antwortet_der_Kartenabruf_mit_404_und_board_unbekannt()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardMitSpaltenAn(webApi, "Entwicklung");
+        var kartenklasse = await LegeKartenklasseAn(webApi, board.BoardId, "WBS", "WBS-");
+
+        var antwort = await webApi.Klient.GetAsync(KartenDerKartenklasseRoute(99999, kartenklasse.KartenklasseId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Kartenabruf an unbekanntem Board");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("board-unbekannt"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain("99999"));
+            Assert.That(zurueckweisung.Befunde[0].Kompensation, Does.Contain("GET /api/boards"));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_es_die_Kartenklasse_nirgends_gibt_dann_antwortet_der_Kartenabruf_mit_404_und_kartenklasse_unbekannt()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardMitSpaltenAn(webApi, "Entwicklung");
+
+        var antwort = await webApi.Klient.GetAsync(KartenDerKartenklasseRoute(board.BoardId, 99999));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Kartenabruf mit unbekannter Kartenklasse");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("kartenklasse-unbekannt"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain("99999"));
+            Assert.That(zurueckweisung.Befunde[0].Kompensation, Does.Contain($"GET /api/boards/{board.BoardId}/kartenklassen"));
+        });
+    }
+
+    // Es gibt sie, nur nicht hier: ein eigener Code, weil die Kompensation eine andere ist.
+    [Test]
+    public async Task Wenn_die_Kartenklasse_einem_fremden_Board_gehoert_dann_antwortet_der_Kartenabruf_mit_kartenklasse_fremd()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardMitSpaltenAn(webApi, "Entwicklung");
+        var nachbar = await LegeBoardMitSpaltenAn(webApi, "Beschaffung");
+        var fremde = await LegeKartenklasseAn(webApi, nachbar.BoardId, "WBS", "WBS-");
+
+        var antwort = await webApi.Klient.GetAsync(KartenDerKartenklasseRoute(board.BoardId, fremde.KartenklasseId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Kartenabruf mit fremder Kartenklasse");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("kartenklasse-fremd"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain($"{nachbar.BoardId}").And.Contain($"{board.BoardId}"));
+        });
+    }
+
     private static string KartenklassenRoute(long boardId)
     {
         return $"{BoardsRoute}/{boardId}/kartenklassen";
@@ -276,10 +438,51 @@ public class KartenklassenEndpunkteTests
         return board!.BoardId;
     }
 
-    private static async Task LegeKartenklasseAn(TestWebApi webApi, long boardId, string name, string praefix)
+    private static async Task<Kartenklasse> LegeKartenklasseAn(TestWebApi webApi, long boardId, string name, string praefix)
     {
         var antwort = await webApi.Klient.PostAsJsonAsync(KartenklassenRoute(boardId), new KartenklasseAnlegenAnfrage(name, praefix));
         antwort.EnsureSuccessStatusCode();
+        var kartenklasse = await antwort.Content.ReadFromJsonAsync<Kartenklasse>();
+        Assert.That(kartenklasse, Is.Not.Null);
+        return kartenklasse!;
+    }
+
+    private static string KartenDerKartenklasseRoute(long boardId, long kartenklasseId)
+    {
+        return $"{KartenklassenRoute(boardId)}/{kartenklasseId}/karten";
+    }
+
+    private static async Task<Board> LegeBoardMitSpaltenAn(TestWebApi webApi, string name)
+    {
+        var antwort = await webApi.Klient.PostAsJsonAsync(BoardsRoute, new BoardAnlegenAnfrage(name, BoardArt.Linie, null, null));
+        antwort.EnsureSuccessStatusCode();
+        var board = await antwort.Content.ReadFromJsonAsync<Board>();
+        Assert.That(board, Is.Not.Null);
+        return board!;
+    }
+
+    private static async Task<Karte> OrdneNeueKarteZu(TestWebApi webApi, Board board, long spalteId, string titel, long kartenklasseId)
+    {
+        var angelegt = await webApi.Klient.PostAsJsonAsync($"{BoardsRoute}/{board.BoardId}/spalten/{spalteId}/karten", new KarteAnlegenAnfrage(titel));
+        angelegt.EnsureSuccessStatusCode();
+        var karte = await angelegt.Content.ReadFromJsonAsync<Karte>();
+        Assert.That(karte, Is.Not.Null);
+        var zugeordnet = await webApi.Klient.PutAsJsonAsync($"/api/karten/{karte!.KarteId}/kartenklasse", new KartenklasseZuordnenAnfrage(kartenklasseId));
+        zugeordnet.EnsureSuccessStatusCode();
+        return karte;
+    }
+
+    private static async Task Archiviere(TestWebApi webApi, long boardId, long karteId)
+    {
+        var antwort = await webApi.Klient.PutAsJsonAsync($"{BoardsRoute}/{boardId}/karten/{karteId}/archivierung", new Archivierung(true));
+        antwort.EnsureSuccessStatusCode();
+    }
+
+    private static async Task<IReadOnlyList<Klassenkarte>> LadeKartenDerKartenklasse(TestWebApi webApi, long boardId, long kartenklasseId, string abfrage)
+    {
+        var karten = await webApi.Klient.GetFromJsonAsync<List<Klassenkarte>>($"{KartenDerKartenklasseRoute(boardId, kartenklasseId)}{abfrage}");
+        Assert.That(karten, Is.Not.Null);
+        return karten!;
     }
 
     private static async Task<IReadOnlyList<Kartenklasse>> LadeKartenklassen(TestWebApi webApi, long boardId)

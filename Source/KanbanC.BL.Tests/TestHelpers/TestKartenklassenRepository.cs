@@ -2,6 +2,7 @@ using KanbanC.BL.Interfaces.Klassen;
 using KanbanC.BL.Models;
 using KanbanC.BL.Models.Klassen;
 using KanbanC.BL.Operations.Klassen;
+using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Klassen;
 
 namespace KanbanC.BL.Tests.TestHelpers;
@@ -10,6 +11,9 @@ public sealed class TestKartenklassenRepository : IKartenklassenRepository
 {
     private readonly Dictionary<long, List<Kartenklasse>> _kartenklassenJeBoard = [];
     private long _naechsteKartenklasseId = 1;
+
+    private readonly Dictionary<long, List<Klassenkarte>> _kartenJeKartenklasse = [];
+    private bool _dieKartenklasseIstInzwischenVerschwunden;
 
     private readonly Dictionary<long, Kartenklassenzuordnung> _zuordnungJeKarte = [];
     private readonly HashSet<long> _bekannteKarten = [];
@@ -20,6 +24,8 @@ public sealed class TestKartenklassenRepository : IKartenklassenRepository
     public bool WurdeZugeordnet { get; private set; }
 
     public bool WurdeGeloest { get; private set; }
+
+    public bool WurdenKartenGelesen { get; private set; }
 
     public static TestKartenklassenRepository MitBoardOhneKartenklassen(long boardId)
     {
@@ -61,6 +67,39 @@ public sealed class TestKartenklassenRepository : IKartenklassenRepository
         }
 
         return kartenklassen;
+    }
+
+    // Die Karten je Kartenklasse, wie der Leser sie liefert: in Nummernfolge und samt ihrem Ort.
+    public TestKartenklassenRepository MitKartenDerKartenklasse(long kartenklasseId, params Klassenkarte[] karten)
+    {
+        _kartenJeKartenklasse[kartenklasseId] = [.. karten];
+        return this;
+    }
+
+    // Bildet das Rennen zwischen Prüfung und Lesen ab: der Dienst hat die Kartenklasse am Board
+    // gesehen, beim Lesen der Karten gibt es sie dort nicht mehr.
+    public TestKartenklassenRepository MitVerschwundenerKartenklasse()
+    {
+        _dieKartenklasseIstInzwischenVerschwunden = true;
+        return this;
+    }
+
+    public IReadOnlyList<Klassenkarte>? LadeKartenDerKartenklasse(long boardId, long kartenklasseId, Archivierung archivstand)
+    {
+        WurdenKartenGelesen = true;
+        var boardDerKartenklasse = BoardDerKartenklasse(kartenklasseId);
+        var dieKartenklasseGehoertNichtZuDiesemBoard = _dieKartenklasseIstInzwischenVerschwunden || boardDerKartenklasse is null || boardDerKartenklasse.Value != boardId;
+        if (dieKartenklasseGehoertNichtZuDiesemBoard)
+        {
+            return null; // stil-check: C25 wie im echten Repository: null heißt „Kartenklasse unbekannt oder fremd“, die leere Liste „ohne Karten“
+        }
+
+        if (!_kartenJeKartenklasse.TryGetValue(kartenklasseId, out var karten))
+        {
+            return [];
+        }
+
+        return karten;
     }
 
     public TestKartenklassenRepository MitKarte(long karteId)

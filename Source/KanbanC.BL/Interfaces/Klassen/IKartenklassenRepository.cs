@@ -1,5 +1,6 @@
 using KanbanC.BL.Models;
 using KanbanC.BL.Models.Klassen;
+using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Klassen;
 
 namespace KanbanC.BL.Interfaces.Klassen;
@@ -9,6 +10,11 @@ public interface IKartenklassenRepository
     IReadOnlyList<Kartenklasse>? LadeAlle(long boardId);
 
     Ergebnis<Kartenklasse>? LegeAn(long boardId, KartenklasseAnlegenAnfrage anfrage);
+
+    // Die Karten dieser Kartenklasse über alle Spalten des Boards hinweg, in der Ordnung ihres
+    // Nummernkreises und ungekürzt. null heißt: diese Kartenklasse gehört nicht zu diesem Board;
+    // eine Kartenklasse ohne Karten liefert die leere Liste.
+    IReadOnlyList<Klassenkarte>? LadeKartenDerKartenklasse(long boardId, long kartenklasseId, Archivierung archivstand);
 
     // null heißt: diese KartenklasseId gibt es nirgends. Nennt sie ein anderes Board, gehört
     // die Kartenklasse einem fremden — der Unterschied zwischen „gibt es nicht“ und „gibt es,

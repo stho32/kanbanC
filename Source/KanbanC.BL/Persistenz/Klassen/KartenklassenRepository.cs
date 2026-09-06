@@ -5,6 +5,8 @@ using KanbanC.BL.Interfaces.Persistenz;
 using KanbanC.BL.Models;
 using KanbanC.BL.Models.Klassen;
 using KanbanC.BL.Operations.Klassen;
+using KanbanC.BL.Persistenz.Karten;
+using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Fehler;
 using KanbanC.Contracts.Klassen;
 using Microsoft.Data.Sqlite;
@@ -102,6 +104,21 @@ public sealed class KartenklassenRepository : IKartenklassenRepository
               FROM Board
              WHERE BoardId = @BoardId", new { BoardId = boardId }, transaktion);
         return anzahl > 0;
+    }
+
+    // Die Zugehörigkeit steht vor dem Lesen: die Karten einer fremden Kartenklasse werden gar
+    // nicht erst geholt.
+    public IReadOnlyList<Klassenkarte>? LadeKartenDerKartenklasse(long boardId, long kartenklasseId, Archivierung archivstand)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+
+        var kartenklasseGehoertNichtZumBoard = Kartenklassenleser.LiesKartenklasseDesBoards(verbindung, null, boardId, kartenklasseId) is null;
+        if (kartenklasseGehoertNichtZumBoard)
+        {
+            return null; // stil-check: C25 null heißt „Kartenklasse unbekannt oder fremd“ (404); die leere Liste heißt „Kartenklasse ohne Karten“
+        }
+
+        return Kartenleser.LiesKartenDerKartenklasse(verbindung, null, kartenklasseId, archivstand);
     }
 
     public long? BoardDerKartenklasse(long kartenklasseId)
