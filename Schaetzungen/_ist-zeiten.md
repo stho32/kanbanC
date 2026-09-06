@@ -288,3 +288,4 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-06 | R00020 Datei an Karte haengen | B0269 Bytes ablegen, lesen und entfernen | Standard | 0,4h | 0,1h | 0,1h | autonom |
 | 2026-09-06 | R00020 Datei an Karte haengen | B0270 Anhangs-Anfrage pruefen | Standard | 0,4h | 0,1h | 0,1h | autonom |
 | 2026-09-06 | R00020 Datei an Karte haengen | B0271 Anhaenge am Kartendetail lesen | Standard | 0,4h | 0,2h | 0,2h | autonom |
+| 2026-09-06 | R00020 Datei an Karte haengen | B0272 Anhang anlegen | Standard | 0,4-1,5h | 0,2h | 0,2h | autonom |

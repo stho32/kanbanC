@@ -254,6 +254,26 @@ public sealed class TestKartenRepository : IKartenRepository
         return _kartendetail;
     }
 
+    public AnhangAnlegenAnfrage? ErhaltenerAnhang { get; private set; }
+
+    public long? AbgelegteBytes { get; private set; }
+
+    // Wie das echte Repository: eine Zeile mehr und Bytes daneben, zurueck kommt das gelesene
+    // Detail; null heisst „diese KarteId gibt es nicht". Der Strom wird gelesen, damit ein Test
+    // sieht, ob nach einer Zurueckweisung ueberhaupt etwas geflossen ist.
+    public Kartendetail? HaengeAnhangAn(long karteId, AnhangAnlegenAnfrage anfrage, Stream inhalt)
+    {
+        GeaenderteKarteId = karteId;
+        ErhaltenerAnhang = anfrage;
+        AbgelegteBytes = inhalt.Length;
+        if (_karteFehltAnDieserStelle)
+        {
+            return null;
+        }
+
+        return _kartendetail;
+    }
+
     public IReadOnlyList<Karte> Karten(long spalteId)
     {
         if (!_kartenJeSpalte.TryGetValue(spalteId, out var karten))

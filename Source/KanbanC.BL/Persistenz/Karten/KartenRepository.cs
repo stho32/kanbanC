@@ -330,6 +330,62 @@ public sealed class KartenRepository : IKartenRepository
             VALUES (@Karte, @Kontributor, @Text, @Zeitpunkt)", parameter, transaktion);
     }
 
+    // Eine Zeile mehr und Bytes daneben, Muster SchreibeKommentar — mit einem Unterschied, der
+    // die Reihenfolge bestimmt: **Zeile, dann Bytes, dann Commit.** Die AnhangId aus dem INSERT
+    // ist der Name der Datei auf der Platte, es geht also gar nicht anders herum; und jeder
+    // Abbruch hinterlaesst damit hoechstens eine verwaiste Datei — nie eine Zeile, deren Anhang
+    // beim Klick zerbricht.
+    public Kartendetail? HaengeAnhangAn(long karteId, AnhangAnlegenAnfrage anfrage, Stream inhalt)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+        using var transaktion = verbindung.BeginTransaction();
+
+        var dieKarteGibtEsNicht = !GibtEsDieKarte(verbindung, transaktion, karteId);
+        if (dieKarteGibtEsNicht)
+        {
+            return null; // stil-check: C25 null heisst "diese Karte gibt es nicht" (404)
+        }
+
+        var dateiname = Anhangname.Normalisiert(anfrage.Dateiname);
+        var anhangId = FuegeAnhangEin(verbindung, transaktion, karteId, dateiname, anfrage.Kontributor, Jetzt());
+        var ablagepfad = Anhangpfad.FuerAnhang(verbindung.ConnectionString, karteId, anhangId);
+        var geschriebeneGroesse = Anhangablage.Lege(ablagepfad, inhalt);
+        SchreibeDateigroesse(verbindung, transaktion, anhangId, geschriebeneGroesse);
+        var detail = Kartenleser.LiesKartendetail(verbindung, transaktion, karteId);
+        transaktion.Commit();
+        return detail;
+    }
+
+    // Die Zeile entsteht mit der Groesse 0 und bekommt sie danach: die AnhangId muss vor dem
+    // Schreiben feststehen, weil sie der Dateiname ist — und die Groesse steht erst fest,
+    // nachdem der Strom auf der Platte liegt. Sichtbar wird der Zwischenstand nie, beides
+    // geschieht in derselben Transaktion.
+    // Der Zeitpunkt geht als ISO-Text durch die Spalte, wie beim Kommentar.
+    private static long FuegeAnhangEin(IDbConnection verbindung, IDbTransaction transaktion, long karteId, string dateiname, long kontributorId, DateTimeOffset zeitpunkt)
+    {
+        var parameter = new
+        {
+            Karte = karteId,
+            Kontributor = kontributorId,
+            Dateiname = dateiname,
+            Zeitpunkt = zeitpunkt.ToUniversalTime().ToString(IsoZeitpunktformat, CultureInfo.InvariantCulture),
+        };
+        return verbindung.ExecuteScalar<long>(@"
+            INSERT INTO Anhang (Karte, Kontributor, Dateiname, Dateigroesse, Zeitpunkt)
+            VALUES (@Karte, @Kontributor, @Dateiname, 0, @Zeitpunkt);
+            SELECT last_insert_rowid();", parameter, transaktion);
+    }
+
+    // Gespeichert wird, was tatsaechlich geschrieben wurde, und nicht, was der Aufrufer gemeldet
+    // hat: eine gemeldete Zahl waere eine zweite Wahrheit ueber dieselbe Datei.
+    private static void SchreibeDateigroesse(IDbConnection verbindung, IDbTransaction transaktion, long anhangId, long dateigroesse)
+    {
+        verbindung.Execute(@"
+            UPDATE Anhang
+               SET Dateigroesse = @Dateigroesse
+             WHERE AnhangId = @AnhangId", new { AnhangId = anhangId, Dateigroesse = dateigroesse }, transaktion);
+    }
+
     // Die Zahl der geaenderten Zeilen ist zugleich die Auskunft, ob es die Karte gibt: ein
     // zweiter Zaehlaufruf davor waere dieselbe Frage ein zweites Mal.
     private static bool SchreibeTitel(IDbConnection verbindung, IDbTransaction transaktion, long karteId, string titel)

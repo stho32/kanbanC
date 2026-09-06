@@ -41,6 +41,11 @@ public interface IKartenRepository
     // Der Urheber ist Pflicht und steckt in der Anfrage — einen Kommentar ohne ihn gibt es nicht.
     Kartendetail? SchreibeKommentar(long karteId, KommentarSchreibenAnfrage anfrage);
 
+    // Haengt **eine** Datei an: die Zeile entsteht zuerst, ihre Nummer ist der Name der Datei auf
+    // der Platte, die Bytes gehen danach im Strom dorthin. Zurueck kommt das ganze Kartendetail.
+    // null heisst: diese KarteId gibt es nicht. Der Urheber ist Pflicht und steckt in der Anfrage.
+    Kartendetail? HaengeAnhangAn(long karteId, AnhangAnlegenAnfrage anfrage, Stream inhalt);
+
     // null heisst „diese Spalte gibt es an dieser Stelle nicht"; eine Spalte ohne Karten liefert
     // die leere Liste.
     IReadOnlyList<Karte>? LadeKartenDerSpalte(long boardId, long spalteId, Archivierung archivstand);

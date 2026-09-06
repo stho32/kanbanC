@@ -1810,6 +1810,285 @@ public class KartenRepositoryTests
         Assert.That(detail!.Anhaenge.Select(anhang => anhang.Dateiname), Is.EqualTo(new[] { "wbs-export.md" }));
     }
 
+    // Der Beleg fuer die gewaehlte Reihenfolge: nicht die Antwort wird geprueft, sondern das
+    // Dateisystem — die Datei liegt wirklich unter <Ordner>/<KarteId>/<AnhangId>, ohne Endung.
+    [Test]
+    public void Wenn_ein_Anhang_angehaengt_wird_dann_liegt_die_Datei_unter_der_KarteId_und_der_AnhangId_ohne_Endung()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        using var ablage = new Ablageordner(datenbank);
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+        var inhalt = Bytes(41000);
+
+        var detail = repository.HaengeAnhangAn(karte!.KarteId, new AnhangAnlegenAnfrage("wbs-export.md", 41000, stefan), new MemoryStream(inhalt));
+
+        var anhangId = detail!.Anhaenge[0].AnhangId;
+        var pfad = Path.Combine(ablage.Pfad, karte.KarteId.ToString(CultureInfo.InvariantCulture), anhangId.ToString(CultureInfo.InvariantCulture));
+        Assert.Multiple(() =>
+        {
+            Assert.That(File.Exists(pfad), Is.True, $"Unter {pfad} liegt keine Datei.");
+            Assert.That(File.Exists(pfad + ".md"), Is.False, "Die Datei traegt eine Endung.");
+            Assert.That(File.ReadAllBytes(pfad), Is.EqualTo(inhalt));
+        });
+    }
+
+    // Die Bytes stehen nicht in der Datenbank: die Datei waechst um den Anhang, die Datenbank
+    // nicht.
+    [Test]
+    public void Wenn_ein_grosser_Anhang_angehaengt_wird_dann_waechst_die_Datenbankdatei_nicht_um_seine_Bytes()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        using var ablage = new Ablageordner(datenbank);
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+        var fuenfMegabyte = 5 * 1024 * 1024;
+        var vorher = new FileInfo(datenbank.Dateipfad).Length;
+
+        repository.HaengeAnhangAn(karte!.KarteId, new AnhangAnlegenAnfrage("burndown-r2.png", fuenfMegabyte, stefan), new MemoryStream(Bytes(fuenfMegabyte)));
+
+        var zuwachs = new FileInfo(datenbank.Dateipfad).Length - vorher;
+        Assert.That(zuwachs, Is.LessThan(fuenfMegabyte), "Die Datenbankdatei ist um die Bytes gewachsen.");
+    }
+
+    // Das Rechenbeispiel aus US-4: die gemeldete Laenge zaehlt nicht, gespeichert wird die
+    // geschriebene.
+    [Test]
+    public void Wenn_eine_falsche_Laenge_gemeldet_wird_dann_steht_die_geschriebene_Groesse_in_der_Antwort()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        using var ablage = new Ablageordner(datenbank);
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+
+        var detail = repository.HaengeAnhangAn(karte!.KarteId, new AnhangAnlegenAnfrage("wbs-export.md", 99999, stefan), new MemoryStream(Bytes(41000)));
+
+        Assert.That(detail!.Anhaenge[0].Dateigroesse, Is.EqualTo(41000));
+    }
+
+    // Das Zeitfenster statt einer stellbaren Uhr, wie beim Kommentar.
+    [Test]
+    public void Wenn_ein_Anhang_angehaengt_wird_dann_liegt_sein_Zeitpunkt_im_Fenster_des_Aufrufs()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        using var ablage = new Ablageordner(datenbank);
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+        var vorher = DateTimeOffset.UtcNow.AddSeconds(-1);
+
+        var detail = repository.HaengeAnhangAn(karte!.KarteId, new AnhangAnlegenAnfrage("wbs-export.md", 41000, stefan), new MemoryStream(Bytes(41000)));
+
+        var nachher = DateTimeOffset.UtcNow.AddSeconds(1);
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail!.Anhaenge[0].Zeitpunkt, Is.GreaterThanOrEqualTo(vorher));
+            Assert.That(detail.Anhaenge[0].Zeitpunkt, Is.LessThanOrEqualTo(nachher));
+            Assert.That(detail.Anhaenge[0].Zeitpunkt.Offset, Is.EqualTo(TimeSpan.Zero));
+        });
+    }
+
+    [Test]
+    public void Wenn_ein_Anhang_angehaengt_wird_dann_steht_in_der_Spalte_ISO_Text_in_UTC()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        using var ablage = new Ablageordner(datenbank);
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+
+        repository.HaengeAnhangAn(karte!.KarteId, new AnhangAnlegenAnfrage("wbs-export.md", 41000, stefan), new MemoryStream(Bytes(41000)));
+
+        Assert.That(Anhangzeitpunkttexte(datenbank)[0], Does.EndWith("+00:00"));
+        Assert.That(Anhangzeitpunkttexte(datenbank)[0], Has.Length.EqualTo(33), "Feste Breite: nur so sortiert der Text wie die Zeit.");
+    }
+
+    // Der gemeldete Weg eines fremden Rechners steht nirgends: gespeichert wird der letzte
+    // Bestandteil.
+    [Test]
+    public void Wenn_der_gemeldete_Name_einen_Weg_traegt_dann_steht_nur_der_Dateiname_in_der_Zeile()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        using var ablage = new Ablageordner(datenbank);
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+
+        var detail = repository.HaengeAnhangAn(karte!.KarteId, new AnhangAnlegenAnfrage(@"C:\Temp\wbs-export.md", 41000, stefan), new MemoryStream(Bytes(41000)));
+
+        Assert.That(detail!.Anhaenge[0].Dateiname, Is.EqualTo("wbs-export.md"));
+    }
+
+    // Das Rechenbeispiel der Anforderung: a.md, b.png, c.pdf nacheinander angehaengt stehen in
+    // dieser Reihenfolge, jede mit eigener Nummer und eigenen Bytes.
+    [Test]
+    public void Wenn_drei_Anhaenge_nacheinander_angehaengt_werden_dann_stehen_sie_in_Anhaengreihenfolge_mit_eigenen_Bytes()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        using var ablage = new Ablageordner(datenbank);
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+
+        repository.HaengeAnhangAn(karte!.KarteId, new AnhangAnlegenAnfrage("a.md", 10, stefan), new MemoryStream(Bytes(10)));
+        repository.HaengeAnhangAn(karte.KarteId, new AnhangAnlegenAnfrage("b.png", 20, stefan), new MemoryStream(Bytes(20)));
+        var detail = repository.HaengeAnhangAn(karte.KarteId, new AnhangAnlegenAnfrage("c.pdf", 30, stefan), new MemoryStream(Bytes(30)));
+
+        Assert.That(detail!.Anhaenge.Select(anhang => anhang.Dateiname), Is.EqualTo(new[] { "a.md", "b.png", "c.pdf" }));
+        Assert.That(detail.Anhaenge.Select(anhang => anhang.Dateigroesse), Is.EqualTo(new[] { 10L, 20L, 30L }));
+        Assert.That(detail.Anhaenge.Select(anhang => anhang.AnhangId).Distinct().Count(), Is.EqualTo(3));
+    }
+
+    // Zwei Dateien gleichen Namens sind zwei Dateien — mit verschiedenen Nummern und je eigenen
+    // Bytes auf der Platte.
+    [Test]
+    public void Wenn_zweimal_derselbe_Dateiname_angehaengt_wird_dann_stehen_zwei_Zeilen_mit_je_eigenen_Bytes()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        using var ablage = new Ablageordner(datenbank);
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+
+        repository.HaengeAnhangAn(karte!.KarteId, new AnhangAnlegenAnfrage("wbs-export.md", 10, stefan), new MemoryStream(Bytes(10)));
+        var detail = repository.HaengeAnhangAn(karte.KarteId, new AnhangAnlegenAnfrage("wbs-export.md", 20, stefan), new MemoryStream(Bytes(20)));
+
+        Assert.That(detail!.Anhaenge.Select(anhang => anhang.Dateiname), Is.EqualTo(new[] { "wbs-export.md", "wbs-export.md" }));
+        Assert.That(detail.Anhaenge[0].AnhangId, Is.Not.EqualTo(detail.Anhaenge[1].AnhangId));
+        Assert.That(detail.Anhaenge.Select(anhang => anhang.Dateigroesse), Is.EqualTo(new[] { 10L, 20L }));
+    }
+
+    [Test]
+    public void Wenn_die_KarteId_unbekannt_ist_dann_liefert_HaengeAnhangAn_null_und_legt_weder_Zeile_noch_Datei_an()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        using var ablage = new Ablageordner(datenbank);
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+
+        Assert.That(repository.HaengeAnhangAn(999, new AnhangAnlegenAnfrage("wbs-export.md", 41000, stefan), new MemoryStream(Bytes(41000))), Is.Null);
+        Assert.That(Anhangzeilen(datenbank), Is.Zero);
+        Assert.That(Directory.Exists(ablage.Pfad), Is.False);
+    }
+
+    // Der Aufraeumpfad gehoert in denselben Test wie die Reihenfolge: bricht das Schreiben der
+    // Bytes ab, bleibt keine Zeile stehen — hoechstens eine verwaiste Datei.
+    [Test]
+    public void Wenn_das_Schreiben_der_Bytes_abbricht_dann_bleibt_keine_Zeile_ohne_Datei_zurueck()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        using var ablage = new Ablageordner(datenbank);
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+
+        Assert.Throws<IOException>(() => repository.HaengeAnhangAn(karte!.KarteId, new AnhangAnlegenAnfrage("wbs-export.md", 41000, stefan), new AbbrechenderStrom()));
+
+        Assert.That(Anhangzeilen(datenbank), Is.Zero);
+        Assert.That(repository.LiesKartendetail(karte!.KarteId)!.Anhaenge, Is.Empty);
+    }
+
+    private static long Anhangzeilen(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.ExecuteScalar<long>("SELECT COUNT(*) FROM Anhang");
+    }
+
+    private static string[] Anhangzeitpunkttexte(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.Query<string>(@"
+            SELECT Zeitpunkt
+              FROM Anhang
+             ORDER BY AnhangId").ToArray();
+    }
+
+    private static byte[] Bytes(int laenge)
+    {
+        var inhalt = new byte[laenge];
+        for (var stelle = 0; stelle < laenge; stelle++)
+        {
+            inhalt[stelle] = (byte)(stelle % 251);
+        }
+
+        return inhalt;
+    }
+
+    // Der Ablageordner der temporaeren Datenbank: er entsteht mit dem ersten Anhang und wird
+    // nach dem Test wieder abgeraeumt — kein Test laesst Dateien im Ablageordner stehen.
+    private sealed class Ablageordner : IDisposable
+    {
+        public Ablageordner(TemporaereDatenbank datenbank)
+        {
+            Pfad = datenbank.Dateipfad + "-Files";
+        }
+
+        public string Pfad { get; }
+
+        public void Dispose()
+        {
+            var derOrdnerIstEntstanden = Directory.Exists(Pfad);
+            if (derOrdnerIstEntstanden)
+            {
+                Directory.Delete(Pfad, recursive: true);
+            }
+        }
+    }
+
+    // Ein Strom, der mitten im Kopieren abbricht: die Fault-Injection fuer den Aufraeumpfad.
+    private sealed class AbbrechenderStrom : Stream
+    {
+        public override bool CanRead => true;
+
+        public override bool CanSeek => false;
+
+        public override bool CanWrite => false;
+
+        public override long Length => throw new NotSupportedException();
+
+        public override long Position
+        {
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
+        }
+
+        public override int Read(byte[] puffer, int versatz, int anzahl)
+        {
+            throw new IOException("Die Leitung ist mitten im Hochladen abgerissen.");
+        }
+
+        public override void Flush()
+        {
+        }
+
+        public override long Seek(long versatz, SeekOrigin ursprung)
+        {
+            throw new NotSupportedException();
+        }
+
+        public override void SetLength(long laenge)
+        {
+            throw new NotSupportedException();
+        }
+
+        public override void Write(byte[] puffer, int versatz, int anzahl)
+        {
+            throw new NotSupportedException();
+        }
+    }
+
     private static void FuegeAnhangEin(TemporaereDatenbank datenbank, long karteId, long kontributorId, string dateiname, long dateigroesse, string zeitpunkt)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
