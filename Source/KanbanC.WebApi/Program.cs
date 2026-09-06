@@ -44,6 +44,8 @@ var app = builder.Build();
 
 app.Services.GetRequiredService<Migrationslaeufer>().FuehreAus();
 
+Anhangsgrenzenwaechter.Registriere(app);
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();

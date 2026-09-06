@@ -15,6 +15,11 @@ public sealed class TemporaereDatenbank : IDisposable
 
     public SqliteVerbindungsfabrik Verbindungsfabrik { get; }
 
+    // Der Ablageordner der Anhaenge liegt neben der Datenbankdatei und wird von der Anwendung
+    // beim ersten Anhang angelegt. Der Test kennt seinen Namen, damit er am Dateisystem pruefen
+    // kann — und damit er ihn wieder abraeumt.
+    public string Ablageordner => Dateipfad + "-Files";
+
     public TemporaereDatenbank MitSchema()
     {
         new Migrationslaeufer(Verbindungsfabrik).FuehreAus();
@@ -24,5 +29,10 @@ public sealed class TemporaereDatenbank : IDisposable
     public void Dispose()
     {
         File.Delete(Dateipfad);
+        var derAblageordnerIstEntstanden = Directory.Exists(Ablageordner);
+        if (derAblageordnerIstEntstanden)
+        {
+            Directory.Delete(Ablageordner, recursive: true);
+        }
     }
 }

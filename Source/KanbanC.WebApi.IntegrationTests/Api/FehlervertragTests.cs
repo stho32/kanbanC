@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
@@ -277,6 +279,36 @@ public class FehlervertragTests
             "Kommentar schreiben mit stillgelegter KontributorId",
             await webApi.Klient.PostAsJsonAsync($"/api/karten/{aufbau.Karte.KarteId}/kommentare", new KommentarSchreibenAnfrage("Bitte prüfen", aufbau.Stillgelegter.KontributorId))));
 
+        faelle.Add(new Fehlerfall(
+            "POST /api/karten/{karteId:long}/anhaenge",
+            "Datei anhängen mit leerer Datei",
+            await webApi.Klient.PostAsync($"/api/karten/{aufbau.Karte.KarteId}/anhaenge", Anhangrumpf([], "leer.md", aufbau.Kontributor.KontributorId))));
+
+        faelle.Add(new Fehlerfall(
+            "POST /api/karten/{karteId:long}/anhaenge",
+            "Datei anhängen mit unbekannter KarteId",
+            await webApi.Klient.PostAsync("/api/karten/999/anhaenge", Anhangrumpf([1, 2, 3], "wbs-export.md", aufbau.Kontributor.KontributorId))));
+
+        faelle.Add(new Fehlerfall(
+            "POST /api/karten/{karteId:long}/anhaenge",
+            "Datei anhängen mit unbekannter KontributorId",
+            await webApi.Klient.PostAsync($"/api/karten/{aufbau.Karte.KarteId}/anhaenge", Anhangrumpf([1, 2, 3], "wbs-export.md", 999))));
+
+        faelle.Add(new Fehlerfall(
+            "POST /api/karten/{karteId:long}/anhaenge",
+            "Datei anhängen mit stillgelegter KontributorId",
+            await webApi.Klient.PostAsync($"/api/karten/{aufbau.Karte.KarteId}/anhaenge", Anhangrumpf([1, 2, 3], "wbs-export.md", aufbau.Stillgelegter.KontributorId))));
+
+        faelle.Add(new Fehlerfall(
+            "GET /api/karten/{karteId:long}/anhaenge/{anhangId:long}",
+            "Anhang lesen mit unbekannter AnhangId",
+            await webApi.Klient.GetAsync($"/api/karten/{aufbau.Karte.KarteId}/anhaenge/999")));
+
+        faelle.Add(new Fehlerfall(
+            "DELETE /api/karten/{karteId:long}/anhaenge/{anhangId:long}",
+            "Anhang entfernen mit unbekannter AnhangId",
+            await webApi.Klient.DeleteAsync($"/api/karten/{aufbau.Karte.KarteId}/anhaenge/999")));
+
         return faelle;
     }
 
@@ -308,6 +340,16 @@ public class FehlervertragTests
         var stillgelegt = await webApi.Klient.PutAsJsonAsync($"{KontributorenRoute}/{maria!.KontributorId}/stilllegung", new Stilllegung(true));
         stillgelegt.EnsureSuccessStatusCode();
         return new Aufbau(board, karte!, kontributor!, maria);
+    }
+
+    private static MultipartFormDataContent Anhangrumpf(byte[] inhalt, string dateiname, long kontributorId)
+    {
+        var rumpf = new MultipartFormDataContent();
+        var datei = new ByteArrayContent(inhalt);
+        datei.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+        rumpf.Add(datei, "datei", dateiname);
+        rumpf.Add(new StringContent(kontributorId.ToString(CultureInfo.InvariantCulture)), "kontributor");
+        return rumpf;
     }
 
     private sealed record Aufbau(Board Board, Karte Karte, Kontributor Kontributor, Kontributor Stillgelegter);

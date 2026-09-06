@@ -3,6 +3,7 @@ using KanbanC.BL.Operations.Boards;
 using KanbanC.BL.Operations.Fehler;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
+using Microsoft.AspNetCore.Mvc;
 
 namespace KanbanC.WebApi.Endpunkte;
 
@@ -38,6 +39,14 @@ public static class KartenEndpunkte
     // Kommentarzeile, und eine Route, die niemand ruft, waere tote Flexibilitaet.
     private const string Kommentarroute = "/api/karten/{karteId:long}/kommentare";
 
+    // Dieselbe boardlose Kartenadresse, eine Unterressource weiter — und die einzige, deren
+    // zweite Route keine JSON liefert, sondern die Bytes selbst. Drei Routen und nicht eine wie
+    // beim Kommentar: ein Anhang, den niemand entfernen kann, belegt dauerhaft Platz auf
+    // derselben Platte wie die Datenbank.
+    private const string Anhangroute = "/api/karten/{karteId:long}/anhaenge";
+    private const string Anhanginhaltsroute = "/api/karten/{karteId:long}/anhaenge/{anhangId:long}";
+    private const string Anhanginhaltstyp = "application/octet-stream";
+
     public static void Registriere(IEndpointRouteBuilder routen)
     {
         routen.MapGet(Kartenroute, LiesKartendetail).WithName("KartendetailLesen");
@@ -46,6 +55,14 @@ public static class KartenEndpunkte
         routen.MapPost(Teilaufgabenroute, LegeTeilaufgabeAn).WithName("TeilaufgabeAnlegen");
         routen.MapPut(Teilaufgabenstandsroute, SetzeAbhakung).WithName("TeilaufgabenstandSetzen");
         routen.MapPost(Kommentarroute, SchreibeKommentar).WithName("KommentarSchreiben");
+
+        // DisableAntiforgery, weil eine Minimal-API-Route mit Formularbindung Antiforgery-
+        // Metadaten traegt und ohne die Middleware schon beim ersten Aufruf scheitert (belegt in
+        // DateiwegProbeTests). Die Anwendung laeuft im Full-Trust-Modell ohne Anmeldung; ein
+        // Antiforgery-Token haette hier nichts zu schuetzen, und ein Agent traegt keins.
+        routen.MapPost(Anhangroute, HaengeAnhangAn).WithName("AnhangAnhaengen").DisableAntiforgery();
+        routen.MapGet(Anhanginhaltsroute, LiesAnhang).WithName("AnhangLesen");
+        routen.MapDelete(Anhanginhaltsroute, EntferneAnhang).WithName("AnhangEntfernen");
         routen.MapGet(Basisroute, LiesKartenDerSpalte).WithName("KartenDerSpalteLesen");
         routen.MapPost(Basisroute, LegeKarteAn).WithName("KarteAnlegen");
         routen.MapPut(Lageroute, VerschiebeKarte).WithName("KarteVerschieben");
@@ -126,6 +143,53 @@ public static class KartenEndpunkte
     private static IResult SchreibeKommentar(long karteId, KommentarSchreibenAnfrage anfrage, KartenService kartenService)
     {
         var ergebnis = kartenService.SchreibeKommentar(karteId, anfrage);
+        if (ergebnis.IstErfolg)
+        {
+            return Results.Ok(ergebnis.Wert);
+        }
+
+        return Zurueckweisungen.AlsFehlerantwort(ergebnis.Befunde);
+    }
+
+    // **200 statt 201** und mit dem ganzen Kartendetail, wie beim Kommentar. Datei und Urheber
+    // reisen im **selben** multipart-Rumpf; das Formularfeld braucht [FromForm], weil ein
+    // einfacher Typ ohne Attribut aus der Query gebunden wuerde und der Aufruf dann mit 400 endet
+    // (belegt in DateiwegProbeTests).
+    // Die gemeldete Laenge geht nur in die Pruefung — gespeichert wird, was die Ablage wirklich
+    // geschrieben hat.
+    private static IResult HaengeAnhangAn(long karteId, IFormFile datei, [FromForm] long kontributor, KartenService kartenService)
+    {
+        using var inhalt = datei.OpenReadStream();
+        var anfrage = new AnhangAnlegenAnfrage(datei.FileName, datei.Length, kontributor);
+        var ergebnis = kartenService.HaengeAnhangAn(karteId, anfrage, inhalt);
+        if (ergebnis.IstErfolg)
+        {
+            return Results.Ok(ergebnis.Wert);
+        }
+
+        return Zurueckweisungen.AlsFehlerantwort(ergebnis.Befunde);
+    }
+
+    // Die einzige Route dieses Slices, die keine JSON liefert. Der Fehlerweg bleibt trotzdem
+    // derselbe: ein Befund mit Code, Meldung und Kompensation.
+    // Der Originalname aus der Spalte geht in den Content-Disposition-Kopf; der Inhaltstyp ist
+    // application/octet-stream, weil der Browser die Datei speichern und nicht anzeigen soll.
+    private static IResult LiesAnhang(long karteId, long anhangId, KartenService kartenService)
+    {
+        var ergebnis = kartenService.LiesAnhang(karteId, anhangId);
+        if (ergebnis.IstErfolg)
+        {
+            return Results.File(ergebnis.Wert.Inhalt, Anhanginhaltstyp, ergebnis.Wert.Dateiname);
+        }
+
+        return Zurueckweisungen.AlsFehlerantwort(ergebnis.Befunde);
+    }
+
+    // Dieselbe Antwortgestalt wie das Anhaengen, weil dieselbe Seite sie verbraucht. Entfernt
+    // werden Zeile **und** Datei; ein zweiter Aufruf derselben Nummer meldet ein fehlendes Ding.
+    private static IResult EntferneAnhang(long karteId, long anhangId, KartenService kartenService)
+    {
+        var ergebnis = kartenService.EntferneAnhang(karteId, anhangId);
         if (ergebnis.IstErfolg)
         {
             return Results.Ok(ergebnis.Wert);

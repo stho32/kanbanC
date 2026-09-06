@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
@@ -198,6 +200,75 @@ public class WebApiNeustartTests
             Assert.That(detail.Kommentare.Select(kommentar => kommentar.Zeitpunkt), Is.EqualTo(vorDemNeustart.Kommentare.Select(kommentar => kommentar.Zeitpunkt)));
             Assert.That(detail.Kommentare.Select(kommentar => kommentar.Urheber.Name), Is.EqualTo(new[] { "Stefan", "Claude-Agent", "Stefan" }));
         });
+    }
+
+    // **Und die Bytes**: ein Neustart darf die Liste nicht ueberleben lassen, waehrend die Dateien
+    // daneben verschwinden. Geprueft wird deshalb auch der Download nach dem Neustart.
+    [Test]
+    public async Task Wenn_die_WebApi_nach_dem_Anhaengen_neu_startet_dann_stehen_Namen_Groessen_Urheber_Zeitpunkte_Reihenfolge_und_Bytes_unveraendert_da()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        long karteId;
+        Kartendetail vorDemNeustart;
+        var ersterInhalt = Bytes(41000);
+        var zweiterInhalt = Bytes(118000);
+        using (var ersteInstanz = new TestWebApi(datenbank.Dateipfad))
+        {
+            var board = await LegeBoardAn(ersteInstanz, new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null));
+            var karte = await LegeKarteAn(ersteInstanz, board.BoardId, board.Spalten[0].SpalteId, "Playwright-Lizenz klären");
+            karteId = karte.KarteId;
+            var stefan = await LegeKontributorAn(ersteInstanz, new KontributorAnlegenAnfrage("Stefan", Kontributorart.Mensch));
+            var agent = await LegeKontributorAn(ersteInstanz, new KontributorAnlegenAnfrage("Claude-Agent", Kontributorart.Agent));
+            await HaengeAn(ersteInstanz, karteId, "wbs-export.md", ersterInhalt, stefan.KontributorId);
+            vorDemNeustart = await HaengeAn(ersteInstanz, karteId, "burndown-r2.png", zweiterInhalt, agent.KontributorId);
+        }
+
+        using var zweiteInstanz = new TestWebApi(datenbank.Dateipfad);
+
+        var detail = await zweiteInstanz.Klient.GetFromJsonAsync<Kartendetail>($"/api/karten/{karteId}");
+        Assert.That(detail, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail!.Anhaenge.Select(anhang => anhang.Dateiname), Is.EqualTo(vorDemNeustart.Anhaenge.Select(anhang => anhang.Dateiname)));
+            Assert.That(detail.Anhaenge.Select(anhang => anhang.Dateigroesse), Is.EqualTo(new[] { 41000L, 118000L }));
+            Assert.That(detail.Anhaenge.Select(anhang => anhang.AnhangId), Is.EqualTo(vorDemNeustart.Anhaenge.Select(anhang => anhang.AnhangId)));
+            Assert.That(detail.Anhaenge.Select(anhang => anhang.Urheber), Is.EqualTo(vorDemNeustart.Anhaenge.Select(anhang => anhang.Urheber)));
+            Assert.That(detail.Anhaenge.Select(anhang => anhang.Zeitpunkt), Is.EqualTo(vorDemNeustart.Anhaenge.Select(anhang => anhang.Zeitpunkt)));
+            Assert.That(detail.Anhaenge.Select(anhang => anhang.Urheber.Name), Is.EqualTo(new[] { "Stefan", "Claude-Agent" }));
+        });
+
+        using var geladen = await zweiteInstanz.Klient.GetAsync($"/api/karten/{karteId}/anhaenge/{detail!.Anhaenge[0].AnhangId}");
+        geladen.EnsureSuccessStatusCode();
+        Assert.That(await geladen.Content.ReadAsByteArrayAsync(), Is.EqualTo(ersterInhalt));
+    }
+
+    private static async Task<Kartendetail> HaengeAn(TestWebApi webApi, long karteId, string dateiname, byte[] inhalt, long kontributorId)
+    {
+        var rumpf = new MultipartFormDataContent();
+        var datei = new ByteArrayContent(inhalt);
+        datei.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+        rumpf.Add(datei, "datei", dateiname);
+        rumpf.Add(new StringContent(kontributorId.ToString(CultureInfo.InvariantCulture)), "kontributor");
+        var antwort = await webApi.Klient.PostAsync($"/api/karten/{karteId}/anhaenge", rumpf);
+        antwort.EnsureSuccessStatusCode();
+        var detail = await antwort.Content.ReadFromJsonAsync<Kartendetail>();
+        if (detail is null)
+        {
+            throw new InvalidOperationException("Die API hat kein Kartendetail zurückgegeben.");
+        }
+
+        return detail;
+    }
+
+    private static byte[] Bytes(int laenge)
+    {
+        var inhalt = new byte[laenge];
+        for (var stelle = 0; stelle < laenge; stelle++)
+        {
+            inhalt[stelle] = (byte)(stelle % 251);
+        }
+
+        return inhalt;
     }
 
     private static async Task<Kartendetail> SchreibeKommentar(TestWebApi webApi, long karteId, string text, long kontributorId)

@@ -7,6 +7,8 @@ namespace KanbanC.BL.Operations.Karten;
 
 public static class AnhangValidator
 {
+    private const string ZuGross = "anhang-zu-gross";
+
     // Wie beim Kommentar- und beim TeilaufgabenValidator nennt die Kompensation die Route des
     // Aufrufers samt seiner Nummer. **Kein Dublettenbefund:** zwei Dateien gleichen Namens an
     // derselben Karte sind zwei Dateien — auf der Platte kollidieren sie ohnehin nicht, weil sie
@@ -41,11 +43,24 @@ public static class AnhangValidator
         {
             var grenze = Anhangsgrenze.HoechsteDateigroesse.ToString(CultureInfo.InvariantCulture);
             befunde.Add(new Fehlerbefund(
-                "anhang-zu-gross",
+                ZuGross,
                 $"Ein Anhang darf höchstens {grenze} Bytes groß sein; diese Datei meldet {anfrage.Dateigroesse.ToString(CultureInfo.InvariantCulture)} Bytes.",
                 $"`{anhangroute}` mit einer Datei von höchstens {grenze} Bytes wiederholen."));
         }
 
         return new Pruefbefunde(befunde);
+    }
+
+    // Derselbe Befund für den Fall, in dem der Rahmen den Rumpf schon abgebrochen hat, bevor die
+    // Anwendung ihn sah: die gemeldete Größe ist dann unbekannt, die Obergrenze ist es nicht.
+    // Ohne diesen Weg käme an der Route eine Fehlerantwort ohne Befund heraus — und genau das
+    // schließt der Vertrag aus R00007 aus.
+    public static Fehlerbefund RumpfUeberDerGrenze(long karteId)
+    {
+        var grenze = Anhangsgrenze.HoechsteDateigroesse.ToString(CultureInfo.InvariantCulture);
+        return new Fehlerbefund(
+            ZuGross,
+            $"Der Rumpf des Aufrufs überschreitet die Obergrenze von {grenze} Bytes je Anhang und wurde abgebrochen.",
+            $"`POST /api/karten/{karteId}/anhaenge` mit einer Datei von höchstens {grenze} Bytes wiederholen.");
     }
 }
