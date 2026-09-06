@@ -639,4 +639,119 @@ public class KartenApiKlientTests
             Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("Kommentar"));
         });
     }
+
+    // Methode, Adresse und Rumpf des abgesetzten Aufrufs: dass die KontributorId als Formularfeld
+    // im multipart-Rumpf steht und nicht in der Query, ist ueber den Browser nicht pruefbar.
+    [Test]
+    public async Task Wenn_eine_Datei_angehaengt_wird_dann_reisen_Datei_und_Urheber_im_selben_multipart_Rumpf()
+    {
+        const string rumpf = """{"karte":{"karteId":14,"titel":"Playwright-Lizenz klären","position":2},"board":3,"boardname":"Entwicklung","spalte":5,"spaltenbezeichnung":"In Arbeit","anhaenge":[{"anhangId":7,"dateiname":"wbs-export.md","dateigroesse":41000,"urheber":{"kontributorId":3,"name":"Stefan","art":"Mensch","stillgelegtAm":null},"zeitpunkt":"2026-08-30T15:40:12+00:00"}]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.HaengeAnhangAn(14, 3, "wbs-export.md", new MemoryStream("Inhalt"u8.ToArray()));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("POST http://webapi.test/api/karten/14/anhaenge"));
+            Assert.That(fabrik.AbgesetzterAufruf, Does.Not.Contain("?"), "Der Urheber gehoert in den Rumpf, nicht in die Query.");
+            Assert.That(fabrik.GesendeterRumpf, Does.Contain("name=datei"));
+            Assert.That(fabrik.GesendeterRumpf, Does.Contain("wbs-export.md"));
+            Assert.That(fabrik.GesendeterRumpf, Does.Contain("name=kontributor"));
+            Assert.That(fabrik.GesendeterRumpf, Does.Contain("3"));
+            Assert.That(fabrik.GesendeterRumpf, Does.Contain("Inhalt"));
+            Assert.That(fabrik.GesendeterRumpf, Does.Not.Contain("zeitpunkt"), "Den Zeitpunkt setzt die WebApi.");
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_WebApi_den_Anhang_annimmt_dann_reicht_der_Klient_Name_Groesse_Urheber_und_Zeitpunkt_durch()
+    {
+        const string rumpf = """{"karte":{"karteId":14,"titel":"Playwright-Lizenz klären","position":2},"board":3,"boardname":"Entwicklung","spalte":5,"spaltenbezeichnung":"In Arbeit","anhaenge":[{"anhangId":7,"dateiname":"wbs-export.md","dateigroesse":41000,"urheber":{"kontributorId":3,"name":"Claude-Agent","art":"Agent","stillgelegtAm":"2026-08-12"},"zeitpunkt":"2026-08-30T15:40:12+00:00"}]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.HaengeAnhangAn(14, 3, "wbs-export.md", new MemoryStream([1, 2, 3]));
+
+        var anhang = ergebnis.Wert.Anhaenge[0];
+        Assert.Multiple(() =>
+        {
+            Assert.That(anhang.AnhangId, Is.EqualTo(7));
+            Assert.That(anhang.Dateiname, Is.EqualTo("wbs-export.md"));
+            Assert.That(anhang.Dateigroesse, Is.EqualTo(41000));
+            Assert.That(anhang.Urheber, Is.EqualTo(new Kontributor(3, "Claude-Agent", Kontributorart.Agent, new DateOnly(2026, 8, 12))));
+            Assert.That(anhang.Zeitpunkt, Is.EqualTo(new DateTimeOffset(2026, 8, 30, 15, 40, 12, TimeSpan.Zero)));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_WebApi_den_Anhang_zurueckweist_dann_reicht_der_Klient_ihren_Befund_durch()
+    {
+        const string rumpf = """{"befunde":[{"code":"anhang-zu-gross","meldung":"Ein Anhang darf höchstens 10485760 Bytes groß sein.","kompensation":"`POST /api/karten/14/anhaenge` mit einer kleineren Datei wiederholen."}]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.BadRequest, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.HaengeAnhangAn(14, 3, "film.mp4", new MemoryStream([1, 2, 3]));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.EqualTo("anhang-zu-gross"));
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("10485760"));
+        });
+    }
+
+    // Der 404 dieser Route traegt einen eigenen Befund und darf nicht durch eine Board-Meldung
+    // ersetzt werden — die Route kennt kein Board.
+    [Test]
+    public async Task Wenn_die_Karte_beim_Anhaengen_unbekannt_ist_dann_reicht_der_Klient_den_Befund_der_WebApi_durch()
+    {
+        const string rumpf = """{"befunde":[{"code":"karte-unbekannt","meldung":"Eine Karte mit der Nummer 9999 gibt es nicht.","kompensation":"`GET /api/boards` abrufen."}]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.NotFound, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.HaengeAnhangAn(9999, 3, "wbs-export.md", new MemoryStream([1, 2, 3]));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.EqualTo("karte-unbekannt"));
+        Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("9999"));
+    }
+
+    [Test]
+    public async Task Wenn_ein_Anhang_entfernt_wird_dann_ruft_der_Klient_DELETE_auf_die_Anhangadresse()
+    {
+        const string rumpf = """{"karte":{"karteId":14,"titel":"Playwright-Lizenz klären","position":2},"board":3,"boardname":"Entwicklung","spalte":5,"spaltenbezeichnung":"In Arbeit","anhaenge":[]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.EntferneAnhang(14, 7);
+
+        Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("DELETE http://webapi.test/api/karten/14/anhaenge/7"));
+        Assert.That(ergebnis.Wert.Anhaenge, Is.Empty);
+    }
+
+    [Test]
+    public async Task Wenn_der_Anhang_beim_Entfernen_unbekannt_ist_dann_reicht_der_Klient_den_Befund_der_WebApi_durch()
+    {
+        const string rumpf = """{"befunde":[{"code":"anhang-unbekannt","meldung":"Einen Anhang mit der Nummer 7 gibt es an der Karte 14 nicht.","kompensation":"`GET /api/karten/14` abrufen."}]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.NotFound, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.EntferneAnhang(14, 7);
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.EqualTo("anhang-unbekannt"));
+    }
+
+    // Der Browser laedt die Bytes direkt von der WebApi: der Klient hat dafuer keine Methode.
+    [Test]
+    public void Wenn_der_Klient_durchgesehen_wird_dann_hat_er_keine_Methode_die_Bytes_liest()
+    {
+        var byteMethoden = typeof(KartenApiKlient)
+            .GetMethods()
+            .Where(methode => methode.ReturnType.ToString().Contains("Byte", StringComparison.Ordinal) || methode.ReturnType.ToString().Contains("Stream", StringComparison.Ordinal));
+
+        Assert.That(byteMethoden, Is.Empty);
+    }
 }

@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.Net;
+using System.Net.Http.Headers;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
 
@@ -11,6 +13,12 @@ public sealed class KartenApiKlient
 
     // Ohne Board in der Adresse: wer /karten/14 oeffnet, kennt das Board noch nicht.
     private const string KartenRoute = "api/karten";
+
+    // Die Feldnamen des multipart-Rumpfs sind Vertrag mit der WebApi: dort heissen die Parameter
+    // der Route genauso.
+    private const string Dateifeld = "datei";
+    private const string Urheberfeld = "kontributor";
+    private const string Anhanginhaltstyp = "application/octet-stream";
     private readonly IHttpClientFactory _klientFabrik;
 
     public KartenApiKlient(IHttpClientFactory klientFabrik)
@@ -66,6 +74,35 @@ public sealed class KartenApiKlient
     {
         using var klient = _klientFabrik.CreateClient(KlientName);
         using var antwort = await klient.PostAsJsonAsync($"{KartenRoute}/{karteId}/kommentare", anfrage);
+        return await AlsKartendetail(antwort);
+    }
+
+    // Datei und Urheber reisen im **selben** multipart-Rumpf, wie die WebApi ihn erwartet: das
+    // Feld „datei" traegt die Bytes samt Originalnamen, das Feld „kontributor" die Nummer. Kein
+    // Query-Parameter — der Rumpf ist der Ort, an dem dieses Projekt Kontributoren uebergibt.
+    // Der Strom fliesst durch: er wird nicht vorher in ein Byte-Array gelesen, damit bei 10 MB
+    // kein vermeidbarer Druck auf den Arbeitsspeicher entsteht.
+    // Einen Zeitpunkt schickt der Klient nicht mit — den setzt die WebApi.
+    public async Task<ApiErgebnis<Kartendetail>> HaengeAnhangAn(long karteId, long kontributorId, string dateiname, Stream inhalt)
+    {
+        using var klient = _klientFabrik.CreateClient(KlientName);
+        using var rumpf = new MultipartFormDataContent();
+        using var datei = new StreamContent(inhalt);
+        datei.Headers.ContentType = new MediaTypeHeaderValue(Anhanginhaltstyp);
+        rumpf.Add(datei, Dateifeld, dateiname);
+        rumpf.Add(new StringContent(kontributorId.ToString(CultureInfo.InvariantCulture)), Urheberfeld);
+        using var antwort = await klient.PostAsync($"{KartenRoute}/{karteId}/anhaenge", rumpf);
+        return await AlsKartendetail(antwort);
+    }
+
+    // Zurueck kommt das ganze Kartendetail, wie beim Anhaengen — die Seite behaelt eine Quelle.
+    // **Keine Methode, die Bytes liest:** die holt der Browser direkt von der WebApi. Jede Methode
+    // hier endet in ReadFromJsonAsync, und ein zweiter Rueckweg braechte eine zweite Leseform und
+    // einen Fehlerpfad ohne Befund-Rumpf.
+    public async Task<ApiErgebnis<Kartendetail>> EntferneAnhang(long karteId, long anhangId)
+    {
+        using var klient = _klientFabrik.CreateClient(KlientName);
+        using var antwort = await klient.DeleteAsync($"{KartenRoute}/{karteId}/anhaenge/{anhangId}");
         return await AlsKartendetail(antwort);
     }
 
