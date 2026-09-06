@@ -112,6 +112,8 @@ public sealed class Testumgebung
         _aktuelle = null;
     }
 
+    // Mit der Datei geht der Ablageordner der Anhaenge, der neben ihr entstanden ist: ein Lauf
+    // laesst keine Testdateien liegen.
     private void LoescheDatenbank()
     {
         if (_datenbankDateipfad is null)
@@ -120,6 +122,12 @@ public sealed class Testumgebung
         }
 
         File.Delete(_datenbankDateipfad);
+        var ablageordner = _datenbankDateipfad + "-Files";
+        if (Directory.Exists(ablageordner))
+        {
+            Directory.Delete(ablageordner, recursive: true);
+        }
+
         _datenbankDateipfad = null;
     }
 
