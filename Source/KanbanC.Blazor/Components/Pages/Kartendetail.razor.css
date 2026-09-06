@@ -878,6 +878,148 @@
     opacity: 0.75;
 }
 
+/* Die Handlung und die Ist-Summe teilen sich eine Zeile, wie im Artboard: links der Knopf, rechts
+   die Zahl. */
+.zeitenhandlung {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+/* „Ist 1:22" — ohne „von h:mm Soll": eine Sollzeit gibt es im Bestand nicht. */
+.zeitenist {
+    margin-left: auto;
+    text-align: right;
+    font-size: 11px;
+    line-height: 1.35;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.zeitenistwert {
+    font-size: 15px;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text);
+}
+
+/* Ein Satz statt einer Tabelle voller Nullen, mittig wie im Artboard. */
+.zeitenleerstand {
+    margin: 0;
+    padding-block: var(--space-3);
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.45;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+/* Bilanz und Belege sind zwei Bloecke unter der Handlung; die Linie darueber trennt sie, ohne
+   einen Rahmen zu ziehen. */
+.zeitensummen,
+.zeiteneintraege {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--color-divider);
+}
+
+.zeitensumme {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 13px;
+}
+
+.zeitensummename {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.zeitensummewert {
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+}
+
+.zeiteneintraegekopf {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+}
+
+.zeiteneintraegemarke {
+    font-family: var(--font-heading);
+    font-weight: var(--font-heading-weight);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.zeitenzahl {
+    margin-left: auto;
+    font-size: 11px;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.zeiteneintragsliste {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.zeiteneintrag {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    font-size: 12px;
+    background: var(--color-bg);
+    border-radius: var(--radius-xs);
+}
+
+/* Die Kante links ist eines der drei Merkmale, an denen ein laufender Eintrag ohne Farbvergleich
+   zu erkennen ist — die anderen beiden sind das Wort „laeuft" und das Stoppquadrat. */
+.zeiteneintrag-laeuft {
+    border-left: 3px solid var(--color-accent);
+}
+
+.zeiteneintrag .kuerzel {
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+    font-size: 8px;
+}
+
+.zeiteneintragspanne {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.zeiteneintragsdauer {
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Die einzige Handlung an einer Zeile — und nur an einer laufenden: ein abgeschlossener Eintrag
+   traegt keine, denn Aendern und Loeschen gehoeren I0025. */
+.zeiteneintragstopp {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    background: var(--color-accent);
+    color: var(--color-bg);
+    border: none;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+}
+
 /* Dieselbe Popoverform wie in der Kopfzeile; die Werte kommen aus gestaltung.css. Es steht hier
    ein zweites Mal, statt aus Kopfzeile.razor herauszuwandern — die Kopfzeile bleibt unberuehrt. */
 .identitaetspopover {

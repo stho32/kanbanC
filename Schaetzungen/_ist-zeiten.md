@@ -317,3 +317,4 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-06 | R00025 Karten einer Klasse abrufen | I0022 Lauf gesamt, 4 Bubbles B0315-B0318 (Station S6 ohne Bubble-Commits) | Standard | 2,8-3,9h | 0,7h | 0,7h | autonom |
 | 2026-09-06 | R00026 Timer starten | I0023 Lauf gesamt, 11 Bubbles B0319-B0329 (Station S6 ohne Bubble-Commits) | Standard | 12,4-17,7h | 1,0h | 1,0h | autonom |
 | 2026-09-06 | R00027 Timer stoppen | I0024 Lauf gesamt, 7 Bubbles B0330-B0336 (Station S6 ohne Bubble-Commits) | Standard | 9,2-12,3h | 0,8h | 0,8h | autonom |
+| 2026-09-06 | R00028 Zeiten einer Karte sehen | I0026 Lauf gesamt, 9 Bubbles B0349-B0357 (Station S6 ohne Bubble-Commits) | Standard | 8,4-13,7h | 1,3h | 1,3h | autonom |

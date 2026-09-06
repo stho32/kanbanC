@@ -6,8 +6,8 @@ using Microsoft.Playwright.NUnit;
 namespace KanbanC.PlaywrightTests.Tests;
 
 // US-1 bis US-9 als Rundlauf über die Oberfläche: stoppen, die Plakette verschwinden sehen, neu
-// starten. Der hinterlassene Eintrag mit Beginn, Ende und Kontributor wird an der API geprüft und
-// nicht im Browser — die Liste, die ihn zeigte, gehört I0026.
+// starten. Der hinterlassene Eintrag mit Beginn, Ende und Kontributor wird hier an der API
+// geprüft; wie er in der Einträgeliste erscheint, prüft ZeitenSehenE2ETests.
 [TestFixture]
 public class TimerStoppenE2ETests : PageTest
 {
@@ -38,10 +38,12 @@ public class TimerStoppenE2ETests : PageTest
         await Expect(aufbau.Seite.ZeitenLaeuft).ToHaveCountAsync(0);
     }
 
-    // US-1, letzter Teil: weder Summenzeile noch Einträgeliste — die gehören I0026.
+    // US-1, letzter Teil: der Block trägt weiterhin seine Kennung und kein „Soll" — eine Sollzeit
+    // gibt es im Bestand nirgends. Summenzeile und Einträgeliste standen hier bis I0026 als
+    // Abwesenheit; sie sind seither gebaut und werden in ZeitenSehenE2ETests geprüft.
     [Test]
     [Category("US-1")]
-    public async Task Wenn_der_erste_Eintrag_abgeschlossen_ist_dann_zeigt_der_Zeitenblock_weder_Summe_noch_Liste()
+    public async Task Wenn_der_erste_Eintrag_abgeschlossen_ist_dann_traegt_der_Zeitenblock_weiter_seine_Kennung_und_kein_Soll()
     {
         var aufbau = await KarteMitLaufendemTimer();
 
@@ -49,8 +51,6 @@ public class TimerStoppenE2ETests : PageTest
         await Expect(aufbau.Seite.TimerStarten).ToBeVisibleAsync();
 
         await Expect(aufbau.Seite.Zeitenabschnitt).ToContainTextAsync("Zeiten");
-        await Expect(aufbau.Seite.Zeitenabschnitt).Not.ToContainTextAsync("Summe");
-        await Expect(aufbau.Seite.Zeitenabschnitt).Not.ToContainTextAsync("Ist");
         await Expect(aufbau.Seite.Zeitenabschnitt).Not.ToContainTextAsync("Soll");
     }
 
@@ -134,11 +134,12 @@ public class TimerStoppenE2ETests : PageTest
         });
     }
 
-    // US-4: fremde Timer sind in der Oberfläche nicht beendbar — an der fremden Plakette hängt
-    // keine Handlung; über die API geht der Stopp trotzdem.
+    // US-4: an der fremden Plakette in der Bahn hängt keine Handlung, und der Knopf oben bleibt
+    // fort — er gehört dem eigenen Timer. Beendbar ist der fremde Eintrag über die API; seit
+    // I0026 auch über das Stoppquadrat an seiner Zeile, das ZeitenSehenE2ETests prüft.
     [Test]
     [Category("US-4")]
-    public async Task Wenn_ein_fremder_Timer_laeuft_dann_traegt_die_Oberflaeche_keine_Stopphandlung_und_die_API_beendet_ihn_doch()
+    public async Task Wenn_ein_fremder_Timer_laeuft_dann_traegt_die_Bahn_keine_Stopphandlung_und_der_Knopf_oben_bleibt_fort()
     {
         var aufbau = await KarteMitLaufendemTimer();
         using var webApi = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);

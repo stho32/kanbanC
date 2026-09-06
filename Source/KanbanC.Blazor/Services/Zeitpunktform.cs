@@ -16,6 +16,8 @@ public static class Zeitpunktform
     private const string IsoDatumsformat = "yyyy-MM-dd";
     private const string Tageszeitformat = "HH:mm";
     private const int MinutenEinerStunde = 60;
+    private const string Spannenstrich = "–";
+    private const string LaufendeMessung = "läuft";
 
     // Nur die Tageszeit, ohne Bezug auf „jetzt": „läuft seit 08:04" bleibt wahr, wie lange die
     // Seite auch offen steht — anders als eine verstrichene Dauer, die ab der ersten Sekunde
@@ -27,15 +29,37 @@ public static class Zeitpunktform
 
     public static string AlsText(DateTimeOffset zeitpunkt, DateTimeOffset jetzt)
     {
-        var ortszeit = zeitpunkt.ToLocalTime();
-        var jetztInOrtszeit = jetzt.ToLocalTime();
-
         var derZeitpunktLiegtInDerLetztenStunde = jetzt - zeitpunkt < TimeSpan.FromMinutes(MinutenEinerStunde);
         if (derZeitpunktLiegtInDerLetztenStunde)
         {
             return $"vor {VergangeneMinuten(zeitpunkt, jetzt)} Min";
         }
 
+        return MitTagesbezug(zeitpunkt, jetzt);
+    }
+
+    // Der Zeitraum einer Zeile in der Einträgeliste: „gestern 17:40 – 18:25". **Ohne den Zweig
+    // „vor n Min"** — als Anfang einer Spanne ist eine relative Angabe unlesbar („vor 3 Min –
+    // 18:25"). Das Ende trägt nur die Tageszeit: eine Spanne hängt am Tag ihres Anfangs.
+    // Ein laufender Eintrag trägt an der Stelle des Endes das Wort „läuft" und **keine Dauer** —
+    // eine gerenderte Dauer wäre ohne Live-Kanal ab der ersten Sekunde falsch.
+    public static string AlsZeitraum(DateTimeOffset beginn, DateTimeOffset? ende, DateTimeOffset jetzt)
+    {
+        var anfang = MitTagesbezug(beginn, jetzt);
+        if (ende is null)
+        {
+            return $"{anfang} {Spannenstrich} {LaufendeMessung}";
+        }
+
+        return $"{anfang} {Spannenstrich} {AlsTageszeit(ende.Value)}";
+    }
+
+    // „heute", „gestern", sonst das ISO-Datum — der Tagesbezug entsteht an genau einer Stelle und
+    // wird von beiden Formen mitgenutzt.
+    private static string MitTagesbezug(DateTimeOffset zeitpunkt, DateTimeOffset jetzt)
+    {
+        var ortszeit = zeitpunkt.ToLocalTime();
+        var jetztInOrtszeit = jetzt.ToLocalTime();
         var tageszeit = ortszeit.ToString(Tageszeitformat, CultureInfo.InvariantCulture);
         var tagesabstand = Tag(jetztInOrtszeit).DayNumber - Tag(ortszeit).DayNumber;
 

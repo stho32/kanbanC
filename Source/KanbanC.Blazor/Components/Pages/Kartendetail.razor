@@ -493,28 +493,44 @@ else
             </div>
 
             @* Der Zeitenblock steht unter „Klasse und Nummer", wo D0004.dc.html den gestrichelten
-               Kasten „Zeiten und Timer" schon freihält. **Die Einträgeliste und die Summe je
-               Kontributor gehören I0026**, der Nachtrag I0025. Der Knopf trägt **keine gerenderte
-               Dauer** („Stoppen" statt des gezeichneten „Stoppen 1:36"): ohne Live-Kanal wäre sie
-               ab der ersten Sekunde falsch. Beendbar ist hier nur der **eigene** Timer — das
-               Stoppquadrat am fremden Eintrag hängt an einer Zeile, die es erst mit I0026 gibt. *@
+               Kasten „Zeiten und Timer" schon freihält. Die Reihenfolge ist die des Artboards:
+               erst die Handlung, dann die Bilanz, dann die Belege. Der Nachtrag am Fuß und der
+               Stift an abgeschlossenen Zeilen gehören I0025 und fehlen hier — eine Handlung, die
+               nichts tut, wäre schlechter als keine.
+               **Gerechnet wird an genau einer Stelle:** ein Aufruf liefert Kontributorensummen
+               und Gesamtsumme. Der Knopf trägt **keine gerenderte Dauer** („Stoppen" statt des
+               gezeichneten „Stoppen 1:36"): ohne Live-Kanal wäre sie ab der ersten Sekunde
+               falsch — und aus demselben Grund steht in der laufenden Zeile „läuft" statt einer
+               Dauer, und die laufende Messung zählt nicht in die Summe. *@
             <div class="blattfeld zeitenfeld" id="zeitenabschnitt">
+                @{
+                    var zeitbilanz = Zeitbilanz.Fuer(_detail.Zeiteintraege);
+                }
                 <span class="blattmarke">Zeiten</span>
-                @if (LaufenderEigenerZeiteintrag is not null)
-                {
-                    <button type="button" class="btn btn-haupt zeitenknopf" id="timer-stoppen" @onclick="StoppeTimer">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg>
-                        Stoppen
-                        <span class="zeitenlauf" id="zeiten-laeuft">läuft seit @Zeitpunktform.AlsTageszeit(LaufenderEigenerZeiteintrag.Beginn)</span>
-                    </button>
-                }
-                else
-                {
-                    <button type="button" class="btn btn-haupt zeitenknopf" id="timer-starten" @onclick="StarteTimer">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M8 5.5 18 12 8 18.5z"></path></svg>
-                        Timer starten
-                    </button>
-                }
+                <div class="zeitenhandlung">
+                    @if (LaufenderEigenerZeiteintrag is not null)
+                    {
+                        <button type="button" class="btn btn-haupt zeitenknopf" id="timer-stoppen" @onclick="StoppeTimer">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg>
+                            Stoppen
+                            <span class="zeitenlauf" id="zeiten-laeuft">läuft seit @Zeitpunktform.AlsTageszeit(LaufenderEigenerZeiteintrag.Beginn)</span>
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-haupt zeitenknopf" id="timer-starten" @onclick="StarteTimer">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M8 5.5 18 12 8 18.5z"></path></svg>
+                            Timer starten
+                        </button>
+                    }
+
+                    @* „Ist 1:22" — ohne das gezeichnete „von 5:00 Soll": eine Sollzeit gibt es im
+                       Bestand nirgends, sie gehört I0033 und braucht dort ihre eigene Quelle. *@
+                    @if (HatZeiteintraege)
+                    {
+                        <span class="zeitenist" id="zeiten-ist">Ist <span class="zeitenistwert">@Dauerform.AlsText(zeitbilanz.Gesamtsumme)</span></span>
+                    }
+                </div>
 
                 @* Ohne gewählte Identität wird nicht gemeckert, sondern gefragt: „nicht gewählt"
                    ist keine Regelverletzung, sondern eine fehlende Angabe — und die Wahl ist die
@@ -529,6 +545,68 @@ else
                         <Identitaetswahl Kontributoren="_kontributoren"
                                          GewaehlteKontributorId="_urheber?.KontributorId"
                                          Gewaehlt="UebernimmIdentitaetUndStarte" />
+                    </div>
+                }
+
+                @* Ein Satz statt einer Tabelle voller Nullen: die Summen entstehen mit dem ersten
+                   Eintrag. Anders als bei Kommentaren und Anhängen hängt keine Handlung daran —
+                   die Handlung dieses Blocks ist der Startknopf, der ohnehin darüber steht. *@
+                @if (!HatZeiteintraege)
+                {
+                    <p class="zeitenleerstand" id="zeiten-leerstand">Noch keine Zeit erfasst.</p>
+                }
+                else
+                {
+                    @if (zeitbilanz.Kontributorensummen.Count > 0)
+                    {
+                        <div class="zeitensummen" id="zeitensummen">
+                            @foreach (var zeile in zeitbilanz.Kontributorensummen)
+                            {
+                                <div class="zeitensumme" @key="zeile.Kontributor.KontributorId" data-zeitensumme="@zeile.Kontributor.KontributorId">
+                                    <span class="kuerzel @Kontributorartform.Kuerzelklasse(zeile.Kontributor.Art)" title="@Kontributorartform.Beschriftung(zeile.Kontributor.Art)">@Kontributorartform.Kuerzel(zeile.Kontributor.Name)</span>
+                                    <span class="zeitensummename">@zeile.Kontributor.Name</span>
+                                    <span class="zeitensummewert">@Summentext(zeile)</span>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    @* Flach und chronologisch, neueste zuerst — nicht nach Kontributor gruppiert:
+                       die Gruppierung leistet die Bilanz darüber, und erst die Zeitfolge macht
+                       eine Überlappung lesbar. *@
+                    <div class="zeiteneintraege">
+                        <div class="zeiteneintraegekopf">
+                            <span class="zeiteneintraegemarke">Einträge</span>
+                            <span class="zeitenzahl" id="zeitenzahl">@Zeiteintragszahl</span>
+                        </div>
+                        <div class="zeiteneintragsliste" id="zeiteneintragsliste">
+                            @foreach (var eintrag in ZeiteintraegeNeuesteZuerst)
+                            {
+                                <div class="@Zeilenklasse(eintrag)" @key="eintrag.ZeiteintragId" data-zeiteintrag="@eintrag.ZeiteintragId">
+                                    @* Der Titel nennt hier den **Namen** und nicht die Art wie in der
+                                       Bilanz darüber: die Summenzeile schreibt den Namen daneben und
+                                       kann die Art ergänzen, die schmale Eintragszeile schreibt ihn
+                                       nicht — dort wäre die Art die Auskunft, die schon fehlt. *@
+                                    <span class="kuerzel @Kontributorartform.Kuerzelklasse(eintrag.Kontributor.Art)" title="@eintrag.Kontributor.Name">@Kontributorartform.Kuerzel(eintrag.Kontributor.Name)</span>
+                                    <span class="zeiteneintragspanne">@Zeitpunktform.AlsZeitraum(eintrag.Beginn, eintrag.Ende, DateTimeOffset.Now)</span>
+                                    @if (eintrag.Ende is not null)
+                                    {
+                                        <span class="zeiteneintragsdauer">@Dauerform.AlsText(eintrag.Ende.Value - eintrag.Beginn)</span>
+                                    }
+                                    else
+                                    {
+                                        @* Das Quadrat steht an **jeder** laufenden Zeile, auch an
+                                           der eines fremden Kontributors und auch ohne gewählte
+                                           Identität: ein Agenten-Timer, der über Nacht
+                                           weiterläuft, muss von jemandem beendet werden können.
+                                           Gestoppt wird der Timer, nicht die Urheberschaft. *@
+                                        <button type="button" class="zeiteneintragstopp" title="Timer von @eintrag.Kontributor.Name stoppen" @onclick="() => StoppeZeile(eintrag)">
+                                            <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg>
+                                        </button>
+                                    }
+                                </div>
+                            }
+                        </div>
                     </div>
                 }
             </div>
@@ -1084,6 +1162,63 @@ else
         return eintrag.Ende is null && eintrag.Kontributor.KontributorId == _urheber!.KontributorId;
     }
 
+    private bool HatZeiteintraege
+    {
+        get
+        {
+            return _detail!.Zeiteintraege.Count > 0;
+        }
+    }
+
+    // Die Anzahl wird gerechnet und nicht mitgesendet — .Count an der gelieferten Liste, wie bei
+    // den Kommentaren. Ohne Eintrag bleibt sie fort: die Zahl steht nur über einer Liste.
+    private string Zeiteintragszahl
+    {
+        get
+        {
+            return _detail!.Zeiteintraege.Count.ToString(CultureInfo.InvariantCulture);
+        }
+    }
+
+    // Neueste zuerst — die Umkehrung entsteht in der Anzeige. Der Zeitenleser bleibt bei seiner
+    // Beginn-aufsteigenden Folge, weil eine Reihenfolge in der Persistenz keine Wahrheit
+    // behauptet; bei gleichem Beginn entscheidet die Nummer, damit die Folge stabil bleibt.
+    private IReadOnlyList<Zeiteintrag> ZeiteintraegeNeuesteZuerst
+    {
+        get
+        {
+            var nachBeginn = _detail!.Zeiteintraege.OrderByDescending(eintrag => eintrag.Beginn);
+            return nachBeginn.ThenByDescending(eintrag => eintrag.ZeiteintragId).ToList();
+        }
+    }
+
+    // „0:37 · 1 läuft": die laufende Messung ist genannt, aber nicht addiert — wer die Zahl
+    // liest, sieht, dass sie unvollständig ist, und warum.
+    private static string Summentext(Kontributorenzeitsumme zeile)
+    {
+        var summe = Dauerform.AlsText(zeile.Summe);
+        var esLaeuftNichts = zeile.Laufende == 0;
+        if (esLaeuftNichts)
+        {
+            return summe;
+        }
+
+        return $"{summe} · {zeile.Laufende.ToString(CultureInfo.InvariantCulture)} läuft";
+    }
+
+    // Laufend und abgeschlossen unterscheiden sich an drei Merkmalen, von denen keines nur Farbe
+    // ist: der Akzentkante links, dem Wort „läuft" an der Stelle des Endes und dem Stoppquadrat.
+    private static string Zeilenklasse(Zeiteintrag eintrag)
+    {
+        var derEintragLaeuft = eintrag.Ende is null;
+        if (derEintragLaeuft)
+        {
+            return "zeiteneintrag zeiteneintrag-laeuft";
+        }
+
+        return "zeiteneintrag";
+    }
+
     // Die Wahl wird hier ein letztes Mal gelesen und nicht aus _urheber genommen: zwischen dem
     // letzten Nachlesen und dem Klick kann sie in der Kopfzeile gewechselt haben.
     private async Task StarteTimer()
@@ -1123,17 +1258,27 @@ else
     }
 
     // Gestoppt wird ohne Identitätsfrage: der Eintrag weiß selbst, wem er gehört, und der Aufruf
-    // nennt keinen Kontributor.
+    // nennt keinen Kontributor. Der Knopf oben sucht den eigenen laufenden Eintrag und beendet
+    // ihn über denselben Weg wie das Quadrat an seiner Zeile — beide zeigen denselben Eintrag,
+    // also darf es auch nur einen Weg geben, ihn zu beenden.
     private async Task StoppeTimer()
     {
-        _zurueckweisung = null;
         var laufender = LaufenderEigenerZeiteintrag;
         if (laufender is null)
         {
             return;
         }
 
-        _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(() => SendeZeitmessungsende(laufender.ZeiteintragId));
+        await StoppeZeile(laufender);
+    }
+
+    // Die Zeilenhandlung beendet **genau diesen** Eintrag — auch den eines fremden Kontributors
+    // und auch ohne gewählte Identität. Es entsteht dabei keine neue Fähigkeit: über die API ging
+    // der fremde Stopp längst, es fehlte nur die Zeile, an der das Quadrat hängen konnte.
+    private async Task StoppeZeile(Zeiteintrag eintrag)
+    {
+        _zurueckweisung = null;
+        _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(() => SendeZeitmessungsende(eintrag.ZeiteintragId));
     }
 
     // Der zurückkommende Eintrag ersetzt den alten über dasselbe MitEintrag wie beim Start —

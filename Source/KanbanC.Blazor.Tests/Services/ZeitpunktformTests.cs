@@ -33,6 +33,9 @@ public class ZeitpunktformTests
     // gebauter Testwert traefe je nach Zeitzone des Laufs einen anderen Kalendertag.
     private static readonly DateTimeOffset Jetzt = Ortszeit(2026, 8, 31, 12, 0);
 
+    // Das „jetzt" der Zeitraumtests — dieselbe stellbare Uhr, ein anderer Tag.
+    private static readonly DateTimeOffset Heute = Ortszeit(2026, 9, 6, 12, 0);
+
     // Das erste Rechenbeispiel der Anforderung: 11:38 desselben Tages, „jetzt" 12:00.
     [Test]
     public void Wenn_der_Zeitpunkt_22_Minuten_zurueckliegt_dann_steht_dort_vor_22_Min()
@@ -121,6 +124,84 @@ public class ZeitpunktformTests
         var gestern = Ortszeit(2026, 8, 30, 17, 40);
 
         Assert.That(Zeitpunktform.AlsText(gestern.ToUniversalTime(), Jetzt), Is.EqualTo("gestern 17:40"));
+    }
+
+    // US-1: die abgeschlossenen Zeilen des Rechenbeispiels.
+    [Test]
+    public void Wenn_ein_abgeschlossener_Eintrag_von_gestern_erscheint_dann_steht_dort_gestern_mit_Beginn_und_Ende()
+    {
+        var zeitraum = Zeitpunktform.AlsZeitraum(Ortszeit(2026, 9, 5, 17, 40), Ortszeit(2026, 9, 5, 18, 25), Heute);
+
+        Assert.That(zeitraum, Is.EqualTo("gestern 17:40 – 18:25"));
+    }
+
+    [Test]
+    public void Wenn_ein_abgeschlossener_Eintrag_von_heute_erscheint_dann_steht_dort_heute_mit_Beginn_und_Ende()
+    {
+        var zeitraum = Zeitpunktform.AlsZeitraum(Ortszeit(2026, 9, 6, 9, 12), Ortszeit(2026, 9, 6, 9, 49), Heute);
+
+        Assert.That(zeitraum, Is.EqualTo("heute 09:12 – 09:49"));
+    }
+
+    // Alles Aeltere traegt das ISO-Datum, in derselben Form wie die Kommentar-Metazeile.
+    [Test]
+    public void Wenn_ein_Eintrag_von_vorgestern_erscheint_dann_traegt_er_das_ISO_Datum()
+    {
+        var zeitraum = Zeitpunktform.AlsZeitraum(Ortszeit(2026, 9, 4, 11, 5), Ortszeit(2026, 9, 4, 11, 42), Heute);
+
+        Assert.That(zeitraum, Is.EqualTo("2026-09-04 11:05 – 11:42"));
+    }
+
+    // US-3: an der Stelle des Endes steht das Wort, nicht eine Dauer — eine gerenderte Dauer
+    // waere ohne Live-Kanal ab der ersten Sekunde falsch.
+    [Test]
+    public void Wenn_ein_Eintrag_laeuft_dann_steht_an_der_Stelle_des_Endes_das_Wort_laeuft_und_keine_Dauer()
+    {
+        var zeitraum = Zeitpunktform.AlsZeitraum(Ortszeit(2026, 9, 6, 9, 12), ende: null, Heute);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(zeitraum, Is.EqualTo("heute 09:12 – läuft"));
+            Assert.That(zeitraum.Split(" – ")[1], Is.EqualTo("läuft"), "An der Stelle des Endes steht das Wort und nichts sonst.");
+        });
+    }
+
+    // Der Anfang einer Spanne traegt nie „vor n Min": „vor 3 Min – 18:25" waere unlesbar.
+    [Test]
+    public void Wenn_der_Beginn_wenige_Minuten_zurueckliegt_dann_traegt_er_trotzdem_die_Tageszeit()
+    {
+        var zeitraum = Zeitpunktform.AlsZeitraum(Heute.AddMinutes(-3), ende: null, Heute);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(zeitraum, Is.EqualTo("heute 11:57 – läuft"));
+            Assert.That(zeitraum, Does.Not.Contain("vor"));
+        });
+    }
+
+    // „jetzt" ist ein Parameter und keine Uhr im Inneren: derselbe Eintrag, einen Tag später
+    // gelesen, traegt „gestern" statt „heute".
+    [Test]
+    public void Wenn_derselbe_Eintrag_einen_Tag_spaeter_gelesen_wird_dann_traegt_er_gestern_statt_heute()
+    {
+        var beginn = Ortszeit(2026, 9, 6, 9, 12);
+        var ende = Ortszeit(2026, 9, 6, 9, 49);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Zeitpunktform.AlsZeitraum(beginn, ende, Heute), Is.EqualTo("heute 09:12 – 09:49"));
+            Assert.That(Zeitpunktform.AlsZeitraum(beginn, ende, Heute.AddDays(1)), Is.EqualTo("gestern 09:12 – 09:49"));
+        });
+    }
+
+    // Der Wert reist als UTC und wird zur Anzeige umgerechnet — auch als Spanne.
+    [Test]
+    public void Wenn_der_Zeitraum_in_UTC_kommt_dann_zeigt_die_Form_ihn_in_Ortszeit()
+    {
+        var beginn = Ortszeit(2026, 9, 5, 17, 40);
+        var ende = Ortszeit(2026, 9, 5, 18, 25);
+
+        Assert.That(Zeitpunktform.AlsZeitraum(beginn.ToUniversalTime(), ende.ToUniversalTime(), Heute), Is.EqualTo("gestern 17:40 – 18:25"));
     }
 
     private static DateTimeOffset Ortszeit(int jahr, int monat, int tag, int stunde, int minute)

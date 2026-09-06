@@ -429,4 +429,42 @@ public sealed class KartendetailSeite
     {
         return _seite.Locator($"#zeiten-identitaetspopover #identitaet-waehlen-{kontributorId}");
     }
+
+    // „Ist 1:22" neben dem Timerknopf — ohne „von h:mm Soll", das es im Bestand nicht gibt.
+    public ILocator ZeitenIst => _seite.Locator("#zeiten-ist");
+
+    public ILocator ZeitenLeerstand => _seite.Locator("#zeiten-leerstand");
+
+    public ILocator Zeitensummen => _seite.Locator("#zeitensummen .zeitensumme");
+
+    public ILocator Zeitensumme(long kontributorId)
+    {
+        return _seite.Locator($"#zeitensummen [data-zeitensumme=\"{kontributorId}\"]");
+    }
+
+    public ILocator Zeitenzahl => _seite.Locator("#zeitenzahl");
+
+    public ILocator Zeiteintraege => _seite.Locator("#zeiteneintragsliste .zeiteneintrag");
+
+    // Die laufende Zeile traegt ihre eigene Klasse — die Akzentkante ist eines der drei Merkmale,
+    // an denen sie ohne Farbvergleich zu erkennen ist.
+    public ILocator LaufendeZeiteintraege => _seite.Locator("#zeiteneintragsliste .zeiteneintrag-laeuft");
+
+    public ILocator Zeiteintrag(long zeiteintragId)
+    {
+        return _seite.Locator($"#zeiteneintragsliste [data-zeiteintrag=\"{zeiteintragId}\"]");
+    }
+
+    public ILocator Zeiteintragsdauern => _seite.Locator("#zeiteneintragsliste .zeiteneintragsdauer");
+
+    public ILocator Zeiteintragsspannen => _seite.Locator("#zeiteneintragsliste .zeiteneintragspanne");
+
+    public ILocator Zeiteintragskuerzel => _seite.Locator("#zeiteneintragsliste .kuerzel");
+
+    public ILocator Stoppquadrate => _seite.Locator("#zeiteneintragsliste .zeiteneintragstopp");
+
+    public ILocator Stoppquadrat(long zeiteintragId)
+    {
+        return Zeiteintrag(zeiteintragId).Locator(".zeiteneintragstopp");
+    }
 }
