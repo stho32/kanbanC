@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>63 % · stho32/kanbanC · Wie lange noch · KanbanC</title>
+<style>
+:root { --bg-primary:#f7f6f2; --bg-panel:#ffffff; --border:#d9d4c8; --text-primary:#1f1c26; --text-secondary:#5a5563; --brand-primary:#3d56b3;
+  --status-warn:#b8860b; --status-warn-bg:#fff3cd; --status-ok:#2e7d32; --status-ok-bg:#d4edda;
+  --series-1:#2a78d6; --series-2:#eb6834; --surface-1:#fcfcfb; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg-primary:#16151a; --bg-panel:#1f1e25; --border:#3a3842; --text-primary:#ecebf0; --text-secondary:#aaa7b4; --brand-primary:#8ea2ff;
+  --status-warn-bg:#3f3414; --status-ok-bg:#1f3a24; --series-1:#3987e5; --series-2:#d95926; --surface-1:#1a1a19; } }
+:root[data-theme="dark"] { --bg-primary:#16151a; --bg-panel:#1f1e25; --border:#3a3842; --text-primary:#ecebf0; --text-secondary:#aaa7b4; --brand-primary:#8ea2ff;
+  --status-warn-bg:#3f3414; --status-ok-bg:#1f3a24; --series-1:#3987e5; --series-2:#d95926; --surface-1:#1a1a19; }
+body { margin:0; background:var(--bg-primary); color:var(--text-primary); font:15px/1.45 system-ui, sans-serif; }
+main { max-width:1040px; margin:0 auto; padding:24px 20px 48px; }
+h1 { font-size:1.5rem; margin:0 0 4px; } h2 { font-size:1.1rem; margin:28px 0 8px; }
+.sek { color:var(--text-secondary); margin:6px 0 0; }
+.kopf { display:flex; flex-wrap:wrap; gap:16px; align-items:baseline; }
+.badge { display:inline-block; font-size:.7rem; letter-spacing:.04em; padding:2px 8px; border-radius:4px; background:var(--status-ok-bg); color:var(--status-ok); vertical-align:middle; }
+.badge.warn { background:var(--status-warn-bg); color:var(--status-warn); }
+.panel { background:var(--bg-panel); border:1px solid var(--border); border-radius:8px; padding:12px; margin-top:12px; }
+.scroll { overflow-x:auto; }
+table { border-collapse:collapse; width:100%; } th, td { text-align:left; padding:6px 10px; border-bottom:1px solid var(--border); white-space:nowrap; }
+svg { width:100%; height:auto; display:block; background:var(--surface-1); border-radius:6px; }
+.grid { stroke:var(--border); stroke-width:1; } .ax, .lbl { fill:var(--text-secondary); font-size:12px; }
+.umfang { fill:none; stroke:var(--text-secondary); stroke-width:2; stroke-dasharray:6 4; }
+.offen { fill:none; stroke:var(--series-1); stroke-width:2; } .mk { fill:var(--series-1); stroke:var(--surface-1); stroke-width:2; }
+.band { fill:var(--series-2); opacity:.15; } .p50 { stroke:var(--series-2); stroke-width:2; } .p85 { stroke:var(--series-2); stroke-width:2; stroke-dasharray:6 4; } .p95 { stroke:var(--series-2); stroke-width:2; stroke-dasharray:2 4; }
+.heute { stroke:var(--brand-primary); stroke-width:1.5; stroke-dasharray:3 3; }
+.legende { display:flex; flex-wrap:wrap; gap:18px; margin:8px 0 0; padding:0; list-style:none; color:var(--text-secondary); font-size:.9rem; }
+.legende i { display:inline-block; width:22px; height:0; border-top:2px solid; vertical-align:middle; margin-right:6px; }
+.tip { position:absolute; pointer-events:none; background:var(--bg-panel); border:1px solid var(--border); border-radius:6px; padding:6px 10px; font-size:.85rem; display:none; }
+details summary { cursor:pointer; color:var(--brand-primary); }
+@media print { :root { --bg-primary:#fff; --bg-panel:#fff; --text-primary:#000; --text-secondary:#333; --surface-1:#fff; } details { display:block; } details > * { display:block; } .tip { display:none !important; } }
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+</style>
+</head>
+<body>
+<main>
+<div class="kopf"><h1>Wie lange noch — KanbanC</h1><span class="sek">stho32/kanbanC · Stand So 06.09.2026</span></div>
+<p><strong>26 von 41 Slices fertig (63 %)</strong> · 15 offen · Benutzer-Test für 0 von 26 gelaufen · 421 Anmerkungen offen</p>
+<div class="panel" style="position:relative">
+<h2 style="margin-top:0">Burndown der Slices mit Forecast-Fächer</h2>
+<svg viewBox="0 0 960 420" role="img" aria-label="Offene Slices je Kalendertag mit Forecast">
+<line class="grid" x1="56" x2="936" y1="364.0" y2="364.0"/><text class="ax" x="48" y="368.0" text-anchor="end">0</text><line class="grid" x1="56" x2="936" y1="298.4" y2="298.4"/><text class="ax" x="48" y="302.4" text-anchor="end">8</text><line class="grid" x1="56" x2="936" y1="232.9" y2="232.9"/><text class="ax" x="48" y="236.9" text-anchor="end">16</text><line class="grid" x1="56" x2="936" y1="167.3" y2="167.3"/><text class="ax" x="48" y="171.3" text-anchor="end">24</text><line class="grid" x1="56" x2="936" y1="101.8" y2="101.8"/><text class="ax" x="48" y="105.8" text-anchor="end">32</text><line class="grid" x1="56" x2="936" y1="36.2" y2="36.2"/><text class="ax" x="48" y="40.2" text-anchor="end">40</text><text class="ax" x="56.0" y="382" text-anchor="middle">29.08.</text><text class="ax" x="148.6" y="382" text-anchor="middle">31.08.</text><text class="ax" x="241.3" y="382" text-anchor="middle">02.09.</text><text class="ax" x="333.9" y="382" text-anchor="middle">04.09.</text><text class="ax" x="426.5" y="382" text-anchor="middle">06.09.</text><text class="ax" x="519.2" y="382" text-anchor="middle">08.09.</text><text class="ax" x="611.8" y="382" text-anchor="middle">10.09.</text><text class="ax" x="704.4" y="382" text-anchor="middle">12.09.</text><text class="ax" x="797.1" y="382" text-anchor="middle">14.09.</text><text class="ax" x="889.7" y="382" text-anchor="middle">16.09.</text>
+<polyline class="umfang" points="56.0,44.4 102.3,28.0 148.6,28.0 194.9,28.0 241.3,28.0 287.6,28.0 333.9,28.0 380.2,28.0 426.5,28.0"/>
+<polygon class="band" points="426.5,241.1 704.4,364.0 889.7,364.0"/><line class="p50" x1="426.5" y1="241.1" x2="704.4" y2="364.0"/><text class="lbl" x="704.4" y="356.0" text-anchor="middle">P50 12.09.</text><line class="p85" x1="426.5" y1="241.1" x2="797.1" y2="364.0"/><text class="lbl" x="797.1" y="342.0" text-anchor="middle">P85 14.09.</text><line class="p95" x1="426.5" y1="241.1" x2="889.7" y2="364.0"/><text class="lbl" x="889.7" y="356.0" text-anchor="middle">P95 16.09.</text>
+<polyline class="offen" points="56.0,77.2 102.3,77.2 148.6,93.6 194.9,93.6 241.3,93.6 287.6,101.8 333.9,150.9 380.2,191.9 426.5,241.1"/>
+<circle cx="56.0" cy="77.2" r="4" class="mk"/><circle cx="102.3" cy="77.2" r="4" class="mk"/><circle cx="148.6" cy="93.6" r="4" class="mk"/><circle cx="287.6" cy="101.8" r="4" class="mk"/><circle cx="333.9" cy="150.9" r="4" class="mk"/><circle cx="380.2" cy="191.9" r="4" class="mk"/><circle cx="426.5" cy="241.1" r="4" class="mk"/>
+<line class="heute" x1="426.5" x2="426.5" y1="28" y2="364"/><text class="lbl" x="430.5" y="40">heute</text>
+<rect id="hit" x="56" y="28" width="880" height="336" fill="transparent"/>
+</svg>
+<div class="tip" id="tip"></div>
+<ul class="legende"><li><i style="border-color:var(--text-secondary);border-top-style:dashed"></i>Umfang (Slices in der WBS)</li><li><i style="border-color:var(--series-1)"></i>Offene Slices, gemessen</li><li><i style="border-color:var(--series-2)"></i>Forecast P50 · P85 gestrichelt · P95 gepunktet</li></ul>
+<details><summary>Tabellenansicht</summary><div class="scroll"><table><thead><tr><th scope="col">Tag</th><th scope="col">Umfang</th><th scope="col">Fertig</th><th scope="col">Offen</th></tr></thead><tbody><tr><td>2026-08-29</td><td>39</td><td>4</td><td>35</td></tr><tr><td>2026-08-30</td><td>41</td><td>6</td><td>35</td></tr><tr><td>2026-08-31</td><td>41</td><td>8</td><td>33</td></tr><tr><td>2026-09-01</td><td>41</td><td>8</td><td>33</td></tr><tr><td>2026-09-02</td><td>41</td><td>8</td><td>33</td></tr><tr><td>2026-09-03</td><td>41</td><td>9</td><td>32</td></tr><tr><td>2026-09-04</td><td>41</td><td>15</td><td>26</td></tr><tr><td>2026-09-05</td><td>41</td><td>20</td><td>21</td></tr><tr><td>2026-09-06</td><td>41</td><td>26</td><td>15</td></tr></tbody></table></div></details>
+</div>
+<h2>Umsetzung autonom <span class='badge'>25 LÄUFE GEMESSEN</span></h2><div class='scroll'><table><thead><tr><th scope='col'>Mit X % Wkt.</th><th scope='col'>Fertig zum, 7-Tage-Woche</th><th scope='col'>Fertig zum, 5-Tage-Woche</th><th scope='col'>Restliche Dauer vmtl.</th><th scope='col'>Stunden</th></tr></thead><tbody><tr><td>50 %</td><td>Sa 12.09.2026</td><td>Di 15.09.2026</td><td>6 Kalendertage · 7 Arbeitstage</td><td>56 h</td></tr><tr><td>70 %</td><td>So 13.09.2026</td><td>Mi 16.09.2026</td><td>7 Kalendertage · 8 Arbeitstage</td><td>64 h</td></tr><tr><td>85 %</td><td>Mo 14.09.2026</td><td>Do 17.09.2026</td><td>8 Kalendertage · 9 Arbeitstage</td><td>72 h</td></tr><tr><td>95 %</td><td>Mi 16.09.2026</td><td>Di 22.09.2026</td><td>10 Kalendertage · 12 Arbeitstage</td><td>96 h</td></tr></tbody></table></div><p class='sek'>8 h je Arbeitstag, 8,9 h je Kalendertag gemessen. Tagesreihe: 3 2 2 0 0 1 6 5 6</p><h2>Umsetzung im-pair <span class='badge warn'>1 LAUF, UNGEMESSEN</span></h2><p>Kein Forecast. Zählung als Ersatz: 116 bis 233 h, 15 bis 29 Arbeitstage in der 5-Tage-Woche.</p>
+<h2>Nicht enthalten</h2>
+<ul><li>Benutzer-Test: S7 für 0 von 26 Slices gelaufen, 421 Anmerkungen offen — Nacharbeit daraus ist in keiner Messung.</li>
+<li>Schwerere offene Dialogs: 15 Interactions nicht bis Bubble geplant (Boards führen, Zeiterfassung, Live-Aktualisierung, WBS-Import, Auswertungen); der Hypothesen-Faktor 0,5–2 ist im Forecast nicht enthalten.</li></ul>
+<h2>Lesehinweise und Methodik</h2>
+<ul><li>Quelle: WBS-Datei, Git-Historie, <code>Schaetzungen/_ist-zeiten.md</code>, Anmerkungsdatei. Generat, wird aus ihnen neu gerechnet.</li>
+<li>„Fertig am" ist das Datum des ersten Commits, in dem der Knoten in der WBS <code>gruen</code> trägt. Der Umfang je Tag ist die Zahl der Interactions in der WBS an diesem Tag; der Nenner wächst, wenn Slices dazukommen.</li>
+<li>Forecast: 20000 Ziehungen mit Zurücklegen aus der Tagesreihe (Slices je Kalendertag, Nulltage enthalten), bis die offenen Slices erreicht sind. Perzentile über die gezogenen Tage. Kein Hypothesen-Faktor, kein Puffer.</li>
+<li>5-Tage-Woche: Kalendertage × gemessene Stunden je Kalendertag ÷ 8, aufgerundet, ab dem nächsten Werktag nur Mo bis Fr gezählt.</li>
+<li>Ein Modus mit weniger als 3 Läufen ist ungemessen und bekommt keine Perzentile. Zeit ohne Commit zwischen zwei Tagen zählt als Null-Durchsatz, nicht als Ausreißer.</li></ul>
+<script type="application/json" id="daten">[{"datum": "2026-08-29", "umfang": 39, "fertig": 4, "offen": 35, "zukunft": false}, {"datum": "2026-08-30", "umfang": 41, "fertig": 6, "offen": 35, "zukunft": false}, {"datum": "2026-08-31", "umfang": 41, "fertig": 8, "offen": 33, "zukunft": false}, {"datum": "2026-09-01", "umfang": 41, "fertig": 8, "offen": 33, "zukunft": false}, {"datum": "2026-09-02", "umfang": 41, "fertig": 8, "offen": 33, "zukunft": false}, {"datum": "2026-09-03", "umfang": 41, "fertig": 9, "offen": 32, "zukunft": false}, {"datum": "2026-09-04", "umfang": 41, "fertig": 15, "offen": 26, "zukunft": false}, {"datum": "2026-09-05", "umfang": 41, "fertig": 20, "offen": 21, "zukunft": false}, {"datum": "2026-09-06", "umfang": 41, "fertig": 26, "offen": 15, "zukunft": false}, {"datum": "2026-09-07", "umfang": 41, "fertig": 26, "offen": 15, "zukunft": true}, {"datum": "2026-09-08", "umfang": 41, "fertig": 26, "offen": 15, "zukunft": true}, {"datum": "2026-09-09", "umfang": 41, "fertig": 26, "offen": 15, "zukunft": true}, {"datum": "2026-09-10", "umfang": 41, "fertig": 26, "offen": 15, "zukunft": true}, {"datum": "2026-09-11", "umfang": 41, "fertig": 26, "offen": 15, "zukunft": true}, {"datum": "2026-09-12", "umfang": 41, "fertig": 26, "offen": 15, "zukunft": true}, {"datum": "2026-09-13", "umfang": 41, "fertig": 26, "offen": 15, "zukunft": true}, {"datum": "2026-09-14", "umfang": 41, "fertig": 26, "offen": 15, "zukunft": true}, {"datum": "2026-09-15", "umfang": 41, "fertig": 26, "offen": 15, "zukunft": true}, {"datum": "2026-09-16", "umfang": 41, "fertig": 26, "offen": 15, "zukunft": true}, {"datum": "2026-09-17", "umfang": 41, "fertig": 26, "offen": 15, "zukunft": true}]</script>
+<script>
+(function () {
+  var daten = JSON.parse(document.getElementById("daten").textContent);
+  var svg = document.querySelector("svg"), hit = document.getElementById("hit"), tip = document.getElementById("tip");
+  var L = 56, pw = 880;
+  function zeige(ev) {
+    var r = svg.getBoundingClientRect();
+    var rel = (ev.clientX - r.left) / r.width * 960;
+    var i = Math.round((rel - L) / pw * (daten.length - 1));
+    if (i < 0 || i >= daten.length) { tip.style.display = "none"; return; }
+    var d = daten[i];
+    tip.innerHTML = d.datum + (d.zukunft ? " (Forecast)" : "") + "<br>Umfang " + d.umfang + " · fertig " + d.fertig + " · offen " + d.offen;
+    tip.style.display = "block";
+    tip.style.left = (ev.clientX - r.left + 12) + "px"; tip.style.top = (ev.clientY - r.top - 36) + "px";
+  }
+  hit.addEventListener("mousemove", zeige); hit.addEventListener("mouseleave", function () { tip.style.display = "none"; });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") tip.style.display = "none"; });
+})();
+</script>
+</main>
+</body>
+</html>
