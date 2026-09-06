@@ -299,3 +299,4 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-06 | R00020 Datei an Karte haengen | B0280 Anhangabschnitt der Kartenseite | Standard | 2h | 0,3h | 0,3h | autonom |
 | 2026-09-06 | R00020 Datei an Karte haengen | B0281 E2E Datei an Karte haengen | Standard | 2-4h | 0,6h | 0,6h | autonom |
 | 2026-09-06 | R00020 Datei an Karte haengen | Lauf R00020 · S7 ausstehend | Nacharbeit | — | 0,1h | 0,1h | autonom |
+| 2026-09-06 | R00021 Karte auf Dateien verweisen lassen | B0282 Probe: Zwischenablage aus dem Blazor-Kreislauf | Standard | 0,4-1,5h | 0,1h | 0,1h | autonom |
