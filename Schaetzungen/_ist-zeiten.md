@@ -282,3 +282,4 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-05 | R00019 Karte kommentieren | B0264 Kommentarabschnitt der Kartenseite | Standard | 2h | 0,0h | 0,0h | autonom |
 | 2026-09-05 | R00019 Karte kommentieren | B0265 E2E Karte kommentieren | Standard | 2-4h | 0,4h | 0,4h | autonom |
 | 2026-09-06 | R00019 Karte kommentieren | Lauf R00019 · S7 ausstehend | Nacharbeit | — | 0,3h | 0,3h | autonom |
+| 2026-09-06 | R00020 Datei an Karte haengen | B0266 Probe: Datei durch multipart in die WebApi und zurueck | Standard | 0,4-1,5h | 0,1h | 0,1h | autonom |
