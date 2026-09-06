@@ -295,6 +295,41 @@ else
                einzeilige Form bleibt. Und die Überschrift rechts heißt **„Dateiverweise"** und
                nicht „Verweise": das Wort ist in dieser Anwendung schon der Hyperlink, und zwei
                Bedeutungen desselben Worts stünden auf demselben Schirm nebeneinander. *@
+            @* **Eine** Stelle, die **beide** Listen kennt, und vier Zustände daraus. Bis R00020
+               standen hier zwei getrennte `@@if` — je Hälfte einer —, und eine frische Karte sagte
+               damit zweimal, dass sie leer ist. Das Artboard zeichnet eine Zeile (`:425`), und der
+               Testkommentar von R00020 hat den Wechsel angekündigt.
+               **Der Ort ist entschieden und begründet:** die Zeile steht **über** der Sektion und
+               nicht darunter. Sie spricht über beide Hälften, muss also außerhalb beider stehen —
+               innerhalb würde sie zum dritten Flex-Element neben ihnen. Und sie steht an der
+               Stelle, an der die fehlenden Listen stünden: in beiden Hälften kommt die Liste vor
+               der Eingabezeile, eine Zeile darunter läse sich als Nachsatz zu den Eingaben.
+               Das ist eine Frage des Markups und nicht des Verhaltens: die vier Zustände und ihr
+               Wortlaut gelten unabhängig davon. *@
+            @if (!HatAnhaenge && !HatDateiverweise)
+            {
+                <p class="blattleerstand" id="leerstand-beide-haelften">
+                    Keine Anhänge, keine Dateiverweise ·
+                    @* Ein label und kein Knopf: „for" öffnet denselben Dateiwähler wie die Fläche
+                       in der linken Hälfte, ohne einen zweiten Weg dorthin zu bauen. *@
+                    <label class="blatthandlung" id="anhang-hinzufuegen" for="anhang-datei">hinzufügen</label>
+                </p>
+            }
+            else if (!HatAnhaenge)
+            {
+                <p class="blattleerstand" id="anhang-leerstand">
+                    Keine Anhänge ·
+                    <label class="blatthandlung" id="anhang-hinzufuegen" for="anhang-datei">hinzufügen</label>
+                </p>
+            }
+            else if (!HatDateiverweise)
+            {
+                <p class="blattleerstand" id="dateiverweis-leerstand">
+                    Keine Dateiverweise ·
+                    <button type="button" class="blatthandlung" id="dateiverweis-eintragen" @onclick="FokussiereDateiverweisfeld">eintragen</button>
+                </p>
+            }
+
             <div class="blattzweispalter" id="anhaengeUndVerweise">
                 <section class="blatthalbabschnitt" id="anhangabschnitt">
                     <h3 class="blattueberschrift">Anhänge</h3>
@@ -322,16 +357,6 @@ else
                                 </div>
                             }
                         </div>
-                    }
-                    else
-                    {
-                        @* Die Handlung statt der Null, wie bei den Teilaufgaben und den Kommentaren. *@
-                        <p class="anhangleerstand" id="anhang-leerstand">
-                            Keine Anhänge ·
-                            @* Ein label und kein Knopf: „for" öffnet denselben Dateiwähler wie die
-                               Fläche darunter, ohne einen zweiten Weg dorthin zu bauen. *@
-                            <label class="blatthandlung" id="anhang-hinzufuegen" for="anhang-datei">hinzufügen</label>
-                        </p>
                     }
 
                     @* Die Fläche ist ein label um das Dateifeld: ein Klick öffnet den Dateiwähler,
@@ -378,14 +403,6 @@ else
                                 </div>
                             }
                         </div>
-                    }
-                    else
-                    {
-                        @* Die Handlung statt der Null, wie in den drei Abschnitten davor. *@
-                        <p class="dateiverweisleerstand" id="dateiverweis-leerstand">
-                            Keine Dateiverweise ·
-                            <button type="button" class="blatthandlung" id="dateiverweis-eintragen" @onclick="FokussiereDateiverweisfeld">eintragen</button>
-                        </p>
                     }
 
                     @* Den Text des Feldes führt das Feld selbst, nicht der Server: kein value.

@@ -81,11 +81,14 @@ public class KartendetailOeffnenE2ETests : PageTest
         await Expect(aufbau.Detail.MeldungUnbekannteKarte).ToHaveCountAsync(0);
     }
 
-    // Die Leerzustandszeile der frischen Karte, wie im Artboard: beide Abschnitte tragen die
+    // Die Leerzustandszeile der frischen Karte, wie im Artboard: jeder Abschnitt traegt die
     // Handlung statt einer Null.
+    // **Der angekuendigte Wechsel ist eingeloest:** wo bis R00020 die halbe Zeile „Keine
+    // Anhaenge · hinzufuegen" stand, steht seit R00021 die gemeinsame ueber beiden Haelften. Der
+    // Kommentar an dieser Stelle hat genau das vorausgesagt.
     [Test]
     [Category("US-7")]
-    public async Task Wenn_eine_frische_Karte_geoeffnet_wird_dann_tragen_Teilaufgaben_Kommentare_und_Anhaenge_die_Handlung_statt_einer_Null()
+    public async Task Wenn_eine_frische_Karte_geoeffnet_wird_dann_tragen_Teilaufgaben_Kommentare_und_beide_Haelften_die_Handlung_statt_einer_Null()
     {
         var aufbau = await BoardMitDreiKarten();
 
@@ -93,9 +96,9 @@ public class KartendetailOeffnenE2ETests : PageTest
 
         await Expect(aufbau.Detail.TeilaufgabenLeerstand).ToHaveTextAsync("Keine Teilaufgaben · anlegen");
         await Expect(aufbau.Detail.KommentarLeerstand).ToHaveTextAsync("Noch kein Kommentar · schreiben");
-        // Halb, wie im Artboard vorgesehen: die gemeinsame Zeile „Keine Anhänge, keine Verweise"
-        // entsteht erst mit I0019, das die rechte Hälfte der Sektion füllt.
-        await Expect(aufbau.Detail.AnhangLeerstand).ToHaveTextAsync("Keine Anhänge · hinzufügen");
+        await Expect(aufbau.Detail.LeerstandBeiderHaelften).ToHaveTextAsync("Keine Anhänge, keine Dateiverweise · hinzufügen");
+        await Expect(aufbau.Detail.AnhangLeerstand).ToHaveCountAsync(0);
+        await Expect(aufbau.Detail.DateiverweisLeerstand).ToHaveCountAsync(0);
     }
 
     private async Task<Aufbau> BoardMitDreiKarten()

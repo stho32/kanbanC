@@ -687,7 +687,9 @@
     color: var(--color-text);
 }
 
-.anhangleerstand {
+/* Der Leerstand **beider** Hälften, in allen vier Zuständen dieselbe Zeile an derselben Stelle:
+   über der zweispaltigen Sektion. Eine Klasse und nicht zwei — es ist eine Stelle. */
+.blattleerstand {
     margin: 0;
     font-size: 12px;
     color: color-mix(in srgb, var(--color-text) 55%, transparent);
@@ -811,12 +813,6 @@
 
 .dateiverweis:hover .dateiverweis-entfernen {
     color: var(--color-text);
-}
-
-.dateiverweisleerstand {
-    margin: 0;
-    font-size: 12px;
-    color: color-mix(in srgb, var(--color-text) 55%, transparent);
 }
 
 /* Die Eingabezeile aus dem Artboard: eine Pille über die volle Breite, ohne Knopf daneben —

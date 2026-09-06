@@ -209,6 +209,11 @@ public sealed class KartendetailSeite
 
     public ILocator DateiverweisLeerstand => _seite.Locator("#dateiverweis-leerstand");
 
+    // Die gemeinsame Zeile ueber beiden Haelften, wenn die Karte weder Anhang noch Dateiverweis
+    // traegt. Sie steht an derselben Stelle wie die beiden halben — es ist eine Stelle mit vier
+    // Zustaenden.
+    public ILocator LeerstandBeiderHaelften => _seite.Locator("#leerstand-beide-haelften");
+
     public ILocator Dateiverweisfeld => _seite.Locator("#dateiverweis-eingabe");
 
     public ILocator DateiverweisHinweis => _seite.Locator("#dateiverweis-hinweis");

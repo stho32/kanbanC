@@ -18,14 +18,17 @@ public class DateiAnKarteHaengenE2ETests : PageTest
     private const int HundertachtzehnKilobyte = 118000;
 
     // US-1: die Handlung statt der Null, und die gezeichnete Ablegefläche darunter.
+    // Die Karte dieses Aufbaus traegt **weder** Anhang **noch** Dateiverweis; die Handlung steht
+    // deshalb seit R00021 in der gemeinsamen Zeile ueber beiden Haelften und nicht mehr in der
+    // halben. Der Wortlaut nennt beide, die Handlung ist dieselbe.
     [Test]
     [Category("US-1")]
     public async Task Wenn_die_Karte_keinen_Anhang_traegt_dann_steht_dort_die_Handlung_und_die_Ablegeflaeche()
     {
         var aufbau = await KarteOhneAnhang();
 
-        await Expect(aufbau.Seite.AnhangLeerstand).ToContainTextAsync("Keine Anhänge");
-        await Expect(aufbau.Seite.AnhangLeerstand).ToContainTextAsync("hinzufügen");
+        await Expect(aufbau.Seite.LeerstandBeiderHaelften).ToContainTextAsync("Keine Anhänge");
+        await Expect(aufbau.Seite.LeerstandBeiderHaelften).ToContainTextAsync("hinzufügen");
         await Expect(aufbau.Seite.Ablegeflaeche).ToContainTextAsync("Datei hierher ziehen oder wählen");
         await Expect(aufbau.Seite.Anhaenge).ToHaveCountAsync(0);
     }
