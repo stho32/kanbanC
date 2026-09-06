@@ -9,8 +9,8 @@ namespace KanbanC.PlaywrightTests.Tests;
 
 // US-1 bis US-8 als Rundlauf über die Oberfläche: der Leerzustand, die Einträgeliste, die Summen
 // je Kontributor, die laufende Zeile ohne Dauer und der Stopp am fremden Timer.
-// Die Zeiträume entstehen über Start und Stopp — ein Nachtrag mit gewählten Uhrzeiten gehört
-// I0025 und fehlt hier; die Rechnung selbst belegen die Unit Tests der Zeitbilanz.
+// Die Zeiträume entstehen hier über Start und Stopp; den Nachtrag mit gewählten Uhrzeiten fährt
+// ZeitenNachtragenE2ETests, und die Rechnung selbst belegen die Unit Tests der Zeitbilanz.
 [TestFixture]
 public class ZeitenSehenE2ETests : PageTest
 {
@@ -84,11 +84,11 @@ public class ZeitenSehenE2ETests : PageTest
         await Expect(aufbau.Seite.Zeitenabschnitt).Not.ToContainTextAsync("Soll");
     }
 
-    // US-4: eine abgeschlossene Zeile trägt überhaupt keine Handlung — kein Stift, kein Löschen,
-    // kein Stoppquadrat. Ändern und Nachtragen gehören I0025.
+    // US-4: eine abgeschlossene Zeile trägt kein Stoppquadrat — es steht nur an der laufenden.
+    // Der Stift zum Ändern kam mit I0025 hinzu und gehört nicht zu dieser Zusage.
     [Test]
     [Category("US-4")]
-    public async Task Wenn_eine_Zeile_abgeschlossen_ist_dann_traegt_sie_keine_Handlung()
+    public async Task Wenn_eine_Zeile_abgeschlossen_ist_dann_traegt_sie_kein_Stoppquadrat()
     {
         var aufbau = await FrischeKarte();
         await WaehleIdentitaet(aufbau.Seite, aufbau.Stefan);

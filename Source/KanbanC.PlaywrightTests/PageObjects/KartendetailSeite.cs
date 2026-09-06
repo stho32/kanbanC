@@ -467,4 +467,20 @@ public sealed class KartendetailSeite
     {
         return Zeiteintrag(zeiteintragId).Locator(".zeiteneintragstopp");
     }
+
+    // Der Stift öffnet die Zeile an Ort und Stelle — er steht an jeder Zeile, auch an einer
+    // laufenden.
+    public ILocator Zeiteintragsstift(long zeiteintragId)
+    {
+        return _seite.Locator($"#zeiteneintrag-stift-{zeiteintragId}");
+    }
+
+    public ILocator ZeitenNachtragenOeffnen => _seite.Locator("#zeiten-nachtragen-oeffnen");
+
+    // Dasselbe Formular an zwei Orten; höchstens eines steht zugleich offen.
+    public ILocator Zeitenformulare => _seite.Locator("#zeitenabschnitt .zeitenformular");
+
+    public Zeiteintragsformular Nachtragsformular => new(_seite, "zeitennachtrag");
+
+    public Zeiteintragsformular Aenderungsformular => new(_seite, "zeitenaenderung");
 }

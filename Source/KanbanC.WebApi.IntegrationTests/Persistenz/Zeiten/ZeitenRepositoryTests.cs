@@ -1,3 +1,4 @@
+using System.Globalization;
 using Dapper;
 using KanbanC.BL.Operations.Boards;
 using KanbanC.BL.Persistenz.Boards;
@@ -6,6 +7,7 @@ using KanbanC.BL.Persistenz.Zeiten;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
 using KanbanC.Contracts.Kontributoren;
+using KanbanC.Contracts.Zeiten;
 using KanbanC.WebApi.IntegrationTests.Infrastructure;
 
 namespace KanbanC.WebApi.IntegrationTests.Persistenz.Zeiten;
@@ -459,6 +461,216 @@ public class ZeitenRepositoryTests
             Assert.That(beendeter.Kontributor.KontributorId, Is.EqualTo(aufbau.AgentId));
             Assert.That(beendeter.Kontributor.StillgelegtAm, Is.EqualTo(new DateOnly(2026, 9, 6)));
         });
+    }
+
+    [Test]
+    public void Wenn_ein_Zeiteintrag_nachgetragen_wird_dann_stehen_Beginn_und_Ende_als_ISO_Text_in_UTC()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+
+        var nachgetragener = repository.TrageNach(aufbau.ErsteKarteId, new ZeiteintragNachtragenAnfrage(aufbau.StefanId, AchtUhrVier, NeunUhrVierzigMitteleuropaeisch));
+
+        Assert.That(nachgetragener, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(nachgetragener!.Beginn, Is.EqualTo(AchtUhrVier));
+            Assert.That(nachgetragener.Ende, Is.EqualTo(NeunUhrVierzig));
+            Assert.That(nachgetragener.Kontributor.Name, Is.EqualTo("Stefan"));
+        });
+        Assert.That(Endetexte(datenbank), Is.EqualTo(new[] { NeunUhrVierzig.ToString(IsoZeitpunktformat, CultureInfo.InvariantCulture) }));
+    }
+
+    // Der partielle Index kann beim Nachtrag nie anschlagen: er traegt immer ein Ende. Der schon
+    // laufende Eintrag desselben Paares bleibt unberuehrt.
+    [Test]
+    public void Wenn_fuer_dasselbe_Paar_ein_Timer_laeuft_dann_gelingt_der_Nachtrag_daneben()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+        repository.StarteZeitmessung(aufbau.ErsteKarteId, aufbau.StefanId, AchtUhrVier);
+
+        var nachgetragener = repository.TrageNach(aufbau.ErsteKarteId, new ZeiteintragNachtragenAnfrage(aufbau.StefanId, NeunUhrZwoelf, NeunUhrVierzig));
+
+        Assert.That(nachgetragener, Is.Not.Null);
+        Assert.That(Endetexte(datenbank), Is.EqualTo(new string?[] { null, NeunUhrVierzig.ToString(IsoZeitpunktformat, CultureInfo.InvariantCulture) }));
+    }
+
+    [Test]
+    public void Wenn_es_die_Karte_nicht_gibt_dann_traegt_das_Repository_nichts_nach()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+
+        var nachgetragener = repository.TrageNach(999, new ZeiteintragNachtragenAnfrage(aufbau.StefanId, AchtUhrVier, NeunUhrVierzig));
+
+        Assert.That(nachgetragener, Is.Null);
+        Assert.That(Zeiteintragszeilen(datenbank), Is.Empty);
+    }
+
+    [Test]
+    public void Wenn_ein_Zeiteintrag_geaendert_wird_dann_stehen_Kontributor_Beginn_und_Ende_neu_und_die_Karte_bleibt()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+        var nachgetragener = repository.TrageNach(aufbau.ErsteKarteId, new ZeiteintragNachtragenAnfrage(aufbau.StefanId, AchtUhrVier, NeunUhrVierzig));
+
+        var aenderung = repository.Aendere(aufbau.ErsteKarteId, nachgetragener!.ZeiteintragId, new ZeiteintragAendernAnfrage(aufbau.AgentId, NeunUhrZwoelf, ElfUhrFuenfzehn));
+
+        Assert.That(aenderung, Is.Not.Null);
+        Assert.That(aenderung!.WurdeGeaendert, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(aenderung.Eintrag.ZeiteintragId, Is.EqualTo(nachgetragener.ZeiteintragId));
+            Assert.That(aenderung.Eintrag.Karte, Is.EqualTo(aufbau.ErsteKarteId));
+            Assert.That(aenderung.Eintrag.Kontributor.KontributorId, Is.EqualTo(aufbau.AgentId));
+            Assert.That(aenderung.Eintrag.Beginn, Is.EqualTo(NeunUhrZwoelf));
+            Assert.That(aenderung.Eintrag.Ende, Is.EqualTo(ElfUhrFuenfzehn));
+        });
+    }
+
+    // Der Rückfall auf „läuft": nach der Änderung findet ihn LiesLaufendenEintrag wieder.
+    [Test]
+    public void Wenn_das_Ende_auf_null_gesetzt_wird_dann_laeuft_der_Eintrag_wieder_und_die_Spalte_ist_leer()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+        var nachgetragener = repository.TrageNach(aufbau.ErsteKarteId, new ZeiteintragNachtragenAnfrage(aufbau.StefanId, AchtUhrVier, NeunUhrVierzig));
+
+        var aenderung = repository.Aendere(aufbau.ErsteKarteId, nachgetragener!.ZeiteintragId, new ZeiteintragAendernAnfrage(aufbau.StefanId, AchtUhrVier, Ende: null));
+
+        Assert.That(aenderung, Is.Not.Null);
+        Assert.That(aenderung!.WurdeGeaendert, Is.True);
+        Assert.That(aenderung.Eintrag.Ende, Is.Null);
+        Assert.That(Endetexte(datenbank), Is.EqualTo(new string?[] { null }));
+        var zweiterStart = repository.StarteZeitmessung(aufbau.ErsteKarteId, aufbau.StefanId, ElfUhrFuenfzehn);
+        Assert.That(zweiterStart!.IstNeu, Is.False, "Der wieder laufende Eintrag ist ueber LiesLaufendenEintrag auffindbar.");
+    }
+
+    [Test]
+    public void Wenn_ein_Eintrag_an_einer_fremden_Karte_geaendert_werden_soll_dann_bleibt_er_unveraendert()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+        var nachgetragener = repository.TrageNach(aufbau.ErsteKarteId, new ZeiteintragNachtragenAnfrage(aufbau.StefanId, AchtUhrVier, NeunUhrVierzig));
+
+        var aenderung = repository.Aendere(aufbau.ZweiteKarteId, nachgetragener!.ZeiteintragId, new ZeiteintragAendernAnfrage(aufbau.AgentId, NeunUhrZwoelf, ElfUhrFuenfzehn));
+
+        Assert.That(aenderung, Is.Null);
+        Assert.That(Zeiteintragszeilen(datenbank)[0].Beginn, Is.EqualTo(AchtUhrVier.ToString(IsoZeitpunktformat, CultureInfo.InvariantCulture)));
+    }
+
+    // **Die gefährlichste Stelle des Slice:** die Prüfung sitzt im Schreibweg selbst. Läuft für
+    // dasselbe Paar schon ein anderer, kommt er statt des geänderten zurück, **ohne** dass
+    // geschrieben wurde — nur so kann der partielle Index nie statt eines Befunds zuschlagen.
+    [Test]
+    public void Wenn_fuer_dasselbe_Paar_ein_anderer_laeuft_dann_meldet_die_Aenderung_ihn_und_schreibt_nicht()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+        var laufender = repository.StarteZeitmessung(aufbau.ErsteKarteId, aufbau.StefanId, AchtUhrVier);
+        var abgeschlossener = repository.TrageNach(aufbau.ErsteKarteId, new ZeiteintragNachtragenAnfrage(aufbau.StefanId, NeunUhrZwoelf, NeunUhrVierzig));
+
+        var aenderung = repository.Aendere(aufbau.ErsteKarteId, abgeschlossener!.ZeiteintragId, new ZeiteintragAendernAnfrage(aufbau.StefanId, NeunUhrZwoelf, Ende: null));
+
+        Assert.That(aenderung, Is.Not.Null);
+        Assert.That(aenderung!.WurdeGeaendert, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(aenderung.Eintrag.ZeiteintragId, Is.EqualTo(laufender!.Zeiteintrag.ZeiteintragId));
+            Assert.That(Endetexte(datenbank)[1], Is.EqualTo(NeunUhrVierzig.ToString(IsoZeitpunktformat, CultureInfo.InvariantCulture)), "Der abgeschlossene Eintrag bleibt abgeschlossen.");
+        });
+    }
+
+    // Der Eintrag steht seinem eigenen Rückfall auf „läuft" nicht im Weg: ein laufender, der
+    // laufend bleiben soll, wird geändert und nicht abgewiesen.
+    [Test]
+    public void Wenn_ein_laufender_Eintrag_laufend_bleiben_soll_dann_steht_er_sich_selbst_nicht_im_Weg()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+        var laufender = repository.StarteZeitmessung(aufbau.ErsteKarteId, aufbau.StefanId, AchtUhrVier);
+
+        var aenderung = repository.Aendere(aufbau.ErsteKarteId, laufender!.Zeiteintrag.ZeiteintragId, new ZeiteintragAendernAnfrage(aufbau.StefanId, NeunUhrZwoelf, Ende: null));
+
+        Assert.That(aenderung, Is.Not.Null);
+        Assert.That(aenderung!.WurdeGeaendert, Is.True);
+        Assert.That(aenderung.Eintrag.Beginn, Is.EqualTo(NeunUhrZwoelf));
+    }
+
+    [Test]
+    public void Wenn_ein_Eintrag_gelesen_wird_dann_liefert_das_Repository_ihn_nur_an_seiner_eigenen_Karte()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+        var nachgetragener = repository.TrageNach(aufbau.ErsteKarteId, new ZeiteintragNachtragenAnfrage(aufbau.StefanId, AchtUhrVier, NeunUhrVierzig));
+
+        var anEigenerKarte = repository.Lies(aufbau.ErsteKarteId, nachgetragener!.ZeiteintragId);
+        var anFremderKarte = repository.Lies(aufbau.ZweiteKarteId, nachgetragener.ZeiteintragId);
+
+        Assert.That(anEigenerKarte, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(anEigenerKarte!.Kontributor.KontributorId, Is.EqualTo(aufbau.StefanId));
+            Assert.That(anFremderKarte, Is.Null);
+        });
+    }
+
+    [Test]
+    public void Wenn_ein_Zeiteintrag_geloescht_wird_dann_traegt_das_Kartendetail_ihn_nicht_mehr()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+        var bleibender = repository.TrageNach(aufbau.ErsteKarteId, new ZeiteintragNachtragenAnfrage(aufbau.StefanId, AchtUhrVier, NeunUhrVierzig));
+        var zuLoeschender = repository.TrageNach(aufbau.ErsteKarteId, new ZeiteintragNachtragenAnfrage(aufbau.AgentId, NeunUhrZwoelf, ElfUhrFuenfzehn));
+
+        var detail = repository.Loesche(aufbau.ErsteKarteId, zuLoeschender!.ZeiteintragId);
+
+        Assert.That(detail, Is.Not.Null);
+        Assert.That(detail!.Zeiteintraege.Select(eintrag => eintrag.ZeiteintragId), Is.EqualTo(new[] { bleibender!.ZeiteintragId }));
+        Assert.That(Zeiteintragszeilen(datenbank), Has.Length.EqualTo(1));
+    }
+
+    // Ein laufender Eintrag ist ebenso löschbar wie ein abgeschlossener; das Paar ist danach
+    // wieder frei.
+    [Test]
+    public void Wenn_ein_laufender_Eintrag_geloescht_wird_dann_ist_das_Paar_wieder_frei()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+        var laufender = repository.StarteZeitmessung(aufbau.ErsteKarteId, aufbau.StefanId, AchtUhrVier);
+
+        var detail = repository.Loesche(aufbau.ErsteKarteId, laufender!.Zeiteintrag.ZeiteintragId);
+
+        Assert.That(detail, Is.Not.Null);
+        Assert.That(detail!.Zeiteintraege, Is.Empty);
+        var neuerStart = repository.StarteZeitmessung(aufbau.ErsteKarteId, aufbau.StefanId, NeunUhrZwoelf);
+        Assert.That(neuerStart!.IstNeu, Is.True, "Nach dem Loeschen ist das Paar wieder frei.");
+    }
+
+    [Test]
+    public void Wenn_ein_Eintrag_an_einer_fremden_Karte_geloescht_werden_soll_dann_bleibt_er_stehen()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+        var nachgetragener = repository.TrageNach(aufbau.ErsteKarteId, new ZeiteintragNachtragenAnfrage(aufbau.StefanId, AchtUhrVier, NeunUhrVierzig));
+
+        var detail = repository.Loesche(aufbau.ZweiteKarteId, nachgetragener!.ZeiteintragId);
+
+        Assert.That(detail, Is.Null);
+        Assert.That(Zeiteintragszeilen(datenbank), Has.Length.EqualTo(1));
     }
 
     private static Testaufbau Aufbau(TemporaereDatenbank datenbank)

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using KanbanC.Contracts.Boards;
@@ -14,6 +15,15 @@ public class ZeitenEndpunkteTests
 {
     private const string BoardsRoute = "/api/boards";
     private const string KontributorenRoute = "/api/kontributoren";
+    private static readonly DateTimeOffset GesternZwoelfUhr = new(2026, 9, 5, 12, 0, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset GesternHalbZwei = new(2026, 9, 5, 13, 30, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset GesternZweiUhr = new(2026, 9, 5, 14, 0, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset GesternAcht = new(2026, 9, 5, 8, 0, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset GesternNeun = new(2026, 9, 5, 9, 0, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset GesternZehn = new(2026, 9, 5, 10, 0, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset GesternAchtzehn = new(2026, 9, 5, 18, 0, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset GesternNeunzehn = new(2026, 9, 5, 19, 0, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset GesternZwanzig = new(2026, 9, 5, 20, 0, 0, TimeSpan.Zero);
 
     [Test]
     public async Task Wenn_eine_Zeitmessung_startet_dann_antwortet_die_Route_mit_201_und_einem_Eintrag_ohne_Ende()
@@ -291,22 +301,7 @@ public class ZeitenEndpunkteTests
         Assert.That(detail.Zeiteintraege, Is.Empty);
     }
 
-    // Genau zwei Zeitenrouten: starten und beenden. POST …/zeiten bleibt dem Nachtragen aus I0025,
-    // GET /api/zeiten/laufend der Kopfzeilenübersicht aus I0027 — beide entstehen hier nicht.
-    [Test]
-    public void Wenn_die_Routen_der_WebApi_gelesen_werden_dann_gibt_es_genau_die_Startroute_und_die_Enderoute()
-    {
-        using var datenbank = new TemporaereDatenbank();
-        using var webApi = new TestWebApi(datenbank.Dateipfad);
 
-        var zeitenrouten = Zeitenrouten(webApi.Routen);
-
-        Assert.That(zeitenrouten, Is.EquivalentTo(new[]
-        {
-            "POST /api/karten/{karteId:long}/zeiten/laufend",
-            "PUT /api/karten/{karteId:long}/zeiten/{zeiteintragId:long}/ende",
-        }));
-    }
 
     // Solange nur gestartet und wiederholt wurde, trägt kein Eintrag ein Ende: „läuft" ist genau
     // „kein Ende", und der Start setzt es nie. Erst der Stopp füllt die Spalte.
@@ -577,6 +572,517 @@ public class ZeitenEndpunkteTests
         var detail = await LadeKartendetail(webApi, aufbau.ZweiteKarteId);
         Assert.That(detail.Zeiteintraege[0].Ende, Is.Null);
         Assert.That(detail.Zeiteintraege[0].Beginn, Is.EqualTo(gestarteter.Beginn));
+    }
+
+    // Genau fünf Zeitenrouten: starten, beenden, nachtragen, ändern und löschen.
+    // GET /api/zeiten/laufend bleibt der Kopfzeilenübersicht aus I0027 und entsteht hier nicht.
+    [Test]
+    public void Wenn_die_Routen_der_WebApi_gelesen_werden_dann_gibt_es_genau_die_fuenf_Zeitenrouten()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+
+        var zeitenrouten = Zeitenrouten(webApi.Routen);
+
+        Assert.That(zeitenrouten, Is.EquivalentTo(new[]
+        {
+            "POST /api/karten/{karteId:long}/zeiten/laufend",
+            "PUT /api/karten/{karteId:long}/zeiten/{zeiteintragId:long}/ende",
+            "POST /api/karten/{karteId:long}/zeiten",
+            "PUT /api/karten/{karteId:long}/zeiten/{zeiteintragId:long}",
+            "DELETE /api/karten/{karteId:long}/zeiten/{zeiteintragId:long}",
+        }));
+    }
+
+    // Der long-Constraint trennt die Nummer vom Wort: „…/zeiten/laufend" und
+    // „…/zeiten/{zeiteintragId:long}" greifen nebeneinander, ohne sich zu verdecken.
+    [Test]
+    public async Task Wenn_beide_Zeitenadressen_aufgerufen_werden_dann_greifen_laufend_und_die_Nummer_nebeneinander()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await LegeAufbauAn(webApi);
+        var gestarteter = await StarteZeitmessung(webApi, aufbau.ErsteKarteId, aufbau.Stefan.KontributorId);
+
+        var aufDieNummer = await webApi.Klient.PutAsJsonAsync(Zeiteintragsroute(aufbau.ErsteKarteId, gestarteter.ZeiteintragId), new ZeiteintragAendernAnfrage(aufbau.Stefan.KontributorId, GesternZwoelfUhr, GesternHalbZwei));
+        var aufDasWort = await webApi.Klient.PostAsJsonAsync(Zeitmessungsroute(aufbau.ErsteKarteId), new ZeitmessungStartenAnfrage(aufbau.Agent.KontributorId));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(aufDieNummer.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+            Assert.That(aufDasWort.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        });
+        var detail = await LadeKartendetail(webApi, aufbau.ErsteKarteId);
+        Assert.That(detail.Zeiteintraege, Has.Count.EqualTo(2));
+    }
+
+    [Test]
+    public async Task Wenn_ein_Zeiteintrag_nachgetragen_wird_dann_antwortet_die_Route_mit_201_und_einem_Eintrag_mit_Ende()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await LegeAufbauAn(webApi);
+
+        var antwort = await webApi.Klient.PostAsJsonAsync(Nachtragsroute(aufbau.ErsteKarteId), new ZeiteintragNachtragenAnfrage(aufbau.Stefan.KontributorId, GesternZwoelfUhr, GesternHalbZwei));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        var zeiteintrag = await antwort.Content.ReadFromJsonAsync<Zeiteintrag>();
+        Assert.That(zeiteintrag, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(zeiteintrag!.Karte, Is.EqualTo(aufbau.ErsteKarteId));
+            Assert.That(zeiteintrag.Kontributor.Name, Is.EqualTo("Stefan"));
+            Assert.That(zeiteintrag.Beginn, Is.EqualTo(GesternZwoelfUhr));
+            Assert.That(zeiteintrag.Ende, Is.EqualTo(GesternHalbZwei));
+        });
+    }
+
+    // Der Eintrag steht danach im Kartendetail und überlebt einen Neustart der WebApi: dieselbe
+    // Datei, ein zweiter Prozess.
+    [Test]
+    public async Task Wenn_ein_Zeiteintrag_nachgetragen_wurde_dann_steht_er_nach_einem_Neustart_der_WebApi_noch_da()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        long karteId;
+        using (var webApi = new TestWebApi(datenbank.Dateipfad))
+        {
+            var aufbau = await LegeAufbauAn(webApi);
+            karteId = aufbau.ErsteKarteId;
+            var antwort = await webApi.Klient.PostAsJsonAsync(Nachtragsroute(karteId), new ZeiteintragNachtragenAnfrage(aufbau.Stefan.KontributorId, GesternZwoelfUhr, GesternHalbZwei));
+            antwort.EnsureSuccessStatusCode();
+        }
+
+        using var zweiterLauf = new TestWebApi(datenbank.Dateipfad);
+        var detail = await LadeKartendetail(zweiterLauf, karteId);
+
+        Assert.That(detail.Zeiteintraege, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail.Zeiteintraege[0].Beginn, Is.EqualTo(GesternZwoelfUhr));
+            Assert.That(detail.Zeiteintraege[0].Ende, Is.EqualTo(GesternHalbZwei));
+        });
+    }
+
+    // Ein Nachtrag ohne „ende" ist kein Nachtrag, sondern ein Start — und der hat eine eigene
+    // Adresse. Die Gestalt der Anfrage sagt es, und die WebApi nimmt ihn nicht an.
+    [Test]
+    public async Task Wenn_ein_Nachtrag_ohne_Ende_geschickt_wird_dann_entsteht_kein_Eintrag()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await LegeAufbauAn(webApi);
+
+        var antwort = await webApi.Klient.PostAsync(Nachtragsroute(aufbau.ErsteKarteId), JsonRumpf($$"""{"kontributor":{{aufbau.Stefan.KontributorId}},"beginn":"2026-09-05T12:00:00+00:00"}"""));
+
+        Assert.That((int)antwort.StatusCode, Is.InRange(400, 499));
+        var detail = await LadeKartendetail(webApi, aufbau.ErsteKarteId);
+        Assert.That(detail.Zeiteintraege, Is.Empty);
+    }
+
+    [Test]
+    public async Task Wenn_das_Ende_vor_dem_Beginn_liegt_dann_antwortet_der_Nachtrag_mit_400_und_beiden_Werten()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await LegeAufbauAn(webApi);
+
+        var antwort = await webApi.Klient.PostAsJsonAsync(Nachtragsroute(aufbau.ErsteKarteId), new ZeiteintragNachtragenAnfrage(aufbau.Stefan.KontributorId, GesternHalbZwei, GesternZwoelfUhr));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var befund = (await Fehlerrumpf.Lies(antwort, "Nachtrag mit Ende vor Beginn")).Befunde[0];
+        Assert.Multiple(() =>
+        {
+            Assert.That(befund.Code, Is.EqualTo("zeiteintrag-ende-vor-beginn"));
+            Assert.That(befund.Meldung, Does.Contain("2026-09-05T13:30:00Z"));
+            Assert.That(befund.Meldung, Does.Contain("2026-09-05T12:00:00Z"));
+            Assert.That(befund.Kompensation, Is.Not.Empty);
+        });
+        var detail = await LadeKartendetail(webApi, aufbau.ErsteKarteId);
+        Assert.That(detail.Zeiteintraege, Is.Empty);
+    }
+
+    // Dauer null bleibt erlaubt — dieselbe Entscheidung wie beim Stopp.
+    [Test]
+    public async Task Wenn_Beginn_und_Ende_derselbe_Zeitpunkt_sind_dann_wird_der_Nachtrag_angenommen()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await LegeAufbauAn(webApi);
+
+        var antwort = await webApi.Klient.PostAsJsonAsync(Nachtragsroute(aufbau.ErsteKarteId), new ZeiteintragNachtragenAnfrage(aufbau.Stefan.KontributorId, GesternZwoelfUhr, GesternZwoelfUhr));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        var zeiteintrag = await antwort.Content.ReadFromJsonAsync<Zeiteintrag>();
+        Assert.That(zeiteintrag!.Ende, Is.EqualTo(zeiteintrag.Beginn));
+    }
+
+    [Test]
+    public async Task Wenn_ein_Zeitpunkt_in_der_Zukunft_liegt_dann_antwortet_der_Nachtrag_mit_400_und_nennt_Wert_und_Toleranz()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await LegeAufbauAn(webApi);
+        var morgen = DateTimeOffset.UtcNow.AddDays(1);
+
+        var antwort = await webApi.Klient.PostAsJsonAsync(Nachtragsroute(aufbau.ErsteKarteId), new ZeiteintragNachtragenAnfrage(aufbau.Stefan.KontributorId, morgen, morgen.AddHours(1)));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var befund = (await Fehlerrumpf.Lies(antwort, "Nachtrag in der Zukunft")).Befunde[0];
+        Assert.Multiple(() =>
+        {
+            Assert.That(befund.Code, Is.EqualTo("zeiteintrag-in-der-zukunft"));
+            Assert.That(befund.Meldung, Does.Contain("1 Minute"));
+            Assert.That(befund.Kompensation, Is.Not.Empty);
+        });
+        var detail = await LadeKartendetail(webApi, aufbau.ErsteKarteId);
+        Assert.That(detail.Zeiteintraege, Is.Empty);
+    }
+
+    // Eine halbe Minute voraus liegt innerhalb der Toleranz: das Formular ist minutengenau, und
+    // „bis jetzt" darf kein Fehler sein.
+    [Test]
+    public async Task Wenn_das_Ende_eine_halbe_Minute_nach_der_Serveruhr_liegt_dann_wird_der_Nachtrag_angenommen()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await LegeAufbauAn(webApi);
+        var gleichJetzt = DateTimeOffset.UtcNow.AddSeconds(30);
+
+        var antwort = await webApi.Klient.PostAsJsonAsync(Nachtragsroute(aufbau.ErsteKarteId), new ZeiteintragNachtragenAnfrage(aufbau.Stefan.KontributorId, gleichJetzt.AddHours(-1), gleichJetzt));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        var detail = await LadeKartendetail(webApi, aufbau.ErsteKarteId);
+        Assert.That(detail.Zeiteintraege, Has.Count.EqualTo(1));
+        Assert.That(detail.Zeiteintraege[0].Ende, Is.Not.Null);
+    }
+
+    [Test]
+    public async Task Wenn_der_Kontributor_stillgelegt_ist_dann_antwortet_der_Nachtrag_mit_400()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await LegeAufbauAn(webApi);
+
+        var antwort = await webApi.Klient.PostAsJsonAsync(Nachtragsroute(aufbau.ErsteKarteId), new ZeiteintragNachtragenAnfrage(aufbau.Stillgelegte.KontributorId, GesternZwoelfUhr, GesternHalbZwei));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var befund = (await Fehlerrumpf.Lies(antwort, "Nachtrag fuer einen Stillgelegten")).Befunde[0];
+        Assert.That(befund.Code, Is.EqualTo("kontributor-stillgelegt"));
+        var detail = await LadeKartendetail(webApi, aufbau.ErsteKarteId);
+        Assert.That(detail.Zeiteintraege, Is.Empty);
+    }
+
+    [Test]
+    public async Task Wenn_die_Karte_unbekannt_ist_dann_antwortet_der_Nachtrag_mit_404_und_dem_Weg_ueber_die_Boards()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await LegeAufbauAn(webApi);
+
+        var antwort = await webApi.Klient.PostAsJsonAsync(Nachtragsroute(999), new ZeiteintragNachtragenAnfrage(aufbau.Stefan.KontributorId, GesternZwoelfUhr, GesternHalbZwei));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var befund = (await Fehlerrumpf.Lies(antwort, "Nachtrag an unbekannter Karte")).Befunde[0];
+        Assert.Multiple(() =>
+        {
+            Assert.That(befund.Code, Is.EqualTo("karte-unbekannt"));
+            Assert.That(befund.Kompensation, Does.Contain("/api/boards"));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_der_Kontributor_unbekannt_ist_dann_antwortet_der_Nachtrag_mit_404()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await LegeAufbauAn(webApi);
+
+        var antwort = await webApi.Klient.PostAsJsonAsync(Nachtragsroute(aufbau.ErsteKarteId), new ZeiteintragNachtragenAnfrage(999, GesternZwoelfUhr, GesternHalbZwei));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var befund = (await Fehlerrumpf.Lies(antwort, "Nachtrag fuer unbekannten Kontributor")).Befunde[0];
+        Assert.That(befund.Code, Is.EqualTo("kontributor-unbekannt"));
+        var detail = await LadeKartendetail(webApi, aufbau.ErsteKarteId);
+        Assert.That(detail.Zeiteintraege, Is.Empty);
+    }
+
+    // Dieselbe Operation prueft beide Wege: die Zukunftsschranke gilt auch beim Aendern, und der
+    // bestehende Eintrag bleibt dabei stehen, wie er stand.
+    [Test]
+    public async Task Wenn_eine_Aenderung_in_die_Zukunft_zeigt_dann_antwortet_die_Route_mit_400_und_der_Eintrag_bleibt_stehen()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await LegeAufbauAn(webApi);
+        var nachgetragener = await TrageNach(webApi, aufbau.ErsteKarteId, aufbau.Stefan.KontributorId, GesternZwoelfUhr, GesternHalbZwei);
+        var morgen = DateTimeOffset.UtcNow.AddDays(1);
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Zeiteintragsroute(aufbau.ErsteKarteId, nachgetragener.ZeiteintragId), new ZeiteintragAendernAnfrage(aufbau.Stefan.KontributorId, morgen, morgen.AddHours(1)));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var befund = (await Fehlerrumpf.Lies(antwort, "Aenderung in die Zukunft")).Befunde[0];
+        Assert.Multiple(() =>
+        {
+            Assert.That(befund.Code, Is.EqualTo("zeiteintrag-in-der-zukunft"));
+            Assert.That(befund.Meldung, Does.Contain("1 Minute"));
+        });
+        var detail = await LadeKartendetail(webApi, aufbau.ErsteKarteId);
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail.Zeiteintraege[0].Beginn, Is.EqualTo(GesternZwoelfUhr));
+            Assert.That(detail.Zeiteintraege[0].Ende, Is.EqualTo(GesternHalbZwei));
+        });
+    }
+
+    // Überlappungen bleiben erlaubt und ungeprüft: drei Einträge desselben Tages werden alle
+    // drei angenommen, und die Summe wird nicht gekappt.
+    [Test]
+    public async Task Wenn_sich_drei_Eintraege_desselben_Kontributors_ueberlappen_dann_werden_alle_drei_angenommen()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await LegeAufbauAn(webApi);
+
+        await TrageNach(webApi, aufbau.ErsteKarteId, aufbau.Agent.KontributorId, GesternAcht, GesternAchtzehn);
+        await TrageNach(webApi, aufbau.ErsteKarteId, aufbau.Agent.KontributorId, GesternNeun, GesternNeunzehn);
+        await TrageNach(webApi, aufbau.ErsteKarteId, aufbau.Agent.KontributorId, GesternZehn, GesternZwanzig);
+
+        var detail = await LadeKartendetail(webApi, aufbau.ErsteKarteId);
+        Assert.That(detail.Zeiteintraege, Has.Count.EqualTo(3));
+        var summe = detail.Zeiteintraege.Sum(eintrag => (eintrag.Ende!.Value - eintrag.Beginn).Ticks);
+        Assert.That(TimeSpan.FromTicks(summe), Is.EqualTo(TimeSpan.FromHours(30)));
+    }
+
+    [Test]
+    public async Task Wenn_ein_Zeiteintrag_geaendert_wird_dann_antwortet_die_Route_mit_200_und_die_Nummern_bleiben()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await LegeAufbauAn(webApi);
+        var nachgetragener = await TrageNach(webApi, aufbau.ErsteKarteId, aufbau.Stefan.KontributorId, GesternZwoelfUhr, GesternHalbZwei);
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Zeiteintragsroute(aufbau.ErsteKarteId, nachgetragener.ZeiteintragId), new ZeiteintragAendernAnfrage(aufbau.Agent.KontributorId, GesternZwoelfUhr, GesternZweiUhr));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var geaenderter = await antwort.Content.ReadFromJsonAsync<Zeiteintrag>();
+        Assert.Multiple(() =>
+        {
+            Assert.That(geaenderter!.ZeiteintragId, Is.EqualTo(nachgetragener.ZeiteintragId));
+            Assert.That(geaenderter.Karte, Is.EqualTo(aufbau.ErsteKarteId));
+            Assert.That(geaenderter.Kontributor.KontributorId, Is.EqualTo(aufbau.Agent.KontributorId));
+            Assert.That(geaenderter.Ende, Is.EqualTo(GesternZweiUhr));
+        });
+        var detail = await LadeKartendetail(webApi, aufbau.ErsteKarteId);
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail.Zeiteintraege[0].Kontributor.KontributorId, Is.EqualTo(aufbau.Agent.KontributorId));
+            Assert.That(detail.Zeiteintraege[0].Ende, Is.EqualTo(GesternZweiUhr));
+        });
+    }
+
+    // Ein Eintrag eines später Stillgelegten bleibt korrigierbar, solange sein Kontributor
+    // derselbe bleibt — sonst fröre die Stilllegung falsche Zeiten ein.
+    [Test]
+    public async Task Wenn_ein_Eintrag_eines_Stillgelegten_ohne_Kontributorwechsel_geaendert_wird_dann_antwortet_die_Route_mit_200()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await LegeAufbauAn(webApi);
+        var nachgetragener = await TrageNach(webApi, aufbau.ErsteKarteId, aufbau.Stefan.KontributorId, GesternZwoelfUhr, GesternHalbZwei);
+        var stilllegung = await webApi.Klient.PutAsJsonAsync($"{KontributorenRoute}/{aufbau.Stefan.KontributorId}/stilllegung", new Stilllegung(true));
+        stilllegung.EnsureSuccessStatusCode();
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Zeiteintragsroute(aufbau.ErsteKarteId, nachgetragener.ZeiteintragId), new ZeiteintragAendernAnfrage(aufbau.Stefan.KontributorId, GesternZwoelfUhr, GesternZweiUhr));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var geaenderter = await antwort.Content.ReadFromJsonAsync<Zeiteintrag>();
+        Assert.That(geaenderter!.Ende, Is.EqualTo(GesternZweiUhr));
+    }
+
+    [Test]
+    public async Task Wenn_auf_einen_stillgelegten_Kontributor_gewechselt_wird_dann_antwortet_die_Route_mit_400()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await LegeAufbauAn(webApi);
+        var nachgetragener = await TrageNach(webApi, aufbau.ErsteKarteId, aufbau.Agent.KontributorId, GesternZwoelfUhr, GesternHalbZwei);
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Zeiteintragsroute(aufbau.ErsteKarteId, nachgetragener.ZeiteintragId), new ZeiteintragAendernAnfrage(aufbau.Stillgelegte.KontributorId, GesternZwoelfUhr, GesternZweiUhr));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var befund = (await Fehlerrumpf.Lies(antwort, "Wechsel auf einen Stillgelegten")).Befunde[0];
+        Assert.That(befund.Code, Is.EqualTo("kontributor-stillgelegt"));
+        var detail = await LadeKartendetail(webApi, aufbau.ErsteKarteId);
+        Assert.That(detail.Zeiteintraege[0].Kontributor.KontributorId, Is.EqualTo(aufbau.Agent.KontributorId));
+    }
+
+    // **Der Randfall des Rueckfalls auf „laufend":** kein SqliteException-Text kommt durch, der
+    // Befund nennt die Nummer des schon laufenden Eintrags.
+    [Test]
+    public async Task Wenn_ein_Eintrag_wieder_laufen_soll_und_schon_einer_laeuft_dann_nennt_der_Befund_dessen_Nummer()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await LegeAufbauAn(webApi);
+        var laufender = await StarteZeitmessung(webApi, aufbau.ErsteKarteId, aufbau.Agent.KontributorId);
+        var abgeschlossener = await TrageNach(webApi, aufbau.ErsteKarteId, aufbau.Agent.KontributorId, GesternZwoelfUhr, GesternHalbZwei);
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Zeiteintragsroute(aufbau.ErsteKarteId, abgeschlossener.ZeiteintragId), new ZeiteintragAendernAnfrage(aufbau.Agent.KontributorId, GesternZwoelfUhr, Ende: null));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var befund = (await Fehlerrumpf.Lies(antwort, "Rueckfall auf laufend neben einem laufenden")).Befunde[0];
+        Assert.Multiple(() =>
+        {
+            Assert.That(befund.Code, Is.EqualTo("zeiteintrag-laeuft-schon"));
+            Assert.That(befund.Meldung, Does.Contain(laufender.ZeiteintragId.ToString(CultureInfo.InvariantCulture)));
+            Assert.That(befund.Meldung, Does.Not.Contain("SQLite"));
+            Assert.That(befund.Meldung, Does.Not.Contain("UNIQUE"));
+            Assert.That(befund.Kompensation, Is.Not.Empty);
+        });
+        var detail = await LadeKartendetail(webApi, aufbau.ErsteKarteId);
+        var unveraenderter = detail.Zeiteintraege.Single(eintrag => eintrag.ZeiteintragId == abgeschlossener.ZeiteintragId);
+        Assert.That(unveraenderter.Ende, Is.EqualTo(GesternHalbZwei));
+    }
+
+    // Laeuft kein anderer, gelingt der Rueckfall — und das Kartendetail zeigt den Eintrag danach
+    // ohne Ende.
+    [Test]
+    public async Task Wenn_ein_Eintrag_wieder_laufen_soll_und_kein_anderer_laeuft_dann_zeigt_das_Kartendetail_ihn_ohne_Ende()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await LegeAufbauAn(webApi);
+        var nachgetragener = await TrageNach(webApi, aufbau.ErsteKarteId, aufbau.Agent.KontributorId, GesternZwoelfUhr, GesternHalbZwei);
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Zeiteintragsroute(aufbau.ErsteKarteId, nachgetragener.ZeiteintragId), new ZeiteintragAendernAnfrage(aufbau.Agent.KontributorId, GesternZwoelfUhr, Ende: null));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var detail = await LadeKartendetail(webApi, aufbau.ErsteKarteId);
+        Assert.That(detail.Zeiteintraege[0].Ende, Is.Null);
+    }
+
+    [Test]
+    public async Task Wenn_das_Ende_beim_Aendern_vor_dem_Beginn_liegt_dann_bleibt_der_Eintrag_unveraendert()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await LegeAufbauAn(webApi);
+        var nachgetragener = await TrageNach(webApi, aufbau.ErsteKarteId, aufbau.Stefan.KontributorId, GesternZwoelfUhr, GesternHalbZwei);
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Zeiteintragsroute(aufbau.ErsteKarteId, nachgetragener.ZeiteintragId), new ZeiteintragAendernAnfrage(aufbau.Stefan.KontributorId, GesternHalbZwei, GesternZwoelfUhr));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var befund = (await Fehlerrumpf.Lies(antwort, "Aenderung mit Ende vor Beginn")).Befunde[0];
+        Assert.That(befund.Code, Is.EqualTo("zeiteintrag-ende-vor-beginn"));
+        var detail = await LadeKartendetail(webApi, aufbau.ErsteKarteId);
+        Assert.That(detail.Zeiteintraege[0].Beginn, Is.EqualTo(GesternZwoelfUhr));
+    }
+
+    // Eine ZeiteintragId, die es an einer **anderen** Karte gibt, ist an dieser keine.
+    [Test]
+    public async Task Wenn_der_Zeiteintrag_an_einer_anderen_Karte_liegt_dann_antwortet_die_Aenderung_mit_404_zeiteintrag_unbekannt()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await LegeAufbauAn(webApi);
+        var nachgetragener = await TrageNach(webApi, aufbau.ZweiteKarteId, aufbau.Stefan.KontributorId, GesternZwoelfUhr, GesternHalbZwei);
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Zeiteintragsroute(aufbau.ErsteKarteId, nachgetragener.ZeiteintragId), new ZeiteintragAendernAnfrage(aufbau.Stefan.KontributorId, GesternZwoelfUhr, GesternZweiUhr));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var befund = (await Fehlerrumpf.Lies(antwort, "Aenderung an fremder Karte")).Befunde[0];
+        Assert.Multiple(() =>
+        {
+            Assert.That(befund.Code, Is.EqualTo("zeiteintrag-unbekannt"));
+            Assert.That(befund.Kompensation, Does.Contain($"/api/karten/{aufbau.ErsteKarteId}"));
+        });
+        var detail = await LadeKartendetail(webApi, aufbau.ZweiteKarteId);
+        Assert.That(detail.Zeiteintraege[0].Ende, Is.EqualTo(GesternHalbZwei));
+    }
+
+    // Gibt es schon die Karte nicht, meldet der Aufruf die Karte: eine Kompensation, die auf eine
+    // 404-Adresse zeigt, wäre nicht ausführbar.
+    [Test]
+    public async Task Wenn_die_Karte_unbekannt_ist_dann_meldet_die_Aenderung_die_Karte_und_nicht_den_Zeiteintrag()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await LegeAufbauAn(webApi);
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Zeiteintragsroute(777, 1), new ZeiteintragAendernAnfrage(aufbau.Stefan.KontributorId, GesternZwoelfUhr, GesternZweiUhr));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var befund = (await Fehlerrumpf.Lies(antwort, "Aenderung an unbekannter Karte")).Befunde[0];
+        Assert.That(befund.Code, Is.EqualTo("karte-unbekannt"));
+    }
+
+    [Test]
+    public async Task Wenn_ein_Zeiteintrag_geloescht_wird_dann_antwortet_die_Route_mit_200_und_dem_Kartendetail_ohne_ihn()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await LegeAufbauAn(webApi);
+        var bleibender = await TrageNach(webApi, aufbau.ErsteKarteId, aufbau.Stefan.KontributorId, GesternZwoelfUhr, GesternHalbZwei);
+        var zuLoeschender = await TrageNach(webApi, aufbau.ErsteKarteId, aufbau.Agent.KontributorId, GesternAcht, GesternNeun);
+
+        var antwort = await webApi.Klient.DeleteAsync(Zeiteintragsroute(aufbau.ErsteKarteId, zuLoeschender.ZeiteintragId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var detail = await antwort.Content.ReadFromJsonAsync<Kartendetail>();
+        Assert.That(detail!.Zeiteintraege.Select(eintrag => eintrag.ZeiteintragId), Is.EqualTo(new[] { bleibender.ZeiteintragId }));
+        var nachgeladenes = await LadeKartendetail(webApi, aufbau.ErsteKarteId);
+        Assert.That(nachgeladenes.Zeiteintraege, Has.Count.EqualTo(1));
+    }
+
+    [Test]
+    public async Task Wenn_ein_laufender_Eintrag_geloescht_wird_dann_ist_das_Paar_wieder_frei()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await LegeAufbauAn(webApi);
+        var laufender = await StarteZeitmessung(webApi, aufbau.ErsteKarteId, aufbau.Stefan.KontributorId);
+
+        var antwort = await webApi.Klient.DeleteAsync(Zeiteintragsroute(aufbau.ErsteKarteId, laufender.ZeiteintragId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var neuerStart = await webApi.Klient.PostAsJsonAsync(Zeitmessungsroute(aufbau.ErsteKarteId), new ZeitmessungStartenAnfrage(aufbau.Stefan.KontributorId));
+        Assert.That(neuerStart.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+    }
+
+    [Test]
+    public async Task Wenn_der_Zeiteintrag_an_einer_anderen_Karte_liegt_dann_antwortet_die_Loeschung_mit_404_und_er_bleibt_stehen()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await LegeAufbauAn(webApi);
+        var nachgetragener = await TrageNach(webApi, aufbau.ZweiteKarteId, aufbau.Stefan.KontributorId, GesternZwoelfUhr, GesternHalbZwei);
+
+        var antwort = await webApi.Klient.DeleteAsync(Zeiteintragsroute(aufbau.ErsteKarteId, nachgetragener.ZeiteintragId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var befund = (await Fehlerrumpf.Lies(antwort, "Loeschung an fremder Karte")).Befunde[0];
+        Assert.That(befund.Code, Is.EqualTo("zeiteintrag-unbekannt"));
+        var detail = await LadeKartendetail(webApi, aufbau.ZweiteKarteId);
+        Assert.That(detail.Zeiteintraege, Has.Count.EqualTo(1));
+    }
+
+    private static string Nachtragsroute(long karteId)
+    {
+        return $"/api/karten/{karteId}/zeiten";
+    }
+
+    private static string Zeiteintragsroute(long karteId, long zeiteintragId)
+    {
+        return $"/api/karten/{karteId}/zeiten/{zeiteintragId}";
+    }
+
+    private static async Task<Zeiteintrag> TrageNach(TestWebApi webApi, long karteId, long kontributorId, DateTimeOffset beginn, DateTimeOffset ende)
+    {
+        var antwort = await webApi.Klient.PostAsJsonAsync(Nachtragsroute(karteId), new ZeiteintragNachtragenAnfrage(kontributorId, beginn, ende));
+        antwort.EnsureSuccessStatusCode();
+        var zeiteintrag = await antwort.Content.ReadFromJsonAsync<Zeiteintrag>();
+        Assert.That(zeiteintrag, Is.Not.Null);
+        return zeiteintrag!;
     }
 
     private static string Zeitmessungsenderoute(long karteId, long zeiteintragId)

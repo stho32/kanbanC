@@ -4,7 +4,9 @@ using KanbanC.BL.Interfaces.Zeiten;
 using KanbanC.BL.Models;
 using KanbanC.BL.Models.Zeiten;
 using KanbanC.BL.Operations.Fehler;
+using KanbanC.BL.Operations.Zeiten;
 using KanbanC.Contracts.Fehler;
+using KanbanC.Contracts.Karten;
 using KanbanC.Contracts.Zeiten;
 
 namespace KanbanC.BL.Integrations.Zeiten;
@@ -59,6 +61,108 @@ public sealed class ZeitenService
         }
 
         return Ergebnis<Zeiteintrag>.Erfolg(beendeter!);
+    }
+
+    // Geprüft wird in der Reihenfolge, in der die Kompensationen ausführbar sind: erst die
+    // Zeitspanne (ohne jeden Zugriff), dann der Kontributor, dann die Karte.
+    public Ergebnis<Zeiteintrag> TrageNach(long karteId, ZeiteintragNachtragenAnfrage anfrage)
+    {
+        var befunde = Zeitspanne.Pruefe(anfrage.Beginn, anfrage.Ende, Jetzt());
+        var dieZeitspanneIstUngueltig = !befunde.IstOhneBefund;
+        if (dieZeitspanneIstUngueltig)
+        {
+            return Ergebnis<Zeiteintrag>.Zurueckgewiesen(befunde);
+        }
+
+        var befundZumZeitmesser = BefundZumZeitmesser(anfrage.Kontributor);
+        if (befundZumZeitmesser is not null)
+        {
+            return Zurueckgewiesen<Zeiteintrag>(befundZumZeitmesser);
+        }
+
+        var nachgetragener = _zeitenRepository.TrageNach(karteId, anfrage);
+        var dieKarteGibtEsNicht = nachgetragener is null;
+        if (dieKarteGibtEsNicht)
+        {
+            return Zurueckgewiesen<Zeiteintrag>(Nichtgefunden.Karte(karteId));
+        }
+
+        return Ergebnis<Zeiteintrag>.Erfolg(nachgetragener!);
+    }
+
+    // Die Stilllegung greift hier **nur bei Kontributorwechsel**: ein Eintrag eines später
+    // Stillgelegten muss in Beginn und Ende korrigierbar bleiben, sonst friert die Stilllegung
+    // falsche Zeiten dauerhaft ein und die Auswertung erbt sie.
+    // Den Rückfall auf „läuft" entscheidet nicht dieser Dienst, sondern das Repository unter
+    // seinem Schreibschloss — und meldet den anderen laufenden Eintrag zurück, aus dem hier der
+    // lesbare Befund wird. Eine Prüfung davor ließe ein Fenster, in dem statt einer Auskunft die
+    // nackte Meldung des partiellen Index herauskäme.
+    public Ergebnis<Zeiteintrag> Aendere(long karteId, long zeiteintragId, ZeiteintragAendernAnfrage anfrage)
+    {
+        var befunde = Zeitspanne.Pruefe(anfrage.Beginn, anfrage.Ende, Jetzt());
+        var dieZeitspanneIstUngueltig = !befunde.IstOhneBefund;
+        if (dieZeitspanneIstUngueltig)
+        {
+            return Ergebnis<Zeiteintrag>.Zurueckgewiesen(befunde);
+        }
+
+        var befundZumWechsel = BefundZumKontributorwechsel(karteId, zeiteintragId, anfrage.Kontributor);
+        if (befundZumWechsel is not null)
+        {
+            return Zurueckgewiesen<Zeiteintrag>(befundZumWechsel);
+        }
+
+        var aenderung = _zeitenRepository.Aendere(karteId, zeiteintragId, anfrage);
+        var derZeiteintragLiegtNichtAnDieserKarte = aenderung is null;
+        if (derZeiteintragLiegtNichtAnDieserKarte)
+        {
+            return Zurueckgewiesen<Zeiteintrag>(BefundZumFehlendenZeiteintrag(karteId, zeiteintragId));
+        }
+
+        var einAndererLaeuftSchon = !aenderung!.WurdeGeaendert;
+        if (einAndererLaeuftSchon)
+        {
+            return Zurueckgewiesen<Zeiteintrag>(Doppelt.LaufenderZeiteintrag(karteId, anfrage.Kontributor, aenderung.Eintrag.ZeiteintragId));
+        }
+
+        return Ergebnis<Zeiteintrag>.Erfolg(aenderung.Eintrag);
+    }
+
+    // Der bisherige Kontributor wird gelesen, weil die Stilllegung nur bei einem Wechsel greift.
+    // Gibt es den Eintrag an dieser Karte nicht, sagt das schon dieser Zugriff — der Aufrufer
+    // erfährt es dann, bevor überhaupt geschrieben wird.
+    // null heisst „an diesem Kontributor ist nichts zu beanstanden".
+    private Fehlerbefund? BefundZumKontributorwechsel(long karteId, long zeiteintragId, long kontributorId)
+    {
+        var bisheriger = _zeitenRepository.Lies(karteId, zeiteintragId);
+        var derZeiteintragLiegtNichtAnDieserKarte = bisheriger is null;
+        if (derZeiteintragLiegtNichtAnDieserKarte)
+        {
+            return BefundZumFehlendenZeiteintrag(karteId, zeiteintragId);
+        }
+
+        var derKontributorBleibtDerselbe = bisheriger!.Kontributor.KontributorId == kontributorId;
+        if (derKontributorBleibtDerselbe)
+        {
+            return null;
+        }
+
+        return BefundZumZeitmesser(kontributorId);
+    }
+
+    // **Kein Validator und kein Kontributor:** eine Nummer hat keinen ungültigen Fall, und wer
+    // löscht, behauptet nichts über sich selbst. Zurück kommt das ganze Kartendetail, weil
+    // dieselbe Seite es verbraucht — Hausform EntferneAnhang.
+    public Ergebnis<Kartendetail> Loesche(long karteId, long zeiteintragId)
+    {
+        var detail = _zeitenRepository.Loesche(karteId, zeiteintragId);
+        var derZeiteintragLiegtNichtAnDieserKarte = detail is null;
+        if (derZeiteintragLiegtNichtAnDieserKarte)
+        {
+            return Zurueckgewiesen<Kartendetail>(BefundZumFehlendenZeiteintrag(karteId, zeiteintragId));
+        }
+
+        return Ergebnis<Kartendetail>.Erfolg(detail!);
     }
 
     // Gibt es schon die Karte nicht, schickt ein Befund über den Zeiteintrag den Aufrufer auf eine

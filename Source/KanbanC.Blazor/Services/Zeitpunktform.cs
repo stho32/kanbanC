@@ -27,6 +27,52 @@ public static class Zeitpunktform
         return zeitpunkt.ToLocalTime().ToString(Tageszeitformat, CultureInfo.InvariantCulture);
     }
 
+    // Die Gegenrichtung: aus dem, was das Formular traegt — ein Tag und eine Uhrzeit in Ortszeit
+    // —, wird der volle Zeitpunkt, den die API nimmt. Sie wohnt neben ihrer Hinrichtung, damit
+    // dieselbe Regel nicht an zwei Stellen steht und auseinanderlaeuft.
+    // An der Sommerzeitgrenze nimmt GetUtcOffset für eine zweideutige Uhrzeit den Standardversatz
+    // und für eine übersprungene den davor gültigen; beides ist eine Auslegung und keine
+    // Zurückweisung — eine Zeitbuchung an dieser einen Stunde bleibt korrigierbar.
+    public static DateTimeOffset AusOrtszeit(DateOnly tag, TimeOnly uhrzeit)
+    {
+        var ortszeit = tag.ToDateTime(uhrzeit, DateTimeKind.Unspecified);
+        return new DateTimeOffset(ortszeit, TimeZoneInfo.Local.GetUtcOffset(ortszeit));
+    }
+
+    // Ein leeres „bis" ist keine fehlende Angabe, sondern die Aussage „laeuft" — deshalb null und
+    // kein Befund.
+    public static DateTimeOffset? AusOrtszeit(DateOnly tag, TimeOnly? uhrzeit)
+    {
+        if (uhrzeit is null)
+        {
+            return null;
+        }
+
+        return AusOrtszeit(tag, uhrzeit.Value);
+    }
+
+    // Was das Formular in seine Felder schreibt, wenn eine bestehende Zeile aufklappt — dieselbe
+    // Ortszeit, die die Zeile daneben liest.
+    public static DateOnly AlsTag(DateTimeOffset zeitpunkt)
+    {
+        return DateOnly.FromDateTime(zeitpunkt.ToLocalTime().DateTime);
+    }
+
+    public static TimeOnly AlsUhrzeit(DateTimeOffset zeitpunkt)
+    {
+        return TimeOnly.FromDateTime(zeitpunkt.ToLocalTime().DateTime);
+    }
+
+    public static TimeOnly? AlsUhrzeit(DateTimeOffset? zeitpunkt)
+    {
+        if (zeitpunkt is null)
+        {
+            return null;
+        }
+
+        return AlsUhrzeit(zeitpunkt.Value);
+    }
+
     public static string AlsText(DateTimeOffset zeitpunkt, DateTimeOffset jetzt)
     {
         var derZeitpunktLiegtInDerLetztenStunde = jetzt - zeitpunkt < TimeSpan.FromMinutes(MinutenEinerStunde);

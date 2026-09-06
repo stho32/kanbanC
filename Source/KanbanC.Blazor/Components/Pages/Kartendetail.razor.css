@@ -1020,6 +1020,49 @@
     cursor: pointer;
 }
 
+/* Der Stift öffnet die Zeile an Ort und Stelle. Er steht rechts außen, hinter der Dauer oder
+   dem Stoppquadrat, und trägt sich zurück: die Zeile ist ein Beleg, keine Werkzeugleiste. */
+.zeiteneintragstift {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    color: var(--color-neutral-600);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.zeiteneintragstift:hover {
+    color: var(--color-accent);
+}
+
+/* Der Nachtrag steht am Fuß des Blocks — auch auf einer Karte ohne gemessene Zeit. */
+.zeitennachtrag {
+    margin-top: var(--space-2);
+}
+
+.zeitennachtragknopf {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    font-family: var(--font-heading);
+    font-weight: var(--font-heading-weight);
+    font-size: 13px;
+    color: var(--color-accent);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.zeitennachtragknopf:hover {
+    background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+    border-radius: var(--radius-md);
+}
+
 /* Dieselbe Popoverform wie in der Kopfzeile; die Werte kommen aus gestaltung.css. Es steht hier
    ein zweites Mal, statt aus Kopfzeile.razor herauszuwandern — die Kopfzeile bleibt unberuehrt. */
 .identitaetspopover {

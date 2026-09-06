@@ -1,4 +1,5 @@
 using System.Net;
+using KanbanC.Contracts.Karten;
 using KanbanC.Contracts.Zeiten;
 
 namespace KanbanC.Blazor.Services;
@@ -39,6 +40,34 @@ public sealed class ZeitenApiKlient
         return await AlsZeiteintrag(antwort);
     }
 
+    // Der Nachtrag geht an „…/zeiten" ohne „laufend": eine andere Adresse für eine andere Frage.
+    // Beginn **und** Ende reisen mit — die WebApi setzt hier nichts selbst.
+    public async Task<ApiErgebnis<Zeiteintrag>> TrageNach(long karteId, ZeiteintragNachtragenAnfrage anfrage)
+    {
+        using var klient = _klientFabrik.CreateClient(KlientName);
+        using var antwort = await klient.PostAsJsonAsync($"{KartenRoute}/{karteId}/zeiten", anfrage);
+        return await AlsZeiteintrag(antwort);
+    }
+
+    // Dieselbe Adresse wie das Löschen, anderes Verb. Ein Ende von null reist als JSON-null mit
+    // und macht den Eintrag wieder laufend.
+    public async Task<ApiErgebnis<Zeiteintrag>> Aendere(long karteId, long zeiteintragId, ZeiteintragAendernAnfrage anfrage)
+    {
+        using var klient = _klientFabrik.CreateClient(KlientName);
+        using var antwort = await klient.PutAsJsonAsync($"{KartenRoute}/{karteId}/zeiten/{zeiteintragId}", anfrage);
+        return await AlsZeiteintrag(antwort);
+    }
+
+    // **Ohne Rumpf**, und zurück kommt nicht der gelöschte Eintrag, sondern das ganze
+    // Kartendetail ohne ihn — die zweite Antwortgestalt dieses Klienten braucht deshalb eine
+    // eigene Lesehilfe.
+    public async Task<ApiErgebnis<Kartendetail>> Loesche(long karteId, long zeiteintragId)
+    {
+        using var klient = _klientFabrik.CreateClient(KlientName);
+        using var antwort = await klient.DeleteAsync($"{KartenRoute}/{karteId}/zeiten/{zeiteintragId}");
+        return await AlsKartendetail(antwort);
+    }
+
     // 400 und 404 laufen denselben Weg, weil beide einen Befund der WebApi tragen.
     // ApiAntwortleser wäre die falsche Stelle: sein 404-Zweig ersetzt jeden Befund durch eine
     // Board-Meldung, und diese Route kennt kein Board.
@@ -59,5 +88,26 @@ public sealed class ZeitenApiKlient
         }
 
         return ApiErgebnis<Zeiteintrag>.Erfolg(zeiteintrag);
+    }
+
+    // Die Schwester von AlsZeiteintrag für die zweite Antwortgestalt; dieselbe Behandlung der
+    // Zurückweisung, weil dieselben Befunde kommen.
+    private static async Task<ApiErgebnis<Kartendetail>> AlsKartendetail(HttpResponseMessage antwort)
+    {
+        var dieWebApiHatDenAufrufZurueckgewiesen = antwort.StatusCode == HttpStatusCode.BadRequest || antwort.StatusCode == HttpStatusCode.NotFound;
+        if (dieWebApiHatDenAufrufZurueckgewiesen)
+        {
+            var zurueckweisung = await Zurueckweisungsleser.Lies(antwort);
+            return ApiErgebnis<Kartendetail>.Zurueckgewiesen(zurueckweisung);
+        }
+
+        antwort.EnsureSuccessStatusCode();
+        var detail = await antwort.Content.ReadFromJsonAsync<Kartendetail>();
+        if (detail is null)
+        {
+            throw new InvalidOperationException("Die WebApi hat kein Kartendetail zurückgegeben.");
+        }
+
+        return ApiErgebnis<Kartendetail>.Erfolg(detail);
     }
 }

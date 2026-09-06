@@ -1,0 +1,306 @@
+@using System.Globalization
+@using KanbanC.Contracts.Fehler
+@using KanbanC.Contracts.Kontributoren
+
+@* Dasselbe Formular an zwei Orten: leer am Fuß der Einträgeliste und gefüllt in der Zeile, die
+   geändert wird. Es ist kein Dialogfenster — die Liste bleibt daneben stehen, damit man sieht,
+   wogegen man korrigiert. *@
+<div class="zeitenformular" id="@Kennung">
+    @* Die Gründe stehen **über** den Eingaben und nicht ganz oben auf der Seite: dort stünden sie
+       außerhalb des Blicks, in dem gerade getippt wird. *@
+    @if (Zurueckweisung is not null)
+    {
+        <div class="meldung meldung-abweisung zeitenformular-zurueckweisung" role="alert" id="@Feldkennung("zurueckweisung")">
+            <ul>
+                @foreach (var befund in Zurueckweisung.Befunde)
+                {
+                    <li>@befund.Meldung</li>
+                }
+            </ul>
+        </div>
+    }
+
+    <div class="zeitenformularzeile">
+        <div class="zeitenformularfeld zeitenformularfeld-kontributor">
+            <label class="zeitenformularmarke" for="@Feldkennung("kontributor")">Kontributor</label>
+            <select class="input" id="@Feldkennung("kontributor")" @bind="_kontributorId">
+                @foreach (var kontributor in Buchbare)
+                {
+                    <option value="@kontributor.KontributorId">@kontributor.Name</option>
+                }
+            </select>
+        </div>
+
+        @if (MitTag)
+        {
+            <div class="zeitenformularfeld zeitenformularfeld-tag">
+                <label class="zeitenformularmarke" for="@Feldkennung("tag")">Tag</label>
+                <input class="input zeitenformulareingabe" type="date" id="@Feldkennung("tag")" value="@_tagtext" @oninput="UebernimmTag" />
+            </div>
+        }
+
+        <div class="zeitenformularfeld zeitenformularfeld-uhrzeit">
+            <label class="zeitenformularmarke" for="@Feldkennung("von")">von</label>
+            <input class="input zeitenformulareingabe" type="time" id="@Feldkennung("von")" value="@_vontext" @oninput="UebernimmVon" />
+        </div>
+
+        <div class="zeitenformularfeld zeitenformularfeld-uhrzeit">
+            <label class="zeitenformularmarke" for="@Feldkennung("bis")">bis</label>
+            <input class="input zeitenformulareingabe" type="time" id="@Feldkennung("bis")" value="@_bistext" @oninput="UebernimmBis" />
+        </div>
+
+        @* „ergibt 1:30" — und „—", solange die Spanne nicht feststeht. Gerechnet wird mit
+           derselben Dauerform wie in der Zeile darüber. *@
+        <div class="zeitenformularergebnis">
+            <span class="zeitenformularergebnismarke">ergibt</span>
+            <span class="zeitenformularergebniswert" id="@Feldkennung("ergibt")">@Ergibt</span>
+        </div>
+    </div>
+
+    <div class="zeitenformularhandlung">
+        <button type="button"
+                class="btn btn-haupt"
+                id="@Feldkennung("bestaetigen")"
+                disabled="@(!DieEingabeIstVollstaendig)"
+                @onclick="Bestaetige">@Bestaetigungsbeschriftung</button>
+        <button type="button" class="btn btn-neben" id="@Feldkennung("abbrechen")" @onclick="() => Abgebrochen.InvokeAsync()">@Abbruchbeschriftung</button>
+        @if (MitLoeschen)
+        {
+            @* Die **Karte** ist das einzige Feld, das dieses Formular nicht ändert — ohne Löschen
+               bliebe ein Nachtrag auf der falschen Karte dauerhaft stehen. *@
+            <button type="button" class="btn btn-schlicht zeitenformularloeschen" id="@Feldkennung("loeschen")" @onclick="() => Geloescht.InvokeAsync()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"></path><path d="M9 7V5h6v2"></path><path d="M6 7v13h12V7"></path></svg>
+                Eintrag löschen
+            </button>
+        }
+    </div>
+</div>
+
+@code {
+    private const string Tagesformat = "yyyy-MM-dd";
+    private const string Uhrzeitformat = "HH:mm";
+    private const string KeineSpanne = "—";
+
+    private long _kontributorId;
+    private string _tagtext = string.Empty;
+    private string _vontext = string.Empty;
+    private string _bistext = string.Empty;
+
+    // Der Vorsatz jeder Elementkennung dieses Formulars: dieselbe Komponente steht zweimal auf
+    // der Seite, und zwei gleiche Kennungen wären keine.
+    [Parameter]
+    [EditorRequired]
+    public string Kennung { get; set; } = string.Empty;
+
+    [Parameter]
+    [EditorRequired]
+    public IReadOnlyList<Kontributor> Kontributoren { get; set; } = [];
+
+    [Parameter]
+    public long? VorbelegterKontributor { get; set; }
+
+    // Ein bestehender Eintrag ändert seine Uhrzeiten, nicht seinen Tag: dort trägt das Formular
+    // kein Tagesfeld, und der Tag kommt vom Eintrag selbst.
+    [Parameter]
+    public bool MitTag { get; set; }
+
+    [Parameter]
+    public DateOnly VorbelegterTag { get; set; }
+
+    [Parameter]
+    public TimeOnly? VorbelegtesVon { get; set; }
+
+    [Parameter]
+    public TimeOnly? VorbelegtesBis { get; set; }
+
+    // Beim Nachtragen ist das Ende pflichtig, beim Ändern nicht: ein leeres „bis" heißt dort
+    // „läuft wieder".
+    [Parameter]
+    public bool EndeIstPflicht { get; set; }
+
+    [Parameter]
+    public bool MitLoeschen { get; set; }
+
+    [Parameter]
+    [EditorRequired]
+    public string Bestaetigungsbeschriftung { get; set; } = string.Empty;
+
+    [Parameter]
+    [EditorRequired]
+    public string Abbruchbeschriftung { get; set; } = string.Empty;
+
+    [Parameter]
+    public Zurueckweisung? Zurueckweisung { get; set; }
+
+    [Parameter]
+    public EventCallback<Zeiteintragseingabe> Bestaetigt { get; set; }
+
+    [Parameter]
+    public EventCallback Abgebrochen { get; set; }
+
+    [Parameter]
+    public EventCallback Geloescht { get; set; }
+
+    // Vorbelegt wird **einmal** beim Aufklappen. Käme der Wert bei jeder Renderrunde neu, wäre
+    // eine zurückgewiesene Eingabe nach der Antwort der WebApi wieder fort — und genau sie soll
+    // stehen bleiben.
+    protected override void OnInitialized()
+    {
+        _kontributorId = ErsterBuchbarer();
+        _tagtext = VorbelegterTag.ToString(Tagesformat, CultureInfo.InvariantCulture);
+        _vontext = AlsFeldtext(VorbelegtesVon);
+        _bistext = AlsFeldtext(VorbelegtesBis);
+    }
+
+    private long ErsterBuchbarer()
+    {
+        var vorbelegterStehtZurWahl = Buchbare.Any(kontributor => kontributor.KontributorId == VorbelegterKontributor);
+        if (vorbelegterStehtZurWahl)
+        {
+            return VorbelegterKontributor!.Value;
+        }
+
+        var ersterBuchbarer = Buchbare.FirstOrDefault();
+        if (ersterBuchbarer is null)
+        {
+            return 0;
+        }
+
+        return ersterBuchbarer.KontributorId;
+    }
+
+    private IReadOnlyList<Kontributor> Buchbare
+    {
+        get
+        {
+            return Zeitbuchungsliste.Buchbare(Kontributoren, VorbelegterKontributor);
+        }
+    }
+
+    private void UebernimmTag(ChangeEventArgs ereignis)
+    {
+        _tagtext = Alstext(ereignis);
+    }
+
+    private void UebernimmVon(ChangeEventArgs ereignis)
+    {
+        _vontext = Alstext(ereignis);
+    }
+
+    private void UebernimmBis(ChangeEventArgs ereignis)
+    {
+        _bistext = Alstext(ereignis);
+    }
+
+    private static string Alstext(ChangeEventArgs ereignis)
+    {
+        return ereignis.Value?.ToString() ?? string.Empty;
+    }
+
+    private string Ergibt
+    {
+        get
+        {
+            var von = GeleseneVon;
+            var bis = GelesenesBis;
+            var dieSpanneStehtNichtFest = von is null || bis is null || bis.Value < von.Value;
+            if (dieSpanneStehtNichtFest)
+            {
+                return KeineSpanne;
+            }
+
+            return Dauerform.AlsText(bis!.Value - von!.Value);
+        }
+    }
+
+    // Was das Formular selbst entscheiden kann, entscheidet es hier: ohne Tag, ohne „von" und —
+    // beim Nachtragen — ohne „bis" gäbe es keinen Aufruf, den die WebApi beantworten könnte.
+    // Alles Fachliche (Reihenfolge, Zukunft, Stilllegung) bleibt ihre Sache.
+    private bool DieEingabeIstVollstaendig
+    {
+        get
+        {
+            var esFehltEinPflichtfeld = GelesenerTag is null || GeleseneVon is null || _kontributorId == 0;
+            if (esFehltEinPflichtfeld)
+            {
+                return false;
+            }
+
+            var dasEndeFehltObwohlEsPflichtIst = EndeIstPflicht && GelesenesBis is null;
+            return !dasEndeFehltObwohlEsPflichtIst;
+        }
+    }
+
+    private DateOnly? GelesenerTag
+    {
+        get
+        {
+            if (!MitTag)
+            {
+                return VorbelegterTag;
+            }
+
+            var wurdeGelesen = DateOnly.TryParseExact(_tagtext, Tagesformat, CultureInfo.InvariantCulture, DateTimeStyles.None, out var tag);
+            if (!wurdeGelesen)
+            {
+                return null;
+            }
+
+            return tag;
+        }
+    }
+
+    private TimeOnly? GeleseneVon
+    {
+        get
+        {
+            return AlsUhrzeit(_vontext);
+        }
+    }
+
+    private TimeOnly? GelesenesBis
+    {
+        get
+        {
+            return AlsUhrzeit(_bistext);
+        }
+    }
+
+    // Ein Zeitfeld des Browsers liefert „HH:mm", mit Sekunden aber „HH:mm:ss" — beide Formen sind
+    // dieselbe Uhrzeit und werden gelesen; alles andere ist eine unvollständige Eingabe.
+    private static TimeOnly? AlsUhrzeit(string text)
+    {
+        var wurdeGelesen = TimeOnly.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.None, out var uhrzeit);
+        if (!wurdeGelesen)
+        {
+            return null;
+        }
+
+        return uhrzeit;
+    }
+
+    private static string AlsFeldtext(TimeOnly? uhrzeit)
+    {
+        if (uhrzeit is null)
+        {
+            return string.Empty;
+        }
+
+        return uhrzeit.Value.ToString(Uhrzeitformat, CultureInfo.InvariantCulture);
+    }
+
+    private async Task Bestaetige()
+    {
+        if (!DieEingabeIstVollstaendig)
+        {
+            return;
+        }
+
+        await Bestaetigt.InvokeAsync(new Zeiteintragseingabe(_kontributorId, GelesenerTag!.Value, GeleseneVon!.Value, GelesenesBis));
+    }
+
+    private string Feldkennung(string teil)
+    {
+        return $"{Kennung}-{teil}";
+    }
+}

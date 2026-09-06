@@ -17,6 +17,8 @@ public class FehlervertragTests
 {
     private const string BoardsRoute = "/api/boards";
     private const string KontributorenRoute = "/api/kontributoren";
+    private static readonly DateTimeOffset GesternZwoelfUhr = new(2026, 9, 5, 12, 0, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset GesternHalbZwei = new(2026, 9, 5, 13, 30, 0, TimeSpan.Zero);
     private static readonly string[] RoutenOhneFehlerantwort =
     [
         "GET /openapi/{documentName}.json",
@@ -368,6 +370,41 @@ public class FehlervertragTests
             "POST /api/karten/{karteId:long}/zeiten/laufend",
             "Zeitmessung starten mit stillgelegter KontributorId",
             await webApi.Klient.PostAsJsonAsync($"/api/karten/{aufbau.Karte.KarteId}/zeiten/laufend", new ZeitmessungStartenAnfrage(aufbau.Stillgelegter.KontributorId))));
+
+        faelle.Add(new Fehlerfall(
+            "POST /api/karten/{karteId:long}/zeiten",
+            "Zeiteintrag an unbekannter Karte nachtragen",
+            await webApi.Klient.PostAsJsonAsync("/api/karten/999/zeiten", new ZeiteintragNachtragenAnfrage(aufbau.Kontributor.KontributorId, GesternZwoelfUhr, GesternHalbZwei))));
+
+        faelle.Add(new Fehlerfall(
+            "POST /api/karten/{karteId:long}/zeiten",
+            "Zeiteintrag mit Ende vor Beginn nachtragen",
+            await webApi.Klient.PostAsJsonAsync($"/api/karten/{aufbau.Karte.KarteId}/zeiten", new ZeiteintragNachtragenAnfrage(aufbau.Kontributor.KontributorId, GesternHalbZwei, GesternZwoelfUhr))));
+
+        faelle.Add(new Fehlerfall(
+            "POST /api/karten/{karteId:long}/zeiten",
+            "Zeiteintrag in der Zukunft nachtragen",
+            await webApi.Klient.PostAsJsonAsync($"/api/karten/{aufbau.Karte.KarteId}/zeiten", new ZeiteintragNachtragenAnfrage(aufbau.Kontributor.KontributorId, DateTimeOffset.UtcNow.AddDays(1), DateTimeOffset.UtcNow.AddDays(1).AddHours(1)))));
+
+        faelle.Add(new Fehlerfall(
+            "POST /api/karten/{karteId:long}/zeiten",
+            "Zeiteintrag fuer einen stillgelegten Kontributor nachtragen",
+            await webApi.Klient.PostAsJsonAsync($"/api/karten/{aufbau.Karte.KarteId}/zeiten", new ZeiteintragNachtragenAnfrage(aufbau.Stillgelegter.KontributorId, GesternZwoelfUhr, GesternHalbZwei))));
+
+        faelle.Add(new Fehlerfall(
+            "PUT /api/karten/{karteId:long}/zeiten/{zeiteintragId:long}",
+            "Zeiteintrag an unbekannter Karte aendern",
+            await webApi.Klient.PutAsJsonAsync("/api/karten/999/zeiten/1", new ZeiteintragAendernAnfrage(aufbau.Kontributor.KontributorId, GesternZwoelfUhr, GesternHalbZwei))));
+
+        faelle.Add(new Fehlerfall(
+            "PUT /api/karten/{karteId:long}/zeiten/{zeiteintragId:long}",
+            "Unbekannten Zeiteintrag aendern",
+            await webApi.Klient.PutAsJsonAsync($"/api/karten/{aufbau.Karte.KarteId}/zeiten/999", new ZeiteintragAendernAnfrage(aufbau.Kontributor.KontributorId, GesternZwoelfUhr, GesternHalbZwei))));
+
+        faelle.Add(new Fehlerfall(
+            "DELETE /api/karten/{karteId:long}/zeiten/{zeiteintragId:long}",
+            "Unbekannten Zeiteintrag loeschen",
+            await webApi.Klient.DeleteAsync($"/api/karten/{aufbau.Karte.KarteId}/zeiten/999")));
 
         faelle.Add(new Fehlerfall(
             "PUT /api/karten/{karteId:long}/zeiten/{zeiteintragId:long}/ende",

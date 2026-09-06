@@ -604,11 +604,67 @@ else
                                             <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg>
                                         </button>
                                     }
+                                    @* Der Stift öffnet die Zeile an Ort und Stelle. Er steht auch
+                                       an einer laufenden Zeile: ein zu früh gestarteter Timer
+                                       muss korrigierbar sein, ohne ihn erst zu stoppen. *@
+                                    <button type="button" class="zeiteneintragstift" id="zeiteneintrag-stift-@eintrag.ZeiteintragId" title="Eintrag von @eintrag.Kontributor.Name ändern" @onclick="() => OeffneZeiteintrag(eintrag)">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17z"></path></svg>
+                                    </button>
                                 </div>
+                                @if (_offeneZeiteintragId == eintrag.ZeiteintragId)
+                                {
+                                    @* Ein eigener Schlüssel je Zeile, verschieden von dem der
+                                       Zeile selbst: zwei Geschwister dürfen nicht denselben
+                                       tragen. Er sorgt dafür, dass das Formular beim Wechsel der
+                                       Zeile neu vorbelegt wird. *@
+                                    <Zeiteintragsformular @key="@($"zeitenaenderung-{eintrag.ZeiteintragId}")"
+                                                          Kennung="zeitenaenderung"
+                                                          Kontributoren="_kontributoren"
+                                                          VorbelegterKontributor="eintrag.Kontributor.KontributorId"
+                                                          MitTag="false"
+                                                          VorbelegterTag="Zeitpunktform.AlsTag(eintrag.Beginn)"
+                                                          VorbelegtesVon="Zeitpunktform.AlsUhrzeit(eintrag.Beginn)"
+                                                          VorbelegtesBis="Zeitpunktform.AlsUhrzeit(eintrag.Ende)"
+                                                          EndeIstPflicht="false"
+                                                          MitLoeschen="true"
+                                                          Bestaetigungsbeschriftung="Sichern"
+                                                          Abbruchbeschriftung="Verwerfen"
+                                                          Zurueckweisung="_zeitenzurueckweisung"
+                                                          Bestaetigt="eingabe => AendereZeiteintrag(eintrag, eingabe)"
+                                                          Abgebrochen="SchliesseZeitenformulare"
+                                                          Geloescht="() => LoescheZeiteintrag(eintrag)" />
+                                }
                             }
                         </div>
                     </div>
                 }
+
+                @* Der Nachtrag steht am Fuß und **außerhalb** des Leerzustands: auf einer Karte
+                   ohne gemessene Zeit ist er der einzige Weg hinein. *@
+                <div class="zeitennachtrag" id="zeitennachtragsbereich">
+                    @if (_nachtragIstOffen)
+                    {
+                        <Zeiteintragsformular Kennung="zeitennachtrag"
+                                              Kontributoren="_kontributoren"
+                                              VorbelegterKontributor="_urheber?.KontributorId"
+                                              MitTag="true"
+                                              VorbelegterTag="Zeitpunktform.AlsTag(DateTimeOffset.Now)"
+                                              EndeIstPflicht="true"
+                                              MitLoeschen="false"
+                                              Bestaetigungsbeschriftung="Nachtragen"
+                                              Abbruchbeschriftung="Abbrechen"
+                                              Zurueckweisung="_zeitenzurueckweisung"
+                                              Bestaetigt="TrageZeitNach"
+                                              Abgebrochen="SchliesseZeitenformulare" />
+                    }
+                    else
+                    {
+                        <button type="button" class="zeitennachtragknopf" id="zeiten-nachtragen-oeffnen" @onclick="OeffneNachtrag">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+                            Zeit nachtragen
+                        </button>
+                    }
+                </div>
             </div>
 
             @* Das Feld ist ein Textfeld mit Marken davor, kein Auswahlfeld: ein Etikett ist eine
@@ -1238,6 +1294,11 @@ else
     private async Task OeffneIdentitaetswahl()
     {
         _identitaetswahlIstOffen = true;
+        await LadeKontributoren();
+    }
+
+    private async Task LadeKontributoren()
+    {
         _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(async () => _kontributoren = await KontributorenKlient.LadeAlle());
     }
 
@@ -1308,6 +1369,117 @@ else
         }
 
         _detail = _detail! with { Zeiteintraege = MitEintrag(_detail.Zeiteintraege, ergebnis.Wert) };
+    }
+
+    // Höchstens **ein** Zeitenformular steht offen: der Nachtrag am Fuß oder genau eine Zeile.
+    // Zwei Wahrheitswerte wären dieselbe Aussage zweimal und ließen beide zugleich offen.
+    private bool _nachtragIstOffen;
+    private long? _offeneZeiteintragId;
+
+    // Die Gründe des Zeitenblocks stehen im Formular, nicht in der Meldungsstelle ganz oben:
+    // dort stünden sie außerhalb des Blicks, in dem gerade getippt wird — und die Eingaben, auf
+    // die sie sich beziehen, bleiben stehen.
+    private Zurueckweisung? _zeitenzurueckweisung;
+
+    // Die Kontributorenliste wird beim Aufklappen geholt und nicht beim Laden der Seite: wer das
+    // Formular öffnet, will den heutigen Stand sehen — dieselbe Antwort wie in der Identitätswahl.
+    private async Task OeffneNachtrag()
+    {
+        _offeneZeiteintragId = null;
+        _zeitenzurueckweisung = null;
+        _nachtragIstOffen = true;
+        await LadeKontributoren();
+    }
+
+    // Ein zweiter Klick auf denselben Stift schließt die Zeile wieder — derselbe Schalter,
+    // dieselbe Handlung rückwärts.
+    private async Task OeffneZeiteintrag(Zeiteintrag eintrag)
+    {
+        var dieseZeileIstSchonOffen = _offeneZeiteintragId == eintrag.ZeiteintragId;
+        if (dieseZeileIstSchonOffen)
+        {
+            SchliesseZeitenformulare();
+            return;
+        }
+
+        _nachtragIstOffen = false;
+        _zeitenzurueckweisung = null;
+        _offeneZeiteintragId = eintrag.ZeiteintragId;
+        await LadeKontributoren();
+    }
+
+    private void SchliesseZeitenformulare()
+    {
+        _nachtragIstOffen = false;
+        _offeneZeiteintragId = null;
+        _zeitenzurueckweisung = null;
+    }
+
+    private async Task TrageZeitNach(Zeiteintragseingabe eingabe)
+    {
+        _zeitenzurueckweisung = null;
+        _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(() => SendeNachtrag(eingabe));
+    }
+
+    // Zurück kommt der angelegte Eintrag und nicht die ganze Seite — Liste, Summen und Ist-Summe
+    // ziehen über dasselbe MitEintrag nach wie bei Start und Stopp.
+    private async Task SendeNachtrag(Zeiteintragseingabe eingabe)
+    {
+        var beginn = Zeitpunktform.AusOrtszeit(eingabe.Tag, eingabe.Von);
+        var ende = Zeitpunktform.AusOrtszeit(eingabe.Tag, eingabe.Bis!.Value);
+        var ergebnis = await ZeitenKlient.TrageNach(KarteId, new ZeiteintragNachtragenAnfrage(eingabe.Kontributor, beginn, ende));
+        if (ergebnis.WurdeZurueckgewiesen)
+        {
+            _zeitenzurueckweisung = ergebnis.Zurueckweisung;
+            return;
+        }
+
+        _detail = _detail! with { Zeiteintraege = MitEintrag(_detail.Zeiteintraege, ergebnis.Wert) };
+        _nachtragIstOffen = false;
+    }
+
+    private async Task AendereZeiteintrag(Zeiteintrag eintrag, Zeiteintragseingabe eingabe)
+    {
+        _zeitenzurueckweisung = null;
+        _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(() => SendeZeiteintragsaenderung(eintrag, eingabe));
+    }
+
+    // Der Tag stammt aus dem Eintrag selbst: ein bestehender Eintrag ändert seine Uhrzeiten,
+    // nicht seinen Tag. Ein leeres „bis" reist als null und lässt ihn wieder laufen.
+    private async Task SendeZeiteintragsaenderung(Zeiteintrag eintrag, Zeiteintragseingabe eingabe)
+    {
+        var beginn = Zeitpunktform.AusOrtszeit(eingabe.Tag, eingabe.Von);
+        var ende = Zeitpunktform.AusOrtszeit(eingabe.Tag, eingabe.Bis);
+        var ergebnis = await ZeitenKlient.Aendere(KarteId, eintrag.ZeiteintragId, new ZeiteintragAendernAnfrage(eingabe.Kontributor, beginn, ende));
+        if (ergebnis.WurdeZurueckgewiesen)
+        {
+            _zeitenzurueckweisung = ergebnis.Zurueckweisung;
+            return;
+        }
+
+        _detail = _detail! with { Zeiteintraege = MitEintrag(_detail.Zeiteintraege, ergebnis.Wert) };
+        _offeneZeiteintragId = null;
+    }
+
+    private async Task LoescheZeiteintrag(Zeiteintrag eintrag)
+    {
+        _zeitenzurueckweisung = null;
+        _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(() => SendeZeiteintragsloeschung(eintrag));
+    }
+
+    // Zurück kommt das ganze Kartendetail ohne die Zeile — Hausform EntferneAnhang: ein zweiter
+    // Abruf wäre ein Fenster, in dem Liste und Summen auseinanderlaufen.
+    private async Task SendeZeiteintragsloeschung(Zeiteintrag eintrag)
+    {
+        var ergebnis = await ZeitenKlient.Loesche(KarteId, eintrag.ZeiteintragId);
+        if (ergebnis.WurdeZurueckgewiesen)
+        {
+            _zeitenzurueckweisung = ergebnis.Zurueckweisung;
+            return;
+        }
+
+        _detail = ergebnis.Wert;
+        _offeneZeiteintragId = null;
     }
 
     // Ersetzen statt anhängen: ein zweiter Start auf derselben Karte liefert **denselben** Eintrag

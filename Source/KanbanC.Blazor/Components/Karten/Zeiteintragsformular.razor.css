@@ -1,0 +1,83 @@
+/* Die Form des Nachtrags- und Änderungsformulars nach dem Artboard (D0006.dc.html, Zustand 5 und
+   Rand C): Marken über den Feldern, „ergibt" rechts, die Handlungen darunter. Die Akzentkante
+   links markiert die aufgeklappte Stelle, wie an der laufenden Zeile. Alle Gestaltungswerte
+   kommen aus gestaltung.css; die Felder und Knöpfe tragen dessen Klassen .input und .btn. */
+.zeitenformular {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    background: var(--color-bg);
+    border-left: 3px solid var(--color-accent);
+    border-radius: var(--radius-md);
+}
+
+.zeitenformularzeile {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-2);
+}
+
+.zeitenformularfeld {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.zeitenformularfeld-kontributor {
+    flex: 1 1 176px;
+    min-width: 0;
+}
+
+.zeitenformularfeld-tag {
+    flex: 0 0 176px;
+}
+
+.zeitenformularfeld-uhrzeit {
+    flex: 0 0 108px;
+}
+
+.zeitenformularmarke {
+    font-size: 12px;
+    color: var(--color-neutral-700);
+}
+
+.zeitenformulareingabe {
+    font-variant-numeric: tabular-nums;
+}
+
+.zeitenformularergebnis {
+    display: flex;
+    flex: 1 1 88px;
+    flex-direction: column;
+    text-align: right;
+}
+
+.zeitenformularergebnismarke {
+    font-size: 11px;
+    color: var(--color-neutral-600);
+}
+
+.zeitenformularergebniswert {
+    font-size: 15px;
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+}
+
+.zeitenformularhandlung {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+/* Löschen steht neben den anderen Handlungen und nicht abgesetzt: es ist der Korrekturweg für
+   das eine Feld, das dieses Formular nicht ändert. */
+.zeitenformularloeschen {
+    color: var(--color-accent-700);
+}
+
+.zeitenformular-zurueckweisung {
+    margin: 0;
+}

@@ -209,4 +209,68 @@ public class ZeitpunktformTests
         var wanduhr = new DateTime(jahr, monat, tag, stunde, minute, 0, DateTimeKind.Unspecified);
         return new DateTimeOffset(wanduhr, TimeZoneInfo.Local.GetUtcOffset(wanduhr));
     }
+
+    // Hin- und Rueckweg an einem Beispiel: was AusOrtszeit erzeugt, liest AlsZeitraum wieder als
+    // dieselbe Uhrzeit — genau darauf verlaesst sich das Formular.
+    [Test]
+    public void Wenn_Tag_und_Uhrzeit_umgerechnet_werden_dann_liest_die_Zeitraumform_dieselbe_Uhrzeit_zurueck()
+    {
+        var tag = new DateOnly(2026, 9, 5);
+        var vierzehnUhr = new TimeOnly(14, 0);
+
+        var zeitpunkt = Zeitpunktform.AusOrtszeit(tag, vierzehnUhr);
+
+        Assert.That(Zeitpunktform.AlsTageszeit(zeitpunkt), Is.EqualTo("14:00"));
+        Assert.That(Zeitpunktform.AlsZeitraum(zeitpunkt, zeitpunkt.AddMinutes(90), zeitpunkt), Does.Contain("14:00").And.Contain("15:30"));
+    }
+
+    // Die Umrechnung geht ueber die Zeitzone des Servers: der Versatz des Ergebnisses ist genau
+    // der, den TimeZoneInfo.Local fuer diesen Zeitpunkt nennt.
+    [Test]
+    public void Wenn_Tag_und_Uhrzeit_umgerechnet_werden_dann_traegt_der_Zeitpunkt_den_Versatz_der_Serverzeitzone()
+    {
+        var tag = new DateOnly(2026, 9, 5);
+        var vierzehnUhr = new TimeOnly(14, 0);
+
+        var zeitpunkt = Zeitpunktform.AusOrtszeit(tag, vierzehnUhr);
+
+        var erwarteterVersatz = TimeZoneInfo.Local.GetUtcOffset(new DateTime(2026, 9, 5, 14, 0, 0, DateTimeKind.Unspecified));
+        Assert.That(zeitpunkt.Offset, Is.EqualTo(erwarteterVersatz));
+        Assert.That(zeitpunkt.DateTime, Is.EqualTo(new DateTime(2026, 9, 5, 14, 0, 0)));
+    }
+
+    // Ein leeres „bis" ist keine fehlende Angabe, sondern die Aussage „laeuft".
+    [Test]
+    public void Wenn_keine_Uhrzeit_eingetragen_ist_dann_entsteht_kein_Zeitpunkt()
+    {
+        var zeitpunkt = Zeitpunktform.AusOrtszeit(new DateOnly(2026, 9, 5), (TimeOnly?)null);
+
+        Assert.That(zeitpunkt, Is.Null);
+    }
+
+    [Test]
+    public void Wenn_eine_Uhrzeit_eingetragen_ist_dann_entsteht_derselbe_Zeitpunkt_wie_ohne_Nullbarkeit()
+    {
+        var tag = new DateOnly(2026, 9, 5);
+        var halbVier = new TimeOnly(15, 30);
+
+        var nullbar = Zeitpunktform.AusOrtszeit(tag, (TimeOnly?)halbVier);
+
+        Assert.That(nullbar, Is.EqualTo(Zeitpunktform.AusOrtszeit(tag, halbVier)));
+    }
+
+    // Was das Formular vorbelegt, ist die Ortszeit des Eintrags — dieselbe, die die Zeile daneben
+    // liest.
+    [Test]
+    public void Wenn_ein_Zeitpunkt_ins_Formular_uebernommen_wird_dann_tragen_Tag_und_Uhrzeit_die_Ortszeit()
+    {
+        var zeitpunkt = Zeitpunktform.AusOrtszeit(new DateOnly(2026, 9, 5), new TimeOnly(17, 40));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Zeitpunktform.AlsTag(zeitpunkt), Is.EqualTo(new DateOnly(2026, 9, 5)));
+            Assert.That(Zeitpunktform.AlsUhrzeit(zeitpunkt), Is.EqualTo(new TimeOnly(17, 40)));
+            Assert.That(Zeitpunktform.AlsUhrzeit((DateTimeOffset?)null), Is.Null);
+        });
+    }
 }

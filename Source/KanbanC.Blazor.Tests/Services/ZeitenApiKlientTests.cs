@@ -11,6 +11,7 @@ public class ZeitenApiKlientTests
 {
     private const string JsonInhaltstyp = "application/json";
     private const string BeendeterEintrag = """{"zeiteintragId":7,"karte":14,"kontributor":{"kontributorId":3,"name":"Stefan","art":"Mensch","stillgelegtAm":null},"beginn":"2026-09-06T08:04:00+00:00","ende":"2026-09-06T09:40:00+00:00"}""";
+    private const string LeeresKartendetail = """{"karte":{"karteId":14,"titel":"Migration schreiben","spalte":1,"beschreibung":null,"faelligAm":null,"startAm":null,"farbe":"Ohne","kontributor":null,"kartennummer":null},"board":1,"boardname":"Entwicklung","spalte":1,"spaltenbezeichnung":"Backlog","verantwortlicher":null,"etiketten":[],"etikettvorschlaege":[],"teilaufgaben":[],"kommentare":[],"anhaenge":[],"dateiverweise":[],"kartenklasse":null,"zeiteintraege":[]}""";
     private const string LaufenderEintrag = """{"zeiteintragId":7,"karte":14,"kontributor":{"kontributorId":3,"name":"Stefan","art":"Mensch","stillgelegtAm":null},"beginn":"2026-09-06T08:04:00+00:00","ende":null}""";
 
     [Test]
@@ -196,5 +197,122 @@ public class ZeitenApiKlientTests
 
         Assert.That(async () => await klient.StarteZeitmessung(14, new ZeitmessungStartenAnfrage(3)),
             Throws.InvalidOperationException);
+    }
+
+    [Test]
+    public async Task Wenn_ein_Zeiteintrag_nachgetragen_wird_dann_lautet_die_Adresse_zeiten_und_der_Rumpf_traegt_Beginn_und_Ende()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.Created, BeendeterEintrag, JsonInhaltstyp);
+        var klient = new ZeitenApiKlient(fabrik);
+        var beginn = new DateTimeOffset(2026, 9, 5, 12, 0, 0, TimeSpan.Zero);
+        var ende = new DateTimeOffset(2026, 9, 5, 13, 30, 0, TimeSpan.Zero);
+
+        var ergebnis = await klient.TrageNach(14, new ZeiteintragNachtragenAnfrage(3, beginn, ende));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("POST http://webapi.test/api/karten/14/zeiten"));
+            Assert.That(fabrik.GesendeterRumpf, Does.Contain("\"kontributor\":3"));
+            Assert.That(fabrik.GesendeterRumpf, Does.Contain("12:00:00"));
+            Assert.That(fabrik.GesendeterRumpf, Does.Contain("13:30:00"));
+            Assert.That(ergebnis.Wert.ZeiteintragId, Is.EqualTo(7));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_WebApi_den_Nachtrag_zurueckweist_dann_traegt_das_Ergebnis_ihren_Befund()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.BadRequest,
+            """{"befunde":[{"code":"zeiteintrag-ende-vor-beginn","meldung":"Das Ende liegt vor dem Beginn: Beginn 2026-09-05T15:30:00Z, Ende 2026-09-05T14:00:00Z.","kompensation":"Den Aufruf wiederholen."}]}""",
+            JsonInhaltstyp);
+        var klient = new ZeitenApiKlient(fabrik);
+
+        var ergebnis = await klient.TrageNach(14, new ZeiteintragNachtragenAnfrage(3, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.EqualTo("zeiteintrag-ende-vor-beginn"));
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("2026-09-05T15:30:00Z"));
+        });
+    }
+
+    // Ein Ende von null reist als JSON-null mit: genau daran erkennt die WebApi den Rueckfall auf
+    // „laeuft". Ueber den Browser waere ein weggelassenes Feld nicht von null zu unterscheiden.
+    [Test]
+    public async Task Wenn_ein_Zeiteintrag_wieder_laufen_soll_dann_traegt_der_Rumpf_ein_ende_von_null()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, LaufenderEintrag, JsonInhaltstyp);
+        var klient = new ZeitenApiKlient(fabrik);
+
+        var ergebnis = await klient.Aendere(14, 7, new ZeiteintragAendernAnfrage(3, new DateTimeOffset(2026, 9, 6, 8, 4, 0, TimeSpan.Zero), Ende: null));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("PUT http://webapi.test/api/karten/14/zeiten/7"));
+            Assert.That(fabrik.GesendeterRumpf, Does.Contain("\"ende\":null"));
+            Assert.That(ergebnis.Wert.Ende, Is.Null);
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_WebApi_die_Aenderung_zurueckweist_dann_traegt_das_Ergebnis_ihren_Befund()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.BadRequest,
+            """{"befunde":[{"code":"zeiteintrag-laeuft-schon","meldung":"Fuer den Kontributor 3 laeuft an der Karte 14 schon der Zeiteintrag 9.","kompensation":"Den Zeiteintrag 9 stoppen."}]}""",
+            JsonInhaltstyp);
+        var klient = new ZeitenApiKlient(fabrik);
+
+        var ergebnis = await klient.Aendere(14, 7, new ZeiteintragAendernAnfrage(3, DateTimeOffset.UtcNow, Ende: null));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.EqualTo("zeiteintrag-laeuft-schon"));
+        Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("Zeiteintrag 9"));
+    }
+
+    // **Die zweite Antwortgestalt dieses Klienten:** zurueck kommt das ganze Kartendetail und
+    // nicht der geloeschte Eintrag — und der Aufruf traegt keinen Rumpf.
+    [Test]
+    public async Task Wenn_ein_Zeiteintrag_geloescht_wird_dann_traegt_das_Ergebnis_das_Kartendetail_und_der_Aufruf_keinen_Rumpf()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, LeeresKartendetail, JsonInhaltstyp);
+        var klient = new ZeitenApiKlient(fabrik);
+
+        var ergebnis = await klient.Loesche(14, 7);
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("DELETE http://webapi.test/api/karten/14/zeiten/7"));
+            Assert.That(fabrik.GesendeterRumpf, Is.Null);
+            Assert.That(ergebnis.Wert.Karte.KarteId, Is.EqualTo(14));
+            Assert.That(ergebnis.Wert.Zeiteintraege, Is.Empty);
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_WebApi_die_Loeschung_mit_404_zurueckweist_dann_traegt_das_Ergebnis_ihren_Befund()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.NotFound,
+            """{"befunde":[{"code":"zeiteintrag-unbekannt","meldung":"Einen Zeiteintrag mit der Nummer 7 gibt es an der Karte 14 nicht.","kompensation":"`GET /api/karten/14` abrufen."}]}""",
+            JsonInhaltstyp);
+        var klient = new ZeitenApiKlient(fabrik);
+
+        var ergebnis = await klient.Loesche(14, 7);
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.EqualTo("zeiteintrag-unbekannt"));
+        Assert.That(() => ergebnis.Wert, Throws.InvalidOperationException);
+    }
+
+    [Test]
+    public void Wenn_die_WebApi_beim_Loeschen_kein_Kartendetail_liefert_dann_scheitert_der_Aufruf_sichtbar()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, "null", JsonInhaltstyp);
+        var klient = new ZeitenApiKlient(fabrik);
+
+        Assert.That(async () => await klient.Loesche(14, 7), Throws.InvalidOperationException);
     }
 }
