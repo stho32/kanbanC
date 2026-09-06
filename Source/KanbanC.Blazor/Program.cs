@@ -1,11 +1,15 @@
 using KanbanC.Blazor.Components;
 using KanbanC.Blazor.Services;
+using KanbanC.Contracts.Karten;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Die Voreinstellung von MaximumReceiveMessageSize sind 32 KB je SignalR-Nachricht — schon eine
+// 41-kB-Datei kaeme damit nicht durch den Kreislauf. Angehoben wird auf dieselbe Konstante, auf
+// die sich Validator, WebApi-Route und Dateiwaehler beziehen.
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+    .AddInteractiveServerComponents()
+    .AddHubOptions(optionen => optionen.MaximumReceiveMessageSize = Anhangsgrenze.HoechsteDateigroesse);
 
 // Die Oberfläche spricht ausschließlich über die WebApi mit den Daten -
 // es gibt bewusst keine Projektreferenz auf KanbanC.BL.

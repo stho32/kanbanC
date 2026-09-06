@@ -10,11 +10,18 @@ using KanbanC.BL.Persistenz.Boards;
 using KanbanC.BL.Persistenz.Karten;
 using KanbanC.BL.Persistenz.Kontributoren;
 using KanbanC.BL.Persistenz.Migrationen;
+using KanbanC.Contracts.Karten;
 using KanbanC.WebApi.Endpunkte;
+using Microsoft.AspNetCore.Http.Features;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
+
+// Die Obergrenze der Anhaenge gilt auch dann, wenn ein Agent an der Oberflaeche vorbei direkt
+// diese API ruft — eine Grenze, die nur in der Oberflaeche steht, ist keine. Dieselbe Konstante
+// wie im Validator und im Blazor-Kreislauf; eine zweite Zahl gibt es nicht.
+builder.Services.Configure<FormOptions>(optionen => optionen.MultipartBodyLengthLimit = Anhangsgrenze.HoechsteDateigroesse);
 
 var verbindungszeichenfolge = builder.Configuration["Datenhaltung:Verbindungszeichenfolge"];
 if (verbindungszeichenfolge is null)

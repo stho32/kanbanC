@@ -25,6 +25,10 @@ public sealed class TestWebApi : IDisposable
 
     public HttpClient Klient { get; }
 
+    // Die Dienste des laufenden Hosts. Gelesen wird daraus, was der Host beim Start eingestellt
+    // hat und keine Route zurueckgibt — die Laengengrenze der multipart-Rumpfe zum Beispiel.
+    public IServiceProvider Dienste => _fabrik.Services;
+
     // Die registrierten Routen als „METHODE /pfad“. Der Vertragstest liest sie, damit ein neuer
     // Endpunkt nicht stillschweigend an der Prüfung vorbeikommt.
     public IReadOnlyList<string> Routen
