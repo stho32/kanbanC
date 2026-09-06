@@ -386,6 +386,99 @@ public sealed class KartenRepository : IKartenRepository
              WHERE AnhangId = @AnhangId", new { AnhangId = anhangId, Dateigroesse = dateigroesse }, transaktion);
     }
 
+    // Eine Zeile mehr, Muster SchreibeKommentar — mit einem Waechter dazwischen, den die
+    // Nachbarn nicht haben: **der Bestand der Karte wird in derselben Transaktion auf denselben
+    // Pfad geprueft, vor dem INSERT.** Zwei Zeilen mit demselben Pfad zeigen auf dieselbe Datei,
+    // und die zweite traegt keine Aussage.
+    // Gelesen statt am Index abgefangen: der Aufrufer bekommt einen lesbaren Befund mit
+    // Kompensation und nie eine nackte Datenbankmeldung. Der eindeutige Index aus 015 bleibt
+    // trotzdem — er sichert die Regel gegen jeden Weg, der hier vorbeischreibt.
+    // Zurueck kommen **drei** Lagen und nicht zwei: null allein muesste sonst „Karte unbekannt"
+    // und „Pfad doppelt" zugleich heissen.
+    public Dateiverweiseintragung TrageDateiverweisEin(long karteId, DateiverweisEintragenAnfrage anfrage)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+        using var transaktion = verbindung.BeginTransaction();
+
+        var dieKarteGibtEsNicht = !GibtEsDieKarte(verbindung, transaktion, karteId);
+        if (dieKarteGibtEsNicht)
+        {
+            return Dateiverweiseintragung.KarteUnbekannt;
+        }
+
+        var pfad = Dateiverweispfad.Normalisiert(anfrage.Pfad);
+        var derPfadStehtSchonAnDieserKarte = GibtEsDenPfadAnDerKarte(verbindung, transaktion, karteId, pfad);
+        if (derPfadStehtSchonAnDieserKarte)
+        {
+            return Dateiverweiseintragung.PfadDoppelt;
+        }
+
+        FuegeDateiverweisEin(verbindung, transaktion, karteId, pfad, anfrage.Kontributor, Jetzt());
+        var detail = Kartenleser.LiesKartendetail(verbindung, transaktion, karteId);
+        transaktion.Commit();
+        return Dateiverweiseintragung.Eingetragen(detail!);
+    }
+
+    // Der Vergleich laeuft ueber die Bedingung und nicht in C#: so entscheidet dieselbe Stelle
+    // ueber die Dublette, die auch der eindeutige Index bewacht. **Ohne COLLATE NOCASE**, wie der
+    // Index: Gross- und Kleinschreibung unterscheidet Pfade.
+    private static bool GibtEsDenPfadAnDerKarte(IDbConnection verbindung, IDbTransaction transaktion, long karteId, string pfad)
+    {
+        var gefundeneZeilen = verbindung.ExecuteScalar<long>(@"
+            SELECT COUNT(*)
+              FROM Dateiverweis
+             WHERE Karte = @Karte
+               AND Pfad = @Pfad", new { Karte = karteId, Pfad = pfad }, transaktion);
+        return gefundeneZeilen > 0;
+    }
+
+    // Der Zeitpunkt geht als ISO-Text durch die Spalte, wie beim Kommentar und beim Anhang.
+    private static void FuegeDateiverweisEin(IDbConnection verbindung, IDbTransaction transaktion, long karteId, string pfad, long kontributorId, DateTimeOffset zeitpunkt)
+    {
+        var parameter = new
+        {
+            Karte = karteId,
+            Kontributor = kontributorId,
+            Pfad = pfad,
+            Zeitpunkt = zeitpunkt.ToUniversalTime().ToString(IsoZeitpunktformat, CultureInfo.InvariantCulture),
+        };
+        verbindung.Execute(@"
+            INSERT INTO Dateiverweis (Karte, Kontributor, Pfad, Zeitpunkt)
+            VALUES (@Karte, @Kontributor, @Pfad, @Zeitpunkt)", parameter, transaktion);
+    }
+
+    // Muster EntferneAnhang, nur ohne Datei daneben: ein Dateiverweis traegt einen Pfad, keine
+    // Bytes. Deshalb reicht hier ein null fuer beide Lagen — „Karte unbekannt" und „gehoert zu
+    // einer anderen Karte" laufen auf dieselbe Aussage hinaus und werden im Dienst
+    // auseinandergehalten, wie beim Anhang.
+    public Kartendetail? EntferneDateiverweis(long karteId, long dateiverweisId)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+        using var transaktion = verbindung.BeginTransaction();
+
+        var derDateiverweisGehoertNichtZuDieserKarte = !LoescheDateiverweiszeile(verbindung, transaktion, karteId, dateiverweisId);
+        if (derDateiverweisGehoertNichtZuDieserKarte)
+        {
+            return null; // stil-check: C25 null heisst "diesen Dateiverweis gibt es an dieser Karte nicht" (404)
+        }
+
+        var detail = Kartenleser.LiesKartendetail(verbindung, transaktion, karteId);
+        transaktion.Commit();
+        return detail;
+    }
+
+    // Die Zahl der geloeschten Zeilen ist zugleich die Auskunft, ob der Dateiverweis zu dieser
+    // Karte gehoert — wie bei LoescheAnhangzeile. **Beide** Nummern stehen in der Bedingung.
+    private static bool LoescheDateiverweiszeile(IDbConnection verbindung, IDbTransaction transaktion, long karteId, long dateiverweisId)
+    {
+        var geloeschteZeilen = verbindung.Execute(@"
+            DELETE
+              FROM Dateiverweis
+             WHERE DateiverweisId = @DateiverweisId
+               AND Karte = @Karte", new { DateiverweisId = dateiverweisId, Karte = karteId }, transaktion);
+        return geloeschteZeilen > 0;
+    }
+
     // Nur lesend, deshalb ohne Transaktion. **Beide** Nummern stehen in der Bedingung: eine
     // AnhangId, die es gibt, aber zu einer anderen Karte gehoert, liefert hier nichts — sie wird
     // damit zu 404, statt die Datei einer fremden Karte herauszugeben.

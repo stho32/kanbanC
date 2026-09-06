@@ -2421,6 +2421,286 @@ public class KartenRepositoryTests
         Assert.That(detail!.Dateiverweise.Select(dateiverweis => dateiverweis.Pfad), Is.EqualTo(new[] { "Dokumentation/Planung/kanbanc.md" }));
     }
 
+    // Der Zeitpunkt kommt aus der Uhr des Repositorys und ist nicht stellbar; geprueft wird
+    // deshalb ueber ein Zeitfenster, wie beim Kommentar und beim Anhang.
+    [Test]
+    public void Wenn_ein_Dateiverweis_eingetragen_wird_dann_liegt_sein_Zeitpunkt_im_Fenster_des_Aufrufs()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var karteId = KarteOhneDateiverweis(datenbank, repository, out var stefan);
+        var vorher = DateTimeOffset.UtcNow.AddSeconds(-1);
+
+        var eintragung = repository.TrageDateiverweisEin(karteId, new DateiverweisEintragenAnfrage("Dokumentation/Planung/kanbanc.md", stefan));
+        var nachher = DateTimeOffset.UtcNow.AddSeconds(1);
+
+        Assert.That(eintragung.Detail!.Dateiverweise, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(eintragung.Detail.Dateiverweise[0].Zeitpunkt, Is.GreaterThanOrEqualTo(vorher));
+            Assert.That(eintragung.Detail.Dateiverweise[0].Zeitpunkt, Is.LessThanOrEqualTo(nachher));
+            Assert.That(eintragung.Detail.Dateiverweise[0].Zeitpunkt.Offset, Is.EqualTo(TimeSpan.Zero));
+        });
+    }
+
+    // Feste Breite in UTC: nur so sortiert der Text lexikografisch wie chronologisch — dieselbe
+    // Zusage wie bei Kommentar und Anhang.
+    [Test]
+    public void Wenn_ein_Dateiverweis_eingetragen_wird_dann_steht_in_der_Spalte_ISO_Text_in_UTC()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var karteId = KarteOhneDateiverweis(datenbank, repository, out var stefan);
+
+        repository.TrageDateiverweisEin(karteId, new DateiverweisEintragenAnfrage("Dokumentation/Planung/kanbanc.md", stefan));
+
+        Assert.That(Dateiverweiszeitpunkttexte(datenbank), Has.Length.EqualTo(1));
+        Assert.That(Dateiverweiszeitpunkttexte(datenbank)[0], Does.EndWith("+00:00"));
+        Assert.That(Dateiverweiszeitpunkttexte(datenbank)[0], Has.Length.EqualTo(33), "Feste Breite: nur so sortiert der Text wie die Zeit.");
+    }
+
+    // Randgetrimmt, sonst zeichengleich — auch mit Rueckstrichen.
+    [Test]
+    public void Wenn_ein_Pfad_mit_Randleerzeichen_eingetragen_wird_dann_steht_er_getrimmt_und_sonst_zeichengleich_da()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var karteId = KarteOhneDateiverweis(datenbank, repository, out var stefan);
+
+        repository.TrageDateiverweisEin(karteId, new DateiverweisEintragenAnfrage("  Dokumentation/Planung/kanbanc.md  ", stefan));
+        var eintragung = repository.TrageDateiverweisEin(karteId, new DateiverweisEintragenAnfrage(@"  Dokumentation\Planung\kanbanc.md  ", stefan));
+
+        Assert.That(eintragung.Detail!.Dateiverweise.Select(dateiverweis => dateiverweis.Pfad),
+            Is.EqualTo(new[] { "Dokumentation/Planung/kanbanc.md", @"Dokumentation\Planung\kanbanc.md" }));
+    }
+
+    [Test]
+    public void Wenn_ein_Dateiverweis_eingetragen_wird_dann_traegt_die_Antwort_das_ganze_Kartendetail_mit_dem_Urheber()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var agent = LegeKontributorAn(datenbank, "Claude-Agent", Kontributorart.Agent);
+
+        var eintragung = repository.TrageDateiverweisEin(karte!.KarteId, new DateiverweisEintragenAnfrage("Dokumentation/Planung/kanbanc.md", agent));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(eintragung.Detail!.Karte.Titel, Is.EqualTo("Playwright-Lizenz klären"));
+            Assert.That(eintragung.Detail.Dateiverweise[0].Urheber, Is.EqualTo(new Kontributor(agent, "Claude-Agent", Kontributorart.Agent, StillgelegtAm: null)));
+            Assert.That(eintragung.Detail.Dateiverweise[0].DateiverweisId, Is.GreaterThan(0));
+        });
+    }
+
+    [Test]
+    public void Wenn_drei_Dateiverweise_nacheinander_eingetragen_werden_dann_stehen_sie_in_Eintragereihenfolge()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var karteId = KarteOhneDateiverweis(datenbank, repository, out var stefan);
+
+        repository.TrageDateiverweisEin(karteId, new DateiverweisEintragenAnfrage("a.md", stefan));
+        repository.TrageDateiverweisEin(karteId, new DateiverweisEintragenAnfrage("b.md", stefan));
+        var eintragung = repository.TrageDateiverweisEin(karteId, new DateiverweisEintragenAnfrage("c.md", stefan));
+
+        Assert.That(eintragung.Detail!.Dateiverweise.Select(dateiverweis => dateiverweis.Pfad), Is.EqualTo(new[] { "a.md", "b.md", "c.md" }));
+        Assert.That(eintragung.Detail.Dateiverweise.Select(dateiverweis => dateiverweis.DateiverweisId).Distinct().Count(), Is.EqualTo(3));
+    }
+
+    [Test]
+    public void Wenn_die_KarteId_unbekannt_ist_dann_meldet_TrageDateiverweisEin_die_unbekannte_Karte_und_schreibt_nicht()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+
+        var eintragung = repository.TrageDateiverweisEin(999, new DateiverweisEintragenAnfrage("kanbanc.md", stefan));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(eintragung.Detail, Is.Null);
+            Assert.That(eintragung.PfadSchonVorhanden, Is.False);
+            Assert.That(Dateiverweiszeilen(datenbank), Is.Zero);
+        });
+    }
+
+    // Die dritte Lage, die es bei den Nachbarn nicht gibt — und die scharfe Zusicherung dazu:
+    // **es wurde nichts geschrieben**, die Liste bleibt bei einer Zeile.
+    [Test]
+    public void Wenn_derselbe_Pfad_ein_zweites_Mal_eingetragen_wird_dann_meldet_das_Repository_die_Dublette_und_schreibt_nicht()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var karteId = KarteOhneDateiverweis(datenbank, repository, out var stefan);
+        repository.TrageDateiverweisEin(karteId, new DateiverweisEintragenAnfrage("Dokumentation/Planung/kanbanc.md", stefan));
+
+        var zweite = repository.TrageDateiverweisEin(karteId, new DateiverweisEintragenAnfrage("Dokumentation/Planung/kanbanc.md", stefan));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(zweite.PfadSchonVorhanden, Is.True);
+            Assert.That(zweite.Detail, Is.Null);
+            Assert.That(Dateiverweiszeilen(datenbank), Is.EqualTo(1));
+        });
+    }
+
+    // Getrimmt wird vor dem Vergleich: „kanbanc.md" und „ kanbanc.md " sind derselbe Pfad.
+    [Test]
+    public void Wenn_sich_zwei_Eintraege_nur_an_den_Raendern_unterscheiden_dann_gelten_sie_als_derselbe_Pfad()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var karteId = KarteOhneDateiverweis(datenbank, repository, out var stefan);
+        repository.TrageDateiverweisEin(karteId, new DateiverweisEintragenAnfrage("kanbanc.md", stefan));
+
+        var zweite = repository.TrageDateiverweisEin(karteId, new DateiverweisEintragenAnfrage("   kanbanc.md   ", stefan));
+
+        Assert.That(zweite.PfadSchonVorhanden, Is.True);
+        Assert.That(Dateiverweiszeilen(datenbank), Is.EqualTo(1));
+    }
+
+    // Die Dublette haengt am Pfad, nicht am Urheber: zwei Kontributoren, derselbe Pfad, eine
+    // Zeile.
+    [Test]
+    public void Wenn_zwei_verschiedene_Urheber_denselben_Pfad_eintragen_dann_bleibt_es_eine_Zeile()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var karteId = KarteOhneDateiverweis(datenbank, repository, out var stefan);
+        var nina = LegeKontributorAn(datenbank, "Nina Barth", Kontributorart.Mensch);
+        repository.TrageDateiverweisEin(karteId, new DateiverweisEintragenAnfrage("kanbanc.md", stefan));
+
+        var zweite = repository.TrageDateiverweisEin(karteId, new DateiverweisEintragenAnfrage("kanbanc.md", nina));
+
+        Assert.That(zweite.PfadSchonVorhanden, Is.True);
+        Assert.That(Dateiverweiszeilen(datenbank), Is.EqualTo(1));
+    }
+
+    // Gross- und Kleinschreibung unterscheidet: auf der Zielplattform der Vision sind das zwei
+    // Dateien.
+    [Test]
+    public void Wenn_sich_zwei_Pfade_nur_in_der_Schreibweise_unterscheiden_dann_gelten_sie_als_verschieden()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var karteId = KarteOhneDateiverweis(datenbank, repository, out var stefan);
+        repository.TrageDateiverweisEin(karteId, new DateiverweisEintragenAnfrage("Dokumentation/Planung/kanbanc.md", stefan));
+
+        var zweite = repository.TrageDateiverweisEin(karteId, new DateiverweisEintragenAnfrage("Dokumentation/Planung/KANBANC.md", stefan));
+
+        Assert.That(zweite.PfadSchonVorhanden, Is.False);
+        Assert.That(zweite.Detail!.Dateiverweise, Has.Count.EqualTo(2));
+    }
+
+    [Test]
+    public void Wenn_derselbe_Pfad_an_eine_zweite_Karte_eingetragen_wird_dann_geht_er_durch()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var spalteId = board.Spalten[0].SpalteId;
+        var erste = repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var zweite = repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage("Migration schreiben"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+        repository.TrageDateiverweisEin(erste!.KarteId, new DateiverweisEintragenAnfrage("Dokumentation/Planung/kanbanc.md", stefan));
+
+        var eintragung = repository.TrageDateiverweisEin(zweite!.KarteId, new DateiverweisEintragenAnfrage("Dokumentation/Planung/kanbanc.md", stefan));
+
+        Assert.That(eintragung.Detail!.Dateiverweise, Has.Count.EqualTo(1));
+        Assert.That(Dateiverweiszeilen(datenbank), Is.EqualTo(2));
+    }
+
+    [Test]
+    public void Wenn_ein_Dateiverweis_entfernt_wird_dann_ist_er_weg_und_die_uebrigen_bleiben()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var karteId = KarteOhneDateiverweis(datenbank, repository, out var stefan);
+        repository.TrageDateiverweisEin(karteId, new DateiverweisEintragenAnfrage("a.md", stefan));
+        var zweite = repository.TrageDateiverweisEin(karteId, new DateiverweisEintragenAnfrage("b.md", stefan));
+        var ersteId = zweite.Detail!.Dateiverweise[0].DateiverweisId;
+
+        var detail = repository.EntferneDateiverweis(karteId, ersteId);
+
+        Assert.That(detail!.Dateiverweise.Select(dateiverweis => dateiverweis.Pfad), Is.EqualTo(new[] { "b.md" }));
+        Assert.That(Dateiverweiszeilen(datenbank), Is.EqualTo(1));
+    }
+
+    // Nach dem Entfernen ist der Pfad keine Dublette mehr.
+    [Test]
+    public void Wenn_ein_Pfad_entfernt_und_erneut_eingetragen_wird_dann_geht_er_wieder_durch()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var karteId = KarteOhneDateiverweis(datenbank, repository, out var stefan);
+        var eingetragen = repository.TrageDateiverweisEin(karteId, new DateiverweisEintragenAnfrage("kanbanc.md", stefan));
+        repository.EntferneDateiverweis(karteId, eingetragen.Detail!.Dateiverweise[0].DateiverweisId);
+
+        var erneut = repository.TrageDateiverweisEin(karteId, new DateiverweisEintragenAnfrage("kanbanc.md", stefan));
+
+        Assert.That(erneut.PfadSchonVorhanden, Is.False);
+        Assert.That(erneut.Detail!.Dateiverweise.Select(dateiverweis => dateiverweis.Pfad), Is.EqualTo(new[] { "kanbanc.md" }));
+    }
+
+    // Eine DateiverweisId, die es gibt, aber zu einer anderen Karte gehoert: es wird nichts
+    // entfernt, und die andere Karte traegt ihre Zeile unveraendert weiter.
+    [Test]
+    public void Wenn_der_Dateiverweis_zu_einer_anderen_Karte_gehoert_dann_entfernt_das_Repository_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var spalteId = board.Spalten[0].SpalteId;
+        var eigene = repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var fremde = repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage("Migration schreiben"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+        var beiDerFremden = repository.TrageDateiverweisEin(fremde!.KarteId, new DateiverweisEintragenAnfrage("nur-woanders.md", stefan));
+        var fremdeId = beiDerFremden.Detail!.Dateiverweise[0].DateiverweisId;
+
+        var detail = repository.EntferneDateiverweis(eigene!.KarteId, fremdeId);
+
+        Assert.That(detail, Is.Null);
+        Assert.That(repository.LiesKartendetail(fremde.KarteId)!.Dateiverweise, Has.Count.EqualTo(1));
+    }
+
+    [Test]
+    public void Wenn_derselbe_Dateiverweis_zweimal_entfernt_wird_dann_liefert_der_zweite_Aufruf_null()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var karteId = KarteOhneDateiverweis(datenbank, repository, out var stefan);
+        var eingetragen = repository.TrageDateiverweisEin(karteId, new DateiverweisEintragenAnfrage("kanbanc.md", stefan));
+        var dateiverweisId = eingetragen.Detail!.Dateiverweise[0].DateiverweisId;
+
+        repository.EntferneDateiverweis(karteId, dateiverweisId);
+
+        Assert.That(repository.EntferneDateiverweis(karteId, dateiverweisId), Is.Null);
+    }
+
+    private static long KarteOhneDateiverweis(TemporaereDatenbank datenbank, KartenRepository repository, out long stefan)
+    {
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+        return karte!.KarteId;
+    }
+
+    private static long Dateiverweiszeilen(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.ExecuteScalar<long>("SELECT COUNT(*) FROM Dateiverweis");
+    }
+
+    private static string[] Dateiverweiszeitpunkttexte(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.Query<string>(@"
+            SELECT Zeitpunkt
+              FROM Dateiverweis
+             ORDER BY DateiverweisId").ToArray();
+    }
+
     private static long Etikettzeilen(TemporaereDatenbank datenbank)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();

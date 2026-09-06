@@ -303,3 +303,4 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-06 | R00021 Karte auf Dateien verweisen lassen | B0283 Dateiverweistabelle anlegen | Standard | 0,4h | 0,0h | 0,0h | autonom |
 | 2026-09-06 | R00021 Karte auf Dateien verweisen lassen | B0284 Dateiverweise am Kartendetail lesen | Standard | 0,4h | 0,2h | 0,2h | autonom |
 | 2026-09-06 | R00021 Karte auf Dateien verweisen lassen | B0285 Pfad pruefen | Standard | 0,4h | 0,0h | 0,0h | autonom |
+| 2026-09-06 | R00021 Karte auf Dateien verweisen lassen | B0286 Dateiverweis eintragen und entfernen | Standard | 0,4h | 0,0h | 0,1h | autonom |

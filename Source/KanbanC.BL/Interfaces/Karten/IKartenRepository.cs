@@ -1,4 +1,5 @@
 using KanbanC.BL.Models;
+using KanbanC.BL.Models.Karten;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
 
@@ -54,6 +55,17 @@ public interface IKartenRepository
     // Entfernt Zeile **und** Datei, in dieser Reihenfolge; zurueck kommt das ganze Kartendetail.
     // null heisst: diesen Anhang gibt es an dieser Karte nicht, und entfernt wurde nichts.
     Kartendetail? EntferneAnhang(long karteId, long anhangId);
+
+    // Traegt **einen** Dateiverweis ein und haengt ihn ans Ende der Zeitordnung; zurueck kommt
+    // das ganze Kartendetail. Anders als die Nachbarn **kein Kartendetail?**: hier gibt es drei
+    // Lagen, und null allein muesste „diese KarteId gibt es nicht" und „dieser Pfad steht schon
+    // an dieser Karte" zugleich heissen. Der Urheber ist Pflicht und steckt in der Anfrage.
+    Dateiverweiseintragung TrageDateiverweisEin(long karteId, DateiverweisEintragenAnfrage anfrage);
+
+    // Entfernt **eine** Zeile; zurueck kommt das ganze Kartendetail. null heisst: diesen
+    // Dateiverweis gibt es an dieser Karte nicht, und entfernt wurde nichts. Keine
+    // Aenderungsroute daneben — entfernen und neu eintragen ist derselbe Vorgang in zwei Griffen.
+    Kartendetail? EntferneDateiverweis(long karteId, long dateiverweisId);
 
     // null heisst „diese Spalte gibt es an dieser Stelle nicht"; eine Spalte ohne Karten liefert
     // die leere Liste.

@@ -1,5 +1,6 @@
 using KanbanC.BL.Interfaces.Karten;
 using KanbanC.BL.Models;
+using KanbanC.BL.Models.Karten;
 using KanbanC.BL.Operations.Karten;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Fehler;
@@ -22,6 +23,8 @@ public sealed class TestKartenRepository : IKartenRepository
     private bool _teilaufgabeLiegtNichtAnDieserKarte;
     private bool _anhangLiegtNichtAnDieserKarte;
     private bool _dieBytesFehlenInDerAblage;
+    private bool _dateiverweisLiegtNichtAnDieserKarte;
+    private bool _derPfadStehtSchonAnDerKarte;
 
     private TestKartenRepository(bool spalteIstInzwischenVerschwunden)
     {
@@ -322,6 +325,59 @@ public sealed class TestKartenRepository : IKartenRepository
         GeaenderteKarteId = karteId;
         EntfernterAnhangId = anhangId;
         if (_karteFehltAnDieserStelle || _anhangLiegtNichtAnDieserKarte)
+        {
+            return null;
+        }
+
+        return _kartendetail;
+    }
+
+    public DateiverweisEintragenAnfrage? ErhaltenerDateiverweis { get; private set; }
+
+    // Die Karte gibt es, der Pfad steht schon an ihr: die dritte Lage, die es bei den Nachbarn
+    // nicht gibt und fuer die null keinen Platz mehr haette.
+    public TestKartenRepository MitDiesemPfadBereitsAnDerKarte()
+    {
+        _derPfadStehtSchonAnDerKarte = true;
+        return this;
+    }
+
+    // Wie das echte Repository: drei Lagen statt zwei. Der Pfad wird gepruefft, bevor
+    // geschrieben wird — und nach einer Zurueckweisung wurde nichts geschrieben.
+    public Dateiverweiseintragung TrageDateiverweisEin(long karteId, DateiverweisEintragenAnfrage anfrage)
+    {
+        GeaenderteKarteId = karteId;
+        if (_karteFehltAnDieserStelle)
+        {
+            return Dateiverweiseintragung.KarteUnbekannt;
+        }
+
+        if (_derPfadStehtSchonAnDerKarte)
+        {
+            return Dateiverweiseintragung.PfadDoppelt;
+        }
+
+        ErhaltenerDateiverweis = anfrage;
+        return Dateiverweiseintragung.Eingetragen(_kartendetail!);
+    }
+
+    // Die Karte gibt es, der Dateiverweis gehoert aber zu einer anderen: der Fall, in dem der
+    // Befund den Dateiverweis melden muss und nicht die Karte.
+    public TestKartenRepository OhneDiesenDateiverweis()
+    {
+        _dateiverweisLiegtNichtAnDieserKarte = true;
+        return this;
+    }
+
+    public long? EntfernterDateiverweisId { get; private set; }
+
+    // Wie das echte Repository: die Zeile geht, zurueck kommt das gelesene Detail; null heisst
+    // „diesen Dateiverweis gibt es an dieser Karte nicht".
+    public Kartendetail? EntferneDateiverweis(long karteId, long dateiverweisId)
+    {
+        GeaenderteKarteId = karteId;
+        EntfernterDateiverweisId = dateiverweisId;
+        if (_karteFehltAnDieserStelle || _dateiverweisLiegtNichtAnDieserKarte)
         {
             return null;
         }
