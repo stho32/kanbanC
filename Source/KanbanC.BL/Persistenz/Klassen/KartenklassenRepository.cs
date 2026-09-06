@@ -3,6 +3,7 @@ using Dapper;
 using KanbanC.BL.Interfaces.Klassen;
 using KanbanC.BL.Interfaces.Persistenz;
 using KanbanC.BL.Models;
+using KanbanC.BL.Models.Klassen;
 using KanbanC.BL.Operations.Klassen;
 using KanbanC.Contracts.Fehler;
 using KanbanC.Contracts.Klassen;
@@ -102,4 +103,128 @@ public sealed class KartenklassenRepository : IKartenklassenRepository
              WHERE BoardId = @BoardId", new { BoardId = boardId }, transaktion);
         return anzahl > 0;
     }
+
+    public long? BoardDerKartenklasse(long kartenklasseId)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+        return verbindung.QuerySingleOrDefault<long?>(@"
+            SELECT Board
+              FROM Kartenklasse
+             WHERE KartenklasseId = @KartenklasseId", new { KartenklasseId = kartenklasseId });
+    }
+
+    // Hier wächst der Zaehlerstand — die einzige Stelle. Erhöhen und Zuordnen stehen unter
+    // **einem** Schloss, weil zwischen „nächste Nummer lesen“ und „Nummer vergeben“ ein Fenster
+    // zwei Karten dieselbe Identität gäbe; eine Identität, die zweimal vorkommt, ist keine.
+    // Die drei Fälle liegen deshalb in derselben Transaktion: erstmalig, Wechsel und dieselbe
+    // Kartenklasse erneut.
+    public Kartenklassenzuordnung? OrdneZu(long karteId, long kartenklasseId)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+        using var transaktion = _verbindungsfabrik.BeginneSchreibtransaktion(verbindung);
+
+        var boardDerKarte = BoardDerKarte(verbindung, transaktion, karteId);
+        var dieKarteGibtEsNicht = boardDerKarte is null;
+        if (dieKarteGibtEsNicht)
+        {
+            return null; // stil-check: C25 null heißt „diese Karte gibt es nicht“
+        }
+
+        var kartenklasseDesBoards = Kartenklassenleser.LiesKartenklasseDesBoards(verbindung, transaktion, boardDerKarte!.Value, kartenklasseId);
+        var dieKartenklasseGehoertNichtZumBoardDerKarte = kartenklasseDesBoards is null;
+        if (dieKartenklasseGehoertNichtZumBoardDerKarte)
+        {
+            return null; // stil-check: C25 null heißt „diese Kartenklasse gibt es an dieser Karte nicht“
+        }
+
+        // Wer dieselbe Kartenklasse erneut wählt, verbraucht keine Nummer: sonst frisst jedes
+        // versehentliche Speichern einen Nummernkreis.
+        var bestehende = LiesZuordnung(verbindung, transaktion, karteId);
+        var dieKarteTraegtDieseKartenklasseSchon = bestehende is not null && bestehende.Kartenklasse == kartenklasseId;
+        if (dieKarteTraegtDieseKartenklasseSchon)
+        {
+            return bestehende;
+        }
+
+        // Der Zählerstand der **alten** Kartenklasse bleibt stehen: die alte Nummer verfällt und
+        // wird nie wieder vergeben.
+        var vergebenerStand = ErhoeheZaehlerstand(verbindung, transaktion, kartenklasseId);
+        EntferneZuordnung(verbindung, transaktion, karteId);
+        var zuordnungId = FuegeZuordnungEin(verbindung, transaktion, karteId, kartenklasseId, vergebenerStand);
+        transaktion.Commit();
+        return new Kartenklassenzuordnung(zuordnungId, karteId, kartenklasseId, vergebenerStand);
+    }
+
+    // Der Zählerstand der Kartenklasse wird nicht angefasst: er wächst nur. Fiele er zurück,
+    // bekäme die nächste Zuordnung eine Nummer, die es schon gab.
+    public bool LoeseZuordnung(long karteId)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+        using var transaktion = _verbindungsfabrik.BeginneSchreibtransaktion(verbindung);
+
+        var dieKarteGibtEsNicht = BoardDerKarte(verbindung, transaktion, karteId) is null;
+        if (dieKarteGibtEsNicht)
+        {
+            return false;
+        }
+
+        EntferneZuordnung(verbindung, transaktion, karteId);
+        transaktion.Commit();
+        return true;
+    }
+
+    private static long? BoardDerKarte(IDbConnection verbindung, IDbTransaction transaktion, long karteId)
+    {
+        return verbindung.QuerySingleOrDefault<long?>(@"
+            SELECT s.Board
+              FROM Karte k
+              JOIN Spalte s ON s.SpalteId = k.Spalte
+             WHERE k.KarteId = @KarteId", new { KarteId = karteId }, transaktion);
+    }
+
+    // Über eine eigene Zeile mit long-Spalten: SQLite liefert jede INTEGER-Spalte als long, und
+    // Dapper findet zu einem Record mit int keinen passenden Konstruktor.
+    private static Kartenklassenzuordnung? LiesZuordnung(IDbConnection verbindung, IDbTransaction transaktion, long karteId)
+    {
+        var zeile = verbindung.QuerySingleOrDefault<Kartenklassenzuordnungszeile>(@"
+            SELECT KartenklassenzuordnungId, Karte, Kartenklasse, Zaehlerstand
+              FROM Kartenklassenzuordnung
+             WHERE Karte = @KarteId", new { KarteId = karteId }, transaktion);
+        if (zeile is null)
+        {
+            return null;
+        }
+
+        return new Kartenklassenzuordnung(zeile.KartenklassenzuordnungId, zeile.Karte, zeile.Kartenklasse, (int)zeile.Zaehlerstand);
+    }
+
+    // RETURNING liefert den **neuen** Stand: gelesen und erhöht wird in einer Anweisung, damit
+    // zwischen beidem kein Fenster steht.
+    private static int ErhoeheZaehlerstand(IDbConnection verbindung, IDbTransaction transaktion, long kartenklasseId)
+    {
+        return verbindung.ExecuteScalar<int>(@"
+            UPDATE Kartenklasse
+               SET Zaehlerstand = Zaehlerstand + 1
+             WHERE KartenklasseId = @KartenklasseId
+            RETURNING Zaehlerstand", new { KartenklasseId = kartenklasseId }, transaktion);
+    }
+
+    private static void EntferneZuordnung(IDbConnection verbindung, IDbTransaction transaktion, long karteId)
+    {
+        verbindung.Execute(@"
+            DELETE
+              FROM Kartenklassenzuordnung
+             WHERE Karte = @KarteId", new { KarteId = karteId }, transaktion);
+    }
+
+    private static long FuegeZuordnungEin(IDbConnection verbindung, IDbTransaction transaktion, long karteId, long kartenklasseId, int zaehlerstand)
+    {
+        var parameter = new { Karte = karteId, Kartenklasse = kartenklasseId, Zaehlerstand = zaehlerstand };
+        return verbindung.ExecuteScalar<long>(@"
+            INSERT INTO Kartenklassenzuordnung (Karte, Kartenklasse, Zaehlerstand)
+            VALUES (@Karte, @Kartenklasse, @Zaehlerstand);
+            SELECT last_insert_rowid();", parameter, transaktion);
+    }
+
+    private sealed record Kartenklassenzuordnungszeile(long KartenklassenzuordnungId, long Karte, long Kartenklasse, long Zaehlerstand);
 }

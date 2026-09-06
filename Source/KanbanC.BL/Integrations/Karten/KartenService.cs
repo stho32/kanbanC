@@ -1,5 +1,6 @@
 using KanbanC.BL.Interfaces.Boards;
 using KanbanC.BL.Interfaces.Karten;
+using KanbanC.BL.Interfaces.Klassen;
 using KanbanC.BL.Interfaces.Kontributoren;
 using KanbanC.BL.Models;
 using KanbanC.BL.Operations.Fehler;
@@ -7,6 +8,7 @@ using KanbanC.BL.Operations.Karten;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Fehler;
 using KanbanC.Contracts.Karten;
+using KanbanC.Contracts.Klassen;
 using KanbanC.Contracts.Kontributoren;
 
 namespace KanbanC.BL.Integrations.Karten;
@@ -16,12 +18,14 @@ public sealed class KartenService
     private readonly ISpaltenRepository _spaltenRepository;
     private readonly IKartenRepository _kartenRepository;
     private readonly IKontributorenRepository _kontributorenRepository;
+    private readonly IKartenklassenRepository _kartenklassenRepository;
 
-    public KartenService(ISpaltenRepository spaltenRepository, IKartenRepository kartenRepository, IKontributorenRepository kontributorenRepository)
+    public KartenService(ISpaltenRepository spaltenRepository, IKartenRepository kartenRepository, IKontributorenRepository kontributorenRepository, IKartenklassenRepository kartenklassenRepository)
     {
         _spaltenRepository = spaltenRepository;
         _kartenRepository = kartenRepository;
         _kontributorenRepository = kontributorenRepository;
+        _kartenklassenRepository = kartenklassenRepository;
     }
 
     public Ergebnis<Karte>? LegeKarteAn(long boardId, long spalteId, KarteAnlegenAnfrage anfrage)
@@ -175,6 +179,93 @@ public sealed class KartenService
         }
 
         return Ergebnis<Kartendetail>.Erfolg(detail!);
+    }
+
+    // Dieselbe Antwortgestalt wie AendereKarte, weil dieselbe Seite sie verbraucht. Geprüft wird
+    // erst die Karte, dann die Kartenklasse: das Board der Karte entscheidet, ob die Kartenklasse
+    // an dieser Stelle überhaupt eine ist, und eine Zurückweisung darf nichts hinterlassen —
+    // deshalb steht die Prüfung vor jedem Schreibzugriff. Ein leeres Feld löst die Zuordnung; ein
+    // eigenes DELETE gäbe es zwei Adressen für eine Frage.
+    public Ergebnis<Kartendetail> OrdneKartenklasseZu(long karteId, KartenklasseZuordnenAnfrage anfrage)
+    {
+        var detail = _kartenRepository.LiesKartendetail(karteId);
+        var dieKarteGibtEsNicht = detail is null;
+        if (dieKarteGibtEsNicht)
+        {
+            return Zurueckgewiesen<Kartendetail>(Nichtgefunden.Karte(karteId));
+        }
+
+        var dieZuordnungSollWeg = anfrage.Kartenklasse is null;
+        if (dieZuordnungSollWeg)
+        {
+            return NachDemLoesen(karteId);
+        }
+
+        // Die Prüfung braucht den Bestand und sitzt deshalb hier und nicht in einem Validator —
+        // dieselbe Trennung wie beim Verantwortlichen und beim Kommentarurheber.
+        var kartenklasseId = anfrage.Kartenklasse!.Value;
+        var befundZurKartenklasse = BefundZurKartenklasse(detail!.Board, kartenklasseId);
+        if (befundZurKartenklasse is not null)
+        {
+            return Zurueckgewiesen<Kartendetail>(befundZurKartenklasse);
+        }
+
+        var zuordnung = _kartenklassenRepository.OrdneZu(karteId, kartenklasseId);
+        var dieKarteIstInzwischenVerschwunden = zuordnung is null;
+        if (dieKarteIstInzwischenVerschwunden)
+        {
+            return Zurueckgewiesen<Kartendetail>(Nichtgefunden.Karte(karteId));
+        }
+
+        return NeuGelesenesDetail(karteId);
+    }
+
+    // Eine Karte ohne Zuordnung zu lösen ist kein Fehler: das Ziel ist erreicht.
+    private Ergebnis<Kartendetail> NachDemLoesen(long karteId)
+    {
+        var wurdeGeloest = _kartenklassenRepository.LoeseZuordnung(karteId);
+        var dieKarteIstInzwischenVerschwunden = !wurdeGeloest;
+        if (dieKarteIstInzwischenVerschwunden)
+        {
+            return Zurueckgewiesen<Kartendetail>(Nichtgefunden.Karte(karteId));
+        }
+
+        return NeuGelesenesDetail(karteId);
+    }
+
+    // Neu gelesen statt fortgeschrieben: die vergebene Nummer und die Kartenklasse entstehen im
+    // Leser, und zwei Wege zu derselben Antwort liefen auseinander.
+    private Ergebnis<Kartendetail> NeuGelesenesDetail(long karteId)
+    {
+        var detail = _kartenRepository.LiesKartendetail(karteId);
+        var dieKarteIstInzwischenVerschwunden = detail is null;
+        if (dieKarteIstInzwischenVerschwunden)
+        {
+            return Zurueckgewiesen<Kartendetail>(Nichtgefunden.Karte(karteId));
+        }
+
+        return Ergebnis<Kartendetail>.Erfolg(detail!);
+    }
+
+    // Zwei Lagen, zwei Codes: „gibt es nicht" schickt den Aufrufer an die Liste des Boards,
+    // „gehört einem anderen Board" sagt ihm, dass es sie gibt — nur nicht hier.
+    // null heißt „mit dieser Kartenklasse ist alles in Ordnung".
+    private Fehlerbefund? BefundZurKartenklasse(long boardId, long kartenklasseId)
+    {
+        var boardDerKartenklasse = _kartenklassenRepository.BoardDerKartenklasse(kartenklasseId);
+        var dieKartenklasseGibtEsNicht = boardDerKartenklasse is null;
+        if (dieKartenklasseGibtEsNicht)
+        {
+            return Nichtgefunden.Kartenklasse(boardId, kartenklasseId);
+        }
+
+        var dieKartenklasseGehoertEinemAnderenBoard = boardDerKartenklasse!.Value != boardId;
+        if (dieKartenklasseGehoertEinemAnderenBoard)
+        {
+            return Nichtgefunden.FremdeKartenklasse(boardId, kartenklasseId, boardDerKartenklasse.Value);
+        }
+
+        return null;
     }
 
     // Dieselbe Antwortgestalt wie AendereKarte, weil dieselbe Seite sie verbraucht.

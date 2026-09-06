@@ -4,9 +4,11 @@
 @using KanbanC.Blazor.Services
 @using KanbanC.Contracts.Fehler
 @using KanbanC.Contracts.Karten
+@using KanbanC.Contracts.Klassen
 @using KanbanC.Contracts.Kontributoren
 @using Microsoft.AspNetCore.Components.Forms
 @inject KartenApiKlient KartenKlient
+@inject KartenklassenApiKlient KartenklassenKlient
 @inject KontributorenApiKlient KontributorenKlient
 @inject Identitaetsspeicher Identitaetsspeicher
 @inject Pfadkopie Pfadkopie
@@ -70,6 +72,14 @@ else
     @if (_ausfallmeldung is not null)
     {
         <div class="meldung" role="alert" id="kartenblatt-fehlermeldung">@_ausfallmeldung</div>
+    }
+    @* Die Meldungen der Ablegevorgänge stehen nebeneinander: bei einer erzwungenen Überlappung
+       haben zwei Vorgänge zugleich etwas zu sagen, und keiner darf den anderen verdrängen —
+       sonst verschwände einer wieder stumm. Ohne @key: zwei gleichlautende Meldungen sind
+       möglich, und eine doppelte Elementkennung risse den Kreislauf ab. *@
+    @foreach (var anhangmeldung in _anhangmeldungen)
+    {
+        <div class="meldung anhangmeldung" role="alert">@anhangmeldung</div>
     }
 
     @* Das Blatt liest die Identitätswahl neu, sobald jemand es betritt — mit dem Zeiger oder mit
@@ -357,16 +367,17 @@ else
                     }
 
                     @* Die Fläche ist ein label um das Dateifeld: ein Klick öffnet den Dateiwähler,
-                       und eine Datei, die darauf fällt, landet im selben Feld. Ohne gewählte
-                       Identität ist das Feld gesperrt — ein Anhang ohne Urheber ist keiner. *@
-                    <label class="ablegeflaeche @Ablegesperre" id="anhang-ablegeflaeche">
-                        <span class="ablegetext">Datei hierher ziehen oder wählen</span>
-                        <InputFile class="ablegefeld" id="anhang-datei" OnChange="NimmDatei" disabled="@(_urheber is null)" />
+                       und eine Datei, die darauf fällt, landet im selben Feld. Gesperrt ist sie
+                       ohne gewählte Identität und während ein Anhängen läuft; was sie dann sagt,
+                       rechnet Ablegeflaechenstand. *@
+                    <label class="ablegeflaeche @Ablegesperre @Ablegelauf" id="anhang-ablegeflaeche">
+                        <span class="ablegetext">@Ablegetext</span>
+                        <InputFile class="ablegefeld" id="anhang-datei" OnChange="NimmDatei" disabled="@AblegeflaecheIstGesperrt" />
                     </label>
 
-                    @if (_urheber is null)
+                    @if (Ablegehinweis is not null)
                     {
-                        <p class="anhanghinweis" id="anhang-hinweis">Wähle oben in der Kopfzeile, wer du bist, um eine Datei anzuhängen.</p>
+                        <p class="anhanghinweis" id="anhang-hinweis">@Ablegehinweis</p>
                     }
                 </section>
 
@@ -445,6 +456,37 @@ else
                 else
                 {
                     <button type="button" class="blattwert" id="faellig" @onclick="() => Oeffne(Faelligkeitsfeld)">@Terminformatierer.AlsText(_detail.Karte.FaelligAm)</button>
+                }
+            </div>
+
+            @* Die Klasse steht neben Fälligkeit und Verantwortlichem und speichert wie sie
+               sofort: ein eigener Speicherknopf für **ein** Feld wäre ein Bruch mit den
+               Nachbarn. Die Liste kommt über die eigene Route des Boards — das Kartendetail
+               wächst nicht um eine siebte Liste. Ein Board ohne Klasse bekommt denselben Satz
+               wie der Klassenbereich im Layout-Modus, kein leeres Auswahlfeld. *@
+            <div class="blattfeld">
+                <label class="blattmarke" for="klasse-feld">Klasse</label>
+                @if (_kartenklassen.Count == 0)
+                {
+                    <p class="klassenleerzustand" id="keine-klassen">Dieses Board hat keine Klasse.</p>
+                }
+                else
+                {
+                    <select class="input blattwert" id="klasse-feld" @bind:get="Klassenwert" @bind:set="UebernimmKartenklasse">
+                        <option value="">ohne Klasse</option>
+                        @foreach (var kartenklasse in _kartenklassen)
+                        {
+                            <option value="@kartenklasse.KartenklasseId">@kartenklasse.Praefix @kartenklasse.Name</option>
+                        }
+                    </select>
+                    @if (_detail.Kartenklasse is null)
+                    {
+                        <p class="klassenhinweis" id="klasse-hinweis">Vergibt beim Speichern <span class="klassennummer">@NaechsteNummer</span> — die nächste Nummer der Klasse @ErsteKartenklasse.Name</p>
+                    }
+                    else
+                    {
+                        <p class="klassenhinweis" id="klasse-hinweis">Trägt <span class="tag tag-neutral" id="klasse-nummer">@_detail.Karte.Kartennummer</span></p>
+                    }
                 }
             </div>
 
@@ -562,6 +604,7 @@ else
         try
         {
             await LadeKartendetail();
+            await LadeKartenklassen();
             await LadeUrheber();
             _webApiIstNichtErreichbar = false;
         }
@@ -571,6 +614,97 @@ else
         }
 
         _ladenIstAbgeschlossen = true;
+    }
+
+    private IReadOnlyList<Kartenklasse> _kartenklassen = [];
+
+    // Die Klassenliste des Boards kommt über die Route aus R00022 und nicht über das
+    // Kartendetail: für sie gibt es seit dort eine eigene Adresse.
+    private async Task LadeKartenklassen()
+    {
+        var dasBoardIstNochUnbekannt = _detail is null;
+        if (dasBoardIstNochUnbekannt)
+        {
+            _kartenklassen = [];
+            return;
+        }
+
+        var ergebnis = await KartenklassenKlient.LadeKartenklassen(_detail!.Board);
+        if (ergebnis.WurdeZurueckgewiesen)
+        {
+            // Ohne die Meldung sähe die abgewiesene Liste aus wie ein Board ohne Klasse — die
+            // Seite behauptete dann etwas, das sie nicht weiß.
+            _kartenklassen = [];
+            _zurueckweisung = ergebnis.Zurueckweisung;
+            return;
+        }
+
+        _kartenklassen = ergebnis.Wert;
+    }
+
+    // Der leere Wert ist „ohne Klasse" — derselbe Eintrag, den die Liste zeigt.
+    private string Klassenwert
+    {
+        get
+        {
+            if (_detail!.Kartenklasse is null)
+            {
+                return string.Empty;
+            }
+
+            return _detail.Kartenklasse.KartenklasseId.ToString(CultureInfo.InvariantCulture);
+        }
+    }
+
+    // Solange die Karte keine Klasse trägt, nennt die Zeile die Nummer, die die **erste** Klasse
+    // der Liste als nächste vergibt — und sagt dazu, welche das ist: auf einem Board mit mehreren
+    // Klassen wäre eine Nummer ohne ihren Namen ein Versprechen, das die Wahl daneben nicht hält.
+    private Kartenklasse ErsteKartenklasse
+    {
+        get
+        {
+            return _kartenklassen[0];
+        }
+    }
+
+    private string NaechsteNummer
+    {
+        get
+        {
+            return Kartennummer.Aus(ErsteKartenklasse.Praefix, ErsteKartenklasse.Zaehlerstand + 1);
+        }
+    }
+
+    private async Task UebernimmKartenklasse(string wert)
+    {
+        _zurueckweisung = null;
+        _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(() => OrdneKartenklasseZu(new KartenklasseZuordnenAnfrage(KartenklasseAus(wert))));
+    }
+
+    private static long? KartenklasseAus(string wert)
+    {
+        var ohneKlasseWurdeGewaehlt = wert.Length == 0;
+        if (ohneKlasseWurdeGewaehlt)
+        {
+            return null;
+        }
+
+        return long.Parse(wert, CultureInfo.InvariantCulture);
+    }
+
+    // Nach der Zuordnung wird die Klassenliste neu geholt: ihr Zählerstand ist gerade gewachsen,
+    // und die Hinweiszeile nennt sonst eine Nummer, die es schon gibt.
+    private async Task OrdneKartenklasseZu(KartenklasseZuordnenAnfrage anfrage)
+    {
+        var ergebnis = await KartenKlient.OrdneKartenklasseZu(KarteId, anfrage);
+        if (ergebnis.WurdeZurueckgewiesen)
+        {
+            _zurueckweisung = ergebnis.Zurueckweisung;
+            return;
+        }
+
+        _detail = ergebnis.Wert;
+        await LadeKartenklassen();
     }
 
     private async Task SetzeVerantwortlichen(long? kontributorId)
@@ -963,13 +1097,28 @@ else
         return $"{name} · {Zeitpunktform.AlsText(anhang.Zeitpunkt, DateTimeOffset.Now)}";
     }
 
-    // Ohne gewählte Identität ist die Fläche gesperrt; die Klasse zeichnet das, der Hinweis
-    // darunter sagt, was zu tun ist. Board und Kartenseite bleiben im Übrigen bedienbar.
+    // Welche Datei gerade angehängt wird. Null heißt: es läuft keine Übertragung. Die Komponente
+    // hält den Zustand, die Regel darüber liegt in Ablegeflaechenstand.
+    private string? _laufendeDatei;
+
+    private readonly List<string> _anhangmeldungen = [];
+
+    // Gesperrt ist die Fläche ohne gewählte Identität und während ein Anhängen läuft; die Klasse
+    // zeichnet das, der Hinweis darunter sagt, was zu tun ist. Board und Kartenseite bleiben im
+    // Übrigen bedienbar.
+    private bool AblegeflaecheIstGesperrt
+    {
+        get
+        {
+            return Ablegeflaechenstand.IstGesperrt(_urheber is not null, _laufendeDatei);
+        }
+    }
+
     private string Ablegesperre
     {
         get
         {
-            if (_urheber is null)
+            if (AblegeflaecheIstGesperrt)
             {
                 return "ablegeflaeche-gesperrt";
             }
@@ -978,19 +1127,90 @@ else
         }
     }
 
+    // Der laufende Vorgang bekommt eine eigene Kante: er ist ein anderer Grund als die fehlende
+    // Identität, und der Mensch soll die beiden nicht verwechseln.
+    private string Ablegelauf
+    {
+        get
+        {
+            if (_laufendeDatei is null)
+            {
+                return string.Empty;
+            }
+
+            return "ablegeflaeche-laeuft";
+        }
+    }
+
+    private string Ablegetext
+    {
+        get
+        {
+            return Ablegeflaechenstand.Text(_urheber is not null, _laufendeDatei);
+        }
+    }
+
+    private string? Ablegehinweis
+    {
+        get
+        {
+            return Ablegeflaechenstand.Hinweis(_urheber is not null);
+        }
+    }
+
     // Die Wahl wird beim Senden gelesen und nicht beim Laden: zwischen dem letzten Nachlesen und
     // dem Ablegen kann sie gewechselt haben, und der Anhang trägt dann den neuen Urheber.
     // Muster SendeKommentar.
     private async Task NimmDatei(InputFileChangeEventArgs ereignis)
     {
+        var datei = ereignis.File;
+
+        // Ein Anhängen, das schon läuft, gehört dem, der es ausgelöst hat: weder seine Bytes noch
+        // seine Meldung fasst ein zweiter Vorgang an. Über die Fläche entsteht dieser Fall nicht,
+        // weil sie so lange gesperrt ist; wer sie umgeht, bekommt trotzdem seine Meldung.
+        var laufendeDatei = _laufendeDatei;
+        if (laufendeDatei is not null)
+        {
+            _anhangmeldungen.Add(Anhangausfall.Sperrmeldung(datei.Name, laufendeDatei));
+            return;
+        }
+
         _zurueckweisung = null;
+        _ausfallmeldung = null;
+        _anhangmeldungen.Clear();
+
+        // Der Zustand entsteht **vor** dem ersten await und wird sofort gezeichnet: die Sperre
+        // muss den Browser erreichen, bevor die Übertragung beginnt, sonst steht das Feld im
+        // entscheidenden Moment noch offen.
+        _laufendeDatei = datei.Name;
+        StateHasChanged();
+        try
+        {
+            await HaengeAn(datei);
+        }
+        catch (JSException)
+        {
+            // Der abgerissene Dateistrom ist keine HttpRequestException, sondern die Antwort des
+            // Browsers auf eine Datei-Nummer, die er nicht mehr kennt. Ohne diesen Fangpunkt
+            // stürbe der Vorgang lautlos, und die Datei wäre ohne jede Spur verschwunden.
+            _anhangmeldungen.Add(Anhangausfall.Abbruchmeldung(datei.Name));
+        }
+        finally
+        {
+            // Auf jedem Ausgang wieder frei — Erfolg, Zurückweisung, Größenwächter und Abbruch
+            // gleichermaßen. Eine Fläche, die nach einem Fehler gesperrt bleibt, tauschte den
+            // Datenverlust gegen eine unbedienbare Seite.
+            _laufendeDatei = null;
+        }
+    }
+
+    private async Task HaengeAn(IBrowserFile datei)
+    {
         _urheber = await GewaehlterUrheber();
         if (_urheber is null)
         {
             return;
         }
-
-        var datei = ereignis.File;
 
         // Der Waechter vor dem Strom, mit **derselben** Konstante wie Validator und Route: ohne ihn
         // wirft OpenReadStream, und statt einer lesbaren Meldung bekäme der Mensch einen

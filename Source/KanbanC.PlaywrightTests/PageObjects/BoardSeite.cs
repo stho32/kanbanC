@@ -57,6 +57,9 @@ public sealed class BoardSeite
 
     public ILocator Kartentitel => _seite.Locator("#spaltenbahnen .karte-titel");
 
+    // Die Nummernplakette steht **über** dem Titelverweis, nicht in ihm.
+    public ILocator Kartennummern => _seite.Locator("#spaltenbahnen .karte-nummer");
+
     public ILocator LeerhinweiseDerBahnen => _seite.Locator("#spaltenbahnen .spaltenbahn-leer");
 
     public ILocator Datumsgruppen => _seite.Locator("#spaltenbahnen .spaltenbahn-datumsgruppe");

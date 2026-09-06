@@ -28,6 +28,13 @@
             }
         </div>
     </div>
+    @* Die Plakette steht **ueber** dem Titelverweis und nicht in ihm: der Titel bleibt der Weg
+       auf die Kartenseite, und die beiden Ziehproben pruefen genau das. Eine Karte ohne Klasse
+       zeigt hier nichts — die Stelle kostet dann keine Zeile. *@
+    @if (Kartendaten.Kartennummer is not null)
+    {
+        <span class="tag tag-neutral karte-nummer" data-kartennummer="@Kartendaten.Kartennummer">@Kartendaten.Kartennummer</span>
+    }
     @* Der zweite Weg auf die Kartenseite. Ein Klick bewegt die Maus nicht und beginnt deshalb
        keinen Zug (KindZiehbarkeitProbeE2ETests); wird am Titel gezogen, zieht die Karte weiter
        als Ganzes — belegt in VerweisInZiehbarerKarteProbeE2ETests. *@

@@ -3,6 +3,7 @@ using KanbanC.BL.Operations.Boards;
 using KanbanC.BL.Operations.Fehler;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
+using KanbanC.Contracts.Klassen;
 using Microsoft.AspNetCore.Mvc;
 
 namespace KanbanC.WebApi.Endpunkte;
@@ -55,6 +56,12 @@ public static class KartenEndpunkte
     private const string Dateiverweisroute = "/api/karten/{karteId:long}/dateiverweise";
     private const string Dateiverweiszeilenroute = "/api/karten/{karteId:long}/dateiverweise/{dateiverweisId:long}";
 
+    // Dieselbe boardlose Kartenadresse, eine Unterressource weiter — und **eine** Route statt
+    // zweier: „welche Klasse trägt diese Karte“ ist eine Frage, und ein leeres Feld im PUT
+    // beantwortet sie mit „keine“. Ein eigenes DELETE gäbe einem Agenten zwei Adressen für
+    // dieselbe Auskunft. Einzahl in der Adresse, weil eine Karte höchstens eine trägt.
+    private const string Kartenklassenroute = "/api/karten/{karteId:long}/kartenklasse";
+
     public static void Registriere(IEndpointRouteBuilder routen)
     {
         routen.MapGet(Kartenroute, LiesKartendetail).WithName("KartendetailLesen");
@@ -63,6 +70,7 @@ public static class KartenEndpunkte
         routen.MapPost(Teilaufgabenroute, LegeTeilaufgabeAn).WithName("TeilaufgabeAnlegen");
         routen.MapPut(Teilaufgabenstandsroute, SetzeAbhakung).WithName("TeilaufgabenstandSetzen");
         routen.MapPost(Kommentarroute, SchreibeKommentar).WithName("KommentarSchreiben");
+        routen.MapPut(Kartenklassenroute, OrdneKartenklasseZu).WithName("KartenklasseZuordnen");
 
         // DisableAntiforgery, weil eine Minimal-API-Route mit Formularbindung Antiforgery-
         // Metadaten traegt und ohne die Middleware schon beim ersten Aufruf scheitert (belegt in
@@ -137,6 +145,20 @@ public static class KartenEndpunkte
     private static IResult SetzeAbhakung(long karteId, long teilaufgabeId, Teilaufgabenstand stand, KartenService kartenService)
     {
         var ergebnis = kartenService.SetzeAbhakung(karteId, teilaufgabeId, stand);
+        if (ergebnis.IstErfolg)
+        {
+            return Results.Ok(ergebnis.Wert);
+        }
+
+        return Zurueckweisungen.AlsFehlerantwort(ergebnis.Befunde);
+    }
+
+    // Dieselbe Antwortgestalt wie das Ändern: zurück kommt die ganze Kartenseite, in der die
+    // vergebene Nummer schon steht — ein Agent sieht sie ohne zweiten Aufruf. Ein leeres Feld im
+    // Rumpf löst die Zuordnung.
+    private static IResult OrdneKartenklasseZu(long karteId, KartenklasseZuordnenAnfrage anfrage, KartenService kartenService)
+    {
+        var ergebnis = kartenService.OrdneKartenklasseZu(karteId, anfrage);
         if (ergebnis.IstErfolg)
         {
             return Results.Ok(ergebnis.Wert);

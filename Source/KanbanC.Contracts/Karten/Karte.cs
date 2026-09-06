@@ -10,6 +10,10 @@ namespace KanbanC.Contracts.Karten;
 // Art trägt das Kartendetail — an der Bahn wäre der volle Kontributor je Karte eine zweite
 // Abfrage für eine Angabe, die dort nicht gezeichnet ist.
 // Die Etiketten reisen bewusst nicht mit: sie sind eine n-Beziehung und hängen am Kartendetail.
+// Die Kartennummer reist als **fertige** Zeichenkette mit — WBS-32 — und damit überall, wo eine
+// Karte steht, auch in der Boardantwort: ein Agent sieht sie ohne zweiten Aufruf, und die Bahn
+// zeichnet sie. Kein zweites Feld für die Kartenklasse daneben: das Präfix in der Nummer sagt
+// lesbar, welche trägt. null heißt „ohne Klasse".
 public record Karte(
     long KarteId,
     string Titel,
@@ -18,4 +22,5 @@ public record Karte(
     string? Beschreibung,
     DateOnly? FaelligAm,
     Kartenfarbe Farbe,
-    long? Kontributor);
+    long? Kontributor,
+    string? Kartennummer);

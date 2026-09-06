@@ -19,4 +19,12 @@ public sealed class SqliteVerbindungsfabrik : IDatenbankVerbindungsfabrik
         verbindung.Open();
         return verbindung;
     }
+
+    // BEGIN IMMEDIATE: das Schreibschloss fällt vor dem ersten Lesen, damit zwei gleichzeitige
+    // Schreiber nacheinander laufen statt beide am Hochstufen zu scheitern.
+    public IDbTransaction BeginneSchreibtransaktion(IDbConnection verbindung)
+    {
+        var sqliteVerbindung = (SqliteConnection)verbindung;
+        return sqliteVerbindung.BeginTransaction(IsolationLevel.Serializable, deferred: false);
+    }
 }

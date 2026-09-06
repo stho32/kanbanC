@@ -330,6 +330,49 @@ public class WebApiNeustartTests
         }));
     }
 
+    // Die Kartennummer soll außerhalb der Anwendung tragen — in einem Zweignamen, in einer
+    // Commit-Nachricht. Sie muss deshalb einen Neustart überstehen, und der Zaehlerstand mit ihr:
+    // fällt er zurück, bekäme die nächste Zuordnung eine Nummer, die es schon gab.
+    [Test]
+    public async Task Wenn_die_WebApi_neu_startet_dann_stehen_Zuordnung_Nummer_und_Zaehlerstand_unveraendert_da()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        long karteId;
+        using (var ersteInstanz = new TestWebApi(datenbank.Dateipfad))
+        {
+            var board = await LegeBoardAn(ersteInstanz, new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null));
+            var karte = await LegeKarteAn(ersteInstanz, board.BoardId, board.Spalten[0].SpalteId, "Klassenfilter über die API");
+            karteId = karte.KarteId;
+            await LegeKartenklasseAn(ersteInstanz, board.BoardId, "WBS", "WBS-");
+            await LegeKartenklasseAn(ersteInstanz, board.BoardId, "Bugmeldungen", "BUG-");
+            await OrdneKartenklasseZu(ersteInstanz, karteId, kartenklasseId: 1);
+            await OrdneKartenklasseZu(ersteInstanz, karteId, kartenklasseId: 2);
+        }
+
+        using var zweiteInstanz = new TestWebApi(datenbank.Dateipfad);
+
+        var detail = await zweiteInstanz.Klient.GetFromJsonAsync<Kartendetail>($"/api/karten/{karteId}");
+        var kartenklassen = await zweiteInstanz.Klient.GetFromJsonAsync<List<Kartenklasse>>($"{BoardsRoute}/1/kartenklassen");
+        var geladenesBoard = await zweiteInstanz.Klient.GetFromJsonAsync<Board>($"{BoardsRoute}/1");
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail!.Karte.Kartennummer, Is.EqualTo("BUG-01"));
+            Assert.That(detail.Kartenklasse, Is.EqualTo(new Kartenklasse(2, "Bugmeldungen", "BUG-", 1)));
+            Assert.That(kartenklassen, Is.EqualTo(new[]
+            {
+                new Kartenklasse(1, "WBS", "WBS-", 1),
+                new Kartenklasse(2, "Bugmeldungen", "BUG-", 1),
+            }));
+            Assert.That(geladenesBoard!.Spalten[0].Karten[0].Kartennummer, Is.EqualTo("BUG-01"));
+        });
+    }
+
+    private static async Task OrdneKartenklasseZu(TestWebApi webApi, long karteId, long? kartenklasseId)
+    {
+        var antwort = await webApi.Klient.PutAsJsonAsync($"/api/karten/{karteId}/kartenklasse", new KartenklasseZuordnenAnfrage(kartenklasseId));
+        antwort.EnsureSuccessStatusCode();
+    }
+
     private static async Task LegeKartenklasseAn(TestWebApi webApi, long boardId, string name, string praefix)
     {
         var antwort = await webApi.Klient.PostAsJsonAsync($"{BoardsRoute}/{boardId}/kartenklassen", new KartenklasseAnlegenAnfrage(name, praefix));

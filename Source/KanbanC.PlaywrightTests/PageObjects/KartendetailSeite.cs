@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.Playwright;
 
 namespace KanbanC.PlaywrightTests.PageObjects;
@@ -6,6 +7,8 @@ namespace KanbanC.PlaywrightTests.PageObjects;
 // /karten/{karteId} ist eine eigene Seite, kein Ausschnitt des Boards.
 public sealed class KartendetailSeite
 {
+    private const int Sperrfrist = 50;
+
     private readonly IPage _seite;
     private readonly string _basisAdresse;
 
@@ -199,7 +202,16 @@ public sealed class KartendetailSeite
 
     public ILocator Anhangdateifeld => _seite.Locator("#anhang-datei");
 
+    // Die Beschriftung der Fläche: sie sagt entweder, dass hier eine Datei hinfällt, oder welche
+    // Datei gerade angehängt wird.
+    public ILocator Ablegetext => _seite.Locator("#anhang-ablegeflaeche .ablegetext");
+
     public ILocator AnhangHinweis => _seite.Locator("#anhang-hinweis");
+
+    // Alle sichtbaren Meldungen des Blatts — Zurückweisung, Ausfall und die Meldungen des
+    // Anhängens. Die Bilanz „nie stumm" fragt an dieser Stelle nach, ob ein Vorgang eine Spur
+    // hinterlassen hat.
+    public ILocator Meldungen => _seite.Locator(".meldung");
 
     public ILocator Dateiverweisabschnitt => _seite.Locator("#dateiverweisabschnitt");
 
@@ -275,7 +287,19 @@ public sealed class KartendetailSeite
 
     // Ueber das verborgene Dateifeld und nicht ueber den Ziehweg: Playwright setzt Dateien am
     // input, und der gezeichnete Ziehweg fuehrt in dasselbe Feld.
+    // Gewartet wird, bis die Fläche eine Datei annimmt: SetInputFiles ist die einzige Aktion
+    // ohne Actionability-Prüfung und legt Dateien auch auf ein gesperrtes Feld — ein Mensch kann
+    // das nicht. Die kurze Frist davor lässt einem eben ausgelösten Vorgang die Zeit, seine
+    // Sperre zu zeigen; ohne sie liefe der nächste Ablegevorgang gegen ein Feld, das nur noch
+    // nicht gesperrt **aussieht**. Wer die Überlappung erzwingen will, nimmt ErzwingeAblegen.
     public async Task HaengeDateiAn(string dateiname, byte[] inhalt)
+    {
+        await Task.Delay(Sperrfrist);
+        await Assertions.Expect(Anhangdateifeld).ToBeEnabledAsync();
+        await ErzwingeAblegen(dateiname, inhalt);
+    }
+
+    public async Task ErzwingeAblegen(string dateiname, byte[] inhalt)
     {
         await Anhangdateifeld.SetInputFilesAsync(new FilePayload
         {
@@ -344,6 +368,27 @@ public sealed class KartendetailSeite
     {
         await Faelligkeit.ClickAsync();
         await Faelligkeitsfeld.FillAsync(isoDatum);
+    }
+
+    public ILocator Klassenfeld => _seite.Locator("#klasse-feld");
+
+    public ILocator Klassenhinweis => _seite.Locator("#klasse-hinweis");
+
+    public ILocator Kartennummer => _seite.Locator("#klasse-nummer");
+
+    // Derselbe Satz und dieselbe Kennung wie im Klassenbereich des Layout-Modus.
+    public ILocator HinweisKeineKlassen => _seite.Locator("#keine-klassen");
+
+    public ILocator Klassenwahlmoeglichkeiten => _seite.Locator("#klasse-feld option");
+
+    public async Task WaehleKlasse(long kartenklasseId)
+    {
+        await Klassenfeld.SelectOptionAsync(kartenklasseId.ToString(CultureInfo.InvariantCulture));
+    }
+
+    public async Task WaehleOhneKlasse()
+    {
+        await Klassenfeld.SelectOptionAsync(string.Empty);
     }
 
     public ILocator Ausnahmeanzeige => _seite.Locator("#blazor-error-ui");

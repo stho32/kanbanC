@@ -3,6 +3,7 @@ using System.Globalization;
 using Dapper;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
+using KanbanC.Contracts.Klassen;
 using KanbanC.Contracts.Kontributoren;
 
 namespace KanbanC.BL.Persistenz.Karten;
@@ -17,12 +18,15 @@ internal static class Kartenleser
     {
         var zeilen = verbindung.Query<Kartenzeile>(@"
             SELECT k.KarteId, k.Spalte, k.Titel, k.Position, e.ErledigtAm,
-                   p.Beschreibung, p.FaelligAm, p.Farbe, p.Kontributor
+                   p.Beschreibung, p.FaelligAm, p.Farbe, p.Kontributor,
+                   n.Praefix AS Kartenklassenpraefix, z.Zaehlerstand AS VergebenerZaehlerstand
               FROM Karte k
               JOIN Spalte s ON s.SpalteId = k.Spalte
               LEFT JOIN Karteerledigung e ON e.Karte = k.KarteId
               LEFT JOIN Kartenarchivierung a ON a.Karte = k.KarteId
               LEFT JOIN Karteneigenschaft p ON p.Karte = k.KarteId
+              LEFT JOIN Kartenklassenzuordnung z ON z.Karte = k.KarteId
+              LEFT JOIN Kartenklasse n ON n.KartenklasseId = z.Kartenklasse
              WHERE s.Board = @BoardId
                AND a.Karte IS NULL
              ORDER BY k.Spalte, k.Position", new { BoardId = boardId }, transaktion);
@@ -43,11 +47,14 @@ internal static class Kartenleser
         var parameter = new { SpalteId = spalteId, archivstand.IstArchiviert };
         var zeilen = verbindung.Query<Kartenzeile>(@"
             SELECT k.KarteId, k.Spalte, k.Titel, k.Position, e.ErledigtAm,
-                   p.Beschreibung, p.FaelligAm, p.Farbe, p.Kontributor
+                   p.Beschreibung, p.FaelligAm, p.Farbe, p.Kontributor,
+                   n.Praefix AS Kartenklassenpraefix, z.Zaehlerstand AS VergebenerZaehlerstand
               FROM Karte k
               LEFT JOIN Karteerledigung e ON e.Karte = k.KarteId
               LEFT JOIN Kartenarchivierung a ON a.Karte = k.KarteId
               LEFT JOIN Karteneigenschaft p ON p.Karte = k.KarteId
+              LEFT JOIN Kartenklassenzuordnung z ON z.Karte = k.KarteId
+              LEFT JOIN Kartenklasse n ON n.KartenklasseId = z.Kartenklasse
              WHERE k.Spalte = @SpalteId
                AND ((@IstArchiviert = 0 AND a.Karte IS NULL)
                  OR (@IstArchiviert = 1 AND a.Karte IS NOT NULL))
@@ -66,7 +73,9 @@ internal static class Kartenleser
                    p.Beschreibung, p.FaelligAm, p.Farbe, p.Kontributor,
                    s.Bezeichnung AS Spaltenbezeichnung, b.BoardId AS Board, b.Name AS Boardname,
                    v.Name AS Verantwortlichenname, v.Kontributorart AS Verantwortlichenart,
-                   t.StillgelegtAm AS VerantwortlicherStillgelegtAm
+                   t.StillgelegtAm AS VerantwortlicherStillgelegtAm,
+                   n.Praefix AS Kartenklassenpraefix, z.Zaehlerstand AS VergebenerZaehlerstand,
+                   n.KartenklasseId, n.Name AS Kartenklassenname, n.Zaehlerstand AS Kartenklassenstand
               FROM Karte k
               JOIN Spalte s ON s.SpalteId = k.Spalte
               JOIN Board b ON b.BoardId = s.Board
@@ -74,6 +83,8 @@ internal static class Kartenleser
               LEFT JOIN Karteneigenschaft p ON p.Karte = k.KarteId
               LEFT JOIN Kontributor v ON v.KontributorId = p.Kontributor
               LEFT JOIN Kontributorstilllegung t ON t.Kontributor = v.KontributorId
+              LEFT JOIN Kartenklassenzuordnung z ON z.Karte = k.KarteId
+              LEFT JOIN Kartenklasse n ON n.KartenklasseId = z.Kartenklasse
              WHERE k.KarteId = @KarteId", new { KarteId = karteId }, transaktion);
         if (zeile is null)
         {
@@ -89,7 +100,9 @@ internal static class Kartenleser
             zeile.Beschreibung,
             zeile.FaelligAm,
             zeile.Farbe,
-            zeile.Kontributor));
+            zeile.Kontributor,
+            zeile.Kartenklassenpraefix,
+            zeile.VergebenerZaehlerstand));
         return new Kartendetail(
             karte,
             zeile.Board,
@@ -102,7 +115,8 @@ internal static class Kartenleser
             Teilaufgabenleser.LiesTeilaufgabenDerKarte(verbindung, transaktion, karteId),
             Kommentarleser.LiesKommentareDerKarte(verbindung, transaktion, karteId),
             Anhangleser.LiesAnhaengeDerKarte(verbindung, transaktion, karteId),
-            Dateiverweisleser.LiesDateiverweiseDerKarte(verbindung, transaktion, karteId));
+            Dateiverweisleser.LiesDateiverweiseDerKarte(verbindung, transaktion, karteId),
+            AlsKartenklasse(zeile));
     }
 
     private static Karte AlsKarte(Kartenzeile zeile)
@@ -115,7 +129,36 @@ internal static class Kartenleser
             zeile.Beschreibung,
             AlsDatum(zeile.FaelligAm),
             AlsKartenfarbe(zeile.Farbe),
-            zeile.Kontributor);
+            zeile.Kontributor,
+            AlsKartennummer(zeile.Kartenklassenpraefix, zeile.VergebenerZaehlerstand));
+    }
+
+    // Gebildet, nicht abgelegt: die Nummer entsteht überall aus Präfix und dem Zählerstand, den
+    // die Zuordnung festhält. null heißt „diese Karte trägt keine Klasse".
+    private static string? AlsKartennummer(string? praefix, long? vergebenerZaehlerstand)
+    {
+        if (praefix is null || vergebenerZaehlerstand is null)
+        {
+            return null;
+        }
+
+        return Kartennummer.Aus(praefix, (int)vergebenerZaehlerstand.Value);
+    }
+
+    // Die Kartenklasse reist als ganzes DTO und trägt ihren **eigenen** Zählerstand — nicht den
+    // der Karte: die Seite zeigt daneben, welche Nummer die Klasse als nächste vergibt.
+    private static Kartenklasse? AlsKartenklasse(Kartendetailzeile zeile)
+    {
+        if (zeile.KartenklasseId is null)
+        {
+            return null;
+        }
+
+        return new Kartenklasse(
+            zeile.KartenklasseId.Value,
+            zeile.Kartenklassenname!,
+            zeile.Kartenklassenpraefix!,
+            (int)zeile.Kartenklassenstand!.Value);
     }
 
     // Der Verantwortliche reist als ganzer Kontributor: die Seite zeigt Name und Art, und
@@ -165,7 +208,9 @@ internal static class Kartenleser
         string? Beschreibung,
         string? FaelligAm,
         string? Farbe,
-        long? Kontributor);
+        long? Kontributor,
+        string? Kartenklassenpraefix,
+        long? VergebenerZaehlerstand);
 
     private sealed record Kartendetailzeile(
         long KarteId,
@@ -182,5 +227,10 @@ internal static class Kartenleser
         string Boardname,
         string? Verantwortlichenname,
         string? Verantwortlichenart,
-        string? VerantwortlicherStillgelegtAm);
+        string? VerantwortlicherStillgelegtAm,
+        string? Kartenklassenpraefix,
+        long? VergebenerZaehlerstand,
+        long? KartenklasseId,
+        string? Kartenklassenname,
+        long? Kartenklassenstand);
 }

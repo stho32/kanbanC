@@ -886,6 +886,102 @@ public class MigrationslaeuferTests
         });
     }
 
+    [Test]
+    public void Wenn_die_Migration_gelaufen_ist_dann_traegt_das_Schema_die_Tabelle_Kartenklassenzuordnung_mit_ihren_vier_Spalten()
+    {
+        using var datenbank = new TemporaereDatenbank();
+
+        new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus();
+
+        Assert.That(Tabellennamen(datenbank), Does.Contain("Kartenklassenzuordnung"));
+        Assert.That(Spaltennamen(datenbank, "Kartenklassenzuordnung"),
+            Is.EqualTo(new[] { "KartenklassenzuordnungId", "Karte", "Kartenklasse", "Zaehlerstand" }));
+    }
+
+    // Der eindeutige Index auf der Karte traegt „hoechstens eine Kartenklasse je Karte" ins
+    // Schema — auch gegen einen Weg, der am Dienst vorbeischreibt.
+    [Test]
+    public void Wenn_eine_zweite_Zuordnung_auf_dieselbe_Karte_geschrieben_wird_dann_scheitert_sie_an_der_Datenbank()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "Klassenfilter über die API", 1);
+        FuegeKartenklasseEin(datenbank, boardId, "WBS", "WBS-");
+        FuegeKartenklasseEin(datenbank, boardId, "Bugmeldungen", "BUG-");
+        FuegeKartenklassenzuordnungEin(datenbank, karteId: 1, kartenklasseId: 1, zaehlerstand: 32);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Indexdefinition(datenbank, "UX_Kartenklassenzuordnung_Karte"), Is.Not.Null);
+            Assert.That(
+                () => FuegeKartenklassenzuordnungEin(datenbank, karteId: 1, kartenklasseId: 2, zaehlerstand: 8),
+                Throws.TypeOf<SqliteException>());
+        });
+        Assert.That(Kartenklassenzuordnungszeilen(datenbank), Is.EqualTo(new[] { (1L, 1L, 1L, 32L) }));
+    }
+
+    // Das Netz unter der Zusage, dass eine Kartennummer sich nie wiederholt: WBS-32 gibt es
+    // genau einmal, auch wenn jemand am Dienst vorbei schreibt.
+    [Test]
+    public void Wenn_dasselbe_Paar_aus_Kartenklasse_und_Zaehlerstand_ein_zweites_Mal_geschrieben_wird_dann_scheitert_es_an_der_Datenbank()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "Klassenfilter über die API", 1);
+        FuegeKarteEin(datenbank, spalteId, "Nummernkreis prüfen", 2);
+        FuegeKartenklasseEin(datenbank, boardId, "WBS", "WBS-");
+        FuegeKartenklassenzuordnungEin(datenbank, karteId: 1, kartenklasseId: 1, zaehlerstand: 32);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Indexdefinition(datenbank, "UX_Kartenklassenzuordnung_Kartenklasse_Zaehlerstand"), Is.Not.Null);
+            Assert.That(
+                () => FuegeKartenklassenzuordnungEin(datenbank, karteId: 2, kartenklasseId: 1, zaehlerstand: 32),
+                Throws.TypeOf<SqliteException>());
+        });
+        Assert.That(Kartenklassenzuordnungszeilen(datenbank), Is.EqualTo(new[] { (1L, 1L, 1L, 32L) }));
+    }
+
+    [Test]
+    public void Wenn_die_Migration_ein_zweites_Mal_laeuft_dann_bleiben_Schema_und_Kartenklassenzuordnungen_unveraendert()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "Klassenfilter über die API", 1);
+        FuegeKartenklasseEin(datenbank, boardId, "WBS", "WBS-");
+        FuegeKartenklassenzuordnungEin(datenbank, karteId: 1, kartenklasseId: 1, zaehlerstand: 32);
+        var schemaVorher = SchemaDefinitionen(datenbank);
+
+        Assert.That(() => new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus(), Throws.Nothing);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(SchemaDefinitionen(datenbank), Is.EqualTo(schemaVorher));
+            Assert.That(Kartenklassenzuordnungszeilen(datenbank), Is.EqualTo(new[] { (1L, 1L, 1L, 32L) }));
+        });
+    }
+
+    private static void FuegeKartenklassenzuordnungEin(TemporaereDatenbank datenbank, long karteId, long kartenklasseId, long zaehlerstand)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Kartenklassenzuordnung (Karte, Kartenklasse, Zaehlerstand)
+            VALUES (@Karte, @Kartenklasse, @Zaehlerstand)", new { Karte = karteId, Kartenklasse = kartenklasseId, Zaehlerstand = zaehlerstand });
+    }
+
+    private static (long KartenklassenzuordnungId, long Karte, long Kartenklasse, long Zaehlerstand)[] Kartenklassenzuordnungszeilen(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        var zeilen = verbindung.Query<(long KartenklassenzuordnungId, long Karte, long Kartenklasse, long Zaehlerstand)>(@"
+            SELECT KartenklassenzuordnungId, Karte, Kartenklasse, Zaehlerstand
+              FROM Kartenklassenzuordnung
+             ORDER BY KartenklassenzuordnungId");
+        return zeilen.ToArray();
+    }
+
     private static void FuegeKartenklasseEin(TemporaereDatenbank datenbank, long boardId, string name, string praefix)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();

@@ -9,6 +9,12 @@
     box-shadow: var(--shadow-sm);
 }
 
+/* Die Nummernplakette traegt ihre Gestaltung aus .tag im Token-Sheet; hier steht nur, dass sie
+   sich nicht ueber die Kartenbreite zieht — die Karte ist eine Flex-Spalte. */
+.karte-nummer {
+    align-self: flex-start;
+}
+
 /* Der Titel ist der Weg auf die Kartenseite. Als Verweis traegt er die Grundfarbe weiter —
    ein blauer Link stuende quer zum Klima — und zeigt seine Klickbarkeit ueber die
    Unterstreichung in Akzentfarbe. */

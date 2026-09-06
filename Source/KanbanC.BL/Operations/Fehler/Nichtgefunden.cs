@@ -16,7 +16,9 @@ public static class Nichtgefunden
     private const string AnhangUnbekannt = "anhang-unbekannt";
     private const string AnhangbytesFehlen = "anhang-bytes-fehlen";
     private const string DateiverweisUnbekannt = "dateiverweis-unbekannt";
-    private static readonly string[] AlleCodes = [BoardUnbekannt, KarteUnbekannt, KarteFremd, SpalteUnbekannt, SpalteFremd, KontributorUnbekannt, TeilaufgabeUnbekannt, AnhangUnbekannt, AnhangbytesFehlen, DateiverweisUnbekannt];
+    private const string KartenklasseUnbekannt = "kartenklasse-unbekannt";
+    private const string KartenklasseFremd = "kartenklasse-fremd";
+    private static readonly string[] AlleCodes = [BoardUnbekannt, KarteUnbekannt, KarteFremd, SpalteUnbekannt, SpalteFremd, KontributorUnbekannt, TeilaufgabeUnbekannt, AnhangUnbekannt, AnhangbytesFehlen, DateiverweisUnbekannt, KartenklasseUnbekannt, KartenklasseFremd];
 
     public static Fehlerbefund Board(long boardId)
     {
@@ -112,6 +114,25 @@ public static class Nichtgefunden
             SpalteFremd,
             $"Die Spalte {spalteId} gehört zum Board {boardIdDerSpalte}, nicht zum Board {boardId}.",
             $"`GET /api/boards/{boardId}` abrufen und den Aufruf mit einer SpalteId dieses Boards wiederholen.");
+    }
+
+    public static Fehlerbefund Kartenklasse(long boardId, long kartenklasseId)
+    {
+        return new Fehlerbefund(
+            KartenklasseUnbekannt,
+            $"Eine Kartenklasse mit der Nummer {kartenklasseId} gibt es nicht.",
+            $"`GET /api/boards/{boardId}/kartenklassen` abrufen, die KartenklasseIds ablesen und den Aufruf mit einer vorhandenen wiederholen.");
+    }
+
+    // Die Schwester von FremdeKarte und FremdeSpalte: eine Kartenklasse gehört **einem** Board,
+    // und die eines anderen ist an dieser Karte keine. Ein eigener Code, weil die Kompensation
+    // eine andere ist — nicht „gibt es nicht", sondern „gibt es, nur nicht hier".
+    public static Fehlerbefund FremdeKartenklasse(long boardId, long kartenklasseId, long boardIdDerKartenklasse)
+    {
+        return new Fehlerbefund(
+            KartenklasseFremd,
+            $"Die Kartenklasse {kartenklasseId} gehört zum Board {boardIdDerKartenklasse}, nicht zum Board {boardId} dieser Karte.",
+            $"`GET /api/boards/{boardId}/kartenklassen` abrufen und den Aufruf mit einer KartenklasseId dieses Boards wiederholen.");
     }
 
     public static Fehlerbefund Kontributor(long kontributorId)

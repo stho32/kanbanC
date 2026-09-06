@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
+using KanbanC.Contracts.Klassen;
 
 namespace KanbanC.Blazor.Services;
 
@@ -45,6 +46,16 @@ public sealed class KartenApiKlient
     {
         using var klient = _klientFabrik.CreateClient(KlientName);
         using var antwort = await klient.PutAsJsonAsync($"{KartenRoute}/{karteId}/etiketten", etiketten);
+        return await AlsKartendetail(antwort);
+    }
+
+    // **Eine** Adresse für die ganze Frage „welche Klasse trägt diese Karte“: ein leeres Feld im
+    // Rumpf löst die Zuordnung, es gibt kein DELETE daneben. Die Adresse heißt `kartenklasse`
+    // und nicht `klasse` — derselbe Bezeichner wie im übrigen Stack.
+    public async Task<ApiErgebnis<Kartendetail>> OrdneKartenklasseZu(long karteId, KartenklasseZuordnenAnfrage anfrage)
+    {
+        using var klient = _klientFabrik.CreateClient(KlientName);
+        using var antwort = await klient.PutAsJsonAsync($"{KartenRoute}/{karteId}/kartenklasse", anfrage);
         return await AlsKartendetail(antwort);
     }
 

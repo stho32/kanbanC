@@ -181,6 +181,290 @@ public class KartenklassenRepositoryTests
         Assert.That(GespeicherteKartenklassenAnzahl(datenbank, boardId), Is.EqualTo(1));
     }
 
+    [Test]
+    public void Wenn_eine_Karte_einer_Kartenklasse_zugeordnet_wird_dann_vergibt_sie_den_naechsten_Stand_und_die_Klasse_waechst_mit()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var karteId = LegeKarteAn(datenbank, boardId, "Klassenfilter über die API");
+        var repository = new KartenklassenRepository(datenbank.Verbindungsfabrik);
+        var wbs = repository.LegeAn(boardId, new KartenklasseAnlegenAnfrage("WBS", "WBS-"))!.Wert;
+        SetzeZaehlerstand(datenbank, wbs.KartenklasseId, 31);
+
+        var zuordnung = repository.OrdneZu(karteId, wbs.KartenklasseId);
+
+        Assert.That(zuordnung, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(zuordnung!.Karte, Is.EqualTo(karteId));
+            Assert.That(zuordnung.Kartenklasse, Is.EqualTo(wbs.KartenklasseId));
+            Assert.That(zuordnung.Zaehlerstand, Is.EqualTo(32));
+            Assert.That(Kartennummer.Aus(wbs.Praefix, zuordnung.Zaehlerstand), Is.EqualTo("WBS-32"));
+            Assert.That(Zaehlerstand(datenbank, wbs.KartenklasseId), Is.EqualTo(32));
+            Assert.That(Zuordnungszeilen(datenbank), Is.EqualTo(new[] { (karteId, wbs.KartenklasseId, 32L) }));
+        });
+    }
+
+    [Test]
+    public void Wenn_eine_frische_Kartenklasse_ihre_erste_Nummer_vergibt_dann_ist_es_die_Eins()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var karteId = LegeKarteAn(datenbank, boardId, "Klassenfilter über die API");
+        var repository = new KartenklassenRepository(datenbank.Verbindungsfabrik);
+        var wbs = repository.LegeAn(boardId, new KartenklasseAnlegenAnfrage("WBS", "WBS-"))!.Wert;
+
+        var zuordnung = repository.OrdneZu(karteId, wbs.KartenklasseId);
+
+        Assert.That(Kartennummer.Aus(wbs.Praefix, zuordnung!.Zaehlerstand), Is.EqualTo("WBS-01"));
+    }
+
+    // Der Wechsel ersetzt die Zeile; der Zaehlerstand der alten Kartenklasse bleibt stehen, damit
+    // die verfallene Nummer nie an etwas anderes fällt.
+    [Test]
+    public void Wenn_die_Kartenklasse_gewechselt_wird_dann_kommt_die_neue_Nummer_und_der_alte_Zaehlerstand_bleibt_stehen()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var karteId = LegeKarteAn(datenbank, boardId, "Klassenfilter über die API");
+        var repository = new KartenklassenRepository(datenbank.Verbindungsfabrik);
+        var wbs = repository.LegeAn(boardId, new KartenklasseAnlegenAnfrage("WBS", "WBS-"))!.Wert;
+        var bug = repository.LegeAn(boardId, new KartenklasseAnlegenAnfrage("Bugmeldungen", "BUG-"))!.Wert;
+        SetzeZaehlerstand(datenbank, wbs.KartenklasseId, 31);
+        SetzeZaehlerstand(datenbank, bug.KartenklasseId, 7);
+        repository.OrdneZu(karteId, wbs.KartenklasseId);
+
+        var gewechselte = repository.OrdneZu(karteId, bug.KartenklasseId);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Kartennummer.Aus(bug.Praefix, gewechselte!.Zaehlerstand), Is.EqualTo("BUG-08"));
+            Assert.That(Zaehlerstand(datenbank, bug.KartenklasseId), Is.EqualTo(8));
+            Assert.That(Zaehlerstand(datenbank, wbs.KartenklasseId), Is.EqualTo(32));
+            Assert.That(Zuordnungszeilen(datenbank), Is.EqualTo(new[] { (karteId, bug.KartenklasseId, 8L) }));
+        });
+    }
+
+    // WBS-32 wird nie wieder vergeben: die nächste Zuordnung zu WBS bekommt WBS-33.
+    [Test]
+    public void Wenn_nach_einem_Wechsel_eine_andere_Karte_der_alten_Kartenklasse_zugeordnet_wird_dann_bekommt_sie_die_naechste_Nummer()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var ersteKarteId = LegeKarteAn(datenbank, boardId, "Klassenfilter über die API");
+        var zweiteKarteId = LegeKarteAn(datenbank, boardId, "Nummernkreis prüfen");
+        var repository = new KartenklassenRepository(datenbank.Verbindungsfabrik);
+        var wbs = repository.LegeAn(boardId, new KartenklasseAnlegenAnfrage("WBS", "WBS-"))!.Wert;
+        var bug = repository.LegeAn(boardId, new KartenklasseAnlegenAnfrage("Bugmeldungen", "BUG-"))!.Wert;
+        SetzeZaehlerstand(datenbank, wbs.KartenklasseId, 31);
+        repository.OrdneZu(ersteKarteId, wbs.KartenklasseId);
+        repository.OrdneZu(ersteKarteId, bug.KartenklasseId);
+
+        var zweite = repository.OrdneZu(zweiteKarteId, wbs.KartenklasseId);
+
+        Assert.That(Kartennummer.Aus(wbs.Praefix, zweite!.Zaehlerstand), Is.EqualTo("WBS-33"));
+    }
+
+    // Wer versehentlich zweimal speichert, frisst keinen Nummernkreis.
+    [Test]
+    public void Wenn_dieselbe_Kartenklasse_erneut_gewaehlt_wird_dann_bleibt_die_Nummer_und_es_wird_keine_verbraucht()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var karteId = LegeKarteAn(datenbank, boardId, "Klassenfilter über die API");
+        var repository = new KartenklassenRepository(datenbank.Verbindungsfabrik);
+        var wbs = repository.LegeAn(boardId, new KartenklasseAnlegenAnfrage("WBS", "WBS-"))!.Wert;
+        SetzeZaehlerstand(datenbank, wbs.KartenklasseId, 31);
+        var erste = repository.OrdneZu(karteId, wbs.KartenklasseId);
+
+        var zweite = repository.OrdneZu(karteId, wbs.KartenklasseId);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(zweite!.Zaehlerstand, Is.EqualTo(32));
+            Assert.That(zweite.KartenklassenzuordnungId, Is.EqualTo(erste!.KartenklassenzuordnungId));
+            Assert.That(Zaehlerstand(datenbank, wbs.KartenklasseId), Is.EqualTo(32));
+            Assert.That(Zuordnungszeilen(datenbank), Is.EqualTo(new[] { (karteId, wbs.KartenklasseId, 32L) }));
+        });
+    }
+
+    [Test]
+    public void Wenn_die_Zuordnung_geloest_wird_dann_ist_die_Zeile_weg_und_der_Zaehlerstand_bleibt_stehen()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var karteId = LegeKarteAn(datenbank, boardId, "Klassenfilter über die API");
+        var repository = new KartenklassenRepository(datenbank.Verbindungsfabrik);
+        var wbs = repository.LegeAn(boardId, new KartenklasseAnlegenAnfrage("WBS", "WBS-"))!.Wert;
+        SetzeZaehlerstand(datenbank, wbs.KartenklasseId, 31);
+        repository.OrdneZu(karteId, wbs.KartenklasseId);
+
+        var wurdeGeloest = repository.LoeseZuordnung(karteId);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(wurdeGeloest, Is.True);
+            Assert.That(Zuordnungszeilen(datenbank), Is.Empty);
+            Assert.That(Zaehlerstand(datenbank, wbs.KartenklasseId), Is.EqualTo(32));
+        });
+    }
+
+    // Eine Karte ohne Zuordnung zu lösen ist kein Fehler — das Ziel ist erreicht.
+    [Test]
+    public void Wenn_eine_Karte_ohne_Zuordnung_geloest_wird_dann_ist_das_kein_Fehler_und_nichts_aendert_sich()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var karteId = LegeKarteAn(datenbank, boardId, "Klassenfilter über die API");
+        var repository = new KartenklassenRepository(datenbank.Verbindungsfabrik);
+        var wbs = repository.LegeAn(boardId, new KartenklasseAnlegenAnfrage("WBS", "WBS-"))!.Wert;
+        SetzeZaehlerstand(datenbank, wbs.KartenklasseId, 31);
+
+        var wurdeGeloest = repository.LoeseZuordnung(karteId);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(wurdeGeloest, Is.True);
+            Assert.That(Zuordnungszeilen(datenbank), Is.Empty);
+            Assert.That(Zaehlerstand(datenbank, wbs.KartenklasseId), Is.EqualTo(31));
+        });
+    }
+
+    // Die sichtbare Probe auf die Identitätszusage: der Zaehlerstand fällt nicht zurück.
+    [Test]
+    public void Wenn_zugeordnet_geloest_und_erneut_zugeordnet_wird_dann_kommt_die_naechste_Nummer_und_nicht_die_alte()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var karteId = LegeKarteAn(datenbank, boardId, "Klassenfilter über die API");
+        var repository = new KartenklassenRepository(datenbank.Verbindungsfabrik);
+        var wbs = repository.LegeAn(boardId, new KartenklasseAnlegenAnfrage("WBS", "WBS-"))!.Wert;
+        SetzeZaehlerstand(datenbank, wbs.KartenklasseId, 31);
+        var erste = repository.OrdneZu(karteId, wbs.KartenklasseId);
+        repository.LoeseZuordnung(karteId);
+
+        var zweite = repository.OrdneZu(karteId, wbs.KartenklasseId);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Kartennummer.Aus(wbs.Praefix, erste!.Zaehlerstand), Is.EqualTo("WBS-32"));
+            Assert.That(Kartennummer.Aus(wbs.Praefix, zweite!.Zaehlerstand), Is.EqualTo("WBS-33"));
+            Assert.That(Zaehlerstand(datenbank, wbs.KartenklasseId), Is.EqualTo(33));
+        });
+    }
+
+    [Test]
+    public void Wenn_die_Karte_unbekannt_ist_dann_liefert_OrdneZu_null_und_schreibt_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var repository = new KartenklassenRepository(datenbank.Verbindungsfabrik);
+        var wbs = repository.LegeAn(boardId, new KartenklasseAnlegenAnfrage("WBS", "WBS-"))!.Wert;
+        SetzeZaehlerstand(datenbank, wbs.KartenklasseId, 31);
+
+        var zuordnung = repository.OrdneZu(999, wbs.KartenklasseId);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(zuordnung, Is.Null);
+            Assert.That(Zuordnungszeilen(datenbank), Is.Empty);
+            Assert.That(Zaehlerstand(datenbank, wbs.KartenklasseId), Is.EqualTo(31));
+        });
+    }
+
+    [Test]
+    public void Wenn_die_Karte_unbekannt_ist_dann_liefert_LoeseZuordnung_false()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenklassenRepository(datenbank.Verbindungsfabrik);
+
+        Assert.That(repository.LoeseZuordnung(999), Is.False);
+    }
+
+    [Test]
+    public void Wenn_die_Kartenklasse_unbekannt_ist_dann_liefert_OrdneZu_null_und_schreibt_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var karteId = LegeKarteAn(datenbank, boardId, "Klassenfilter über die API");
+        var repository = new KartenklassenRepository(datenbank.Verbindungsfabrik);
+
+        var zuordnung = repository.OrdneZu(karteId, 999);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(zuordnung, Is.Null);
+            Assert.That(Zuordnungszeilen(datenbank), Is.Empty);
+        });
+    }
+
+    // Eine Kartenklasse gehört einem Board; die eines anderen ist an dieser Karte keine.
+    [Test]
+    public void Wenn_die_Kartenklasse_einem_fremden_Board_gehoert_dann_liefert_OrdneZu_null_und_schreibt_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var erstesBoard = LegeBoardAn(datenbank);
+        var zweitesBoard = LegeBoardAn(datenbank);
+        var karteId = LegeKarteAn(datenbank, erstesBoard, "Klassenfilter über die API");
+        var repository = new KartenklassenRepository(datenbank.Verbindungsfabrik);
+        var fremde = repository.LegeAn(zweitesBoard, new KartenklasseAnlegenAnfrage("WBS", "WBS-"))!.Wert;
+        SetzeZaehlerstand(datenbank, fremde.KartenklasseId, 31);
+
+        var zuordnung = repository.OrdneZu(karteId, fremde.KartenklasseId);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(zuordnung, Is.Null);
+            Assert.That(Zuordnungszeilen(datenbank), Is.Empty);
+            Assert.That(Zaehlerstand(datenbank, fremde.KartenklasseId), Is.EqualTo(31));
+        });
+    }
+
+    [Test]
+    public void Wenn_nach_der_KartenklasseId_eines_anderen_Boards_gefragt_wird_dann_nennt_BoardDerKartenklasse_dieses_Board()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var erstesBoard = LegeBoardAn(datenbank);
+        var zweitesBoard = LegeBoardAn(datenbank);
+        var repository = new KartenklassenRepository(datenbank.Verbindungsfabrik);
+        var fremde = repository.LegeAn(zweitesBoard, new KartenklasseAnlegenAnfrage("WBS", "WBS-"))!.Wert;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(repository.BoardDerKartenklasse(fremde.KartenklasseId), Is.EqualTo(zweitesBoard));
+            Assert.That(repository.BoardDerKartenklasse(fremde.KartenklasseId), Is.Not.EqualTo(erstesBoard));
+            Assert.That(repository.BoardDerKartenklasse(999), Is.Null);
+        });
+    }
+
+    private static void SetzeZaehlerstand(TemporaereDatenbank datenbank, long kartenklasseId, long stand)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            UPDATE Kartenklasse
+               SET Zaehlerstand = @Zaehlerstand
+             WHERE KartenklasseId = @KartenklasseId", new { Zaehlerstand = stand, KartenklasseId = kartenklasseId });
+    }
+
+    private static long Zaehlerstand(TemporaereDatenbank datenbank, long kartenklasseId)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.ExecuteScalar<long>(@"
+            SELECT Zaehlerstand
+              FROM Kartenklasse
+             WHERE KartenklasseId = @KartenklasseId", new { KartenklasseId = kartenklasseId });
+    }
+
+    private static (long Karte, long Kartenklasse, long Zaehlerstand)[] Zuordnungszeilen(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        var zeilen = verbindung.Query<(long Karte, long Kartenklasse, long Zaehlerstand)>(@"
+            SELECT Karte, Kartenklasse, Zaehlerstand
+              FROM Kartenklassenzuordnung
+             ORDER BY KartenklassenzuordnungId");
+        return zeilen.ToArray();
+    }
+
     private static long LegeBoardAn(TemporaereDatenbank datenbank)
     {
         var repository = new BoardRepository(datenbank.Verbindungsfabrik);
@@ -188,7 +472,7 @@ public class KartenklassenRepositoryTests
         return repository.LegeAn(anfrage, StandardspaltenVorlage.FuerNeuesBoard()).BoardId;
     }
 
-    private static void LegeKarteAn(TemporaereDatenbank datenbank, long boardId, string titel)
+    private static long LegeKarteAn(TemporaereDatenbank datenbank, long boardId, string titel)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
         var spalteId = verbindung.QuerySingle<long>(@"
@@ -197,9 +481,10 @@ public class KartenklassenRepositoryTests
              WHERE Board = @BoardId
              ORDER BY Position
              LIMIT 1", new { BoardId = boardId });
-        verbindung.Execute(@"
+        return verbindung.ExecuteScalar<long>(@"
             INSERT INTO Karte (Spalte, Titel, Position)
-            VALUES (@Spalte, @Titel, 1)", new { Spalte = spalteId, Titel = titel });
+            VALUES (@Spalte, @Titel, 1);
+            SELECT last_insert_rowid();", new { Spalte = spalteId, Titel = titel });
     }
 
     private static void FuegeKartenklasseDirektEin(TemporaereDatenbank datenbank, long boardId, string name, string praefix)

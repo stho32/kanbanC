@@ -5,6 +5,7 @@ using Dapper;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Fehler;
 using KanbanC.Contracts.Karten;
+using KanbanC.Contracts.Klassen;
 using KanbanC.Contracts.Kontributoren;
 using KanbanC.WebApi.IntegrationTests.Infrastructure;
 
@@ -2593,6 +2594,312 @@ public class KartenEndpunkteTests
         }
 
         return board;
+    }
+
+    [Test]
+    public async Task Wenn_eine_Karte_einer_Kartenklasse_zugeordnet_wird_dann_antwortet_die_API_mit_200_und_dem_ganzen_Kartendetail()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Klassenfilter über die API");
+        var wbs = await LegeKartenklasseAn(webApi, board.BoardId, "WBS", "WBS-");
+        SetzeZaehlerstand(datenbank, wbs.KartenklasseId, 31);
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Kartenklassenroute(karte.KarteId), new KartenklasseZuordnenAnfrage(wbs.KartenklasseId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var detail = await AlsKartendetail(antwort);
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail.Karte.Kartennummer, Is.EqualTo("WBS-32"));
+            Assert.That(detail.Karte.Titel, Is.EqualTo("Klassenfilter über die API"));
+            Assert.That(detail.Kartenklasse, Is.EqualTo(new Kartenklasse(wbs.KartenklasseId, "WBS", "WBS-", 32)));
+            Assert.That(detail.Board, Is.EqualTo(board.BoardId));
+        });
+        var kartenklassen = await LadeKartenklassen(webApi, board.BoardId);
+        Assert.That(kartenklassen[0].Zaehlerstand, Is.EqualTo(32));
+    }
+
+    [Test]
+    public async Task Wenn_eine_frische_Kartenklasse_ihre_erste_Nummer_vergibt_dann_ist_sie_zweistellig()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Klassenfilter über die API");
+        var wbs = await LegeKartenklasseAn(webApi, board.BoardId, "WBS", "WBS-");
+
+        var detail = await OrdneKartenklasseZu(webApi, karte.KarteId, wbs.KartenklasseId);
+
+        Assert.That(detail.Karte.Kartennummer, Is.EqualTo("WBS-01"));
+    }
+
+    // Der Wechsel: neue Nummer aus der neuen Kartenklasse, der Zaehlerstand der alten bleibt
+    // stehen — und es gibt weiterhin genau **eine** Zuordnungszeile.
+    [Test]
+    public async Task Wenn_die_Kartenklasse_gewechselt_wird_dann_kommt_die_neue_Nummer_und_der_alte_Zaehlerstand_bleibt_stehen()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Klassenfilter über die API");
+        var wbs = await LegeKartenklasseAn(webApi, board.BoardId, "WBS", "WBS-");
+        var bug = await LegeKartenklasseAn(webApi, board.BoardId, "Bugmeldungen", "BUG-");
+        SetzeZaehlerstand(datenbank, wbs.KartenklasseId, 31);
+        SetzeZaehlerstand(datenbank, bug.KartenklasseId, 7);
+        await OrdneKartenklasseZu(webApi, karte.KarteId, wbs.KartenklasseId);
+
+        var detail = await OrdneKartenklasseZu(webApi, karte.KarteId, bug.KartenklasseId);
+
+        var kartenklassen = await LadeKartenklassen(webApi, board.BoardId);
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail.Karte.Kartennummer, Is.EqualTo("BUG-08"));
+            Assert.That(detail.Kartenklasse!.Name, Is.EqualTo("Bugmeldungen"));
+            Assert.That(kartenklassen[0].Zaehlerstand, Is.EqualTo(32));
+            Assert.That(kartenklassen[1].Zaehlerstand, Is.EqualTo(8));
+            Assert.That(Zuordnungszahl(datenbank), Is.EqualTo(1));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_dieselbe_Kartenklasse_erneut_zugeordnet_wird_dann_bleiben_Nummer_und_Zaehlerstand_stehen()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Klassenfilter über die API");
+        var wbs = await LegeKartenklasseAn(webApi, board.BoardId, "WBS", "WBS-");
+        SetzeZaehlerstand(datenbank, wbs.KartenklasseId, 31);
+        await OrdneKartenklasseZu(webApi, karte.KarteId, wbs.KartenklasseId);
+
+        var detail = await OrdneKartenklasseZu(webApi, karte.KarteId, wbs.KartenklasseId);
+
+        var kartenklassen = await LadeKartenklassen(webApi, board.BoardId);
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail.Karte.Kartennummer, Is.EqualTo("WBS-32"));
+            Assert.That(kartenklassen[0].Zaehlerstand, Is.EqualTo(32));
+            Assert.That(Zuordnungszahl(datenbank), Is.EqualTo(1));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_das_Feld_leer_bleibt_dann_nimmt_die_API_die_Zuordnung_weg_und_laesst_den_Zaehlerstand_stehen()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Klassenfilter über die API");
+        var wbs = await LegeKartenklasseAn(webApi, board.BoardId, "WBS", "WBS-");
+        SetzeZaehlerstand(datenbank, wbs.KartenklasseId, 31);
+        await OrdneKartenklasseZu(webApi, karte.KarteId, wbs.KartenklasseId);
+
+        var detail = await OrdneKartenklasseZu(webApi, karte.KarteId, null);
+
+        var kartenklassen = await LadeKartenklassen(webApi, board.BoardId);
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail.Karte.Kartennummer, Is.Null);
+            Assert.That(detail.Kartenklasse, Is.Null);
+            Assert.That(kartenklassen[0].Zaehlerstand, Is.EqualTo(32));
+            Assert.That(Zuordnungszahl(datenbank), Is.EqualTo(0));
+        });
+    }
+
+    // Das Ziel ist erreicht — also kein Fehler.
+    [Test]
+    public async Task Wenn_eine_Karte_ohne_Zuordnung_geloest_wird_dann_antwortet_die_API_trotzdem_mit_200()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Klassenfilter über die API");
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Kartenklassenroute(karte.KarteId), new KartenklasseZuordnenAnfrage(null));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var detail = await AlsKartendetail(antwort);
+        Assert.That(detail.Karte.Kartennummer, Is.Null);
+    }
+
+    // Die sichtbare Probe auf die Identitätszusage: eine verfallene Nummer kommt nie wieder.
+    [Test]
+    public async Task Wenn_zugeordnet_geloest_und_erneut_zugeordnet_wird_dann_kommt_die_naechste_Nummer_und_nicht_die_alte()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Klassenfilter über die API");
+        var wbs = await LegeKartenklasseAn(webApi, board.BoardId, "WBS", "WBS-");
+        SetzeZaehlerstand(datenbank, wbs.KartenklasseId, 31);
+
+        var erste = await OrdneKartenklasseZu(webApi, karte.KarteId, wbs.KartenklasseId);
+        var geloest = await OrdneKartenklasseZu(webApi, karte.KarteId, null);
+        var zweite = await OrdneKartenklasseZu(webApi, karte.KarteId, wbs.KartenklasseId);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(erste.Karte.Kartennummer, Is.EqualTo("WBS-32"));
+            Assert.That(geloest.Karte.Kartennummer, Is.Null);
+            Assert.That(zweite.Karte.Kartennummer, Is.EqualTo("WBS-33"));
+        });
+    }
+
+    // Die Nummer reist an der Karte mit: ein Agent sieht sie in der Boardantwort ohne zweiten
+    // Aufruf, und eine Karte ohne Klasse traegt an derselben Stelle null.
+    [Test]
+    public async Task Wenn_das_Board_gelesen_wird_dann_traegt_jede_zugeordnete_Karte_ihre_Nummer_schon_dort()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var spalteId = board.Spalten[0].SpalteId;
+        var zugeordnete = await LegeKarteAn(webApi, board.BoardId, spalteId, "Klassenfilter über die API");
+        await LegeKarteAn(webApi, board.BoardId, spalteId, "Ohne Klasse");
+        var wbs = await LegeKartenklasseAn(webApi, board.BoardId, "WBS", "WBS-");
+        SetzeZaehlerstand(datenbank, wbs.KartenklasseId, 31);
+        await OrdneKartenklasseZu(webApi, zugeordnete.KarteId, wbs.KartenklasseId);
+
+        var geladen = await LadeBoard(webApi, board.BoardId);
+
+        Assert.That(geladen.Spalten[0].Karten.Select(karte => karte.Kartennummer), Is.EqualTo(new[] { "WBS-32", null }));
+    }
+
+    [Test]
+    public async Task Wenn_die_Karte_unbekannt_ist_dann_antwortet_die_API_mit_404_und_dem_Befund_zur_Karte()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var wbs = await LegeKartenklasseAn(webApi, board.BoardId, "WBS", "WBS-");
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Kartenklassenroute(999), new KartenklasseZuordnenAnfrage(wbs.KartenklasseId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var befund = (await Fehlerrumpf.Lies(antwort, "Kartenklasse an unbekannter Karte")).Befunde[0];
+        Assert.Multiple(() =>
+        {
+            Assert.That(befund.Code, Is.EqualTo("karte-unbekannt"));
+            Assert.That(befund.Meldung, Does.Contain("999"));
+        });
+        var kartenklassen = await LadeKartenklassen(webApi, board.BoardId);
+        Assert.That(kartenklassen[0].Zaehlerstand, Is.EqualTo(0));
+    }
+
+    [Test]
+    public async Task Wenn_die_Kartenklasse_unbekannt_ist_dann_antwortet_die_API_mit_404_und_schreibt_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Klassenfilter über die API");
+        var wbs = await LegeKartenklasseAn(webApi, board.BoardId, "WBS", "WBS-");
+        SetzeZaehlerstand(datenbank, wbs.KartenklasseId, 31);
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Kartenklassenroute(karte.KarteId), new KartenklasseZuordnenAnfrage(999));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var befund = (await Fehlerrumpf.Lies(antwort, "unbekannte Kartenklasse")).Befunde[0];
+        Assert.Multiple(() =>
+        {
+            Assert.That(befund.Code, Is.EqualTo("kartenklasse-unbekannt"));
+            Assert.That(befund.Meldung, Does.Contain("999"));
+            Assert.That(befund.Kompensation, Does.Contain($"/api/boards/{board.BoardId}/kartenklassen"));
+        });
+        var kartenklassen = await LadeKartenklassen(webApi, board.BoardId);
+        Assert.Multiple(() =>
+        {
+            Assert.That(kartenklassen[0].Zaehlerstand, Is.EqualTo(31));
+            Assert.That(Zuordnungszahl(datenbank), Is.EqualTo(0));
+        });
+    }
+
+    // Es gibt sie — nur nicht an dieser Karte: ein eigener Befund, weil die Kompensation eine
+    // andere ist.
+    [Test]
+    public async Task Wenn_die_Kartenklasse_einem_fremden_Board_gehoert_dann_antwortet_die_API_mit_dem_eigenen_Befund_und_schreibt_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var board = await LegeBoardAn(webApi);
+        var nachbarboard = await LegeBoardAn(webApi);
+        var karte = await LegeKarteAn(webApi, board.BoardId, board.Spalten[0].SpalteId, "Klassenfilter über die API");
+        var fremde = await LegeKartenklasseAn(webApi, nachbarboard.BoardId, "WBS", "WBS-");
+        SetzeZaehlerstand(datenbank, fremde.KartenklasseId, 31);
+
+        var antwort = await webApi.Klient.PutAsJsonAsync(Kartenklassenroute(karte.KarteId), new KartenklasseZuordnenAnfrage(fremde.KartenklasseId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var befund = (await Fehlerrumpf.Lies(antwort, "fremde Kartenklasse")).Befunde[0];
+        Assert.Multiple(() =>
+        {
+            Assert.That(befund.Code, Is.EqualTo("kartenklasse-fremd"));
+            Assert.That(befund.Meldung, Does.Contain(nachbarboard.BoardId.ToString(CultureInfo.InvariantCulture)));
+            Assert.That(befund.Kompensation, Does.Contain($"/api/boards/{board.BoardId}/kartenklassen"));
+        });
+        var kartenklassen = await LadeKartenklassen(webApi, nachbarboard.BoardId);
+        Assert.Multiple(() =>
+        {
+            Assert.That(kartenklassen[0].Zaehlerstand, Is.EqualTo(31));
+            Assert.That(Zuordnungszahl(datenbank), Is.EqualTo(0));
+        });
+    }
+
+    private static string Kartenklassenroute(long karteId)
+    {
+        return $"/api/karten/{karteId}/kartenklasse";
+    }
+
+    private static async Task<Kartendetail> OrdneKartenklasseZu(TestWebApi webApi, long karteId, long? kartenklasseId)
+    {
+        var antwort = await webApi.Klient.PutAsJsonAsync(Kartenklassenroute(karteId), new KartenklasseZuordnenAnfrage(kartenklasseId));
+        antwort.EnsureSuccessStatusCode();
+        return await AlsKartendetail(antwort);
+    }
+
+    private static async Task<Kartenklasse> LegeKartenklasseAn(TestWebApi webApi, long boardId, string name, string praefix)
+    {
+        var antwort = await webApi.Klient.PostAsJsonAsync($"{BoardsRoute}/{boardId}/kartenklassen", new KartenklasseAnlegenAnfrage(name, praefix));
+        antwort.EnsureSuccessStatusCode();
+        var kartenklasse = await antwort.Content.ReadFromJsonAsync<Kartenklasse>();
+        if (kartenklasse is null)
+        {
+            throw new InvalidOperationException("Die API hat keine Kartenklasse zurückgegeben.");
+        }
+
+        return kartenklasse;
+    }
+
+    private static async Task<IReadOnlyList<Kartenklasse>> LadeKartenklassen(TestWebApi webApi, long boardId)
+    {
+        var kartenklassen = await webApi.Klient.GetFromJsonAsync<List<Kartenklasse>>($"{BoardsRoute}/{boardId}/kartenklassen");
+        if (kartenklassen is null)
+        {
+            throw new InvalidOperationException("Die API hat keine Kartenklassenliste zurückgegeben.");
+        }
+
+        return kartenklassen;
+    }
+
+    // Der Stand 31 ist der Ausgangspunkt der Rechenbeispiele; über die API entstünde er nur aus
+    // 31 Zuordnungen.
+    private static void SetzeZaehlerstand(TemporaereDatenbank datenbank, long kartenklasseId, long stand)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            UPDATE Kartenklasse
+               SET Zaehlerstand = @Zaehlerstand
+             WHERE KartenklasseId = @KartenklasseId", new { Zaehlerstand = stand, KartenklasseId = kartenklasseId });
+    }
+
+    private static long Zuordnungszahl(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.ExecuteScalar<long>(@"
+            SELECT COUNT(*)
+              FROM Kartenklassenzuordnung");
     }
 
     private static async Task<Board> LadeBoard(TestWebApi webApi, long boardId)

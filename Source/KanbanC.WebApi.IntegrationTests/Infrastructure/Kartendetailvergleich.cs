@@ -7,7 +7,8 @@ namespace KanbanC.WebApi.IntegrationTests.Infrastructure;
 // falsch rot (zwei gleiche Listen, zwei Objekte) oder — schlimmer — falsch gruen, sobald
 // jemand dieselbe Instanz zweimal reicht. Dieser Helfer vergleicht Stueck fuer Stueck.
 // **Alle** Listen: waechst das DTO und der Helfer nicht mit, nennt er zwei Details still
-// gleich, die es in der neuen Liste nicht sind.
+// gleich, die es in der neuen Liste nicht sind. Dasselbe gilt für die Kartenklasse: ohne das
+// Glied prüft der Helfer die neue Angabe stillschweigend nicht.
 public static class Kartendetailvergleich
 {
     public static void ErwarteGleichesDetail(Kartendetail? tatsaechlich, Kartendetail? erwartet)
@@ -28,6 +29,7 @@ public static class Kartendetailvergleich
             Assert.That(tatsaechlich.Kommentare, Is.EqualTo(erwartet.Kommentare));
             Assert.That(tatsaechlich.Anhaenge, Is.EqualTo(erwartet.Anhaenge));
             Assert.That(tatsaechlich.Dateiverweise, Is.EqualTo(erwartet.Dateiverweise));
+            Assert.That(tatsaechlich.Kartenklasse, Is.EqualTo(erwartet.Kartenklasse));
         });
     }
 }

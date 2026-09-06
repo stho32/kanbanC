@@ -164,6 +164,37 @@ public class NichtgefundenTests
     }
 
     [Test]
+    public void Wenn_die_Kartenklasse_unbekannt_ist_dann_nennt_der_Befund_ihre_Nummer_und_die_Liste_des_Boards()
+    {
+        var befund = Nichtgefunden.Kartenklasse(2, 999);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(befund.Code, Is.EqualTo("kartenklasse-unbekannt"));
+            Assert.That(befund.Meldung, Does.Contain("999"));
+            Assert.That(befund.Kompensation, Does.Contain("GET /api/boards/2/kartenklassen"));
+            Assert.That(befund.Kompensation, Does.Contain("KartenklasseId"));
+        });
+    }
+
+    // „Gibt es, nur nicht hier": der Befund nennt beide Boards, damit ein Agent sieht, wohin die
+    // Kartenklasse gehoert und wo er die richtige findet.
+    [Test]
+    public void Wenn_die_Kartenklasse_einem_fremden_Board_gehoert_dann_nennt_der_Befund_beide_Boards()
+    {
+        var befund = Nichtgefunden.FremdeKartenklasse(2, 5, 9);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(befund.Code, Is.EqualTo("kartenklasse-fremd"));
+            Assert.That(befund.Meldung, Does.Contain("5"));
+            Assert.That(befund.Meldung, Does.Contain("9"));
+            Assert.That(befund.Meldung, Does.Contain("2"));
+            Assert.That(befund.Kompensation, Does.Contain("GET /api/boards/2/kartenklassen"));
+        });
+    }
+
+    [Test]
     public void Wenn_ein_Befund_ein_fehlendes_Ding_meldet_dann_erkennt_die_Pruefung_ihn_und_eine_verletzte_Regel_nicht()
     {
         var verletzteRegel = new Fehlerbefund("position-ausserhalb", "Position 5 liegt außerhalb.", "Erneut versuchen.");
@@ -180,6 +211,8 @@ public class NichtgefundenTests
             Assert.That(Nichtgefunden.MeldetEinFehlendesDing(Nichtgefunden.Anhang(14, 999)), Is.True);
             Assert.That(Nichtgefunden.MeldetEinFehlendesDing(Nichtgefunden.Anhangbytes(14, 999)), Is.True);
             Assert.That(Nichtgefunden.MeldetEinFehlendesDing(Nichtgefunden.Dateiverweis(14, 999)), Is.True);
+            Assert.That(Nichtgefunden.MeldetEinFehlendesDing(Nichtgefunden.Kartenklasse(2, 999)), Is.True);
+            Assert.That(Nichtgefunden.MeldetEinFehlendesDing(Nichtgefunden.FremdeKartenklasse(2, 5, 9)), Is.True);
             Assert.That(Nichtgefunden.MeldetEinFehlendesDing(verletzteRegel), Is.False);
         });
     }

@@ -1,3 +1,4 @@
+using KanbanC.Contracts.Klassen;
 using KanbanC.Contracts.Kontributoren;
 
 namespace KanbanC.Contracts.Karten;
@@ -29,6 +30,10 @@ namespace KanbanC.Contracts.Karten;
 // Auch hier kein Zählfeld und keine Ordnungszahl daneben. Sie stehen neben den Anhängen und
 // nicht in ihnen: ein Anhang bringt eine Kopie mit, ein Dateiverweis zeigt auf eine Datei, die
 // woanders weiterlebt — zwei Gegenstände, zwei Listen.
+// Die zugeordnete Kartenklasse reist als ganzes DTO, wie der Verantwortliche den ganzen
+// Kontributor trägt: das Feld im Eigenschaftenblock zeigt Name, Präfix und Zählerstand ohne
+// zweite Abfrage. null heißt „ohne Klasse". **Keine siebte Liste** — die Klassenliste des Boards
+// hat seit R00022 eine eigene Route, anders als die Etikettvorschläge, die keine hatten.
 public record Kartendetail(
     Karte Karte,
     long Board,
@@ -41,4 +46,5 @@ public record Kartendetail(
     IReadOnlyList<Teilaufgabe> Teilaufgaben,
     IReadOnlyList<Kommentar> Kommentare,
     IReadOnlyList<Anhang> Anhaenge,
-    IReadOnlyList<Dateiverweis> Dateiverweise);
+    IReadOnlyList<Dateiverweis> Dateiverweise,
+    Kartenklasse? Kartenklasse);

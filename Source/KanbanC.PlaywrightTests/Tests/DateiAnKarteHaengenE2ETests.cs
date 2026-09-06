@@ -1,7 +1,10 @@
+using System.Diagnostics;
+using System.Globalization;
 using KanbanC.Contracts.Karten;
 using KanbanC.Contracts.Kontributoren;
 using KanbanC.PlaywrightTests.Infrastructure;
 using KanbanC.PlaywrightTests.PageObjects;
+using Microsoft.Playwright;
 using Microsoft.Playwright.NUnit;
 
 namespace KanbanC.PlaywrightTests.Tests;
@@ -16,6 +19,14 @@ public class DateiAnKarteHaengenE2ETests : PageTest
 {
     private const int EinundvierzigKilobyte = 41000;
     private const int HundertachtzehnKilobyte = 118000;
+
+    // Die Größen der Reproduktion aus R00024: die große zuerst, die kleine hinterher. Mit
+    // 1000 und 2000 Bytes ist der erste Vorgang durch, bevor der zweite beginnt, und das Fenster
+    // lässt sich gar nicht mehr treffen.
+    private const int DreiMegabyte = 3 * 1024 * 1024;
+    private const int ZweiKilobyte = 2048;
+    private const int Ruhefrist = 60000;
+    private const int Ruhepause = 500;
 
     // US-1: die Handlung statt der Null, und die gezeichnete Ablegefläche darunter.
     // Die Karte dieses Aufbaus traegt **weder** Anhang **noch** Dateiverweis; die Handlung steht
@@ -87,6 +98,99 @@ public class DateiAnKarteHaengenE2ETests : PageTest
 
         await Expect(aufbau.Seite.Anhangnamen).ToHaveTextAsync(["wbs-export.md", "wbs-export.md"]);
         await Expect(aufbau.Seite.Anhanggroessen).ToHaveTextAsync(["1 kB", "2 kB"]);
+    }
+
+    // R00024, US-1: zwei Dateien so schnell hintereinander, wie die Fläche es zulässt.
+    // Gemessen wird an der API und am Ablageordner und **nicht** an der Liste: DOM und Datenbank
+    // stimmten in allen 35 Beobachtungen des Diagnoselaufs überein, eine Zusicherung an der
+    // Liste wäre grün gewesen, während die Datei verlorenging.
+    // Die Wartepunkte sind die neue Zusage selbst — die Fläche sperrt und gibt wieder frei —
+    // und nicht das Ergebnis des ersten Vorgangs: eine Zusicherung darauf serialisierte, was der
+    // Test gerade prüfen soll.
+    // Die Größen gehören zur Reproduktion: mit 1000 und 2000 Bytes blieb der Verlust in 13 von
+    // 13 isolierten Läufen unsichtbar.
+    [Test]
+    [Category("US-1")]
+    public async Task Wenn_zwei_Dateien_so_schnell_abgelegt_werden_wie_die_Flaeche_es_zulaesst_dann_stehen_beide_in_der_Datenbank()
+    {
+        var aufbau = await KarteOhneAnhang();
+        var konsolenfehler = new List<string>();
+        Page.PageError += (_, fehler) => konsolenfehler.Add(fehler);
+
+        await aufbau.Seite.HaengeDateiAn("wbs-export.md", Bytes(DreiMegabyte));
+
+        await Expect(aufbau.Seite.Anhangdateifeld).ToBeDisabledAsync();
+        await Expect(aufbau.Seite.Ablegetext).ToContainTextAsync("wbs-export.md");
+        await Expect(aufbau.Seite.AnhangHinweis).ToHaveCountAsync(0);
+        await Expect(aufbau.Seite.Anhangdateifeld).ToBeEnabledAsync(new LocatorAssertionsToBeEnabledOptions { Timeout = Ruhefrist });
+
+        await aufbau.Seite.HaengeDateiAn("burndown-r2.png", Bytes(ZweiKilobyte));
+
+        var detail = await WarteBisRuhe(aufbau.Seite, aufbau.KarteId);
+        Assert.That(detail.Anhaenge.Select(anhang => anhang.Dateiname), Is.EqualTo(new[] { "wbs-export.md", "burndown-r2.png" }), "Ein Anhang fehlt in der Datenbank.");
+        Assert.That(detail.Anhaenge.Select(anhang => anhang.Dateigroesse), Is.EqualTo(new[] { (long)DreiMegabyte, ZweiKilobyte }));
+        foreach (var anhang in detail.Anhaenge)
+        {
+            var ablagedatei = new FileInfo(Ablagepfad(aufbau.KarteId, anhang.AnhangId));
+            Assert.That(ablagedatei.Exists, Is.True, $"Zu „{anhang.Dateiname}“ liegt keine Datei in der Ablage.");
+            Assert.That(ablagedatei.Length, Is.EqualTo(anhang.Dateigroesse), $"Die Datei zu „{anhang.Dateiname}“ ist nicht so lang wie ihre Zeile.");
+        }
+
+        await Expect(aufbau.Seite.Ausnahmeanzeige).Not.ToBeVisibleAsync();
+        Assert.That(konsolenfehler, Is.Empty, "Der reguläre Bedienweg hat einen Konsolenfehler erzeugt.");
+    }
+
+    // R00024, US-3: jede Meldung gehört der Datei, die gerade abgelegt wurde. Der Befund bleibt
+    // stehen, bis der Mensch selbst die nächste Handlung auslöst — und geht dann mit ihr.
+    // Die Zusicherung zwischen den beiden Ablegevorgängen ist **nicht** die verbotene Art: die
+    // zu große Datei erreicht den Größenwächter vor dem Strom und beginnt gar keine Übertragung,
+    // es gibt hier also kein Fenster, das sie schließen könnte.
+    [Test]
+    [Category("US-3")]
+    public async Task Wenn_nach_einer_beanstandeten_Datei_eine_gueltige_abgelegt_wird_dann_ist_die_alte_Meldung_fort()
+    {
+        var aufbau = await KarteMitEinemAnhang();
+
+        await aufbau.Seite.HaengeDateiAn("film.mp4", Bytes((int)Anhangsgrenze.HoechsteDateigroesse + 1));
+        await Expect(aufbau.Seite.BlattFehlermeldung).ToContainTextAsync("10,5 MB");
+
+        await aufbau.Seite.HaengeDateiAn("notiz.md", Bytes(ZweiKilobyte));
+
+        await Expect(aufbau.Seite.Anhangnamen).ToHaveTextAsync(["wbs-export.md", "notiz.md"]);
+        await Expect(aufbau.Seite.BlattFehlermeldung).ToHaveCountAsync(0);
+        await Expect(aufbau.Seite.Anhangdateifeld).ToBeEnabledAsync();
+    }
+
+    // R00024, US-2: die Bilanz unter Zwang. Playwright setzt die zweite Datei auch auf ein
+    // gesperrtes Feld und erzwingt damit eine Überlappung, die ein Mensch nicht auslösen kann —
+    // die Actionability-Prüfung von SetInputFiles kennt „enabled" nicht.
+    // Dann darf ein Vorgang scheitern, aber nicht stumm: jeder ausgelöste Vorgang endet als
+    // Zeile in der Datenbank **oder** als sichtbare Meldung, die seinen Dateinamen nennt.
+    [Test]
+    [Category("US-2")]
+    public async Task Wenn_die_Ueberlappung_erzwungen_wird_dann_verschwindet_kein_Anhang_stumm()
+    {
+        var aufbau = await KarteOhneAnhang();
+        var konsolenfehler = new List<string>();
+        Page.PageError += (_, fehler) => konsolenfehler.Add(fehler);
+
+        await aufbau.Seite.ErzwingeAblegen("wbs-export.md", Bytes(DreiMegabyte));
+        await aufbau.Seite.ErzwingeAblegen("burndown-r2.png", Bytes(ZweiKilobyte));
+
+        var detail = await WarteBisRuhe(aufbau.Seite, aufbau.KarteId);
+        var meldungen = string.Join(" ", await aufbau.Seite.Meldungen.AllInnerTextsAsync());
+        Assert.Multiple(() =>
+        {
+            foreach (var dateiname in new[] { "wbs-export.md", "burndown-r2.png" })
+            {
+                var derVorgangStehtInDerDatenbank = detail.Anhaenge.Any(anhang => anhang.Dateiname == dateiname);
+                var derVorgangStehtInEinerMeldung = meldungen.Contains(dateiname, StringComparison.Ordinal);
+                Assert.That(derVorgangStehtInDerDatenbank || derVorgangStehtInEinerMeldung, Is.True, $"„{dateiname}“ ist ohne Zeile in der Datenbank und ohne Meldung verschwunden.");
+            }
+        });
+        Assert.That(AbgelegteDateien(aufbau.KarteId), Is.EqualTo(detail.Anhaenge.Count), "In der Ablage liegt eine Datei ohne Zeile — ein abgebrochener Anhang hat einen Rest hinterlassen.");
+        await Expect(aufbau.Seite.Ausnahmeanzeige).Not.ToBeVisibleAsync();
+        Assert.That(konsolenfehler, Is.Empty, "Der Kreislauf hat eine Ausnahme nach draußen gelassen.");
     }
 
     // US-2: der Browser holt die Bytes **direkt von der WebApi**, mit dem Originalnamen und
@@ -269,6 +373,58 @@ public class DateiAnKarteHaengenE2ETests : PageTest
         await Expect(board.KarteMitTitel("Playwright-Lizenz klären")).Not.ToContainTextAsync("wbs-export.md");
         await Expect(board.KarteMitTitel("Playwright-Lizenz klären")).Not.ToContainTextAsync("Anhang");
         await Expect(board.Karten).ToHaveCountAsync(1);
+    }
+
+    // Gewartet wird auf Ruhe und nicht auf ein Ergebnis: die Fläche gibt wieder frei, und die
+    // Zahl der Zeilen ändert sich nicht mehr. Eine Zusicherung über das Ergebnis des ersten
+    // Vorgangs wäre hier eine Synchronisation und nähme dem Test seinen Gegenstand.
+    private async Task<Kartendetail> WarteBisRuhe(KartendetailSeite seite, long karteId)
+    {
+        var frist = Stopwatch.StartNew();
+        var zeilenDavor = -1;
+        var stand = await LiesKartendetail(karteId);
+        while (frist.ElapsedMilliseconds < Ruhefrist)
+        {
+            var dasFeldIstFrei = await seite.Anhangdateifeld.IsEnabledAsync();
+            var esKamNichtsMehrDazu = stand.Anhaenge.Count == zeilenDavor;
+            if (dasFeldIstFrei && esKamNichtsMehrDazu)
+            {
+                return stand;
+            }
+
+            zeilenDavor = stand.Anhaenge.Count;
+            await Task.Delay(Ruhepause);
+            stand = await LiesKartendetail(karteId);
+        }
+
+        return stand;
+    }
+
+    private async Task<Kartendetail> LiesKartendetail(long karteId)
+    {
+        using var webApi = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        return await webApi.LadeKartendetail(karteId);
+    }
+
+    // Ein abgebrochener Anhang darf keinen Rest hinterlassen: was im Ablageordner der Karte
+    // liegt, hat eine Zeile in der Datenbank.
+    private static int AbgelegteDateien(long karteId)
+    {
+        var ablageordner = new DirectoryInfo(Path.Combine(Testumgebung.Aktuelle.Datenbank.Ablageordner, karteId.ToString(CultureInfo.InvariantCulture)));
+        if (!ablageordner.Exists)
+        {
+            return 0;
+        }
+
+        return ablageordner.GetFiles().Length;
+    }
+
+    private static string Ablagepfad(long karteId, long anhangId)
+    {
+        return Path.Combine(
+            Testumgebung.Aktuelle.Datenbank.Ablageordner,
+            karteId.ToString(CultureInfo.InvariantCulture),
+            anhangId.ToString(CultureInfo.InvariantCulture));
     }
 
     // Die Nummer wird ueber den Dateinamen geholt und nicht ueber die Stelle in der Liste: die

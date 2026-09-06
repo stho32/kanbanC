@@ -3,6 +3,7 @@ using KanbanC.Blazor.Services;
 using KanbanC.Blazor.Tests.TestHelpers;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
+using KanbanC.Contracts.Klassen;
 using KanbanC.Contracts.Kontributoren;
 
 namespace KanbanC.Blazor.Tests.Services;
@@ -46,6 +47,64 @@ public class KartenApiKlientTests
         {
             Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.EqualTo("karte-unbekannt"));
             Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("9999"));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_eine_Kartenklasse_zugeordnet_wird_dann_setzt_der_Klient_ein_PUT_auf_kartenklasse_ab_und_reicht_das_Detail_durch()
+    {
+        const string rumpf = """{"karte":{"karteId":14,"titel":"Klassenfilter über die API","position":2,"kartennummer":"WBS-32"},"board":3,"boardname":"Entwicklung","spalte":5,"spaltenbezeichnung":"In Arbeit","kartenklasse":{"kartenklasseId":5,"name":"WBS","praefix":"WBS-","zaehlerstand":32}}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.OrdneKartenklasseZu(14, new KartenklasseZuordnenAnfrage(5));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("PUT http://webapi.test/api/karten/14/kartenklasse"));
+            Assert.That(fabrik.GesendeterRumpf, Does.Contain("\"kartenklasse\":5"));
+            Assert.That(ergebnis.Wert.Karte.Kartennummer, Is.EqualTo("WBS-32"));
+            Assert.That(ergebnis.Wert.Kartenklasse, Is.EqualTo(new Kartenklasse(5, "WBS", "WBS-", 32)));
+        });
+    }
+
+    // Das leere Feld muss als null im Rumpf stehen und nicht als fehlendes Feld: die WebApi
+    // unterscheidet „ohne Klasse" nicht anders von „nichts geschickt".
+    [Test]
+    public async Task Wenn_ohne_Klasse_gewaehlt_wird_dann_steht_null_im_Rumpf_und_nicht_ein_fehlendes_Feld()
+    {
+        const string rumpf = """{"karte":{"karteId":14,"titel":"Klassenfilter über die API","position":2},"board":3,"boardname":"Entwicklung","spalte":5,"spaltenbezeichnung":"In Arbeit"}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.OrdneKartenklasseZu(14, new KartenklasseZuordnenAnfrage(null));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(fabrik.GesendeterRumpf, Is.EqualTo("""{"kartenklasse":null}"""));
+            Assert.That(ergebnis.Wert.Karte.Kartennummer, Is.Null);
+            Assert.That(ergebnis.Wert.Kartenklasse, Is.Null);
+        });
+    }
+
+    // Diese Fehlerpfade sind über den Browser nicht auslösbar — der Grund, aus dem es dieses
+    // Testprojekt gibt.
+    [Test]
+    public async Task Wenn_die_Kartenklasse_einem_fremden_Board_gehoert_dann_reicht_der_Klient_den_eigenen_Befund_durch()
+    {
+        const string rumpf = """{"befunde":[{"code":"kartenklasse-fremd","meldung":"Die Kartenklasse 5 gehört zum Board 9, nicht zum Board 3 dieser Karte.","kompensation":"`GET /api/boards/3/kartenklassen` abrufen."}]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.NotFound, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.OrdneKartenklasseZu(14, new KartenklasseZuordnenAnfrage(5));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.EqualTo("kartenklasse-fremd"));
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("9"));
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Kompensation, Does.Contain("/api/boards/3/kartenklassen"));
         });
     }
 

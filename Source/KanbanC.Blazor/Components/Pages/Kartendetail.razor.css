@@ -172,6 +172,24 @@
     cursor: pointer;
 }
 
+/* Hinweiszeile und Leerzustand des Klassenfeldes tragen dieselbe Form wie im Klassenbereich des
+   Layout-Modus; die Nummer selbst hebt sich in der Grundfarbe ab. */
+.klassenhinweis,
+.klassenleerzustand {
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.45;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.klassenleerzustand {
+    font-size: 14px;
+}
+
+.klassennummer {
+    color: var(--color-text);
+}
+
 .farbpunkte {
     display: flex;
     align-items: center;
@@ -729,6 +747,15 @@
 
 .ablegeflaeche-gesperrt .ablegefeld {
     cursor: not-allowed;
+}
+
+/* Der laufende Vorgang ist der andere Grund derselben Sperre: die durchgezogene Kante in der
+   zweiten Akzentfarbe unterscheidet ihn von der fehlenden Identität, und der Text daneben nennt
+   die Datei. */
+.ablegeflaeche-laeuft {
+    color: var(--color-accent-2-700);
+    border-style: solid;
+    border-color: var(--color-accent-2);
 }
 
 .anhanghinweis {

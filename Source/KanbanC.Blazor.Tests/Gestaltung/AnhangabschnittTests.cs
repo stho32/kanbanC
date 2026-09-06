@@ -27,7 +27,7 @@ public class AnhangabschnittTests
             Assert.That(seite, Does.Contain("id=\"anhangliste\""));
             Assert.That(seite, Does.Contain("id=\"anhang-leerstand\""));
             Assert.That(seite, Does.Contain("id=\"anhang-ablegeflaeche\""));
-            Assert.That(seite, Does.Contain("Datei hierher ziehen oder wählen"));
+            Assert.That(seite, Does.Contain("@Ablegetext"), "Die Beschriftung der Fläche kommt aus Ablegeflaechenstand — sie hängt daran, ob gerade angehängt wird.");
             Assert.That(seite, Does.Contain("id=\"anhang-hinweis\""));
         });
     }

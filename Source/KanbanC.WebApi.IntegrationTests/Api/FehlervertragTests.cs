@@ -363,6 +363,21 @@ public class FehlervertragTests
             "Kartenklassen lesen an unbekanntem Board",
             await webApi.Klient.GetAsync($"{BoardsRoute}/999/kartenklassen")));
 
+        faelle.Add(new Fehlerfall(
+            "PUT /api/karten/{karteId:long}/kartenklasse",
+            "Kartenklasse zuordnen an unbekannter Karte",
+            await webApi.Klient.PutAsJsonAsync("/api/karten/999/kartenklasse", new KartenklasseZuordnenAnfrage(1))));
+
+        faelle.Add(new Fehlerfall(
+            "PUT /api/karten/{karteId:long}/kartenklasse",
+            "Kartenklasse zuordnen mit unbekannter KartenklasseId",
+            await webApi.Klient.PutAsJsonAsync($"/api/karten/{aufbau.Karte.KarteId}/kartenklasse", new KartenklasseZuordnenAnfrage(999))));
+
+        faelle.Add(new Fehlerfall(
+            "PUT /api/karten/{karteId:long}/kartenklasse",
+            "Kartenklasse zuordnen mit der Kartenklasse eines fremden Boards",
+            await webApi.Klient.PutAsJsonAsync($"/api/karten/{aufbau.Karte.KarteId}/kartenklasse", new KartenklasseZuordnenAnfrage(aufbau.FremdeKartenklasse.KartenklasseId))));
+
         return faelle;
     }
 
@@ -400,7 +415,18 @@ public class FehlervertragTests
             $"/api/karten/{karte!.KarteId}/dateiverweise",
             new DateiverweisEintragenAnfrage("Anforderungen/R00000-vision.md", kontributor!.KontributorId));
         ersterDateiverweis.EnsureSuccessStatusCode();
-        return new Aufbau(board, karte, kontributor, maria);
+
+        // Ein zweites Board mit eigener Kartenklasse: der Befund „kartenklasse-fremd" gibt es nur
+        // an einer Kartenklasse, die es wirklich gibt — nur eben auf einem anderen Board.
+        var zweitesBoard = await webApi.Klient.PostAsJsonAsync(BoardsRoute, new BoardAnlegenAnfrage("Beschaffung", BoardArt.Linie, null, null));
+        Assert.That(zweitesBoard.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        var nachbar = await zweitesBoard.Content.ReadFromJsonAsync<Board>();
+        Assert.That(nachbar, Is.Not.Null);
+        var angelegteKartenklasse = await webApi.Klient.PostAsJsonAsync($"{BoardsRoute}/{nachbar!.BoardId}/kartenklassen", new KartenklasseAnlegenAnfrage("WBS", "WBS-"));
+        Assert.That(angelegteKartenklasse.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        var fremdeKartenklasse = await angelegteKartenklasse.Content.ReadFromJsonAsync<Kartenklasse>();
+        Assert.That(fremdeKartenklasse, Is.Not.Null);
+        return new Aufbau(board, karte, kontributor, maria, fremdeKartenklasse!);
     }
 
     private static MultipartFormDataContent Anhangrumpf(byte[] inhalt, string dateiname, long kontributorId)
@@ -413,7 +439,7 @@ public class FehlervertragTests
         return rumpf;
     }
 
-    private sealed record Aufbau(Board Board, Karte Karte, Kontributor Kontributor, Kontributor Stillgelegter);
+    private sealed record Aufbau(Board Board, Karte Karte, Kontributor Kontributor, Kontributor Stillgelegter, Kartenklasse FremdeKartenklasse);
 
     private sealed record Fehlerfall(string Route, string Lage, HttpResponseMessage Antwort);
 }
