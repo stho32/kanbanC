@@ -23,6 +23,11 @@ builder.Services.AddOpenApi();
 // wie im Validator und im Blazor-Kreislauf; eine zweite Zahl gibt es nicht.
 builder.Services.Configure<FormOptions>(optionen => optionen.MultipartBodyLengthLimit = Anhangsgrenze.HoechsteDateigroesse);
 
+// Die Formularbindung meldet den Abbruch am Rumpf nur, wenn sie werfen darf — der Vorgabe nach
+// tut sie das allein in Development. Im Betrieb bliebe sonst eine 400 ohne Befund stehen, und die
+// Obergrenze wäre für den Agenten, der die API direkt ruft, eine wortlose Abweisung.
+builder.Services.Configure<RouteHandlerOptions>(optionen => optionen.ThrowOnBadRequest = true);
+
 var verbindungszeichenfolge = builder.Configuration["Datenhaltung:Verbindungszeichenfolge"];
 if (verbindungszeichenfolge is null)
 {

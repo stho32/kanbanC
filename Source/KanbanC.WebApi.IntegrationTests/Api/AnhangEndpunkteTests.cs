@@ -348,6 +348,26 @@ public class AnhangEndpunkteTests
         Assert.That(Directory.Exists(datenbank.Ablageordner), Is.False, "In der Ablage liegt eine halbe Datei.");
     }
 
+    // Dieselbe Zusage im Betrieb. Die Formularbindung des Rahmens meldet den Abbruch von sich aus
+    // nur beim Entwickeln; die Obergrenze und ihr Befund gelten in jeder Umgebung.
+    [Test]
+    public async Task Wenn_die_WebApi_in_Produktion_laeuft_dann_antwortet_POST_auf_eine_zu_grosse_Datei_ebenso_mit_400_und_Befund()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad, TestWebApi.Produktion);
+        var aufbau = await KarteMitUrheber(webApi);
+
+        using var antwort = await webApi.Klient.PostAsync(
+            Anhangroute(aufbau.KarteId),
+            Multipart(Bytes((int)Anhangsgrenze.HoechsteDateigroesse + 1), "film.mp4", aufbau.Urheber.KontributorId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Datei ueber der Obergrenze in Produktion");
+        Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("anhang-zu-gross"));
+        Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain(Anhangsgrenze.HoechsteDateigroesse.ToString(CultureInfo.InvariantCulture)));
+        await ErwarteKarteOhneAnhang(webApi, aufbau.KarteId);
+    }
+
     [Test]
     public async Task Wenn_die_KarteId_unbekannt_ist_dann_antworten_alle_drei_Routen_mit_404_und_einem_Befund_ohne_Board()
     {

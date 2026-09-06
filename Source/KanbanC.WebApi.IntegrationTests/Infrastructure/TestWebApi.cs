@@ -6,11 +6,16 @@ namespace KanbanC.WebApi.IntegrationTests.Infrastructure;
 
 public sealed class TestWebApi : IDisposable
 {
+    // Der Rahmen behandelt manche Zusage je nach Umgebung anders. WebApplicationFactory stellt
+    // von sich aus Development ein; ein Test, der den Betrieb meint, nennt Produktion ausdrücklich.
+    public const string Produktion = "Production";
+
+    private const string Entwicklung = "Development";
     private const string VerbindungsSchluessel = "Datenhaltung:Verbindungszeichenfolge";
     private const string NachladenSchluessel = "hostBuilder:reloadConfigOnChange";
     private readonly WebApplicationFactory<Program> _fabrik;
 
-    public TestWebApi(string datenbankDateipfad)
+    public TestWebApi(string datenbankDateipfad, string umgebung = Entwicklung)
     {
         // Jeder Test baut einen eigenen Host. Ohne die Abschaltung legt jeder von ihnen
         // Dateiwächter für die Konfiguration an und der Lauf schöpft das Kontingent des
@@ -19,6 +24,7 @@ public sealed class TestWebApi : IDisposable
         {
             host.UseSetting(VerbindungsSchluessel, $"Data Source={datenbankDateipfad}");
             host.UseSetting(NachladenSchluessel, "false");
+            host.UseEnvironment(umgebung);
         });
         Klient = _fabrik.CreateClient();
     }
