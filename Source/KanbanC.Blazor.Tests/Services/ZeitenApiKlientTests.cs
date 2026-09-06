@@ -10,6 +10,7 @@ namespace KanbanC.Blazor.Tests.Services;
 public class ZeitenApiKlientTests
 {
     private const string JsonInhaltstyp = "application/json";
+    private const string BeendeterEintrag = """{"zeiteintragId":7,"karte":14,"kontributor":{"kontributorId":3,"name":"Stefan","art":"Mensch","stillgelegtAm":null},"beginn":"2026-09-06T08:04:00+00:00","ende":"2026-09-06T09:40:00+00:00"}""";
     private const string LaufenderEintrag = """{"zeiteintragId":7,"karte":14,"kontributor":{"kontributorId":3,"name":"Stefan","art":"Mensch","stillgelegtAm":null},"beginn":"2026-09-06T08:04:00+00:00","ende":null}""";
 
     [Test]
@@ -56,6 +57,78 @@ public class ZeitenApiKlientTests
 
         Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("POST http://webapi.test/api/karten/14/zeiten/laufend"));
         Assert.That(fabrik.GesendeterRumpf, Is.EqualTo("""{"kontributor":3}"""));
+    }
+
+    // Deckt auch den zweiten Stopp ab: der Klient ist zustandslos, und die WebApi antwortet dort
+    // mit demselben 200 und demselben Eintrag. Ein zweiter Aufruf sagte hier nichts Neues.
+    [Test]
+    public async Task Wenn_die_WebApi_den_Timer_beendet_dann_traegt_das_Ergebnis_den_Eintrag_mit_Ende()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, BeendeterEintrag, JsonInhaltstyp);
+        var klient = new ZeitenApiKlient(fabrik);
+
+        var ergebnis = await klient.BeendeZeitmessung(14, 7);
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Wert.ZeiteintragId, Is.EqualTo(7));
+            Assert.That(ergebnis.Wert.Kontributor.KontributorId, Is.EqualTo(3));
+            Assert.That(ergebnis.Wert.Beginn, Is.EqualTo(new DateTimeOffset(2026, 9, 6, 8, 4, 0, TimeSpan.Zero)));
+            Assert.That(ergebnis.Wert.Ende, Is.EqualTo(new DateTimeOffset(2026, 9, 6, 9, 40, 0, TimeSpan.Zero)));
+        });
+    }
+
+    // Die Adresse endet auf „ende", und der Aufruf schickt **keinen Rumpf** — weder einen
+    // Kontributor noch einen Zeitpunkt. Genau das wäre im Browser nicht zu sehen.
+    [Test]
+    public async Task Wenn_der_Timer_beendet_wird_dann_lautet_die_Adresse_zeiten_nummer_ende_und_es_geht_kein_Rumpf_mit()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, BeendeterEintrag, JsonInhaltstyp);
+        var klient = new ZeitenApiKlient(fabrik);
+
+        await klient.BeendeZeitmessung(14, 7);
+
+        Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("PUT http://webapi.test/api/karten/14/zeiten/7/ende"));
+        Assert.That(fabrik.GesendeterRumpf, Is.Null);
+    }
+
+    [Test]
+    public async Task Wenn_die_WebApi_den_unbekannten_Zeiteintrag_zurueckweist_dann_steht_ihr_Befund_im_Ergebnis()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.NotFound,
+            """{"befunde":[{"code":"zeiteintrag-unbekannt","meldung":"Einen Zeiteintrag mit der Nummer 777 gibt es an der Karte 14 nicht.","kompensation":"`GET /api/karten/14` abrufen."}]}""",
+            JsonInhaltstyp);
+        var klient = new ZeitenApiKlient(fabrik);
+
+        var ergebnis = await klient.BeendeZeitmessung(14, 777);
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.EqualTo("zeiteintrag-unbekannt"));
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("777"));
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Kompensation, Does.Contain("/api/karten/14"));
+        });
+    }
+
+    // Ein Serverfehler ist auch beim Stopp keine Zurückweisung.
+    [Test]
+    public void Wenn_die_WebApi_den_Stopp_mit_500_beantwortet_dann_scheitert_der_Aufruf_sichtbar()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwortOhneRumpf(HttpStatusCode.InternalServerError);
+        var klient = new ZeitenApiKlient(fabrik);
+
+        Assert.That(async () => await klient.BeendeZeitmessung(14, 7), Throws.TypeOf<HttpRequestException>());
+    }
+
+    [Test]
+    public void Wenn_die_WebApi_beim_Stopp_einen_leeren_Rumpf_liefert_dann_scheitert_der_Aufruf_sichtbar()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, "null", JsonInhaltstyp);
+        var klient = new ZeitenApiKlient(fabrik);
+
+        Assert.That(async () => await klient.BeendeZeitmessung(14, 7), Throws.InvalidOperationException);
     }
 
     [Test]

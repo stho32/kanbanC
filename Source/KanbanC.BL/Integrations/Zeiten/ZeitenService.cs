@@ -1,3 +1,4 @@
+using KanbanC.BL.Interfaces.Karten;
 using KanbanC.BL.Interfaces.Kontributoren;
 using KanbanC.BL.Interfaces.Zeiten;
 using KanbanC.BL.Models;
@@ -14,11 +15,13 @@ public sealed class ZeitenService
 {
     private readonly IZeitenRepository _zeitenRepository;
     private readonly IKontributorenRepository _kontributorenRepository;
+    private readonly IKartenRepository _kartenRepository;
 
-    public ZeitenService(IZeitenRepository zeitenRepository, IKontributorenRepository kontributorenRepository)
+    public ZeitenService(IZeitenRepository zeitenRepository, IKontributorenRepository kontributorenRepository, IKartenRepository kartenRepository)
     {
         _zeitenRepository = zeitenRepository;
         _kontributorenRepository = kontributorenRepository;
+        _kartenRepository = kartenRepository;
     }
 
     // **Kein Validator:** es gibt nichts syntaktisch zu prüfen, long ist long — beide Regeln
@@ -40,6 +43,36 @@ public sealed class ZeitenService
         }
 
         return Ergebnis<Zeitmessungsstart>.Erfolg(start!);
+    }
+
+    // **Kein Validator**, **kein Kontributor** und **keine Stilllegungsprüfung:** eine Nummer hat
+    // keinen ungültigen Fall, jeder darf stoppen — auch einen fremden Timer —, und wer nicht mehr
+    // mitarbeitet, darf zwar keinen Timer mehr starten, sein noch laufender muss aber beendet
+    // werden können; sonst liefe er für immer.
+    public Ergebnis<Zeiteintrag> BeendeZeitmessung(long karteId, long zeiteintragId)
+    {
+        var beendeter = _zeitenRepository.BeendeZeitmessung(karteId, zeiteintragId, Jetzt());
+        var derZeiteintragLiegtNichtAnDieserKarte = beendeter is null;
+        if (derZeiteintragLiegtNichtAnDieserKarte)
+        {
+            return Zurueckgewiesen<Zeiteintrag>(BefundZumFehlendenZeiteintrag(karteId, zeiteintragId));
+        }
+
+        return Ergebnis<Zeiteintrag>.Erfolg(beendeter!);
+    }
+
+    // Gibt es schon die Karte nicht, schickt ein Befund über den Zeiteintrag den Aufrufer auf eine
+    // Kartenadresse, die selbst 404 antwortet — die Kompensation wäre nicht ausführbar. Dieselbe
+    // Trennung wie bei BefundZumFehlendenDateiverweis.
+    private Fehlerbefund BefundZumFehlendenZeiteintrag(long karteId, long zeiteintragId)
+    {
+        var dieKarteGibtEsNicht = _kartenRepository.LiesKartendetail(karteId) is null;
+        if (dieKarteGibtEsNicht)
+        {
+            return Nichtgefunden.Karte(karteId);
+        }
+
+        return Nichtgefunden.Zeiteintrag(karteId, zeiteintragId);
     }
 
     // Dieselben zwei Regeln wie beim Kommentar-, Anhang- und Dateiverweisurheber, nur mit eigener

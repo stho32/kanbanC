@@ -29,6 +29,16 @@ public sealed class ZeitenApiKlient
         return await AlsZeiteintrag(antwort);
     }
 
+    // **PutAsync ohne Inhalt** statt PutAsJsonAsync: der Aufruf hat keinen Rumpf, und einen
+    // Kontributor nennt er nicht — jeder darf stoppen. Zurück kommt der beendete Eintrag, und die
+    // Antwort läuft durch dieselbe Lesehilfe wie beim Start.
+    public async Task<ApiErgebnis<Zeiteintrag>> BeendeZeitmessung(long karteId, long zeiteintragId)
+    {
+        using var klient = _klientFabrik.CreateClient(KlientName);
+        using var antwort = await klient.PutAsync($"{KartenRoute}/{karteId}/zeiten/{zeiteintragId}/ende", null);
+        return await AlsZeiteintrag(antwort);
+    }
+
     // 400 und 404 laufen denselben Weg, weil beide einen Befund der WebApi tragen.
     // ApiAntwortleser wäre die falsche Stelle: sein 404-Zweig ersetzt jeden Befund durch eine
     // Board-Meldung, und diese Route kennt kein Board.

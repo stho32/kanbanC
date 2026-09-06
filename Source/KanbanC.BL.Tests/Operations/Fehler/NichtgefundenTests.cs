@@ -149,6 +149,24 @@ public class NichtgefundenTests
         });
     }
 
+    // Beide Nummern im Grund: eine ZeiteintragId, die es anderswo gibt, ist an dieser Karte
+    // trotzdem keine.
+    [Test]
+    public void Wenn_ein_Zeiteintrag_fehlt_dann_nennt_der_Befund_beide_Nummern_und_den_Weg_ueber_die_Karte()
+    {
+        var befund = Nichtgefunden.Zeiteintrag(14, 777);
+
+        Befundpruefung.ErwarteVollstaendigenBefund(befund, "zeiteintrag-unbekannt");
+        Assert.Multiple(() =>
+        {
+            Assert.That(befund.Meldung, Does.Contain("777"));
+            Assert.That(befund.Meldung, Does.Contain("14"));
+            Assert.That(befund.Meldung, Does.Not.Contain("Board"));
+            Assert.That(befund.Kompensation, Does.Contain("GET /api/karten/14"));
+            Assert.That(befund.Kompensation, Does.Contain("ZeiteintragIds"));
+        });
+    }
+
     [Test]
     public void Wenn_ein_Kontributor_fehlt_dann_nennt_der_Befund_seine_Nummer_und_den_Weg_zur_Liste()
     {
@@ -211,6 +229,7 @@ public class NichtgefundenTests
             Assert.That(Nichtgefunden.MeldetEinFehlendesDing(Nichtgefunden.Anhang(14, 999)), Is.True);
             Assert.That(Nichtgefunden.MeldetEinFehlendesDing(Nichtgefunden.Anhangbytes(14, 999)), Is.True);
             Assert.That(Nichtgefunden.MeldetEinFehlendesDing(Nichtgefunden.Dateiverweis(14, 999)), Is.True);
+            Assert.That(Nichtgefunden.MeldetEinFehlendesDing(Nichtgefunden.Zeiteintrag(14, 999)), Is.True);
             Assert.That(Nichtgefunden.MeldetEinFehlendesDing(Nichtgefunden.Kartenklasse(2, 999)), Is.True);
             Assert.That(Nichtgefunden.MeldetEinFehlendesDing(Nichtgefunden.FremdeKartenklasse(2, 5, 9)), Is.True);
             Assert.That(Nichtgefunden.MeldetEinFehlendesDing(verletzteRegel), Is.False);

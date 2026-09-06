@@ -869,12 +869,13 @@
 }
 
 /* „laeuft seit 08:04" statt einer mitlaufenden Dauer: eine gerenderte Dauer waere ohne
-   Live-Kanal ab der ersten Sekunde falsch. Kein Knopf — gestoppt wird in diesem Slice nicht. */
+   Live-Kanal ab der ersten Sekunde falsch. Die Angabe steht im Stoppknopf und tritt neben seiner
+   Beschriftung zurueck. */
 .zeitenlauf {
     margin: 0;
     font-size: 13px;
     line-height: 1.35;
-    color: var(--color-accent-700);
+    opacity: 0.75;
 }
 
 /* Dieselbe Popoverform wie in der Kopfzeile; die Werte kommen aus gestaltung.css. Es steht hier

@@ -370,6 +370,16 @@ public class FehlervertragTests
             await webApi.Klient.PostAsJsonAsync($"/api/karten/{aufbau.Karte.KarteId}/zeiten/laufend", new ZeitmessungStartenAnfrage(aufbau.Stillgelegter.KontributorId))));
 
         faelle.Add(new Fehlerfall(
+            "PUT /api/karten/{karteId:long}/zeiten/{zeiteintragId:long}/ende",
+            "Zeitmessung beenden mit unbekannter KarteId",
+            await webApi.Klient.PutAsync("/api/karten/999/zeiten/1/ende", null)));
+
+        faelle.Add(new Fehlerfall(
+            "PUT /api/karten/{karteId:long}/zeiten/{zeiteintragId:long}/ende",
+            "Zeitmessung beenden mit unbekannter ZeiteintragId",
+            await webApi.Klient.PutAsync($"/api/karten/{aufbau.Karte.KarteId}/zeiten/999/ende", null)));
+
+        faelle.Add(new Fehlerfall(
             "POST /api/boards/{boardId:long}/kartenklassen",
             "Kartenklasse anlegen an unbekanntem Board",
             await webApi.Klient.PostAsJsonAsync($"{BoardsRoute}/999/kartenklassen", new KartenklasseAnlegenAnfrage("WBS", "WBS-"))));

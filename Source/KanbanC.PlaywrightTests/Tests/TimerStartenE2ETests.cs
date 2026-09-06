@@ -7,8 +7,7 @@ namespace KanbanC.PlaywrightTests.Tests;
 
 // US-1 bis US-6 als Rundlauf über die Oberfläche: starten, auf der Bahn sehen, neu laden, ohne
 // Identität die Wahl erzwingen — und die beiden Proben auf die Entscheidung über mehrere Timer.
-// Geprüft wird das **Zurücklesen** des Zustands, nicht sein Ende: gestoppt wird in diesem Slice
-// nichts.
+// Geprüft wird das **Zurücklesen** des Zustands; das Beenden prüft TimerStoppenE2ETests.
 [TestFixture]
 public class TimerStartenE2ETests : PageTest
 {
@@ -24,8 +23,7 @@ public class TimerStartenE2ETests : PageTest
         await Expect(aufbau.Seite.ZeitenLaeuft).ToHaveCountAsync(0);
     }
 
-    // Das Szenario von US-1 in einem Zug: drücken, „läuft seit" steht da, kein Startknopf mehr —
-    // und **kein** Stoppknopf, denn das Beenden gehört nicht zu diesem Schritt.
+    // Das Szenario von US-1 in einem Zug: drücken, „läuft seit" steht da, kein Startknopf mehr.
     [Test]
     [Category("US-1")]
     public async Task Wenn_der_Timer_gestartet_wird_dann_steht_laeuft_seit_statt_des_Startknopfes()
@@ -37,7 +35,6 @@ public class TimerStartenE2ETests : PageTest
         await Expect(aufbau.Seite.ZeitenLaeuft).ToContainTextAsync("läuft seit");
         await Expect(aufbau.Seite.ZeitenLaeuft).ToHaveTextAsync(Uhrzeitmuster());
         await Expect(aufbau.Seite.TimerStarten).ToHaveCountAsync(0);
-        await Expect(aufbau.Seite.Zeitenabschnitt).Not.ToContainTextAsync("Stoppen");
     }
 
     // US-2: die Plakette auf der Karte in der Bahn, gefüllt für mich — und sie überlebt den

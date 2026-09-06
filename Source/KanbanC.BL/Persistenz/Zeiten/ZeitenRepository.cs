@@ -4,6 +4,7 @@ using Dapper;
 using KanbanC.BL.Interfaces.Persistenz;
 using KanbanC.BL.Interfaces.Zeiten;
 using KanbanC.BL.Models.Zeiten;
+using KanbanC.BL.Operations.Zeiten;
 using KanbanC.Contracts.Zeiten;
 
 namespace KanbanC.BL.Persistenz.Zeiten;
@@ -50,6 +51,63 @@ public sealed class ZeitenRepository : IZeitenRepository
         return new Zeitmessungsstart(angelegter, IstNeu: true);
     }
 
+    // Lesen, Rechnen und Schreiben stehen in **einer** Transaktion, damit zwischen „läuft der
+    // noch?" und „dann schließe ich ihn" kein Fenster bleibt.
+    // Der Wiederhol-Schutz sitzt im Schreibweg selbst: `AND Ende IS NULL` im UPDATE. Ein zweiter
+    // Stopp trifft damit keine Zeile, und das Ende bleibt stehen, wo es steht — der Aufrufer
+    // verlöre sonst gemessene Zeit. Dasselbe Verhältnis wie ON CONFLICT DO NOTHING in
+    // SchreibeStilllegung.
+    // Das Schreibschloss fällt vor dem ersten Lesen (BEGIN IMMEDIATE, Muster OrdneZu): zwei
+    // gleichzeitige Stopper lesen sonst beide und scheitern beide am Hochstufen. Anders als beim
+    // Start fängt hier kein UNIQUE-Index den Verlierer auf — die Bedingung im UPDATE tut es.
+    public Zeiteintrag? BeendeZeitmessung(long karteId, long zeiteintragId, DateTimeOffset uhrzeit)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+        using var transaktion = _verbindungsfabrik.BeginneSchreibtransaktion(verbindung);
+
+        var denEintragGibtEsAnDieserKarteNicht = !GibtEsDenZeiteintragAnDieserKarte(verbindung, transaktion, karteId, zeiteintragId);
+        if (denEintragGibtEsAnDieserKarteNicht)
+        {
+            return null; // stil-check: C25 null heisst "diesen Zeiteintrag gibt es an dieser Karte nicht" (404)
+        }
+
+        var vorherigerStand = Zeitenleser.LiesZeiteintrag(verbindung, transaktion, zeiteintragId);
+        SchreibeEndeSolangeErLaeuft(verbindung, transaktion, zeiteintragId, Zeitmessungsende.Fuer(vorherigerStand.Beginn, uhrzeit));
+        var beendeter = Zeitenleser.LiesZeiteintrag(verbindung, transaktion, zeiteintragId);
+        transaktion.Commit();
+        return beendeter;
+    }
+
+    // Ein Zeiteintrag, den es zwar gibt, der aber an einer anderen Karte liegt, ist an dieser
+    // keiner — dieselbe Regel wie bei Anhang und Dateiverweis.
+    private static bool GibtEsDenZeiteintragAnDieserKarte(IDbConnection verbindung, IDbTransaction transaktion, long karteId, long zeiteintragId)
+    {
+        var parameter = new { ZeiteintragId = zeiteintragId, Karte = karteId };
+        var anzahl = verbindung.ExecuteScalar<long>(@"
+            SELECT COUNT(*)
+              FROM Zeiteintrag
+             WHERE ZeiteintragId = @ZeiteintragId
+               AND Karte = @Karte", parameter, transaktion);
+        return anzahl > 0;
+    }
+
+    // Das Ende geht als ISO-Text in UTC durch dieselbe Spalte wie der Beginn: Dapper
+    // materialisiert aus ihr keinen DateTimeOffset, und nur bei einheitlichem Versatz sortiert
+    // Text lexikografisch wie chronologisch.
+    private static void SchreibeEndeSolangeErLaeuft(IDbConnection verbindung, IDbTransaction transaktion, long zeiteintragId, DateTimeOffset ende)
+    {
+        var parameter = new
+        {
+            ZeiteintragId = zeiteintragId,
+            Ende = ende.ToUniversalTime().ToString(IsoZeitpunktformat, CultureInfo.InvariantCulture),
+        };
+        verbindung.Execute(@"
+            UPDATE Zeiteintrag
+               SET Ende = @Ende
+             WHERE ZeiteintragId = @ZeiteintragId
+               AND Ende IS NULL", parameter, transaktion);
+    }
+
     private static bool GibtEsDieKarte(IDbConnection verbindung, IDbTransaction transaktion, long karteId)
     {
         var anzahl = verbindung.ExecuteScalar<long>(@"
@@ -78,8 +136,8 @@ public sealed class ZeitenRepository : IZeitenRepository
         return Zeitenleser.LiesZeiteintrag(verbindung, transaktion, zeiteintragId.Value);
     }
 
-    // **Ende bleibt NULL** — in diesem Slice wird kein Eintrag geschlossen; ein laufender Timer ist
-    // genau der Eintrag ohne Ende.
+    // **Ende bleibt beim Einfügen NULL** — ein laufender Timer ist genau der Eintrag ohne Ende;
+    // gesetzt wird es erst beim Stopp.
     // Der Beginn geht als ISO-Text durch die Spalte: Microsoft.Data.Sqlite meldet für sie den Typ
     // String, und Dapper materialisiert daraus keinen DateTimeOffset (belegt in
     // SqliteEigenschaftenTests). Geschrieben wird derselbe Text, den der Zeitenleser umrechnet.

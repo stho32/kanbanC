@@ -89,8 +89,7 @@ internal static class Zeitenleser
         return DateTimeOffset.ParseExact(isoText, IsoZeitpunktformat, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
     }
 
-    // null heißt „dieser Eintrag läuft noch". In diesem Slice ist es immer null — geschlossen wird
-    // kein Eintrag; gelesen wird die Spalte trotzdem, damit der Weg steht, bevor I0024 sie füllt.
+    // null heißt „dieser Eintrag läuft noch"; steht ein Text, ist der Eintrag abgeschlossen.
     private static DateTimeOffset? AlsEndeOderNichts(string? isoText)
     {
         if (isoText is null)

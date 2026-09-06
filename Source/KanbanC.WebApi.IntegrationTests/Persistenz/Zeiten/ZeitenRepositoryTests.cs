@@ -15,8 +15,13 @@ namespace KanbanC.WebApi.IntegrationTests.Persistenz.Zeiten;
 // Kartendetail und die Boardantwort.
 public class ZeitenRepositoryTests
 {
+    private const string IsoZeitpunktformat = "O";
     private static readonly DateTimeOffset AchtUhrVier = new(2026, 9, 6, 8, 4, 0, TimeSpan.Zero);
     private static readonly DateTimeOffset NeunUhrZwoelf = new(2026, 9, 6, 9, 12, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset NeunUhrVierzig = new(2026, 9, 6, 9, 40, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset NeunUhrVierzigMitteleuropaeisch = new(2026, 9, 6, 11, 40, 0, TimeSpan.FromHours(2));
+    private static readonly DateTimeOffset ElfUhrFuenfzehn = new(2026, 9, 6, 11, 15, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset EinehalbeMinuteVorAchtUhrVier = new(2026, 9, 6, 8, 3, 30, TimeSpan.Zero);
 
     [Test]
     public void Wenn_eine_Zeitmessung_startet_dann_entsteht_ein_Eintrag_ohne_Ende()
@@ -266,6 +271,194 @@ public class ZeitenRepositoryTests
         var board = new BoardRepository(datenbank.Verbindungsfabrik).Lade(aufbau.BoardId);
 
         Assert.That(board!.LaufendeZeiteintraege.Select(eintrag => eintrag.Karte), Is.EqualTo(new[] { aufbau.ErsteKarteId }));
+    }
+
+    [Test]
+    public void Wenn_eine_Zeitmessung_beendet_wird_dann_steht_das_Ende_und_Beginn_Karte_und_Kontributor_bleiben_unveraendert()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+        var gestarteter = repository.StarteZeitmessung(aufbau.ErsteKarteId, aufbau.StefanId, AchtUhrVier)!.Zeiteintrag;
+
+        var beendeter = repository.BeendeZeitmessung(aufbau.ErsteKarteId, gestarteter.ZeiteintragId, NeunUhrVierzig);
+
+        Assert.That(beendeter, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(beendeter!.ZeiteintragId, Is.EqualTo(gestarteter.ZeiteintragId));
+            Assert.That(beendeter.Karte, Is.EqualTo(aufbau.ErsteKarteId));
+            Assert.That(beendeter.Kontributor.KontributorId, Is.EqualTo(aufbau.StefanId));
+            Assert.That(beendeter.Beginn, Is.EqualTo(AchtUhrVier));
+            Assert.That(beendeter.Ende, Is.EqualTo(NeunUhrVierzig));
+            Assert.That(beendeter.Ende!.Value - beendeter.Beginn, Is.EqualTo(TimeSpan.FromMinutes(96)));
+        });
+    }
+
+    // Das Ende geht als ISO-8601 in UTC durch dieselbe TEXT-Spalte wie der Beginn — und kommt als
+    // nullable DateTimeOffset zurück, den Dapper aus der Spalte nicht selbst materialisiert.
+    [Test]
+    public void Wenn_eine_Zeitmessung_beendet_wird_dann_steht_das_Ende_als_ISO_Text_in_UTC_in_der_Spalte()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+        var gestarteter = repository.StarteZeitmessung(aufbau.ErsteKarteId, aufbau.StefanId, AchtUhrVier)!.Zeiteintrag;
+
+        repository.BeendeZeitmessung(aufbau.ErsteKarteId, gestarteter.ZeiteintragId, NeunUhrVierzigMitteleuropaeisch);
+
+        Assert.That(Endetexte(datenbank), Is.EqualTo(new[] { "2026-09-06T09:40:00.0000000+00:00" }));
+    }
+
+    // Der Wiederhol-Schutz sitzt im UPDATE selbst: der zweite Stopp trifft keine Zeile, das Ende
+    // bleibt stehen, und die gemessene Dauer wächst nicht von 1:36 auf 3:11.
+    [Test]
+    public void Wenn_derselbe_Eintrag_ein_zweites_Mal_beendet_wird_dann_bleibt_das_Ende_des_ersten_Stopps_stehen()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+        var gestarteter = repository.StarteZeitmessung(aufbau.ErsteKarteId, aufbau.StefanId, AchtUhrVier)!.Zeiteintrag;
+        repository.BeendeZeitmessung(aufbau.ErsteKarteId, gestarteter.ZeiteintragId, NeunUhrVierzig);
+
+        var zweiterStopp = repository.BeendeZeitmessung(aufbau.ErsteKarteId, gestarteter.ZeiteintragId, ElfUhrFuenfzehn);
+
+        Assert.That(zweiterStopp, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(zweiterStopp!.Ende, Is.EqualTo(NeunUhrVierzig));
+            Assert.That(zweiterStopp.Ende!.Value - zweiterStopp.Beginn, Is.EqualTo(TimeSpan.FromMinutes(96)));
+        });
+        Assert.That(Endetexte(datenbank), Is.EqualTo(new[] { "2026-09-06T09:40:00.0000000+00:00" }));
+        Assert.That(Zeiteintragszeilen(datenbank), Has.Length.EqualTo(1));
+    }
+
+    // Beginn 08:04:00, Uhr beim Stopp 08:03:30 — geschrieben wird 08:04:00, still und ohne Meldung.
+    [Test]
+    public void Wenn_die_Uhr_hinter_den_Beginn_zurueckgesprungen_ist_dann_steht_der_Beginn_als_Ende_in_der_Spalte()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+        var gestarteter = repository.StarteZeitmessung(aufbau.ErsteKarteId, aufbau.StefanId, AchtUhrVier)!.Zeiteintrag;
+
+        var beendeter = repository.BeendeZeitmessung(aufbau.ErsteKarteId, gestarteter.ZeiteintragId, EinehalbeMinuteVorAchtUhrVier);
+
+        Assert.That(beendeter!.Ende, Is.EqualTo(AchtUhrVier));
+        Assert.That(beendeter.Ende!.Value - beendeter.Beginn, Is.EqualTo(TimeSpan.Zero));
+        Assert.That(Endetexte(datenbank), Is.EqualTo(new[] { "2026-09-06T08:04:00.0000000+00:00" }));
+    }
+
+    [Test]
+    public void Wenn_die_Zeiteintragsnummer_unbekannt_ist_dann_meldet_das_Repository_nichts_gefunden()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+
+        var beendeter = repository.BeendeZeitmessung(aufbau.ErsteKarteId, 999, NeunUhrVierzig);
+
+        Assert.That(beendeter, Is.Null);
+    }
+
+    // Ein Eintrag, den es gibt — nur an einer anderen Karte. Er wird wie ein unbekannter behandelt
+    // und bleibt dabei unberührt.
+    [Test]
+    public void Wenn_der_Zeiteintrag_an_einer_anderen_Karte_liegt_dann_meldet_das_Repository_nichts_gefunden_und_schreibt_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+        var gestarteter = repository.StarteZeitmessung(aufbau.ZweiteKarteId, aufbau.StefanId, AchtUhrVier)!.Zeiteintrag;
+
+        var beendeter = repository.BeendeZeitmessung(aufbau.ErsteKarteId, gestarteter.ZeiteintragId, NeunUhrVierzig);
+
+        Assert.That(beendeter, Is.Null);
+        Assert.That(Endetexte(datenbank), Is.EqualTo(new string?[] { null }));
+    }
+
+    // Die Mechanik hinter „stoppen und neu starten": der partielle UNIQUE-Index aus 018 gibt das
+    // Paar (Karte, Kontributor) frei, sobald Ende steht.
+    [Test]
+    public void Wenn_nach_dem_Stopp_dasselbe_Paar_erneut_startet_dann_entsteht_ein_zweiter_Eintrag_ohne_dass_der_Index_anschlaegt()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+        var erster = repository.StarteZeitmessung(aufbau.ErsteKarteId, aufbau.StefanId, AchtUhrVier)!.Zeiteintrag;
+        repository.BeendeZeitmessung(aufbau.ErsteKarteId, erster.ZeiteintragId, NeunUhrVierzig);
+
+        var zweiter = repository.StarteZeitmessung(aufbau.ErsteKarteId, aufbau.StefanId, ElfUhrFuenfzehn);
+
+        Assert.That(zweiter, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(zweiter!.IstNeu, Is.True);
+            Assert.That(zweiter.Zeiteintrag.ZeiteintragId, Is.Not.EqualTo(erster.ZeiteintragId));
+            Assert.That(zweiter.Zeiteintrag.Ende, Is.Null);
+        });
+        Assert.That(Endetexte(datenbank), Is.EqualTo(new string?[] { "2026-09-06T09:40:00.0000000+00:00", null }));
+    }
+
+    // Missing-Doc aus R00027: dass `AND Ende IS NULL` im UPDATE bei **zwei gleichzeitigen**
+    // Aufrufen genau eine Zeile trifft, war im Repository nirgends vorgemacht. Beide Stopper
+    // laufen an, keiner scheitert, und danach steht **ein** Ende — das eine oder das andere,
+    // nie beide nacheinander.
+    [Test]
+    public async Task Wenn_zwei_Aufrufe_denselben_Eintrag_gleichzeitig_beenden_dann_setzt_genau_einer_das_Ende()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+        var gestarteter = repository.StarteZeitmessung(aufbau.ErsteKarteId, aufbau.StefanId, AchtUhrVier)!.Zeiteintrag;
+
+        var beideStopps = await Task.WhenAll(
+            Task.Run(() => repository.BeendeZeitmessung(aufbau.ErsteKarteId, gestarteter.ZeiteintragId, NeunUhrVierzig)),
+            Task.Run(() => repository.BeendeZeitmessung(aufbau.ErsteKarteId, gestarteter.ZeiteintragId, ElfUhrFuenfzehn)));
+
+        var endeInDerSpalte = Endetexte(datenbank).Single();
+        Assert.That(endeInDerSpalte, Is.AnyOf("2026-09-06T09:40:00.0000000+00:00", "2026-09-06T11:15:00.0000000+00:00"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(beideStopps[0]!.Ende, Is.EqualTo(beideStopps[1]!.Ende));
+            Assert.That(beideStopps[0]!.Ende!.Value.ToString(IsoZeitpunktformat, System.Globalization.CultureInfo.InvariantCulture), Is.EqualTo(endeInDerSpalte));
+        });
+    }
+
+    // Ein beendeter Eintrag ist kein laufender mehr — die Bahnenplakette fällt von selbst heraus.
+    [Test]
+    public void Wenn_der_Timer_beendet_ist_dann_fuehrt_das_Board_ihn_nicht_mehr_unter_den_laufenden()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+        var gestarteter = repository.StarteZeitmessung(aufbau.ErsteKarteId, aufbau.StefanId, AchtUhrVier)!.Zeiteintrag;
+        repository.BeendeZeitmessung(aufbau.ErsteKarteId, gestarteter.ZeiteintragId, NeunUhrVierzig);
+
+        var board = new BoardRepository(datenbank.Verbindungsfabrik).Lade(aufbau.BoardId);
+
+        Assert.That(board!.LaufendeZeiteintraege, Is.Empty);
+    }
+
+    // Ein stillgelegter Kontributor hindert den Stopp nicht: das Repository fragt gar nicht danach.
+    [Test]
+    public void Wenn_der_Kontributor_stillgelegt_ist_dann_laesst_sich_sein_laufender_Eintrag_beenden()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+        var gestarteter = repository.StarteZeitmessung(aufbau.ErsteKarteId, aufbau.AgentId, AchtUhrVier)!.Zeiteintrag;
+        LegeKontributorStill(datenbank, aufbau.AgentId, "2026-09-06");
+
+        var beendeter = repository.BeendeZeitmessung(aufbau.ErsteKarteId, gestarteter.ZeiteintragId, NeunUhrVierzig);
+
+        Assert.That(beendeter, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(beendeter!.Ende, Is.EqualTo(NeunUhrVierzig));
+            Assert.That(beendeter.Kontributor.KontributorId, Is.EqualTo(aufbau.AgentId));
+            Assert.That(beendeter.Kontributor.StillgelegtAm, Is.EqualTo(new DateOnly(2026, 9, 6)));
+        });
     }
 
     private static Testaufbau Aufbau(TemporaereDatenbank datenbank)

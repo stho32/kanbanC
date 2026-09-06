@@ -16,9 +16,10 @@ public static class Nichtgefunden
     private const string AnhangUnbekannt = "anhang-unbekannt";
     private const string AnhangbytesFehlen = "anhang-bytes-fehlen";
     private const string DateiverweisUnbekannt = "dateiverweis-unbekannt";
+    private const string ZeiteintragUnbekannt = "zeiteintrag-unbekannt";
     private const string KartenklasseUnbekannt = "kartenklasse-unbekannt";
     private const string KartenklasseFremd = "kartenklasse-fremd";
-    private static readonly string[] AlleCodes = [BoardUnbekannt, KarteUnbekannt, KarteFremd, SpalteUnbekannt, SpalteFremd, KontributorUnbekannt, TeilaufgabeUnbekannt, AnhangUnbekannt, AnhangbytesFehlen, DateiverweisUnbekannt, KartenklasseUnbekannt, KartenklasseFremd];
+    private static readonly string[] AlleCodes = [BoardUnbekannt, KarteUnbekannt, KarteFremd, SpalteUnbekannt, SpalteFremd, KontributorUnbekannt, TeilaufgabeUnbekannt, AnhangUnbekannt, AnhangbytesFehlen, DateiverweisUnbekannt, ZeiteintragUnbekannt, KartenklasseUnbekannt, KartenklasseFremd];
 
     public static Fehlerbefund Board(long boardId)
     {
@@ -90,6 +91,17 @@ public static class Nichtgefunden
             DateiverweisUnbekannt,
             $"Einen Dateiverweis mit der Nummer {dateiverweisId} gibt es an der Karte {karteId} nicht.",
             $"`GET /api/karten/{karteId}` abrufen, die DateiverweisIds in „dateiverweise“ ablesen und den Aufruf mit einer vorhandenen wiederholen.");
+    }
+
+    // Die Schwester des Dateiverweises, eine Ressource weiter. Der Befund nennt beide Nummern, weil
+    // beide in der Adresse stehen — und weil eine ZeiteintragId, die es anderswo gibt, an dieser
+    // Karte trotzdem keine ist. Der Weg zurück ist die Karte selbst.
+    public static Fehlerbefund Zeiteintrag(long karteId, long zeiteintragId)
+    {
+        return new Fehlerbefund(
+            ZeiteintragUnbekannt,
+            $"Einen Zeiteintrag mit der Nummer {zeiteintragId} gibt es an der Karte {karteId} nicht.",
+            $"`GET /api/karten/{karteId}` abrufen, die ZeiteintragIds in „zeiteintraege“ ablesen und den Aufruf mit einer vorhandenen wiederholen.");
     }
 
     public static Fehlerbefund FremdeKarte(long boardId, long karteId, long boardIdDerKarte)

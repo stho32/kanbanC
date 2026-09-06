@@ -186,6 +186,20 @@ public sealed class WebApiKlient : IDisposable
         return zeiteintrag;
     }
 
+    // Ohne Rumpf und ohne Kontributor: jeder darf stoppen, und das Ende setzt die WebApi.
+    public async Task<Zeiteintrag> BeendeZeitmessung(long karteId, long zeiteintragId)
+    {
+        var antwort = await _klient.PutAsync($"api/karten/{karteId}/zeiten/{zeiteintragId}/ende", null);
+        antwort.EnsureSuccessStatusCode();
+        var zeiteintrag = await antwort.Content.ReadFromJsonAsync<Zeiteintrag>();
+        if (zeiteintrag is null)
+        {
+            throw new InvalidOperationException("Die WebApi hat keinen Zeiteintrag zurückgegeben.");
+        }
+
+        return zeiteintrag;
+    }
+
     // Derselbe Aufruf ohne EnsureSuccessStatusCode: der Test will die Zurueckweisung sehen, statt
     // an ihr zu scheitern.
     public async Task<HttpResponseMessage> VersucheZeitmessungZuStarten(long karteId, long kontributorId)

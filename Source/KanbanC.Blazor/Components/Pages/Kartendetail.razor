@@ -493,16 +493,20 @@ else
             </div>
 
             @* Der Zeitenblock steht unter „Klasse und Nummer", wo D0004.dc.html den gestrichelten
-               Kasten „Zeiten und Timer" schon freihält. **Der Slice baut den Block, nicht seinen
-               Inhalt:** die Einträgeliste und die Summe je Kontributor gehören I0026, der Nachtrag
-               I0025. Aus dem Stoppknopf des Bildes wird hier die stille Zeile „läuft seit" —
-               beendet wird in diesem Slice nichts, und eine gerenderte Dauer wäre ohne Live-Kanal
-               ab der ersten Sekunde falsch. *@
+               Kasten „Zeiten und Timer" schon freihält. **Die Einträgeliste und die Summe je
+               Kontributor gehören I0026**, der Nachtrag I0025. Der Knopf trägt **keine gerenderte
+               Dauer** („Stoppen" statt des gezeichneten „Stoppen 1:36"): ohne Live-Kanal wäre sie
+               ab der ersten Sekunde falsch. Beendbar ist hier nur der **eigene** Timer — das
+               Stoppquadrat am fremden Eintrag hängt an einer Zeile, die es erst mit I0026 gibt. *@
             <div class="blattfeld zeitenfeld" id="zeitenabschnitt">
                 <span class="blattmarke">Zeiten</span>
                 @if (LaufenderEigenerZeiteintrag is not null)
                 {
-                    <p class="zeitenlauf" id="zeiten-laeuft">läuft seit @Zeitpunktform.AlsTageszeit(LaufenderEigenerZeiteintrag.Beginn)</p>
+                    <button type="button" class="btn btn-haupt zeitenknopf" id="timer-stoppen" @onclick="StoppeTimer">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg>
+                        Stoppen
+                        <span class="zeitenlauf" id="zeiten-laeuft">läuft seit @Zeitpunktform.AlsTageszeit(LaufenderEigenerZeiteintrag.Beginn)</span>
+                    </button>
                 }
                 else
                 {
@@ -1116,6 +1120,35 @@ else
         }
 
         _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(() => SendeZeitmessungsstart(_urheber.KontributorId));
+    }
+
+    // Gestoppt wird ohne Identitätsfrage: der Eintrag weiß selbst, wem er gehört, und der Aufruf
+    // nennt keinen Kontributor.
+    private async Task StoppeTimer()
+    {
+        _zurueckweisung = null;
+        var laufender = LaufenderEigenerZeiteintrag;
+        if (laufender is null)
+        {
+            return;
+        }
+
+        _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(() => SendeZeitmessungsende(laufender.ZeiteintragId));
+    }
+
+    // Der zurückkommende Eintrag ersetzt den alten über dasselbe MitEintrag wie beim Start —
+    // Knopf und Zustand ziehen damit ohne zweiten Abruf nach, und die Bahnenplakette fällt beim
+    // nächsten Boardabruf von selbst heraus.
+    private async Task SendeZeitmessungsende(long zeiteintragId)
+    {
+        var ergebnis = await ZeitenKlient.BeendeZeitmessung(KarteId, zeiteintragId);
+        if (ergebnis.WurdeZurueckgewiesen)
+        {
+            _zurueckweisung = ergebnis.Zurueckweisung;
+            return;
+        }
+
+        _detail = _detail! with { Zeiteintraege = MitEintrag(_detail.Zeiteintraege, ergebnis.Wert) };
     }
 
     // Zurück kommt der Zeiteintrag und nicht die ganze Seite: die Route legt eine Zeile an, und

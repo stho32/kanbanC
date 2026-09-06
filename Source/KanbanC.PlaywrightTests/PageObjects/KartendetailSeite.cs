@@ -418,7 +418,9 @@ public sealed class KartendetailSeite
 
     public ILocator TimerStarten => _seite.Locator("#timer-starten");
 
-    // Die stille Zeile statt des Stoppknopfes: gestoppt wird in diesem Slice nicht.
+    public ILocator TimerStoppen => _seite.Locator("#timer-stoppen");
+
+    // Die Angabe „läuft seit 08:04" steht im Stoppknopf — eine mitlaufende Dauer gibt es nicht.
     public ILocator ZeitenLaeuft => _seite.Locator("#zeiten-laeuft");
 
     public ILocator ZeitenIdentitaetspopover => _seite.Locator("#zeiten-identitaetspopover");
