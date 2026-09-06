@@ -246,6 +246,91 @@ public class MigrationslaeuferTests
         });
     }
 
+    // Wie bei Kommentar fuehrt der Primaerschluessel mit einer eigenen Nummer, und die ist zugleich
+    // der Name der Datei auf der Platte. **Keine Position, keine BLOB-Spalte, keine Pfadspalte**:
+    // die Reihenfolge ist der Zeitpunkt, und der Ablageort wird gerechnet.
+    [Test]
+    public void Wenn_die_Migration_gelaufen_ist_dann_traegt_das_Schema_die_Tabelle_Anhang_ohne_Bytes_und_ohne_Pfad()
+    {
+        using var datenbank = new TemporaereDatenbank();
+
+        new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Tabellennamen(datenbank), Does.Contain("Anhang"));
+            Assert.That(Spaltennamen(datenbank, "Anhang"),
+                Is.EqualTo(new[] { "AnhangId", "Karte", "Kontributor", "Dateiname", "Dateigroesse", "Zeitpunkt" }));
+            Assert.That(Schluesselspalten(datenbank, "Anhang"), Is.EqualTo(new[] { "AnhangId" }));
+            Assert.That(Indexdefinition(datenbank, "IX_Anhang_Karte"),
+                Is.EqualTo("CREATE INDEX IX_Anhang_Karte ON Anhang (Karte)"));
+            Assert.That(Spaltentypen(datenbank, "Anhang"), Does.Not.Contain("BLOB"));
+        });
+    }
+
+    // Ein Anhang ohne Urheber oder ohne Zeitpunkt ist keiner: beide Spalten tragen NOT NULL.
+    [Test]
+    public void Wenn_ein_Anhang_ohne_Urheber_oder_ohne_Zeitpunkt_geschrieben_wird_dann_weist_die_Tabelle_ihn_ab()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "Playwright-Lizenz klären", 1);
+        LegeKontributorAn(datenbank, "Stefan");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(() => FuegeAnhangEin(datenbank, 1, kontributorId: null, "wbs-export.md", 41000, "2026-08-30T15:40:12.0000000Z"), Throws.TypeOf<SqliteException>());
+            Assert.That(() => FuegeAnhangEin(datenbank, 1, kontributorId: 1, "wbs-export.md", 41000, zeitpunkt: null), Throws.TypeOf<SqliteException>());
+        });
+        Assert.That(Anhangzeilen(datenbank), Is.Empty);
+    }
+
+    // Zwei Dateien gleichen Namens an derselben Karte sind zwei Dateien: der Schluessel weist sie
+    // nicht ab, anders als beim Etikett — und sie bekommen verschiedene Nummern, weil die Nummer
+    // ihr Dateiname auf der Platte ist.
+    [Test]
+    public void Wenn_derselbe_Dateiname_zweimal_an_dieselbe_Karte_geschrieben_wird_dann_stehen_zwei_Zeilen_mit_verschiedenen_Nummern()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "Playwright-Lizenz klären", 1);
+        LegeKontributorAn(datenbank, "Stefan");
+
+        FuegeAnhangEin(datenbank, 1, 1, "wbs-export.md", 41000, "2026-08-30T15:40:12.0000000Z");
+        FuegeAnhangEin(datenbank, 1, 1, "wbs-export.md", 41000, "2026-08-30T15:41:12.0000000Z");
+
+        var zeilen = Anhangzeilen(datenbank);
+        Assert.That(zeilen.Select(zeile => zeile.Dateiname), Is.EqualTo(new[] { "wbs-export.md", "wbs-export.md" }));
+        Assert.That(zeilen.Select(zeile => zeile.AnhangId).Distinct().Count(), Is.EqualTo(2));
+    }
+
+    [Test]
+    public void Wenn_die_Migration_ein_zweites_Mal_laeuft_dann_bleiben_Dateinamen_Groessen_Urheber_und_Zeitpunkte_stehen()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "Playwright-Lizenz klären", 1);
+        LegeKontributorAn(datenbank, "Stefan");
+        FuegeAnhangEin(datenbank, 1, 1, "wbs-export.md", 41000, "2026-08-30T15:40:12.0000000Z");
+        FuegeAnhangEin(datenbank, 1, 1, "burndown-r2.png", 118000, "2026-08-30T17:40:12.0000000Z");
+        var schemaVorher = SchemaDefinitionen(datenbank);
+
+        Assert.That(() => new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus(), Throws.Nothing);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(SchemaDefinitionen(datenbank), Is.EqualTo(schemaVorher));
+            Assert.That(Anhangzeilen(datenbank), Is.EqualTo(new[]
+            {
+                (1L, 1L, 1L, "wbs-export.md", 41000L, "2026-08-30T15:40:12.0000000Z"),
+                (2L, 1L, 1L, "burndown-r2.png", 118000L, "2026-08-30T17:40:12.0000000Z"),
+            }));
+        });
+    }
+
     [Test]
     public void Wenn_FuehreAus_auf_einer_gefuellten_Datei_ein_zweites_Mal_laeuft_dann_bleiben_Schema_und_Daten_unveraendert()
     {
@@ -787,6 +872,25 @@ public class MigrationslaeuferTests
             SELECT last_insert_rowid();", new { Name = name });
     }
 
+    private static void FuegeAnhangEin(TemporaereDatenbank datenbank, long karteId, long? kontributorId, string dateiname, long dateigroesse, string? zeitpunkt)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Anhang (Karte, Kontributor, Dateiname, Dateigroesse, Zeitpunkt)
+            VALUES (@Karte, @Kontributor, @Dateiname, @Dateigroesse, @Zeitpunkt)",
+            new { Karte = karteId, Kontributor = kontributorId, Dateiname = dateiname, Dateigroesse = dateigroesse, Zeitpunkt = zeitpunkt });
+    }
+
+    private static (long AnhangId, long Karte, long Kontributor, string Dateiname, long Dateigroesse, string Zeitpunkt)[] Anhangzeilen(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        var zeilen = verbindung.Query<(long AnhangId, long Karte, long Kontributor, string Dateiname, long Dateigroesse, string Zeitpunkt)>(@"
+            SELECT AnhangId, Karte, Kontributor, Dateiname, Dateigroesse, Zeitpunkt
+              FROM Anhang
+             ORDER BY AnhangId");
+        return zeilen.ToArray();
+    }
+
     private static void FuegeKommentarEin(TemporaereDatenbank datenbank, long karteId, long? kontributorId, string text, string? zeitpunkt)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
@@ -882,6 +986,15 @@ public class MigrationslaeuferTests
               FROM pragma_table_info('{tabelle}')
              WHERE pk > 0
              ORDER BY pk").ToArray();
+    }
+
+    private static string[] Spaltentypen(TemporaereDatenbank datenbank, string tabelle)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.Query<string>($@"
+            SELECT type
+              FROM pragma_table_info('{tabelle}')
+             ORDER BY cid").ToArray();
     }
 
     private static string[] Spaltennamen(TemporaereDatenbank datenbank, string tabelle)
