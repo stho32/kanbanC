@@ -766,10 +766,34 @@
     white-space: nowrap;
 }
 
+/* Das `↗` steht an der Stelle, an der die Anhangzeile ihr Herunterladen tragt — und ist wie dort
+   ein Bedienelement. Es sieht aus wie die gezeichnete Zierde und verhaelt sich wie ein Knopf. */
 .dateiverweiskopie {
     margin-left: auto;
     flex: none;
+    padding: 0;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: 1;
     color: var(--color-accent-2);
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+}
+
+/* Die sichtbare Rueckmeldung an der Zeile. Sie tritt zurueck wie die Groessenangabe am Anhang und
+   nimmt dem Pfad Platz, statt die Spalte aufzuziehen. */
+.dateiverweisrueckmeldung {
+    flex: none;
+    margin-left: auto;
+    font-family: var(--font-body);
+    font-size: 11px;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+/* Steht die Rueckmeldung, traegt sie den Abstand nach links — sonst schoeben beide gegeneinander. */
+.dateiverweisrueckmeldung ~ .dateiverweiskopie {
+    margin-left: 0;
 }
 
 /* Tritt zurück wie das Kreuz am Anhang und am Etikett und wird erst beim Überfahren der Zeile

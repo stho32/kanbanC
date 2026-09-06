@@ -223,6 +223,21 @@ public sealed class KartendetailSeite
         return Dateiverweis(pfad).Locator(".dateiverweis-entfernen");
     }
 
+    public ILocator DateiverweisKopieren(string pfad)
+    {
+        return Dateiverweis(pfad).Locator(".dateiverweiskopie");
+    }
+
+    public ILocator DateiverweisRueckmeldung(string pfad)
+    {
+        return Dateiverweis(pfad).Locator(".dateiverweisrueckmeldung");
+    }
+
+    public async Task KopiereDateiverweis(string pfad)
+    {
+        await DateiverweisKopieren(pfad).ClickAsync();
+    }
+
     // Getippt wird Zeichen fuer Zeichen wie in den Nachbarfeldern: FillAsync setzt den Wert in
     // einem Zug und traefe damit nicht die Lage, in der jede Eingabe ueber die Leitung laeuft.
     public async Task TippeDateiverweis(string pfad)

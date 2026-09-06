@@ -9,6 +9,7 @@
 @inject KartenApiKlient KartenKlient
 @inject KontributorenApiKlient KontributorenKlient
 @inject Identitaetsspeicher Identitaetsspeicher
+@inject Pfadkopie Pfadkopie
 @inject Anhangbasisadresse Anhangbasis
 @inject IJSRuntime Browser
 
@@ -358,10 +359,21 @@ else
                             @foreach (var dateiverweis in _detail.Dateiverweise)
                             {
                                 <div class="dateiverweis" @key="dateiverweis.DateiverweisId" data-dateiverweis="@dateiverweis.DateiverweisId" title="@Dateiverweismeta(dateiverweis)">
-                                    <span class="dateiverweispfad">@dateiverweis.Pfad</span>
-                                    @* Noch die Zierde des Artboards; zum Bedienelement, das den Pfad
-                                       kopiert, wird sie mit B0291. *@
-                                    <span class="dateiverweiskopie" aria-hidden="true">↗</span>
+                                    <span class="dateiverweispfad" id="@Pfadelement(dateiverweis)">@dateiverweis.Pfad</span>
+                                    @if (WurdeKopiert(dateiverweis))
+                                    {
+                                        <span class="dateiverweisrueckmeldung" data-rueckmeldung="@dateiverweis.DateiverweisId">@Kopiermeldung</span>
+                                    }
+                                    @* Vierte bewusste Abweichung vom Artboard: das `↗` ist dort ein
+                                       `<span>`, steht aber in der Akzentfarbe genau an der Stelle, an
+                                       der die Anhangzeile daneben ihre Handlung trägt — eine Zierde
+                                       dort führte in die Irre. Es **navigiert nicht**, und das ist
+                                       keine Sparsamkeit: ein Repository-Pfad ist keine URL, der
+                                       Server weiß nicht, wo welcher Klon liegt, und ein
+                                       `file://`-Ziel lässt sich aus einer über HTTP ausgelieferten
+                                       Seite nicht öffnen. Kopieren ist dagegen genau das, was mit
+                                       einem Pfad geschieht. *@
+                                    <button type="button" class="dateiverweiskopie" title="Pfad kopieren" @onclick="() => KopierePfad(dateiverweis)">↗</button>
                                     <button type="button" class="dateiverweis-entfernen" title="@dateiverweis.Pfad entfernen" @onclick="() => EntferneDateiverweis(dateiverweis)">✕</button>
                                 </div>
                             }
@@ -1103,6 +1115,52 @@ else
     {
         await Browser.InvokeVoidAsync(ElementEigenschaftenSetzen, _dateiverweisfeld, new { value = string.Empty });
         await _dateiverweisfeld.FocusAsync();
+    }
+
+    // Die Rückmeldung hängt an **einer** Zeile: welche zuletzt kopiert wurde und wie es ausging.
+    // Ein Wahrheitswert je Zeile wäre dieselbe Aussage mehrfach und ließe zwei Meldungen zu.
+    private long? _zuletztKopierterDateiverweis;
+    private Kopierergebnis _kopierstand;
+
+    private bool WurdeKopiert(Dateiverweis dateiverweis)
+    {
+        return _zuletztKopierterDateiverweis == dateiverweis.DateiverweisId;
+    }
+
+    // Der Elementbezeichner der Pfadzeile: über ihn findet die Pfadkopie im Rückfall den
+    // Textknoten, den sie markieren soll.
+    private static string Pfadelement(Dateiverweis dateiverweis)
+    {
+        return $"dateiverweispfad-{dateiverweis.DateiverweisId}";
+    }
+
+    // Drei Ausgänge, drei Wortlaute — und keiner davon ist eine Ausnahmeseite. „markiert" ist
+    // keine Fehlermeldung: der Mensch hat den Pfad ausgewählt vor sich und kann ihn von Hand
+    // kopieren.
+    private string Kopiermeldung
+    {
+        get
+        {
+            if (_kopierstand == Kopierergebnis.InDerZwischenablage)
+            {
+                return "kopiert";
+            }
+
+            if (_kopierstand == Kopierergebnis.AlsTextMarkiert)
+            {
+                return "markiert — von Hand kopieren";
+            }
+
+            return "nicht kopierbar — Pfad von Hand markieren";
+        }
+    }
+
+    // Kopiert wird der **ganze** Pfad und nicht die gekürzte Darstellung: die Ellipse ist
+    // Gestaltung, der Wert ist der Wert.
+    private async Task KopierePfad(Dateiverweis dateiverweis)
+    {
+        _kopierstand = await Pfadkopie.Kopiere(dateiverweis.Pfad, Pfadelement(dateiverweis));
+        _zuletztKopierterDateiverweis = dateiverweis.DateiverweisId;
     }
 
     private async Task EntferneDateiverweis(Dateiverweis dateiverweis)
