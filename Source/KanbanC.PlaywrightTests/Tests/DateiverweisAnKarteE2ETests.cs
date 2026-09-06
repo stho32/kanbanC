@@ -16,6 +16,7 @@ public class DateiverweisAnKarteE2ETests : PageTest
 {
     private const string Wbspfad = "Dokumentation/Planung/kanbanc.md";
     private const string Visionspfad = "Anforderungen/R00000-vision.md";
+    private const int EinundvierzigKilobyte = 41000;
 
     // Nimmt `navigator.clipboard` weg, bevor die Seite eigenen Code ausführt — der unsichere
     // Kontext, den `http://<host>:5180` im LAN von selbst herstellt. Belegt in
@@ -23,6 +24,252 @@ public class DateiverweisAnKarteE2ETests : PageTest
     private const string ZwischenablageWegnehmen = """
         Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true });
         """;
+
+    // US-1: der Abschnitt steht rechts neben den Anhaengen, mit Ueberschrift und Eingabezeile.
+    [Test]
+    [Category("US-1")]
+    public async Task Wenn_die_Kartenseite_geoeffnet_wird_dann_steht_rechts_der_Abschnitt_Dateiverweise_mit_seiner_Eingabezeile()
+    {
+        var seite = await FrischeKarte(mitAnhang: false, mitDateiverweis: false);
+
+        await Expect(seite.Dateiverweisabschnitt).ToContainTextAsync("Dateiverweise");
+        await Expect(seite.Dateiverweisfeld).ToHaveAttributeAsync("placeholder", "Pfad im Repository eintragen");
+        await Expect(seite.Dateiverweise).ToHaveCountAsync(0);
+    }
+
+    // Das Szenario von US-1 in einem Zug: eintragen mit der Eingabetaste, Zeile erscheint, Feld
+    // ist wieder leer, zweite Zeile haengt sich an, Reload zeigt beide unveraendert.
+    [Test]
+    [Category("US-1")]
+    public async Task Wenn_zwei_Pfade_eingetragen_werden_dann_stehen_sie_in_Zeitreihenfolge_und_ueberstehen_den_Reload()
+    {
+        var seite = await FrischeKarte(mitAnhang: false, mitDateiverweis: false);
+
+        await seite.TrageDateiverweisEin(Wbspfad);
+
+        await Expect(seite.Dateiverweispfade).ToHaveTextAsync([Wbspfad]);
+        await Expect(seite.Dateiverweisfeld).ToHaveValueAsync(string.Empty);
+
+        await seite.TrageDateiverweisEin(Visionspfad);
+
+        await Expect(seite.Dateiverweispfade).ToHaveTextAsync([Wbspfad, Visionspfad]);
+
+        await seite.LadeNeu();
+
+        await Expect(seite.Dateiverweispfade).ToHaveTextAsync([Wbspfad, Visionspfad]);
+    }
+
+    // US-1: Urheber und Zeitpunkt stehen im title der Zeile — die gezeichnete einzeilige Form
+    // bleibt, und die Zusage der Vision wird trotzdem eingeloest.
+    [Test]
+    [Category("US-1")]
+    public async Task Wenn_ueber_die_Zeile_gefahren_wird_dann_nennt_ihr_title_den_Urheber_und_den_Zeitpunkt()
+    {
+        var aufbau = await KarteMitDateiverweis();
+
+        var titel = await aufbau.Seite.Dateiverweis(Wbspfad).GetAttributeAsync("title");
+
+        Assert.That(titel, Does.Contain("Stefan"));
+        Assert.That(titel, Is.Not.EqualTo("Stefan"), "Ohne Zeitpunkt loeste der title die halbe Zusage ein.");
+    }
+
+    // US-1: ein zu langer Pfad wird gekuerzt dargestellt und zieht die Spalte nicht auf. Geprueft
+    // an der Breite und nicht am Stylesheet: eine CSS-Regel kann dastehen und trotzdem nicht
+    // greifen.
+    [Test]
+    [Category("US-1")]
+    public async Task Wenn_ein_sehr_langer_Pfad_eingetragen_wird_dann_zieht_er_die_Spalte_nicht_auf()
+    {
+        var seite = await FrischeKarte(mitAnhang: false, mitDateiverweis: false);
+        var breiteVorher = (await seite.Dateiverweisabschnitt.BoundingBoxAsync())!.Width;
+
+        await seite.TrageDateiverweisEin("Dokumentation/Architektur/" + string.Join("/", Enumerable.Repeat("sehr-tief-verschachteltes-verzeichnis", 6)) + "/A00001.md");
+
+        await Expect(seite.Dateiverweise).ToHaveCountAsync(1);
+        var breiteNachher = (await seite.Dateiverweisabschnitt.BoundingBoxAsync())!.Width;
+        Assert.That(breiteNachher, Is.EqualTo(breiteVorher).Within(0.5), "Der Pfad muss gekuerzt dargestellt werden, statt die Haelfte aufzuziehen.");
+    }
+
+    // US-2: ein leerer Pfad wird sichtbar zurueckgewiesen, und die Liste bleibt unveraendert.
+    [Test]
+    [Category("US-2")]
+    public async Task Wenn_ein_leerer_Pfad_abgeschickt_wird_dann_erscheint_eine_lesbare_Meldung_und_die_Liste_bleibt()
+    {
+        var aufbau = await KarteMitDateiverweis();
+
+        await aufbau.Seite.Dateiverweisfeld.ClickAsync();
+        await aufbau.Seite.Dateiverweisfeld.PressAsync("Enter");
+
+        await Expect(aufbau.Seite.BlattZurueckweisung).ToContainTextAsync("Pfad");
+        await Expect(aufbau.Seite.Dateiverweispfade).ToHaveTextAsync([Wbspfad]);
+    }
+
+    // US-2: derselbe Pfad ein zweites Mal — die Meldung ist eine Aussage ueber den Pfad und
+    // **keine Datenbankmeldung ueber einen Index**. Und sie greift schon, wenn sich die beiden
+    // Eingaben nur an den Raendern unterscheiden.
+    [Test]
+    [Category("US-2")]
+    public async Task Wenn_derselbe_Pfad_mit_Raendern_noch_einmal_eingetragen_wird_dann_erscheint_eine_lesbare_Meldung_ueber_den_Pfad()
+    {
+        var aufbau = await KarteMitDateiverweis();
+
+        await aufbau.Seite.TrageDateiverweisEin("   " + Wbspfad + "   ");
+
+        await Expect(aufbau.Seite.BlattZurueckweisung).ToContainTextAsync(Wbspfad);
+        await Expect(aufbau.Seite.BlattZurueckweisung).Not.ToContainTextAsync("UNIQUE");
+        await Expect(aufbau.Seite.Dateiverweispfade).ToHaveTextAsync([Wbspfad]);
+    }
+
+    // US-2: was **angenommen** wird — andere Schreibweise, absoluter Pfad ausserhalb jedes
+    // Repositorys, Rueckstriche. Der letzte steht danach **mit** Rueckstrichen in der Liste.
+    [Test]
+    [Category("US-2")]
+    public async Task Wenn_ein_Pfad_anders_geschrieben_absolut_oder_mit_Rueckstrichen_eingetragen_wird_dann_wird_er_angenommen()
+    {
+        var aufbau = await KarteMitDateiverweis();
+
+        await aufbau.Seite.TrageDateiverweisEin("Dokumentation/Planung/KANBANC.md");
+        await aufbau.Seite.TrageDateiverweisEin("/home/shoff/notizen.txt");
+        await aufbau.Seite.TrageDateiverweisEin(@"Dokumentation\Planung\kanbanc.md");
+
+        await Expect(aufbau.Seite.Dateiverweispfade).ToHaveTextAsync(
+        [
+            Wbspfad,
+            "Dokumentation/Planung/KANBANC.md",
+            "/home/shoff/notizen.txt",
+            @"Dokumentation\Planung\kanbanc.md",
+        ]);
+        await Expect(aufbau.Seite.BlattZurueckweisung).ToHaveCountAsync(0);
+    }
+
+    // US-4: das `×` nimmt die Zeile sofort, der Reload bestaetigt es, und danach laesst sich
+    // derselbe Pfad wieder eintragen — er ist keine Dublette mehr.
+    [Test]
+    [Category("US-4")]
+    public async Task Wenn_das_Kreuz_geklickt_wird_dann_ist_die_Zeile_weg_und_bleibt_es_nach_dem_Reload()
+    {
+        var aufbau = await KarteMitDateiverweis();
+        await aufbau.Seite.TrageDateiverweisEin(Visionspfad);
+        await Expect(aufbau.Seite.Dateiverweispfade).ToHaveTextAsync([Wbspfad, Visionspfad]);
+
+        await aufbau.Seite.DateiverweisEntfernen(Wbspfad).ClickAsync();
+
+        await Expect(aufbau.Seite.Dateiverweispfade).ToHaveTextAsync([Visionspfad]);
+
+        await aufbau.Seite.LadeNeu();
+
+        await Expect(aufbau.Seite.Dateiverweispfade).ToHaveTextAsync([Visionspfad]);
+
+        await aufbau.Seite.TrageDateiverweisEin(Wbspfad);
+
+        await Expect(aufbau.Seite.Dateiverweispfade).ToHaveTextAsync([Visionspfad, Wbspfad]);
+    }
+
+    // US-5: ein frischer Browser ohne gewaehlte Identitaet. Die Eingabezeile ist gesperrt, ein
+    // Hinweis sagt, was zu tun ist — und die bestehenden Zeilen sind trotzdem zu sehen und zu
+    // kopieren.
+    [Test]
+    [Category("US-5")]
+    public async Task Wenn_keine_Identitaet_gewaehlt_ist_dann_ist_die_Eingabezeile_gesperrt_und_die_Zeilen_bleiben_sichtbar()
+    {
+        var aufbau = await KarteMitDateiverweisOhneIdentitaet();
+
+        await Expect(aufbau.Seite.Dateiverweisfeld).ToBeDisabledAsync();
+        await Expect(aufbau.Seite.DateiverweisHinweis).ToContainTextAsync("Kopfzeile");
+        await Expect(aufbau.Seite.Dateiverweispfade).ToHaveTextAsync([Wbspfad]);
+        await Expect(aufbau.Seite.DateiverweisKopieren(Wbspfad)).ToBeVisibleAsync();
+    }
+
+    // US-5: wird die Identitaet in der Kopfzeile gewaehlt, ist die Zeile frei — **ohne Reload**.
+    [Test]
+    [Category("US-5")]
+    public async Task Wenn_die_Identitaet_gewaehlt_wird_dann_ist_die_Eingabezeile_frei_ohne_Reload()
+    {
+        var aufbau = await KarteMitDateiverweisOhneIdentitaet();
+
+        await WaehleIdentitaet(aufbau.Seite, aufbau.Stefan);
+
+        await Expect(aufbau.Seite.Dateiverweisfeld).Not.ToBeDisabledAsync();
+        await Expect(aufbau.Seite.DateiverweisHinweis).ToHaveCountAsync(0);
+    }
+
+    // US-5: ein Identitaetswechsel bei offener Kartenseite wirkt **ohne Reload** — der naechste
+    // Dateiverweis traegt den neu gewaehlten Urheber.
+    [Test]
+    [Category("US-5")]
+    public async Task Wenn_die_Identitaet_bei_offener_Seite_gewechselt_wird_dann_traegt_der_naechste_Dateiverweis_den_neuen_Urheber()
+    {
+        var aufbau = await KarteMitDateiverweis();
+
+        await WaehleIdentitaet(aufbau.Seite, aufbau.Nina);
+        await aufbau.Seite.TrageDateiverweisEin(Visionspfad);
+
+        await Expect(aufbau.Seite.Dateiverweispfade).ToHaveTextAsync([Wbspfad, Visionspfad]);
+        var ersterTitel = await aufbau.Seite.Dateiverweis(Wbspfad).GetAttributeAsync("title");
+        var zweiterTitel = await aufbau.Seite.Dateiverweis(Visionspfad).GetAttributeAsync("title");
+        Assert.Multiple(() =>
+        {
+            Assert.That(ersterTitel, Does.Contain("Stefan"));
+            Assert.That(zweiterTitel, Does.Contain("Nina Barth"));
+        });
+    }
+
+    // US-8 als Gegenprobe: auf der Bahn aendert sich nichts — kein Dateiverweiszeichen, kein Pfad
+    // an der Kartenform.
+    [Test]
+    [Category("US-8")]
+    public async Task Wenn_eine_Karte_Dateiverweise_traegt_dann_zeigt_die_Bahn_dieselbe_Kartenform_wie_zuvor()
+    {
+        var aufbau = await KarteMitDateiverweis();
+
+        var board = new BoardSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await board.Oeffne(aufbau.BoardId);
+
+        await Expect(board.KarteMitTitel("Playwright-Lizenz klären")).ToBeVisibleAsync();
+        await Expect(board.KarteMitTitel("Playwright-Lizenz klären")).Not.ToContainTextAsync(Wbspfad);
+        await Expect(board.KarteMitTitel("Playwright-Lizenz klären")).Not.ToContainTextAsync("Dateiverweis");
+        await Expect(board.Karten).ToHaveCountAsync(1);
+    }
+
+    // US-8 als Gegenprobe: die Anhangzeile daneben bleibt, was sie war — und die beiden Zeilen
+    // sind **ohne Beschriftung** zu unterscheiden. Der Anhang traegt seine Groessenangabe, der
+    // Dateiverweis seine Schreibmaschinenschrift an oliver Kante.
+    [Test]
+    [Category("US-8")]
+    public async Task Wenn_beide_Haelften_gefuellt_sind_dann_unterscheiden_sich_die_Zeilen_ohne_Beschriftung()
+    {
+        var seite = await FrischeKarte(mitAnhang: true, mitDateiverweis: true);
+
+        await Expect(seite.Anhangnamen).ToHaveTextAsync(["wbs-export.md"]);
+        await Expect(seite.Anhanggroessen).ToHaveTextAsync(["41 kB"]);
+        var kante = await seite.Dateiverweis(Wbspfad).EvaluateAsync<string>("zeile => getComputedStyle(zeile).borderLeftColor");
+        var schrift = await seite.Dateiverweis(Wbspfad).EvaluateAsync<string>("zeile => getComputedStyle(zeile).fontFamily");
+        Assert.Multiple(() =>
+        {
+            Assert.That(kante, Is.EqualTo("rgb(122, 138, 94)"), "Die olive Kante unterscheidet die Zeile vom Anhang.");
+            Assert.That(schrift, Does.Contain("monospace").IgnoreCase);
+        });
+    }
+
+    // Der Weg des Agenten und der Weg des Menschen fuehren auf dieselbe Liste: was ueber die API
+    // eingetragen wurde, steht nach dem Oeffnen der Seite da.
+    [Test]
+    [Category("US-7")]
+    public async Task Wenn_ein_Agent_ueber_die_API_eintraegt_dann_steht_die_Zeile_auf_der_Kartenseite()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        using var webApi = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        var board = await webApi.LegeBoardAn("Entwicklung");
+        var karte = await webApi.LegeKarteAn(board.BoardId, board.Spalten[0].SpalteId, "Playwright-Lizenz klären");
+        var agent = await webApi.LegeKontributorAn("Claude-Agent", Kontributorart.Agent);
+        await webApi.TrageDateiverweisEin(karte.KarteId, Wbspfad, agent.KontributorId);
+
+        var seite = new KartendetailSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await seite.Oeffne(karte.KarteId);
+
+        await Expect(seite.Dateiverweispfade).ToHaveTextAsync([Wbspfad]);
+        await Expect(seite.Dateiverweis(Wbspfad)).ToHaveAttributeAsync("title", new System.Text.RegularExpressions.Regex("Claude-Agent"));
+    }
 
     // US-3: der Pfad liegt danach wirklich in der Zwischenablage — **ausgelesen im Browser** und
     // nicht an der Rückmeldung abgelesen. Eine Rückmeldung, die „kopiert" sagt, ohne dass etwas
@@ -218,7 +465,7 @@ public class DateiverweisAnKarteE2ETests : PageTest
         var stefan = await webApi.LegeKontributorAn("Stefan", Kontributorart.Mensch);
         if (mitAnhang)
         {
-            await webApi.HaengeAnhangAn(karte.KarteId, "wbs-export.md", [1, 2, 3], stefan.KontributorId);
+            await webApi.HaengeAnhangAn(karte.KarteId, "wbs-export.md", Bytes(EinundvierzigKilobyte), stefan.KontributorId);
         }
 
         var seite = new KartendetailSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
@@ -242,13 +489,32 @@ public class DateiverweisAnKarteE2ETests : PageTest
         var board = await webApi.LegeBoardAn("Entwicklung");
         var karte = await webApi.LegeKarteAn(board.BoardId, board.Spalten[0].SpalteId, "Playwright-Lizenz klären");
         var stefan = await webApi.LegeKontributorAn("Stefan", Kontributorart.Mensch);
+        var nina = await webApi.LegeKontributorAn("Nina Barth", Kontributorart.Mensch);
 
         var seite = new KartendetailSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
         await seite.Oeffne(karte.KarteId);
         await WaehleIdentitaet(seite, stefan);
         await seite.TrageDateiverweisEin(pfad);
         await Expect(seite.Dateiverweise).ToHaveCountAsync(1);
-        return new Aufbau(seite, board.BoardId, karte.KarteId, stefan);
+        return new Aufbau(seite, board.BoardId, karte.KarteId, stefan, nina);
+    }
+
+    // Der Aufbau fuer US-5: die Zeile steht schon, gewaehlt hat noch niemand. Eingetragen wird
+    // deshalb ueber die API — ohne Identitaet gaebe es den Weg ueber die Oberflaeche gerade nicht.
+    private async Task<Aufbau> KarteMitDateiverweisOhneIdentitaet()
+    {
+        await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
+        using var webApi = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        var board = await webApi.LegeBoardAn("Entwicklung");
+        var karte = await webApi.LegeKarteAn(board.BoardId, board.Spalten[0].SpalteId, "Playwright-Lizenz klären");
+        var stefan = await webApi.LegeKontributorAn("Stefan", Kontributorart.Mensch);
+        var nina = await webApi.LegeKontributorAn("Nina Barth", Kontributorart.Mensch);
+        await webApi.TrageDateiverweisEin(karte.KarteId, Wbspfad, stefan.KontributorId);
+
+        var seite = new KartendetailSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await seite.Oeffne(karte.KarteId);
+        await Expect(seite.Dateiverweise).ToHaveCountAsync(1);
+        return new Aufbau(seite, board.BoardId, karte.KarteId, stefan, nina);
     }
 
     // Gewaehlt wird ueber die Kopfzeile, nicht am sessionStorage vorbei — derselbe Weg wie beim
@@ -263,5 +529,16 @@ public class DateiverweisAnKarteE2ETests : PageTest
         await seite.KehreZumBlattZurueck();
     }
 
-    private sealed record Aufbau(KartendetailSeite Seite, long BoardId, long KarteId, Kontributor Stefan);
+    private static byte[] Bytes(int laenge)
+    {
+        var inhalt = new byte[laenge];
+        for (var stelle = 0; stelle < laenge; stelle++)
+        {
+            inhalt[stelle] = (byte)(stelle % 251);
+        }
+
+        return inhalt;
+    }
+
+    private sealed record Aufbau(KartendetailSeite Seite, long BoardId, long KarteId, Kontributor Stefan, Kontributor Nina);
 }

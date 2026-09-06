@@ -160,6 +160,15 @@ public sealed class WebApiKlient : IDisposable
         return await AlsKartendetail(antwort);
     }
 
+    // Der Weg des Agenten an die Bezuege der Karte: eine Zeile je Aufruf, mit Urheber im Rumpf.
+    // **JSON in beide Richtungen** — anders als beim Anhang reisen hier keine Bytes.
+    public async Task<Kartendetail> TrageDateiverweisEin(long karteId, string pfad, long kontributorId)
+    {
+        var antwort = await _klient.PostAsJsonAsync($"api/karten/{karteId}/dateiverweise", new DateiverweisEintragenAnfrage(pfad, kontributorId));
+        antwort.EnsureSuccessStatusCode();
+        return await AlsKartendetail(antwort);
+    }
+
     public async Task<Kartendetail> LadeKartendetail(long karteId)
     {
         var detail = await _klient.GetFromJsonAsync<Kartendetail>($"api/karten/{karteId}");
