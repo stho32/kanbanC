@@ -131,6 +131,24 @@ public class NichtgefundenTests
         });
     }
 
+    // Beide Nummern im Grund: eine DateiverweisId, die es anderswo gibt, ist an dieser Karte
+    // trotzdem keine.
+    [Test]
+    public void Wenn_ein_Dateiverweis_fehlt_dann_nennt_der_Befund_beide_Nummern_und_den_Weg_ueber_die_Karte()
+    {
+        var befund = Nichtgefunden.Dateiverweis(14, 7);
+
+        Befundpruefung.ErwarteVollstaendigenBefund(befund, "dateiverweis-unbekannt");
+        Assert.Multiple(() =>
+        {
+            Assert.That(befund.Meldung, Does.Contain("7"));
+            Assert.That(befund.Meldung, Does.Contain("14"));
+            Assert.That(befund.Meldung, Does.Not.Contain("Board"));
+            Assert.That(befund.Kompensation, Does.Contain("GET /api/karten/14"));
+            Assert.That(befund.Kompensation, Does.Contain("DateiverweisIds"));
+        });
+    }
+
     [Test]
     public void Wenn_ein_Kontributor_fehlt_dann_nennt_der_Befund_seine_Nummer_und_den_Weg_zur_Liste()
     {
@@ -161,6 +179,7 @@ public class NichtgefundenTests
             Assert.That(Nichtgefunden.MeldetEinFehlendesDing(Nichtgefunden.Teilaufgabe(14, 999)), Is.True);
             Assert.That(Nichtgefunden.MeldetEinFehlendesDing(Nichtgefunden.Anhang(14, 999)), Is.True);
             Assert.That(Nichtgefunden.MeldetEinFehlendesDing(Nichtgefunden.Anhangbytes(14, 999)), Is.True);
+            Assert.That(Nichtgefunden.MeldetEinFehlendesDing(Nichtgefunden.Dateiverweis(14, 999)), Is.True);
             Assert.That(Nichtgefunden.MeldetEinFehlendesDing(verletzteRegel), Is.False);
         });
     }

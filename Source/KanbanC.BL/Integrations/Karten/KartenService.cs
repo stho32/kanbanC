@@ -331,6 +331,90 @@ public sealed class KartenService
         return Ergebnis<Kartendetail>.Erfolg(detail!);
     }
 
+    // Dieselbe Antwortgestalt wie SchreibeKommentar und HaengeAnhangAn, und geprueft wird in
+    // derselben Reihenfolge: erst der Pfad (ohne jeden Zugriff), dann der Urheber, dann die
+    // Karte. Neu ist der dritte Ausgang des Repositorys — der schon eingetragene Pfad; er ist
+    // eine verletzte Regel und keine fehlende Sache, also 400 und nicht 404.
+    public Ergebnis<Kartendetail> TrageDateiverweisEin(long karteId, DateiverweisEintragenAnfrage anfrage)
+    {
+        var befunde = DateiverweisValidator.Pruefe(karteId, anfrage);
+        var derPfadIstUngueltig = !befunde.IstOhneBefund;
+        if (derPfadIstUngueltig)
+        {
+            return Ergebnis<Kartendetail>.Zurueckgewiesen(befunde);
+        }
+
+        var befundZumUrheber = BefundZumDateiverweisurheber(anfrage.Kontributor);
+        if (befundZumUrheber is not null)
+        {
+            return Zurueckgewiesen<Kartendetail>(befundZumUrheber);
+        }
+
+        var eintragung = _kartenRepository.TrageDateiverweisEin(karteId, anfrage);
+        if (eintragung.PfadSchonVorhanden)
+        {
+            return Zurueckgewiesen<Kartendetail>(Doppelt.Dateiverweis(karteId, Dateiverweispfad.Normalisiert(anfrage.Pfad)));
+        }
+
+        var dieKarteGibtEsNicht = eintragung.Detail is null;
+        if (dieKarteGibtEsNicht)
+        {
+            return Zurueckgewiesen<Kartendetail>(Nichtgefunden.Karte(karteId));
+        }
+
+        return Ergebnis<Kartendetail>.Erfolg(eintragung.Detail!);
+    }
+
+    // Kein Validator: eine Nummer hat keinen ungueltigen Fall — dieselbe Ueberlegung wie bei
+    // EntferneAnhang. Zurueck kommt das ganze Kartendetail, weil dieselbe Seite es verbraucht.
+    public Ergebnis<Kartendetail> EntferneDateiverweis(long karteId, long dateiverweisId)
+    {
+        var detail = _kartenRepository.EntferneDateiverweis(karteId, dateiverweisId);
+        var derDateiverweisLiegtNichtAnDieserKarte = detail is null;
+        if (derDateiverweisLiegtNichtAnDieserKarte)
+        {
+            return Zurueckgewiesen<Kartendetail>(BefundZumFehlendenDateiverweis(karteId, dateiverweisId));
+        }
+
+        return Ergebnis<Kartendetail>.Erfolg(detail!);
+    }
+
+    // Gibt es schon die Karte nicht, schickt ein Befund ueber den Dateiverweis den Aufrufer auf
+    // eine Kartenadresse, die selbst 404 antwortet — die Kompensation waere nicht ausfuehrbar.
+    // Dieselbe Trennung wie bei BefundZumFehlendenAnhang.
+    private Fehlerbefund BefundZumFehlendenDateiverweis(long karteId, long dateiverweisId)
+    {
+        var dieKarteGibtEsNicht = _kartenRepository.LiesKartendetail(karteId) is null;
+        if (dieKarteGibtEsNicht)
+        {
+            return Nichtgefunden.Karte(karteId);
+        }
+
+        return Nichtgefunden.Dateiverweis(karteId, dateiverweisId);
+    }
+
+    // Dieselben zwei Regeln wie beim Kommentar- und beim Anhangurheber, nur mit eigener Meldung:
+    // „kann keine Datei mehr anhaengen" waere am Dateiverweis eine Falschaussage — hier wird
+    // keine Datei abgelegt, hier wird auf eine gezeigt.
+    // null heisst „mit diesem Urheber ist alles in Ordnung".
+    private Fehlerbefund? BefundZumDateiverweisurheber(long kontributorId)
+    {
+        var kontributor = _kontributorenRepository.LadeAlle().FirstOrDefault(eintrag => eintrag.KontributorId == kontributorId);
+        var denKontributorGibtEsNicht = kontributor is null;
+        if (denKontributorGibtEsNicht)
+        {
+            return Nichtgefunden.Kontributor(kontributorId);
+        }
+
+        var derKontributorArbeitetNichtMehrMit = kontributor!.StillgelegtAm is not null;
+        if (derKontributorArbeitetNichtMehrMit)
+        {
+            return Stillgelegt.Dateiverweisurheber(kontributorId);
+        }
+
+        return null;
+    }
+
     // Gibt es schon die Karte nicht, schickt ein Befund ueber den Anhang den Aufrufer auf eine
     // Kartenadresse, die selbst 404 antwortet — die Kompensation waere nicht ausfuehrbar.
     // Dieselbe Trennung wie bei BefundZurFehlendenTeilaufgabe.

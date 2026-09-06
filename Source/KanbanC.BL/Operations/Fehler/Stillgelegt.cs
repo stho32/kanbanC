@@ -42,4 +42,16 @@ public static class Stillgelegt
             $"Der Kontributor mit der Nummer {kontributorId} ist stillgelegt und kann keine Datei mehr anhängen.",
             Kompensationsweg);
     }
+
+    // Die vierte Schwester, wieder mit demselben Code und wieder mit eigener Meldung: „kann
+    // nicht verantwortlich sein", „kann keinen Kommentar mehr schreiben" und „kann keine Datei
+    // mehr anhängen" wären am Dateiverweis alle drei eine Falschaussage — hier legt niemand eine
+    // Datei zur Karte, hier zeigt jemand auf eine, die woanders liegt.
+    public static Fehlerbefund Dateiverweisurheber(long kontributorId)
+    {
+        return new Fehlerbefund(
+            KontributorStillgelegt,
+            $"Der Kontributor mit der Nummer {kontributorId} ist stillgelegt und kann keinen Dateiverweis mehr eintragen.",
+            Kompensationsweg);
+    }
 }

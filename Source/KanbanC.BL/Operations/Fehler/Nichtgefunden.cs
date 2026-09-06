@@ -15,7 +15,8 @@ public static class Nichtgefunden
     private const string TeilaufgabeUnbekannt = "teilaufgabe-unbekannt";
     private const string AnhangUnbekannt = "anhang-unbekannt";
     private const string AnhangbytesFehlen = "anhang-bytes-fehlen";
-    private static readonly string[] AlleCodes = [BoardUnbekannt, KarteUnbekannt, KarteFremd, SpalteUnbekannt, SpalteFremd, KontributorUnbekannt, TeilaufgabeUnbekannt, AnhangUnbekannt, AnhangbytesFehlen];
+    private const string DateiverweisUnbekannt = "dateiverweis-unbekannt";
+    private static readonly string[] AlleCodes = [BoardUnbekannt, KarteUnbekannt, KarteFremd, SpalteUnbekannt, SpalteFremd, KontributorUnbekannt, TeilaufgabeUnbekannt, AnhangUnbekannt, AnhangbytesFehlen, DateiverweisUnbekannt];
 
     public static Fehlerbefund Board(long boardId)
     {
@@ -76,6 +77,17 @@ public static class Nichtgefunden
             AnhangbytesFehlen,
             $"Zum Anhang {anhangId} der Karte {karteId} liegen in der Ablage keine Bytes; die Datei ist ausserhalb der Anwendung verschwunden.",
             $"`DELETE /api/karten/{karteId}/anhaenge/{anhangId}` aufrufen und die Datei ueber `POST /api/karten/{karteId}/anhaenge` erneut anhaengen.");
+    }
+
+    // Die Schwester des Anhangs, eine Ressource weiter. Der Befund nennt beide Nummern, weil
+    // beide in der Adresse stehen — und weil eine DateiverweisId, die es anderswo gibt, an dieser
+    // Karte trotzdem keine ist. Der Weg zurueck ist die Karte selbst.
+    public static Fehlerbefund Dateiverweis(long karteId, long dateiverweisId)
+    {
+        return new Fehlerbefund(
+            DateiverweisUnbekannt,
+            $"Einen Dateiverweis mit der Nummer {dateiverweisId} gibt es an der Karte {karteId} nicht.",
+            $"`GET /api/karten/{karteId}` abrufen, die DateiverweisIds in „dateiverweise“ ablesen und den Aufruf mit einer vorhandenen wiederholen.");
     }
 
     public static Fehlerbefund FremdeKarte(long boardId, long karteId, long boardIdDerKarte)

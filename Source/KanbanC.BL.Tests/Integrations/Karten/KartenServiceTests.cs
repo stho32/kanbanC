@@ -662,6 +662,185 @@ public class KartenServiceTests
         Assert.That(Nichtgefunden.MeldetEinFehlendesDing(ergebnis.Befunde[0]), Is.True);
     }
 
+    [Test]
+    public void Wenn_der_Pfad_und_der_Urheber_tragen_dann_reicht_TrageDateiverweisEin_das_Detail_durch()
+    {
+        var kontributorenRepository = new TestKontributorenRepository();
+        var stefan = kontributorenRepository.LegeAn(new KontributorAnlegenAnfrage("Stefan", Kontributorart.Mensch));
+        var detail = Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null));
+        var kartenRepository = TestKartenRepository.Leer().MitKartendetail(detail);
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, kontributorenRepository);
+
+        var ergebnis = service.TrageDateiverweisEin(7, new DateiverweisEintragenAnfrage("Dokumentation/Planung/kanbanc.md", stefan.KontributorId));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.IstErfolg, Is.True);
+            Assert.That(ergebnis.Wert, Is.SameAs(detail));
+            Assert.That(kartenRepository.ErhaltenerDateiverweis!.Pfad, Is.EqualTo("Dokumentation/Planung/kanbanc.md"));
+            Assert.That(kartenRepository.GeaenderteKarteId, Is.EqualTo(7));
+        });
+    }
+
+    [Test]
+    public void Wenn_der_Pfad_leer_ist_dann_weist_TrageDateiverweisEin_ihn_zurueck_und_schreibt_nicht()
+    {
+        var kontributorenRepository = new TestKontributorenRepository();
+        var stefan = kontributorenRepository.LegeAn(new KontributorAnlegenAnfrage("Stefan", Kontributorart.Mensch));
+        var kartenRepository = TestKartenRepository.Leer().MitKartendetail(Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null)));
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, kontributorenRepository);
+
+        var ergebnis = service.TrageDateiverweisEin(7, new DateiverweisEintragenAnfrage("   ", stefan.KontributorId));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.IstErfolg, Is.False);
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("dateiverweis-pfad-leer"));
+            Assert.That(Nichtgefunden.MeldetEinFehlendesDing(ergebnis.Befunde[0]), Is.False);
+            Assert.That(kartenRepository.ErhaltenerDateiverweis, Is.Null);
+        });
+    }
+
+    [Test]
+    public void Wenn_die_KarteId_unbekannt_ist_dann_meldet_TrageDateiverweisEin_ein_fehlendes_Ding()
+    {
+        var kontributorenRepository = new TestKontributorenRepository();
+        var stefan = kontributorenRepository.LegeAn(new KontributorAnlegenAnfrage("Stefan", Kontributorart.Mensch));
+        var kartenRepository = TestKartenRepository.Leer().OhneDieseKarte();
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, kontributorenRepository);
+
+        var ergebnis = service.TrageDateiverweisEin(999, new DateiverweisEintragenAnfrage("kanbanc.md", stefan.KontributorId));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("karte-unbekannt"));
+            Assert.That(Nichtgefunden.MeldetEinFehlendesDing(ergebnis.Befunde[0]), Is.True);
+            Assert.That(kartenRepository.ErhaltenerDateiverweis, Is.Null);
+        });
+    }
+
+    // Die dritte Lage des Repositorys: der Pfad steht schon. **400 und nicht 404** — es fehlt
+    // kein Ding, es wurde eine Regel verletzt.
+    [Test]
+    public void Wenn_der_Pfad_schon_an_der_Karte_steht_dann_meldet_TrageDateiverweisEin_die_Dublette_mit_400()
+    {
+        var kontributorenRepository = new TestKontributorenRepository();
+        var stefan = kontributorenRepository.LegeAn(new KontributorAnlegenAnfrage("Stefan", Kontributorart.Mensch));
+        var kartenRepository = TestKartenRepository.Leer()
+            .MitKartendetail(Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null)))
+            .MitDiesemPfadBereitsAnDerKarte();
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, kontributorenRepository);
+
+        var ergebnis = service.TrageDateiverweisEin(7, new DateiverweisEintragenAnfrage("Dokumentation/Planung/kanbanc.md", stefan.KontributorId));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.IstErfolg, Is.False);
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("dateiverweis-doppelt"));
+            Assert.That(Nichtgefunden.MeldetEinFehlendesDing(ergebnis.Befunde[0]), Is.False);
+            Assert.That(kartenRepository.ErhaltenerDateiverweis, Is.Null);
+        });
+    }
+
+    // Im Befund steht der **getrimmte** Pfad und nicht der getippte: der Aufrufer soll den Wert
+    // sehen, der die Dublette ausgeloest hat.
+    [Test]
+    public void Wenn_der_doppelte_Pfad_Randleerzeichen_traegt_dann_nennt_der_Befund_ihn_getrimmt()
+    {
+        var kontributorenRepository = new TestKontributorenRepository();
+        var stefan = kontributorenRepository.LegeAn(new KontributorAnlegenAnfrage("Stefan", Kontributorart.Mensch));
+        var kartenRepository = TestKartenRepository.Leer()
+            .MitKartendetail(Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null)))
+            .MitDiesemPfadBereitsAnDerKarte();
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, kontributorenRepository);
+
+        var ergebnis = service.TrageDateiverweisEin(7, new DateiverweisEintragenAnfrage("  kanbanc.md  ", stefan.KontributorId));
+
+        Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("„kanbanc.md“"));
+    }
+
+    [Test]
+    public void Wenn_der_Dateiverweisurheber_unbekannt_ist_dann_meldet_TrageDateiverweisEin_ein_fehlendes_Ding_und_schreibt_nicht()
+    {
+        var kartenRepository = TestKartenRepository.Leer().MitKartendetail(Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null)));
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, new TestKontributorenRepository());
+
+        var ergebnis = service.TrageDateiverweisEin(7, new DateiverweisEintragenAnfrage("kanbanc.md", 999));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("kontributor-unbekannt"));
+            Assert.That(Nichtgefunden.MeldetEinFehlendesDing(ergebnis.Befunde[0]), Is.True);
+            Assert.That(kartenRepository.ErhaltenerDateiverweis, Is.Null);
+        });
+    }
+
+    // Die Meldung passt zum Dateiverweis: weder „kann nicht verantwortlich sein" noch „kann
+    // keinen Kommentar mehr schreiben" noch „kann keine Datei mehr anhaengen" waere hier wahr.
+    // Der Code bleibt bei allen vieren derselbe.
+    [Test]
+    public void Wenn_der_Dateiverweisurheber_stillgelegt_ist_dann_spricht_seine_Meldung_vom_Dateiverweis_und_nicht_vom_Anhang()
+    {
+        var kontributorenRepository = new TestKontributorenRepository();
+        var maria = kontributorenRepository.LegeAn(new KontributorAnlegenAnfrage("Maria Lenz", Kontributorart.Mensch));
+        kontributorenRepository.SetzeStilllegung(maria.KontributorId, new Stilllegung(true));
+        var kartenRepository = TestKartenRepository.Leer().MitKartendetail(Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null)));
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, kontributorenRepository);
+
+        var ergebnis = service.TrageDateiverweisEin(7, new DateiverweisEintragenAnfrage("kanbanc.md", maria.KontributorId));
+
+        Befundpruefung.ErwarteVollstaendigenBefund(ergebnis.Befunde[0], "kontributor-stillgelegt");
+        Assert.Multiple(() =>
+        {
+            Assert.That(Nichtgefunden.MeldetEinFehlendesDing(ergebnis.Befunde[0]), Is.False);
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("Dateiverweis"));
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Not.Contain("anhängen"));
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Not.Contain("verantwortlich"));
+            Assert.That(kartenRepository.ErhaltenerDateiverweis, Is.Null);
+        });
+    }
+
+    [Test]
+    public void Wenn_der_Dateiverweis_da_ist_dann_reicht_EntferneDateiverweis_das_Detail_durch()
+    {
+        var detail = Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null));
+        var kartenRepository = TestKartenRepository.Leer().MitKartendetail(detail);
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, new TestKontributorenRepository());
+
+        var ergebnis = service.EntferneDateiverweis(7, 3);
+
+        Assert.That(ergebnis.IstErfolg, Is.True);
+        Assert.That(ergebnis.Wert, Is.SameAs(detail));
+        Assert.That(kartenRepository.EntfernterDateiverweisId, Is.EqualTo(3));
+    }
+
+    [Test]
+    public void Wenn_der_Dateiverweis_schon_weg_ist_dann_meldet_EntferneDateiverweis_ein_fehlendes_Ding()
+    {
+        var kartenRepository = TestKartenRepository.Leer()
+            .MitKartendetail(Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null)))
+            .OhneDiesenDateiverweis();
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, new TestKontributorenRepository());
+
+        var ergebnis = service.EntferneDateiverweis(7, 3);
+
+        Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("dateiverweis-unbekannt"));
+        Assert.That(Nichtgefunden.MeldetEinFehlendesDing(ergebnis.Befunde[0]), Is.True);
+    }
+
+    // Gibt es schon die Karte nicht, meldet die Antwort die Karte: ein Befund ueber den
+    // Dateiverweis schickte den Aufrufer auf eine Kartenadresse, die selbst 404 antwortet.
+    [Test]
+    public void Wenn_es_schon_die_Karte_nicht_gibt_dann_meldet_EntferneDateiverweis_die_Karte_und_nicht_den_Dateiverweis()
+    {
+        var kartenRepository = TestKartenRepository.Leer().OhneDieseKarte();
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, new TestKontributorenRepository());
+
+        var ergebnis = service.EntferneDateiverweis(999, 3);
+
+        Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("karte-unbekannt"));
+    }
+
     private static Kartendetail Kartendetail(Karte karte)
     {
         return new Kartendetail(karte, Board: 3, Boardname: "Entwicklung", Spalte: 5, Spaltenbezeichnung: "In Arbeit", Verantwortlicher: null, Etiketten: [], Etikettvorschlaege: [], Teilaufgaben: [], Kommentare: [], Anhaenge: [], Dateiverweise: []);
