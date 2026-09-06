@@ -744,6 +744,147 @@ public class KartenApiKlientTests
         Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.EqualTo("anhang-unbekannt"));
     }
 
+    // Methode, Adresse und **Rumpf** des abgesetzten Aufrufs: dass die KontributorId im
+    // JSON-Rumpf steht und nicht in der Query, ist ueber den Browser nicht pruefbar.
+    [Test]
+    public async Task Wenn_ein_Dateiverweis_eingetragen_wird_dann_reisen_Pfad_und_Urheber_im_JSON_Rumpf()
+    {
+        const string rumpf = """{"karte":{"karteId":14,"titel":"Playwright-Lizenz klären","position":2},"board":3,"boardname":"Entwicklung","spalte":5,"spaltenbezeichnung":"In Arbeit","dateiverweise":[{"dateiverweisId":7,"pfad":"Dokumentation/Planung/kanbanc.md","urheber":{"kontributorId":3,"name":"Stefan","art":"Mensch","stillgelegtAm":null},"zeitpunkt":"2026-08-30T15:40:12+00:00"}]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.TrageDateiverweisEin(14, new DateiverweisEintragenAnfrage("Dokumentation/Planung/kanbanc.md", 3));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("POST http://webapi.test/api/karten/14/dateiverweise"));
+            Assert.That(fabrik.AbgesetzterAufruf, Does.Not.Contain("?"), "Der Urheber gehoert in den Rumpf, nicht in die Query.");
+            Assert.That(fabrik.GesendeterRumpf, Does.Contain("\"pfad\""));
+            Assert.That(fabrik.GesendeterRumpf, Does.Contain("Dokumentation/Planung/kanbanc.md"));
+            Assert.That(fabrik.GesendeterRumpf, Does.Contain("\"kontributor\":3"));
+            Assert.That(fabrik.GesendeterRumpf, Does.Not.Contain("zeitpunkt"), "Den Zeitpunkt setzt die WebApi.");
+        });
+    }
+
+    // Der Pfad geht **zeichengleich** ueber die Leitung: der Klient schreibt Trennzeichen nicht
+    // um und trimmt auch nicht — das tut die Fachlogik hinter der Route.
+    [Test]
+    public async Task Wenn_ein_Pfad_mit_Rueckstrichen_eingetragen_wird_dann_steht_er_zeichengleich_im_Rumpf()
+    {
+        const string rumpf = """{"karte":{"karteId":14,"titel":"Playwright-Lizenz klären","position":2},"board":3,"boardname":"Entwicklung","spalte":5,"spaltenbezeichnung":"In Arbeit","dateiverweise":[]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        await klient.TrageDateiverweisEin(14, new DateiverweisEintragenAnfrage(@"Dokumentation\Planung\kanbanc.md", 3));
+
+        Assert.That(fabrik.GesendeterRumpf, Does.Contain(@"Dokumentation\\Planung\\kanbanc.md"), "JSON verdoppelt den Rueckstrich; umgeschrieben wird er nicht.");
+    }
+
+    [Test]
+    public async Task Wenn_die_WebApi_den_Dateiverweis_annimmt_dann_reicht_der_Klient_Pfad_Urheber_und_Zeitpunkt_durch()
+    {
+        const string rumpf = """{"karte":{"karteId":14,"titel":"Playwright-Lizenz klären","position":2},"board":3,"boardname":"Entwicklung","spalte":5,"spaltenbezeichnung":"In Arbeit","dateiverweise":[{"dateiverweisId":7,"pfad":"Dokumentation/Planung/kanbanc.md","urheber":{"kontributorId":3,"name":"Claude-Agent","art":"Agent","stillgelegtAm":"2026-08-12"},"zeitpunkt":"2026-08-30T15:40:12+00:00"}]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.TrageDateiverweisEin(14, new DateiverweisEintragenAnfrage("Dokumentation/Planung/kanbanc.md", 3));
+
+        var dateiverweis = ergebnis.Wert.Dateiverweise[0];
+        Assert.Multiple(() =>
+        {
+            Assert.That(dateiverweis.DateiverweisId, Is.EqualTo(7));
+            Assert.That(dateiverweis.Pfad, Is.EqualTo("Dokumentation/Planung/kanbanc.md"));
+            Assert.That(dateiverweis.Urheber, Is.EqualTo(new Kontributor(3, "Claude-Agent", Kontributorart.Agent, new DateOnly(2026, 8, 12))));
+            Assert.That(dateiverweis.Zeitpunkt, Is.EqualTo(new DateTimeOffset(2026, 8, 30, 15, 40, 12, TimeSpan.Zero)));
+        });
+    }
+
+    // Der Dublettenbefund ist ueber den Browser nur mittelbar sichtbar; hier steht er als Vertrag.
+    [Test]
+    public async Task Wenn_die_WebApi_den_doppelten_Pfad_zurueckweist_dann_reicht_der_Klient_ihren_Befund_durch()
+    {
+        const string rumpf = """{"befunde":[{"code":"dateiverweis-doppelt","meldung":"Der Pfad „kanbanc.md“ steht schon an der Karte 14.","kompensation":"`GET /api/karten/14` abrufen."}]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.BadRequest, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.TrageDateiverweisEin(14, new DateiverweisEintragenAnfrage("kanbanc.md", 3));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.EqualTo("dateiverweis-doppelt"));
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("kanbanc.md"));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_WebApi_den_leeren_Pfad_zurueckweist_dann_reicht_der_Klient_ihren_Befund_durch()
+    {
+        const string rumpf = """{"befunde":[{"code":"dateiverweis-pfad-leer","meldung":"Ein Dateiverweis braucht einen Pfad.","kompensation":"`POST /api/karten/14/dateiverweise` mit einem nichtleeren „pfad“ wiederholen."}]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.BadRequest, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.TrageDateiverweisEin(14, new DateiverweisEintragenAnfrage("   ", 3));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.EqualTo("dateiverweis-pfad-leer"));
+    }
+
+    // Der 404 dieser Route traegt einen eigenen Befund und darf nicht durch eine Board-Meldung
+    // ersetzt werden — die Route kennt kein Board.
+    [Test]
+    public async Task Wenn_die_Karte_beim_Eintragen_unbekannt_ist_dann_reicht_der_Klient_den_Befund_der_WebApi_durch()
+    {
+        const string rumpf = """{"befunde":[{"code":"karte-unbekannt","meldung":"Eine Karte mit der Nummer 9999 gibt es nicht.","kompensation":"`GET /api/boards` abrufen."}]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.NotFound, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.TrageDateiverweisEin(9999, new DateiverweisEintragenAnfrage("kanbanc.md", 3));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.EqualTo("karte-unbekannt"));
+        Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("9999"));
+    }
+
+    [Test]
+    public async Task Wenn_ein_Dateiverweis_entfernt_wird_dann_ruft_der_Klient_DELETE_auf_die_Dateiverweisadresse()
+    {
+        const string rumpf = """{"karte":{"karteId":14,"titel":"Playwright-Lizenz klären","position":2},"board":3,"boardname":"Entwicklung","spalte":5,"spaltenbezeichnung":"In Arbeit","dateiverweise":[]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.EntferneDateiverweis(14, 7);
+
+        Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("DELETE http://webapi.test/api/karten/14/dateiverweise/7"));
+        Assert.That(ergebnis.Wert.Dateiverweise, Is.Empty);
+    }
+
+    [Test]
+    public async Task Wenn_der_Dateiverweis_beim_Entfernen_unbekannt_ist_dann_reicht_der_Klient_den_Befund_der_WebApi_durch()
+    {
+        const string rumpf = """{"befunde":[{"code":"dateiverweis-unbekannt","meldung":"Einen Dateiverweis mit der Nummer 7 gibt es an der Karte 14 nicht.","kompensation":"`GET /api/karten/14` abrufen."}]}""";
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.NotFound, rumpf, "application/json");
+        var klient = new KartenApiKlient(fabrik);
+
+        var ergebnis = await klient.EntferneDateiverweis(14, 7);
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.EqualTo("dateiverweis-unbekannt"));
+    }
+
+    // Es gibt keine Route zum Aendern eines Dateiverweises — und deshalb auch keine Methode.
+    [Test]
+    public void Wenn_der_Klient_durchgesehen_wird_dann_hat_er_keine_Methode_die_einen_Dateiverweis_aendert()
+    {
+        var aenderungsmethoden = typeof(KartenApiKlient)
+            .GetMethods()
+            .Where(methode => methode.Name.Contains("Dateiverweis", StringComparison.Ordinal))
+            .Select(methode => methode.Name);
+
+        Assert.That(aenderungsmethoden, Is.EquivalentTo(new[] { "TrageDateiverweisEin", "EntferneDateiverweis" }));
+    }
+
     // Der Browser laedt die Bytes direkt von der WebApi: der Klient hat dafuer keine Methode.
     [Test]
     public void Wenn_der_Klient_durchgesehen_wird_dann_hat_er_keine_Methode_die_Bytes_liest()

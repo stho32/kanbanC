@@ -106,6 +106,28 @@ public sealed class KartenApiKlient
         return await AlsKartendetail(antwort);
     }
 
+    // Eine Zeile, und zurueck kommt das ganze Kartendetail — wie beim Kommentar. **JSON in beide
+    // Richtungen**, anders als beim Anhang: ein Dateiverweis traegt einen Pfad und keine Bytes,
+    // also keine multipart-Form und keine Direktadresse an der WebApi. Der Urheber reist im
+    // **Rumpf** und nicht als Query, wie jeder Kontributor in diesem Projekt. Einen Zeitpunkt
+    // schickt der Klient nicht mit — den setzt die WebApi.
+    public async Task<ApiErgebnis<Kartendetail>> TrageDateiverweisEin(long karteId, DateiverweisEintragenAnfrage anfrage)
+    {
+        using var klient = _klientFabrik.CreateClient(KlientName);
+        using var antwort = await klient.PostAsJsonAsync($"{KartenRoute}/{karteId}/dateiverweise", anfrage);
+        return await AlsKartendetail(antwort);
+    }
+
+    // Zurueck kommt das ganze Kartendetail, wie beim Eintragen — die Seite behaelt eine Quelle.
+    // **Keine Methode zum Aendern:** es gibt keine solche Route, und eine Methode ohne Route
+    // waere tote Flexibilitaet.
+    public async Task<ApiErgebnis<Kartendetail>> EntferneDateiverweis(long karteId, long dateiverweisId)
+    {
+        using var klient = _klientFabrik.CreateClient(KlientName);
+        using var antwort = await klient.DeleteAsync($"{KartenRoute}/{karteId}/dateiverweise/{dateiverweisId}");
+        return await AlsKartendetail(antwort);
+    }
+
     // 400 und 404 laufen denselben Weg, weil beide einen Befund der WebApi tragen.
     // ApiAntwortleser waere die falsche Stelle: sein 404-Zweig ersetzt jeden Befund durch eine
     // Board-Meldung, und diese Route kennt kein Board.
