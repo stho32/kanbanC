@@ -2211,6 +2211,15 @@ public class KartenRepositoryTests
         }
     }
 
+    private static void FuegeDateiverweisEin(TemporaereDatenbank datenbank, long karteId, long kontributorId, string pfad, string zeitpunkt)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Dateiverweis (Karte, Kontributor, Pfad, Zeitpunkt)
+            VALUES (@Karte, @Kontributor, @Pfad, @Zeitpunkt)",
+            new { Karte = karteId, Kontributor = kontributorId, Pfad = pfad, Zeitpunkt = zeitpunkt });
+    }
+
     private static void FuegeAnhangEin(TemporaereDatenbank datenbank, long karteId, long kontributorId, string dateiname, long dateigroesse, string zeitpunkt)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
@@ -2276,6 +2285,140 @@ public class KartenRepositoryTests
             INSERT INTO Teilaufgabe (Karte, Text, Position, Abgehakt)
             VALUES (@Karte, @Text, @Position, @Abgehakt)",
             new { Karte = karteId, Text = text, Position = position, Abgehakt = abgehakt });
+    }
+
+    // Die Reihenfolge ist die Zeitordnung und nicht die des Schreibens: die drei Zeilen werden
+    // absichtlich in verkehrter Zeitfolge eingefuegt, die aeltere kommt trotzdem oben zurueck.
+    [Test]
+    public void Wenn_Dateiverweise_verschieden_datiert_sind_dann_liefert_das_Kartendetail_sie_in_Zeitordnung()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+        FuegeDateiverweisEin(datenbank, karte!.KarteId, stefan, "b.md", "2026-08-30T17:40:12.0000000Z");
+        FuegeDateiverweisEin(datenbank, karte.KarteId, stefan, "a.md", "2026-08-29T09:05:00.0000000Z");
+        FuegeDateiverweisEin(datenbank, karte.KarteId, stefan, "c.md", "2026-08-31T11:38:00.0000000Z");
+
+        var detail = repository.LiesKartendetail(karte.KarteId);
+
+        Assert.That(detail!.Dateiverweise.Select(dateiverweis => dateiverweis.Pfad), Is.EqualTo(new[] { "a.md", "b.md", "c.md" }));
+        Assert.That(detail.Dateiverweise.Select(dateiverweis => dateiverweis.Zeitpunkt), Is.Ordered);
+    }
+
+    [Test]
+    public void Wenn_ein_Dateiverweis_gelesen_wird_dann_traegt_er_seinen_Zeitpunkt_mit_Uhrzeit_in_UTC_und_eine_eigene_Nummer()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+        FuegeDateiverweisEin(datenbank, karte!.KarteId, stefan, "Dokumentation/Planung/kanbanc.md", "2026-08-30T17:40:12.0000000Z");
+
+        var detail = repository.LiesKartendetail(karte.KarteId);
+
+        Assert.That(detail!.Dateiverweise[0].Zeitpunkt, Is.EqualTo(new DateTimeOffset(2026, 8, 30, 17, 40, 12, TimeSpan.Zero)));
+        Assert.That(detail.Dateiverweise[0].DateiverweisId, Is.GreaterThan(0));
+    }
+
+    // Der Pfad kommt **zeichengleich** zurueck: Rueckstriche bleiben Rueckstriche, doppelte
+    // Schraegstriche bleiben doppelt. Die Anwendung schreibt Trennzeichen nicht um.
+    [Test]
+    public void Wenn_ein_Pfad_mit_Rueckstrichen_gelesen_wird_dann_kommt_er_zeichengleich_zurueck()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+        FuegeDateiverweisEin(datenbank, karte!.KarteId, stefan, @"Dokumentation\Planung\kanbanc.md", "2026-08-30T17:40:12.0000000Z");
+
+        var detail = repository.LiesKartendetail(karte.KarteId);
+
+        Assert.That(detail!.Dateiverweise[0].Pfad, Is.EqualTo(@"Dokumentation\Planung\kanbanc.md"));
+    }
+
+    [Test]
+    public void Wenn_ein_Dateiverweis_gelesen_wird_dann_traegt_er_den_ganzen_Urheber()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var agent = LegeKontributorAn(datenbank, "Claude-Agent", Kontributorart.Agent);
+        FuegeDateiverweisEin(datenbank, karte!.KarteId, agent, "Dokumentation/Planung/kanbanc.md", "2026-08-30T17:40:12.0000000Z");
+
+        var detail = repository.LiesKartendetail(karte.KarteId);
+
+        Assert.That(detail!.Dateiverweise[0].Urheber, Is.EqualTo(new Kontributor(agent, "Claude-Agent", Kontributorart.Agent, StillgelegtAm: null)));
+    }
+
+    // Ein stillgelegter Urheber faellt nicht heraus: er bleibt an seinen alten Zeilen sichtbar,
+    // damit die Geschichte der Karte lesbar bleibt, wenn jemand geht.
+    [Test]
+    public void Wenn_der_Urheber_inzwischen_stillgelegt_ist_dann_bleibt_er_am_Dateiverweis_sichtbar()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var maria = LegeKontributorAn(datenbank, "Maria Lenz", Kontributorart.Mensch);
+        FuegeDateiverweisEin(datenbank, karte!.KarteId, maria, "Dokumentation/Planung/kanbanc.md", "2026-08-30T17:40:12.0000000Z");
+        LegeKontributorStill(datenbank, maria, "2026-08-31");
+
+        var detail = repository.LiesKartendetail(karte.KarteId);
+
+        Assert.That(detail!.Dateiverweise, Has.Count.EqualTo(1));
+        Assert.That(detail.Dateiverweise[0].Urheber, Is.EqualTo(new Kontributor(maria, "Maria Lenz", Kontributorart.Mensch, new DateOnly(2026, 8, 31))));
+    }
+
+    [Test]
+    public void Wenn_die_Karte_keinen_Dateiverweis_traegt_dann_liefert_das_Kartendetail_die_leere_Liste()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+
+        Assert.That(repository.LiesKartendetail(karte!.KarteId)!.Dateiverweise, Is.Empty);
+    }
+
+    // Die Dateiverweise einer Karte und nur die: die Zeilen einer fremden Karte kommen nicht mit.
+    [Test]
+    public void Wenn_eine_andere_Karte_Dateiverweise_traegt_dann_liefert_das_Kartendetail_nur_die_eigenen()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var spalteId = board.Spalten[0].SpalteId;
+        var fremde = repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage("Migration schreiben"));
+        var eigene = repository.LegeAn(board.BoardId, spalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+        FuegeDateiverweisEin(datenbank, fremde!.KarteId, stefan, "nur-woanders.md", "2026-08-30T17:40:12.0000000Z");
+        FuegeDateiverweisEin(datenbank, eigene!.KarteId, stefan, "Dokumentation/Planung/kanbanc.md", "2026-08-30T17:41:12.0000000Z");
+
+        var detail = repository.LiesKartendetail(eigene.KarteId);
+
+        Assert.That(detail!.Dateiverweise.Select(dateiverweis => dateiverweis.Pfad), Is.EqualTo(new[] { "Dokumentation/Planung/kanbanc.md" }));
+    }
+
+    // Ohne Archivfilter, wie das ganze Kartendetail: eine archivierte Karte behaelt ihre Adresse.
+    [Test]
+    public void Wenn_die_Karte_archiviert_ist_dann_liefert_das_Kartendetail_ihre_Dateiverweise_weiterhin()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var repository = new KartenRepository(datenbank.Verbindungsfabrik);
+        var board = LegeBoardAn(datenbank);
+        var karte = repository.LegeAn(board.BoardId, board.Spalten[0].SpalteId, new KarteAnlegenAnfrage("Playwright-Lizenz klären"));
+        var stefan = LegeKontributorAn(datenbank, "Stefan", Kontributorart.Mensch);
+        FuegeDateiverweisEin(datenbank, karte!.KarteId, stefan, "Dokumentation/Planung/kanbanc.md", "2026-08-30T17:40:12.0000000Z");
+        ArchiviereKarte(datenbank, karte.KarteId);
+
+        var detail = repository.LiesKartendetail(karte.KarteId);
+
+        Assert.That(detail!.Dateiverweise.Select(dateiverweis => dateiverweis.Pfad), Is.EqualTo(new[] { "Dokumentation/Planung/kanbanc.md" }));
     }
 
     private static long Etikettzeilen(TemporaereDatenbank datenbank)

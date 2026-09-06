@@ -24,6 +24,11 @@ namespace KanbanC.Contracts.Karten;
 // Board-Abruf zahlte sonst eine zweite Abfrage je Karte. Auch hier kein Zählfeld und keine
 // Ordnungszahl daneben. Die Bytes reisen nicht mit — sie holt der Browser über eine eigene Route
 // direkt von der WebApi.
+// Und aus denselben Gründen die Dateiverweise als **sechste** Liste: auf der Bahn ist kein
+// Dateiverweiszeichen gezeichnet, und ein Board-Abruf zahlte sonst eine zweite Abfrage je Karte.
+// Auch hier kein Zählfeld und keine Ordnungszahl daneben. Sie stehen neben den Anhängen und
+// nicht in ihnen: ein Anhang bringt eine Kopie mit, ein Dateiverweis zeigt auf eine Datei, die
+// woanders weiterlebt — zwei Gegenstände, zwei Listen.
 public record Kartendetail(
     Karte Karte,
     long Board,
@@ -35,4 +40,5 @@ public record Kartendetail(
     IReadOnlyList<Etikettvorschlag> Etikettvorschlaege,
     IReadOnlyList<Teilaufgabe> Teilaufgaben,
     IReadOnlyList<Kommentar> Kommentare,
-    IReadOnlyList<Anhang> Anhaenge);
+    IReadOnlyList<Anhang> Anhaenge,
+    IReadOnlyList<Dateiverweis> Dateiverweise);

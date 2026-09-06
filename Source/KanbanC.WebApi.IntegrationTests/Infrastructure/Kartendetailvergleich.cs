@@ -2,7 +2,7 @@ using KanbanC.Contracts.Karten;
 
 namespace KanbanC.WebApi.IntegrationTests.Infrastructure;
 
-// Kartendetail traegt fuenf Listen, und der Gleichheitsvergleich eines Records vergleicht
+// Kartendetail traegt sechs Listen, und der Gleichheitsvergleich eines Records vergleicht
 // Listen ueber die Referenz. Ein Is.EqualTo auf dem ganzen Record waere deshalb entweder
 // falsch rot (zwei gleiche Listen, zwei Objekte) oder — schlimmer — falsch gruen, sobald
 // jemand dieselbe Instanz zweimal reicht. Dieser Helfer vergleicht Stueck fuer Stueck.
@@ -27,6 +27,7 @@ public static class Kartendetailvergleich
             Assert.That(tatsaechlich.Teilaufgaben, Is.EqualTo(erwartet.Teilaufgaben));
             Assert.That(tatsaechlich.Kommentare, Is.EqualTo(erwartet.Kommentare));
             Assert.That(tatsaechlich.Anhaenge, Is.EqualTo(erwartet.Anhaenge));
+            Assert.That(tatsaechlich.Dateiverweise, Is.EqualTo(erwartet.Dateiverweise));
         });
     }
 }
