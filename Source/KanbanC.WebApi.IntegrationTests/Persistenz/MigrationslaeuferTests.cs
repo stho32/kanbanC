@@ -331,6 +331,139 @@ public class MigrationslaeuferTests
         });
     }
 
+    // Wie bei Kommentar und Anhang fuehrt der Primaerschluessel mit einer eigenen Nummer, und
+    // **keine Position** steht daneben: die Reihenfolge ist der Zeitpunkt. Anders als bei Anhang
+    // kommt ein **eindeutiger** Index auf (Karte, Pfad) hinzu — derselbe Pfad an derselben Karte
+    // ist derselbe Verweis.
+    [Test]
+    public void Wenn_die_Migration_gelaufen_ist_dann_traegt_das_Schema_die_Tabelle_Dateiverweis_ohne_Position()
+    {
+        using var datenbank = new TemporaereDatenbank();
+
+        new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Tabellennamen(datenbank), Does.Contain("Dateiverweis"));
+            Assert.That(Spaltennamen(datenbank, "Dateiverweis"),
+                Is.EqualTo(new[] { "DateiverweisId", "Karte", "Kontributor", "Pfad", "Zeitpunkt" }));
+            Assert.That(Schluesselspalten(datenbank, "Dateiverweis"), Is.EqualTo(new[] { "DateiverweisId" }));
+            Assert.That(Indexdefinition(datenbank, "IX_Dateiverweis_Karte"),
+                Is.EqualTo("CREATE INDEX IX_Dateiverweis_Karte ON Dateiverweis (Karte)"));
+        });
+    }
+
+    // Der eindeutige Index ist die einzige Stelle dieses Slice, an der das Schema selbst eine
+    // Regel durchsetzt — **ohne COLLATE NOCASE**, anders als der Index in 002: Gross- und
+    // Kleinschreibung unterscheidet Pfade.
+    [Test]
+    public void Wenn_die_Migration_gelaufen_ist_dann_traegt_das_Schema_den_eindeutigen_Index_auf_Karte_und_Pfad()
+    {
+        using var datenbank = new TemporaereDatenbank();
+
+        new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus();
+
+        Assert.That(Indexdefinition(datenbank, "UX_Dateiverweis_Karte_Pfad"),
+            Is.EqualTo("CREATE UNIQUE INDEX UX_Dateiverweis_Karte_Pfad ON Dateiverweis (Karte, Pfad)"));
+    }
+
+    // Die Zusage des Schemas, am Dienst vorbei geprueft: ein direkter zweiter INSERT mit
+    // demselben (Karte, Pfad) scheitert an der Datenbank. Der lesbare Befund entsteht davor im
+    // Repository — hier steht die Rueckversicherung fuer jeden Weg, der daran vorbeischreibt.
+    [Test]
+    public void Wenn_derselbe_Pfad_zweimal_an_dieselbe_Karte_geschrieben_wird_dann_weist_die_Datenbank_die_zweite_Zeile_ab()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "Playwright-Lizenz klären", 1);
+        LegeKontributorAn(datenbank, "Stefan");
+        FuegeDateiverweisEin(datenbank, 1, 1, "Dokumentation/Planung/kanbanc.md", "2026-08-30T15:40:12.0000000Z");
+
+        Assert.That(
+            () => FuegeDateiverweisEin(datenbank, 1, 1, "Dokumentation/Planung/kanbanc.md", "2026-08-30T15:41:12.0000000Z"),
+            Throws.TypeOf<SqliteException>());
+        Assert.That(Dateiverweiszeilen(datenbank), Has.Length.EqualTo(1));
+    }
+
+    // Zwei Pfade, die sich nur in der Gross-/Kleinschreibung unterscheiden, sind zwei Pfade: auf
+    // der Zielplattform der Vision sind es zwei Dateien.
+    [Test]
+    public void Wenn_sich_zwei_Pfade_nur_in_der_Schreibweise_unterscheiden_dann_nimmt_die_Datenbank_beide()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "Playwright-Lizenz klären", 1);
+        LegeKontributorAn(datenbank, "Stefan");
+
+        FuegeDateiverweisEin(datenbank, 1, 1, "Dokumentation/Planung/kanbanc.md", "2026-08-30T15:40:12.0000000Z");
+        FuegeDateiverweisEin(datenbank, 1, 1, "Dokumentation/Planung/KANBANC.md", "2026-08-30T15:41:12.0000000Z");
+
+        Assert.That(Dateiverweiszeilen(datenbank).Select(zeile => zeile.Pfad),
+            Is.EqualTo(new[] { "Dokumentation/Planung/kanbanc.md", "Dokumentation/Planung/KANBANC.md" }));
+    }
+
+    // Derselbe Pfad an einer **zweiten** Karte ist erlaubt: der Index fuehrt mit der Karte.
+    [Test]
+    public void Wenn_derselbe_Pfad_an_zwei_verschiedenen_Karten_steht_dann_nimmt_die_Datenbank_beide()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "Playwright-Lizenz klären", 1);
+        FuegeKarteEin(datenbank, spalteId, "Migration schreiben", 2);
+        LegeKontributorAn(datenbank, "Stefan");
+
+        FuegeDateiverweisEin(datenbank, 1, 1, "Dokumentation/Planung/kanbanc.md", "2026-08-30T15:40:12.0000000Z");
+        FuegeDateiverweisEin(datenbank, 2, 1, "Dokumentation/Planung/kanbanc.md", "2026-08-30T15:41:12.0000000Z");
+
+        Assert.That(Dateiverweiszeilen(datenbank).Select(zeile => zeile.Karte), Is.EqualTo(new[] { 1L, 2L }));
+    }
+
+    // Ein Dateiverweis ohne Urheber oder ohne Zeitpunkt ist keiner: beide Spalten tragen NOT NULL.
+    [Test]
+    public void Wenn_ein_Dateiverweis_ohne_Urheber_oder_ohne_Zeitpunkt_geschrieben_wird_dann_weist_die_Tabelle_ihn_ab()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "Playwright-Lizenz klären", 1);
+        LegeKontributorAn(datenbank, "Stefan");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(() => FuegeDateiverweisEin(datenbank, 1, kontributorId: null, "kanbanc.md", "2026-08-30T15:40:12.0000000Z"), Throws.TypeOf<SqliteException>());
+            Assert.That(() => FuegeDateiverweisEin(datenbank, 1, kontributorId: 1, "kanbanc.md", zeitpunkt: null), Throws.TypeOf<SqliteException>());
+        });
+        Assert.That(Dateiverweiszeilen(datenbank), Is.Empty);
+    }
+
+    [Test]
+    public void Wenn_die_Migration_ein_zweites_Mal_laeuft_dann_bleiben_Pfade_Urheber_und_Zeitpunkte_stehen()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "Playwright-Lizenz klären", 1);
+        LegeKontributorAn(datenbank, "Stefan");
+        FuegeDateiverweisEin(datenbank, 1, 1, "Dokumentation/Planung/kanbanc.md", "2026-08-30T15:40:12.0000000Z");
+        FuegeDateiverweisEin(datenbank, 1, 1, "Anforderungen/R00000-vision.md", "2026-08-30T17:40:12.0000000Z");
+        var schemaVorher = SchemaDefinitionen(datenbank);
+
+        Assert.That(() => new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus(), Throws.Nothing);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(SchemaDefinitionen(datenbank), Is.EqualTo(schemaVorher));
+            Assert.That(Dateiverweiszeilen(datenbank), Is.EqualTo(new[]
+            {
+                (1L, 1L, 1L, "Dokumentation/Planung/kanbanc.md", "2026-08-30T15:40:12.0000000Z"),
+                (2L, 1L, 1L, "Anforderungen/R00000-vision.md", "2026-08-30T17:40:12.0000000Z"),
+            }));
+        });
+    }
+
     [Test]
     public void Wenn_FuehreAus_auf_einer_gefuellten_Datei_ein_zweites_Mal_laeuft_dann_bleiben_Schema_und_Daten_unveraendert()
     {
@@ -888,6 +1021,25 @@ public class MigrationslaeuferTests
             SELECT AnhangId, Karte, Kontributor, Dateiname, Dateigroesse, Zeitpunkt
               FROM Anhang
              ORDER BY AnhangId");
+        return zeilen.ToArray();
+    }
+
+    private static void FuegeDateiverweisEin(TemporaereDatenbank datenbank, long karteId, long? kontributorId, string pfad, string? zeitpunkt)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Dateiverweis (Karte, Kontributor, Pfad, Zeitpunkt)
+            VALUES (@Karte, @Kontributor, @Pfad, @Zeitpunkt)",
+            new { Karte = karteId, Kontributor = kontributorId, Pfad = pfad, Zeitpunkt = zeitpunkt });
+    }
+
+    private static (long DateiverweisId, long Karte, long Kontributor, string Pfad, string Zeitpunkt)[] Dateiverweiszeilen(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        var zeilen = verbindung.Query<(long DateiverweisId, long Karte, long Kontributor, string Pfad, string Zeitpunkt)>(@"
+            SELECT DateiverweisId, Karte, Kontributor, Pfad, Zeitpunkt
+              FROM Dateiverweis
+             ORDER BY DateiverweisId");
         return zeilen.ToArray();
     }
 
