@@ -295,3 +295,4 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-06 | R00020 Datei an Karte haengen | B0276 Endpunkte der Anhaenge | Standard | 2h | 0,4h | 0,4h | autonom |
 | 2026-09-06 | R00020 Datei an Karte haengen | B0277 API-Klient der Anhaenge | Standard | 2h | 0,2h | 0,2h | autonom |
 | 2026-09-06 | R00020 Datei an Karte haengen | B0278 Herunterladen als Verweis in den Browser | Standard | 0,4h | 0,1h | 0,1h | autonom |
+| 2026-09-06 | R00020 Datei an Karte haengen | B0279 Dateigroesse als Text | Standard | 0,4h | 0,1h | 0,1h | autonom |
