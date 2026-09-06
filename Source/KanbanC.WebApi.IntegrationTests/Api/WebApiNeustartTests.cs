@@ -242,6 +242,83 @@ public class WebApiNeustartTests
         Assert.That(await geladen.Content.ReadAsByteArrayAsync(), Is.EqualTo(ersterInhalt));
     }
 
+    // US-8, letztes Szenario: Pfade, Urheber, Zeitpunkte und Reihenfolge ueberstehen den Neustart
+    // unveraendert — der Zeitpunkt kommt als derselbe Moment zurueck, nicht als naeherungsweise
+    // derselbe. Und ein Pfad mit Rueckstrichen kommt zeichengleich wieder.
+    [Test]
+    public async Task Wenn_die_WebApi_nach_dem_Eintragen_von_Dateiverweisen_neu_startet_dann_stehen_Pfade_Urheber_Zeitpunkte_und_Reihenfolge_unveraendert_da()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        long karteId;
+        Kartendetail vorDemNeustart;
+        using (var ersteInstanz = new TestWebApi(datenbank.Dateipfad))
+        {
+            var board = await LegeBoardAn(ersteInstanz, new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null));
+            var karte = await LegeKarteAn(ersteInstanz, board.BoardId, board.Spalten[0].SpalteId, "Playwright-Lizenz klären");
+            karteId = karte.KarteId;
+            var stefan = await LegeKontributorAn(ersteInstanz, new KontributorAnlegenAnfrage("Stefan", Kontributorart.Mensch));
+            var agent = await LegeKontributorAn(ersteInstanz, new KontributorAnlegenAnfrage("Claude-Agent", Kontributorart.Agent));
+            await TrageDateiverweisEin(ersteInstanz, karteId, "Dokumentation/Planung/kanbanc.md", stefan.KontributorId);
+            await TrageDateiverweisEin(ersteInstanz, karteId, "Anforderungen/R00000-vision.md", agent.KontributorId);
+            vorDemNeustart = await TrageDateiverweisEin(ersteInstanz, karteId, @"Dokumentation\Architektur\A00001.md", stefan.KontributorId);
+        }
+
+        using var zweiteInstanz = new TestWebApi(datenbank.Dateipfad);
+
+        var detail = await zweiteInstanz.Klient.GetFromJsonAsync<Kartendetail>($"/api/karten/{karteId}");
+        Assert.That(detail, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail!.Dateiverweise.Select(dateiverweis => dateiverweis.Pfad), Is.EqualTo(vorDemNeustart.Dateiverweise.Select(dateiverweis => dateiverweis.Pfad)));
+            Assert.That(detail.Dateiverweise.Select(dateiverweis => dateiverweis.DateiverweisId), Is.EqualTo(vorDemNeustart.Dateiverweise.Select(dateiverweis => dateiverweis.DateiverweisId)));
+            Assert.That(detail.Dateiverweise.Select(dateiverweis => dateiverweis.Urheber), Is.EqualTo(vorDemNeustart.Dateiverweise.Select(dateiverweis => dateiverweis.Urheber)));
+            Assert.That(detail.Dateiverweise.Select(dateiverweis => dateiverweis.Zeitpunkt), Is.EqualTo(vorDemNeustart.Dateiverweise.Select(dateiverweis => dateiverweis.Zeitpunkt)));
+            Assert.That(detail.Dateiverweise.Select(dateiverweis => dateiverweis.Urheber.Name), Is.EqualTo(new[] { "Stefan", "Claude-Agent", "Stefan" }));
+            Assert.That(detail.Dateiverweise[2].Pfad, Is.EqualTo(@"Dokumentation\Architektur\A00001.md"));
+        });
+    }
+
+    // Die Dublettenregel ueberlebt den Neustart: sie steht im Schema und nicht nur im laufenden
+    // Prozess.
+    [Test]
+    public async Task Wenn_die_WebApi_neu_startet_dann_gilt_die_Dublettenregel_der_Dateiverweise_weiter()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        long karteId;
+        long kontributorId;
+        using (var ersteInstanz = new TestWebApi(datenbank.Dateipfad))
+        {
+            var board = await LegeBoardAn(ersteInstanz, new BoardAnlegenAnfrage("Entwicklung", BoardArt.Linie, null, null));
+            var karte = await LegeKarteAn(ersteInstanz, board.BoardId, board.Spalten[0].SpalteId, "Playwright-Lizenz klären");
+            karteId = karte.KarteId;
+            var stefan = await LegeKontributorAn(ersteInstanz, new KontributorAnlegenAnfrage("Stefan", Kontributorart.Mensch));
+            kontributorId = stefan.KontributorId;
+            await TrageDateiverweisEin(ersteInstanz, karteId, "Dokumentation/Planung/kanbanc.md", kontributorId);
+        }
+
+        using var zweiteInstanz = new TestWebApi(datenbank.Dateipfad);
+
+        using var antwort = await zweiteInstanz.Klient.PostAsJsonAsync(
+            $"/api/karten/{karteId}/dateiverweise",
+            new DateiverweisEintragenAnfrage("Dokumentation/Planung/kanbanc.md", kontributorId));
+        Assert.That(antwort.StatusCode, Is.EqualTo(System.Net.HttpStatusCode.BadRequest));
+        var detail = await zweiteInstanz.Klient.GetFromJsonAsync<Kartendetail>($"/api/karten/{karteId}");
+        Assert.That(detail!.Dateiverweise, Has.Count.EqualTo(1));
+    }
+
+    private static async Task<Kartendetail> TrageDateiverweisEin(TestWebApi webApi, long karteId, string pfad, long kontributorId)
+    {
+        var antwort = await webApi.Klient.PostAsJsonAsync($"/api/karten/{karteId}/dateiverweise", new DateiverweisEintragenAnfrage(pfad, kontributorId));
+        antwort.EnsureSuccessStatusCode();
+        var detail = await antwort.Content.ReadFromJsonAsync<Kartendetail>();
+        if (detail is null)
+        {
+            throw new InvalidOperationException("Die API hat kein Kartendetail zurückgegeben.");
+        }
+
+        return detail;
+    }
+
     private static async Task<Kartendetail> HaengeAn(TestWebApi webApi, long karteId, string dateiname, byte[] inhalt, long kontributorId)
     {
         var rumpf = new MultipartFormDataContent();

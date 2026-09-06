@@ -16,6 +16,7 @@ public class KartenEndpunkteTests
     private const int HoechsteTitellaenge = 1000;
     private const int HoechsteTeilaufgabenlaenge = 200;
     private const int HoechsteKommentarlaenge = 2000;
+    private const int HoechstePfadlaenge = 500;
 
     [Test]
     public async Task Wenn_eine_Karte_per_POST_angelegt_wird_dann_antwortet_die_API_mit_201_Location_und_vergebener_KarteId()
@@ -1985,6 +1986,451 @@ public class KartenEndpunkteTests
         });
         var detail = await webApi.Klient.GetFromJsonAsync<Kartendetail>(Kartendetailroute(aufbau.KarteId));
         Assert.That(detail!.Kommentare, Is.Empty);
+    }
+
+    // US-7: die Antwort ist 200 mit dem **ganzen** Kartendetail, nicht 201 mit der geschriebenen
+    // Zeile — dieselbe Antwortgestalt, die diese Seite ueberall hat.
+    [Test]
+    public async Task Wenn_ein_Dateiverweis_eingetragen_wird_dann_antwortet_POST_dateiverweise_mit_200_und_dem_ganzen_Kartendetail()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+
+        using var antwort = await webApi.Klient.PostAsJsonAsync(
+            Dateiverweisroute(aufbau.KarteId),
+            new DateiverweisEintragenAnfrage("Dokumentation/Planung/kanbanc.md", aufbau.Urheber.KontributorId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var detail = await AlsKartendetail(antwort);
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail.Karte.Titel, Is.EqualTo("Playwright-Lizenz klären"));
+            Assert.That(detail.Boardname, Is.EqualTo("Entwicklung"));
+            Assert.That(detail.Dateiverweise[^1].Pfad, Is.EqualTo("Dokumentation/Planung/kanbanc.md"));
+            Assert.That(detail.Dateiverweise[^1].DateiverweisId, Is.GreaterThan(0));
+        });
+    }
+
+    // Der Eintrag traegt den **ganzen** Urheber und einen Zeitpunkt im Fenster des Aufrufs — das
+    // Rechenbeispiel der Anforderung.
+    [Test]
+    public async Task Wenn_ein_Dateiverweis_eingetragen_wird_dann_traegt_er_den_ganzen_Urheber_und_einen_Zeitpunkt_im_Fenster_des_Aufrufs()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+
+        var vorher = DateTimeOffset.UtcNow.AddSeconds(-1);
+        var detail = await TrageDateiverweisEin(webApi, aufbau.KarteId, "Dokumentation/Planung/kanbanc.md", aufbau.Urheber.KontributorId);
+        var nachher = DateTimeOffset.UtcNow.AddSeconds(1);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail.Dateiverweise[0].Urheber, Is.EqualTo(aufbau.Urheber));
+            Assert.That(detail.Dateiverweise[0].Zeitpunkt, Is.GreaterThanOrEqualTo(vorher));
+            Assert.That(detail.Dateiverweise[0].Zeitpunkt, Is.LessThanOrEqualTo(nachher));
+        });
+    }
+
+    // Der Aufrufer kann den Zeitpunkt nicht mitgeben: die Anfrage hat kein Feld dafuer, und ein
+    // mitgeschicktes aendert nichts am gespeicherten Wert.
+    [Test]
+    public async Task Wenn_der_Aufrufer_einen_Zeitpunkt_mitschickt_dann_aendert_das_nichts_am_gespeicherten_Wert()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+        var vorher = DateTimeOffset.UtcNow.AddSeconds(-1);
+
+        using var antwort = await webApi.Klient.PostAsJsonAsync(
+            Dateiverweisroute(aufbau.KarteId),
+            new { pfad = "Dokumentation/Planung/kanbanc.md", kontributor = aufbau.Urheber.KontributorId, zeitpunkt = "1999-01-01T00:00:00+00:00" });
+
+        antwort.EnsureSuccessStatusCode();
+        var detail = await AlsKartendetail(antwort);
+        Assert.That(detail.Dateiverweise[0].Zeitpunkt, Is.GreaterThanOrEqualTo(vorher));
+    }
+
+    // Randgetrimmt, sonst zeichengleich — das Rechenbeispiel der Anforderung, samt Windows-Pfad.
+    [Test]
+    public async Task Wenn_ein_Pfad_mit_Raendern_oder_Rueckstrichen_eingetragen_wird_dann_kommt_er_getrimmt_und_zeichengleich_zurueck()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+
+        await TrageDateiverweisEin(webApi, aufbau.KarteId, "  Dokumentation/Planung/kanbanc.md  ", aufbau.Urheber.KontributorId);
+        var detail = await TrageDateiverweisEin(webApi, aufbau.KarteId, @"Dokumentation\Planung\kanbanc.md", aufbau.Urheber.KontributorId);
+
+        Assert.That(detail.Dateiverweise.Select(dateiverweis => dateiverweis.Pfad),
+            Is.EqualTo(new[] { "Dokumentation/Planung/kanbanc.md", @"Dokumentation\Planung\kanbanc.md" }));
+    }
+
+    // Was ausdruecklich **angenommen** wird: eine nicht existierende Datei, ein absoluter Pfad
+    // ausserhalb jedes Repositorys, ein Pfad ohne Endung.
+    [Test]
+    public async Task Wenn_der_Pfad_ins_Leere_zeigt_oder_absolut_ist_dann_nimmt_die_API_ihn_trotzdem_an()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+
+        await TrageDateiverweisEin(webApi, aufbau.KarteId, "Dokumentation/gibt-es-nicht.md", aufbau.Urheber.KontributorId);
+        await TrageDateiverweisEin(webApi, aufbau.KarteId, "/home/shoff/notizen.txt", aufbau.Urheber.KontributorId);
+        var detail = await TrageDateiverweisEin(webApi, aufbau.KarteId, "Dokumentation/Planung", aufbau.Urheber.KontributorId);
+
+        Assert.That(detail.Dateiverweise.Select(dateiverweis => dateiverweis.Pfad),
+            Is.EqualTo(new[] { "Dokumentation/gibt-es-nicht.md", "/home/shoff/notizen.txt", "Dokumentation/Planung" }));
+    }
+
+    // Rechenbeispiel Reihenfolge: a.md, b.md, c.md — aeltester oben, in jedem folgenden Abruf.
+    [Test]
+    public async Task Wenn_drei_Dateiverweise_eingetragen_werden_dann_liefert_GET_karten_dieselbe_Liste_in_derselben_Reihenfolge()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+        await TrageDateiverweisEin(webApi, aufbau.KarteId, "a.md", aufbau.Urheber.KontributorId);
+        await TrageDateiverweisEin(webApi, aufbau.KarteId, "b.md", aufbau.Urheber.KontributorId);
+        await TrageDateiverweisEin(webApi, aufbau.KarteId, "c.md", aufbau.Urheber.KontributorId);
+
+        var detail = await webApi.Klient.GetFromJsonAsync<Kartendetail>(Kartendetailroute(aufbau.KarteId));
+
+        Assert.That(detail!.Dateiverweise.Select(dateiverweis => dateiverweis.Pfad), Is.EqualTo(new[] { "a.md", "b.md", "c.md" }));
+    }
+
+    // US-7 als Gegenprobe: die Dateiverweise haengen am Kartendetail und nicht an der Karte — die
+    // Boardantwort bleibt unveraendert.
+    [Test]
+    public async Task Wenn_eine_Karte_Dateiverweise_traegt_dann_bekommt_die_Boardantwort_keine_Dateiverweisliste()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+        await TrageDateiverweisEin(webApi, aufbau.KarteId, "Dokumentation/Planung/kanbanc.md", aufbau.Urheber.KontributorId);
+
+        var rumpf = await webApi.Klient.GetStringAsync($"{BoardsRoute}/{aufbau.BoardId}");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(rumpf, Does.Not.Contain("dateiverweise"));
+            Assert.That(rumpf, Does.Not.Contain("Dokumentation/Planung/kanbanc.md"));
+        });
+    }
+
+    // Kein Zaehlfeld und keine Position neben der Liste.
+    [Test]
+    public async Task Wenn_das_Kartendetail_gelesen_wird_dann_traegt_es_weder_eine_Dateiverweiszahl_noch_eine_Position()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+        await TrageDateiverweisEin(webApi, aufbau.KarteId, "a.md", aufbau.Urheber.KontributorId);
+        await TrageDateiverweisEin(webApi, aufbau.KarteId, "b.md", aufbau.Urheber.KontributorId);
+
+        var rumpf = await webApi.Klient.GetStringAsync(Kartendetailroute(aufbau.KarteId));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(rumpf, Does.Contain("\"dateiverweise\""));
+            Assert.That(rumpf, Does.Not.Contain("dateiverweiszahl"));
+            Assert.That(rumpf, Does.Not.Contain("dateiverweisanzahl"));
+        });
+
+        var dateiverweisliste = rumpf[rumpf.IndexOf("\"dateiverweise\"", StringComparison.Ordinal)..];
+        Assert.That(dateiverweisliste, Does.Not.Contain("position"));
+    }
+
+    [Test]
+    public async Task Wenn_der_Pfad_leer_ist_dann_antwortet_POST_dateiverweise_mit_400_und_Befund_und_speichert_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+        await TrageDateiverweisEin(webApi, aufbau.KarteId, "Dokumentation/Planung/kanbanc.md", aufbau.Urheber.KontributorId);
+
+        using var antwort = await webApi.Klient.PostAsJsonAsync(Dateiverweisroute(aufbau.KarteId), new DateiverweisEintragenAnfrage("   ", aufbau.Urheber.KontributorId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "dateiverweis-pfad-leer");
+        var detail = await webApi.Klient.GetFromJsonAsync<Kartendetail>(Kartendetailroute(aufbau.KarteId));
+        Assert.That(detail!.Dateiverweise.Select(dateiverweis => dateiverweis.Pfad), Is.EqualTo(new[] { "Dokumentation/Planung/kanbanc.md" }));
+    }
+
+    [Test]
+    public async Task Wenn_der_Pfad_zu_lang_ist_dann_antwortet_POST_dateiverweise_mit_400_und_nennt_die_Hoechstlaenge()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+
+        using var antwort = await webApi.Klient.PostAsJsonAsync(
+            Dateiverweisroute(aufbau.KarteId),
+            new DateiverweisEintragenAnfrage(new string('a', HoechstePfadlaenge + 1), aufbau.Urheber.KontributorId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Dateiverweis eintragen mit zu langem Pfad");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("dateiverweis-pfad-zu-lang"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain("500"));
+            Assert.That(zurueckweisung.Befunde[0].Kompensation, Does.Contain($"POST /api/karten/{aufbau.KarteId}/dateiverweise"));
+        });
+        var detail = await webApi.Klient.GetFromJsonAsync<Kartendetail>(Kartendetailroute(aufbau.KarteId));
+        Assert.That(detail!.Dateiverweise, Is.Empty);
+    }
+
+    // Ein Pfad aus genau 500 Zeichen geht durch — die andere Haelfte des Rechenbeispiels.
+    [Test]
+    public async Task Wenn_der_Pfad_genau_die_Hoechstlaenge_hat_dann_nimmt_die_API_ihn_an()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+
+        var detail = await TrageDateiverweisEin(webApi, aufbau.KarteId, new string('a', HoechstePfadlaenge), aufbau.Urheber.KontributorId);
+
+        Assert.That(detail.Dateiverweise[0].Pfad, Has.Length.EqualTo(HoechstePfadlaenge));
+    }
+
+    // Der Fall, den es bei Anhang, Teilaufgabe und Kommentar nicht gibt.
+    [Test]
+    public async Task Wenn_derselbe_Pfad_ein_zweites_Mal_eingetragen_wird_dann_antwortet_POST_dateiverweise_mit_400_und_lesbarem_Befund()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+        await TrageDateiverweisEin(webApi, aufbau.KarteId, "Dokumentation/Planung/kanbanc.md", aufbau.Urheber.KontributorId);
+
+        using var antwort = await webApi.Klient.PostAsJsonAsync(
+            Dateiverweisroute(aufbau.KarteId),
+            new DateiverweisEintragenAnfrage("  Dokumentation/Planung/kanbanc.md  ", aufbau.Urheber.KontributorId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Dateiverweis eintragen mit schon vorhandenem Pfad");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("dateiverweis-doppelt"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain("Dokumentation/Planung/kanbanc.md"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain(aufbau.KarteId.ToString(CultureInfo.InvariantCulture)));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Not.Contain("UNIQUE"), "Der Aufrufer trifft nie auf eine nackte Datenbankmeldung.");
+        });
+        var detail = await webApi.Klient.GetFromJsonAsync<Kartendetail>(Kartendetailroute(aufbau.KarteId));
+        Assert.That(detail!.Dateiverweise, Has.Count.EqualTo(1));
+    }
+
+    [Test]
+    public async Task Wenn_derselbe_Pfad_an_eine_zweite_Karte_geht_dann_nimmt_die_API_ihn_an()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+        var zweite = await LegeKarteAn(webApi, aufbau.BoardId, (await LadeBoard(webApi, aufbau.BoardId)).Spalten[0].SpalteId, "Migration schreiben");
+        await TrageDateiverweisEin(webApi, aufbau.KarteId, "Dokumentation/Planung/kanbanc.md", aufbau.Urheber.KontributorId);
+
+        var detail = await TrageDateiverweisEin(webApi, zweite.KarteId, "Dokumentation/Planung/kanbanc.md", aufbau.Urheber.KontributorId);
+
+        Assert.That(detail.Dateiverweise.Select(dateiverweis => dateiverweis.Pfad), Is.EqualTo(new[] { "Dokumentation/Planung/kanbanc.md" }));
+    }
+
+    [Test]
+    public async Task Wenn_die_KarteId_unbekannt_ist_dann_antwortet_POST_dateiverweise_mit_404_und_einem_Befund_ohne_Board()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+
+        using var antwort = await webApi.Klient.PostAsJsonAsync(Dateiverweisroute(9999), new DateiverweisEintragenAnfrage("kanbanc.md", aufbau.Urheber.KontributorId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Dateiverweis eintragen mit unbekannter KarteId");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("karte-unbekannt"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain("9999"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Not.Contain("Board"));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_KontributorId_unbekannt_ist_dann_antwortet_POST_dateiverweise_mit_404_und_nennt_die_Kontributorenliste()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+
+        using var antwort = await webApi.Klient.PostAsJsonAsync(Dateiverweisroute(aufbau.KarteId), new DateiverweisEintragenAnfrage("kanbanc.md", 9999));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Dateiverweis eintragen mit unbekannter KontributorId");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("kontributor-unbekannt"));
+            Assert.That(zurueckweisung.Befunde[0].Kompensation, Does.Contain("GET /api/kontributoren"));
+        });
+        var detail = await webApi.Klient.GetFromJsonAsync<Kartendetail>(Kartendetailroute(aufbau.KarteId));
+        Assert.That(detail!.Dateiverweise, Is.Empty);
+    }
+
+    // 400 und nicht 404, und die Meldung spricht vom **Dateiverweis** — weder von Verantwortung
+    // noch vom Kommentar noch vom Anhang.
+    [Test]
+    public async Task Wenn_die_KontributorId_stillgelegt_ist_dann_antwortet_POST_dateiverweise_mit_400_und_einer_Meldung_zum_Dateiverweis()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+        var maria = await LegeKontributorAn(webApi, "Maria Lenz", Kontributorart.Mensch);
+        using var stillgelegt = await webApi.Klient.PutAsJsonAsync($"/api/kontributoren/{maria.KontributorId}/stilllegung", new Stilllegung(true));
+        stillgelegt.EnsureSuccessStatusCode();
+
+        using var antwort = await webApi.Klient.PostAsJsonAsync(Dateiverweisroute(aufbau.KarteId), new DateiverweisEintragenAnfrage("kanbanc.md", maria.KontributorId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Dateiverweis eintragen mit stillgelegter KontributorId");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("kontributor-stillgelegt"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain("Dateiverweis"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Not.Contain("verantwortlich"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Not.Contain("anhängen"));
+        });
+        var detail = await webApi.Klient.GetFromJsonAsync<Kartendetail>(Kartendetailroute(aufbau.KarteId));
+        Assert.That(detail!.Dateiverweise, Is.Empty);
+    }
+
+    // Ein Dateiverweis eines inzwischen stillgelegten Kontributors bleibt an der Karte sichtbar,
+    // mit Name und Stilllegungsstand.
+    [Test]
+    public async Task Wenn_der_Urheber_nach_dem_Eintragen_stillgelegt_wird_dann_bleibt_sein_Dateiverweis_sichtbar()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+        var maria = await LegeKontributorAn(webApi, "Maria Lenz", Kontributorart.Mensch);
+        await TrageDateiverweisEin(webApi, aufbau.KarteId, "Dokumentation/Planung/kanbanc.md", maria.KontributorId);
+        using var stillgelegt = await webApi.Klient.PutAsJsonAsync($"/api/kontributoren/{maria.KontributorId}/stilllegung", new Stilllegung(true));
+        stillgelegt.EnsureSuccessStatusCode();
+
+        var detail = await webApi.Klient.GetFromJsonAsync<Kartendetail>(Kartendetailroute(aufbau.KarteId));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(detail!.Dateiverweise[0].Urheber.Name, Is.EqualTo("Maria Lenz"));
+            Assert.That(detail.Dateiverweise[0].Urheber.StillgelegtAm, Is.Not.Null);
+        });
+    }
+
+    [Test]
+    public async Task Wenn_ein_Dateiverweis_entfernt_wird_dann_antwortet_DELETE_mit_200_und_dem_Kartendetail_ohne_diesen_Eintrag()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+        await TrageDateiverweisEin(webApi, aufbau.KarteId, "a.md", aufbau.Urheber.KontributorId);
+        var mitZweien = await TrageDateiverweisEin(webApi, aufbau.KarteId, "b.md", aufbau.Urheber.KontributorId);
+        var ersteId = mitZweien.Dateiverweise[0].DateiverweisId;
+
+        using var antwort = await webApi.Klient.DeleteAsync(Dateiverweiszeilenroute(aufbau.KarteId, ersteId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var detail = await AlsKartendetail(antwort);
+        Assert.That(detail.Dateiverweise.Select(dateiverweis => dateiverweis.Pfad), Is.EqualTo(new[] { "b.md" }));
+    }
+
+    [Test]
+    public async Task Wenn_derselbe_Dateiverweis_ein_zweites_Mal_entfernt_wird_dann_antwortet_DELETE_mit_404_und_Rumpf()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+        var detail = await TrageDateiverweisEin(webApi, aufbau.KarteId, "kanbanc.md", aufbau.Urheber.KontributorId);
+        var dateiverweisId = detail.Dateiverweise[0].DateiverweisId;
+        using var erste = await webApi.Klient.DeleteAsync(Dateiverweiszeilenroute(aufbau.KarteId, dateiverweisId));
+        erste.EnsureSuccessStatusCode();
+
+        using var antwort = await webApi.Klient.DeleteAsync(Dateiverweiszeilenroute(aufbau.KarteId, dateiverweisId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        await Fehlerrumpf.ErwarteBefundMitCode(antwort, "dateiverweis-unbekannt");
+    }
+
+    // Eine DateiverweisId, die es gibt, aber nicht an **dieser** Karte: 404, und die andere Karte
+    // traegt ihre Zeile danach unveraendert.
+    [Test]
+    public async Task Wenn_der_Dateiverweis_zu_einer_anderen_Karte_gehoert_dann_antwortet_DELETE_mit_404_und_entfernt_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+        var fremde = await LegeKarteAn(webApi, aufbau.BoardId, (await LadeBoard(webApi, aufbau.BoardId)).Spalten[0].SpalteId, "Migration schreiben");
+        var beiDerFremden = await TrageDateiverweisEin(webApi, fremde.KarteId, "nur-woanders.md", aufbau.Urheber.KontributorId);
+        var fremdeId = beiDerFremden.Dateiverweise[0].DateiverweisId;
+
+        using var antwort = await webApi.Klient.DeleteAsync(Dateiverweiszeilenroute(aufbau.KarteId, fremdeId));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        var zurueckweisung = await Fehlerrumpf.Lies(antwort, "Fremden Dateiverweis entfernen");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zurueckweisung.Befunde[0].Code, Is.EqualTo("dateiverweis-unbekannt"));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain(fremdeId.ToString(CultureInfo.InvariantCulture)));
+            Assert.That(zurueckweisung.Befunde[0].Meldung, Does.Contain(aufbau.KarteId.ToString(CultureInfo.InvariantCulture)));
+        });
+        var fremdesDetail = await webApi.Klient.GetFromJsonAsync<Kartendetail>(Kartendetailroute(fremde.KarteId));
+        Assert.That(fremdesDetail!.Dateiverweise, Has.Count.EqualTo(1));
+    }
+
+    // Nach dem Entfernen laesst sich derselbe Pfad wieder eintragen — er ist keine Dublette mehr.
+    [Test]
+    public async Task Wenn_ein_Pfad_entfernt_und_erneut_eingetragen_wird_dann_nimmt_die_API_ihn_wieder_an()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await KarteMitUrheber(webApi);
+        var eingetragen = await TrageDateiverweisEin(webApi, aufbau.KarteId, "kanbanc.md", aufbau.Urheber.KontributorId);
+        using var entfernt = await webApi.Klient.DeleteAsync(Dateiverweiszeilenroute(aufbau.KarteId, eingetragen.Dateiverweise[0].DateiverweisId));
+        entfernt.EnsureSuccessStatusCode();
+
+        var detail = await TrageDateiverweisEin(webApi, aufbau.KarteId, "kanbanc.md", aufbau.Urheber.KontributorId);
+
+        Assert.That(detail.Dateiverweise.Select(dateiverweis => dateiverweis.Pfad), Is.EqualTo(new[] { "kanbanc.md" }));
+    }
+
+    // **Es gibt keine Route zum Aendern eines Dateiverweises.** Geprueft am Bestand der
+    // registrierten Routen und nicht an einem einzelnen Aufruf: ein 404 sagte nur, dass diese
+    // eine Adresse nichts kann.
+    [Test]
+    public void Wenn_die_registrierten_Routen_durchgesehen_werden_dann_gibt_es_keine_zum_Aendern_eines_Dateiverweises()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+
+        var dateiverweisrouten = webApi.Routen.Where(route => route.Contains("dateiverweise", StringComparison.Ordinal));
+
+        Assert.That(dateiverweisrouten, Is.EquivalentTo(new[]
+        {
+            "POST /api/karten/{karteId:long}/dateiverweise",
+            "DELETE /api/karten/{karteId:long}/dateiverweise/{dateiverweisId:long}",
+        }));
+    }
+
+    private static string Dateiverweisroute(long karteId)
+    {
+        return $"/api/karten/{karteId}/dateiverweise";
+    }
+
+    private static string Dateiverweiszeilenroute(long karteId, long dateiverweisId)
+    {
+        return $"/api/karten/{karteId}/dateiverweise/{dateiverweisId}";
+    }
+
+    private static async Task<Kartendetail> TrageDateiverweisEin(TestWebApi webApi, long karteId, string pfad, long kontributorId)
+    {
+        using var antwort = await webApi.Klient.PostAsJsonAsync(Dateiverweisroute(karteId), new DateiverweisEintragenAnfrage(pfad, kontributorId));
+        antwort.EnsureSuccessStatusCode();
+        return await AlsKartendetail(antwort);
     }
 
     private static string Kommentarroute(long karteId)

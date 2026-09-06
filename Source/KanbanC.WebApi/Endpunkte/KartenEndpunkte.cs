@@ -47,6 +47,14 @@ public static class KartenEndpunkte
     private const string Anhanginhaltsroute = "/api/karten/{karteId:long}/anhaenge/{anhangId:long}";
     private const string Anhanginhaltstyp = "application/octet-stream";
 
+    // Dieselbe boardlose Kartenadresse, eine Unterressource weiter — und **zwei** Routen statt
+    // drei wie beim Anhang: ein Dateiverweis traegt einen Pfad und keine Bytes, es gibt also
+    // nichts herunterzuladen. **Keine Aenderungsroute:** die Zeile traegt nichts als den Pfad,
+    // entfernen und neu eintragen ist derselbe Vorgang in zwei Griffen, und eine Route, die
+    // niemand ruft, waere tote Flexibilitaet.
+    private const string Dateiverweisroute = "/api/karten/{karteId:long}/dateiverweise";
+    private const string Dateiverweiszeilenroute = "/api/karten/{karteId:long}/dateiverweise/{dateiverweisId:long}";
+
     public static void Registriere(IEndpointRouteBuilder routen)
     {
         routen.MapGet(Kartenroute, LiesKartendetail).WithName("KartendetailLesen");
@@ -63,6 +71,8 @@ public static class KartenEndpunkte
         routen.MapPost(Anhangroute, HaengeAnhangAn).WithName("AnhangAnhaengen").DisableAntiforgery();
         routen.MapGet(Anhanginhaltsroute, LiesAnhang).WithName("AnhangLesen");
         routen.MapDelete(Anhanginhaltsroute, EntferneAnhang).WithName("AnhangEntfernen");
+        routen.MapPost(Dateiverweisroute, TrageDateiverweisEin).WithName("DateiverweisEintragen");
+        routen.MapDelete(Dateiverweiszeilenroute, EntferneDateiverweis).WithName("DateiverweisEntfernen");
         routen.MapGet(Basisroute, LiesKartenDerSpalte).WithName("KartenDerSpalteLesen");
         routen.MapPost(Basisroute, LegeKarteAn).WithName("KarteAnlegen");
         routen.MapPut(Lageroute, VerschiebeKarte).WithName("KarteVerschieben");
@@ -190,6 +200,36 @@ public static class KartenEndpunkte
     private static IResult EntferneAnhang(long karteId, long anhangId, KartenService kartenService)
     {
         var ergebnis = kartenService.EntferneAnhang(karteId, anhangId);
+        if (ergebnis.IstErfolg)
+        {
+            return Results.Ok(ergebnis.Wert);
+        }
+
+        return Zurueckweisungen.AlsFehlerantwort(ergebnis.Befunde);
+    }
+
+    // **200 statt 201** und mit dem ganzen Kartendetail, wie beim Kommentar und beim Anhang. Der
+    // Zeitpunkt steht nicht in der Anfrage — koennte ein Agent ihn mitgeben, koennte er die
+    // Reihenfolge der Liste faelschen, und der Zeitpunkt ist hier zugleich die einzige Ordnung.
+    // Der Urheber reist im **Rumpf** und nicht als Query, wie jeder Kontributor in diesem
+    // Projekt. **JSON in beide Richtungen**, anders als beim Anhang: ein Dateiverweis traegt
+    // einen Pfad, keine Bytes — also keine multipart-Form und kein DisableAntiforgery.
+    private static IResult TrageDateiverweisEin(long karteId, DateiverweisEintragenAnfrage anfrage, KartenService kartenService)
+    {
+        var ergebnis = kartenService.TrageDateiverweisEin(karteId, anfrage);
+        if (ergebnis.IstErfolg)
+        {
+            return Results.Ok(ergebnis.Wert);
+        }
+
+        return Zurueckweisungen.AlsFehlerantwort(ergebnis.Befunde);
+    }
+
+    // Dieselbe Antwortgestalt wie das Eintragen, weil dieselbe Seite sie verbraucht. Ein zweiter
+    // Aufruf derselben Nummer meldet ein fehlendes Ding.
+    private static IResult EntferneDateiverweis(long karteId, long dateiverweisId, KartenService kartenService)
+    {
+        var ergebnis = kartenService.EntferneDateiverweis(karteId, dateiverweisId);
         if (ergebnis.IstErfolg)
         {
             return Results.Ok(ergebnis.Wert);

@@ -300,6 +300,49 @@ public class FehlervertragTests
             await webApi.Klient.PostAsync($"/api/karten/{aufbau.Karte.KarteId}/anhaenge", Anhangrumpf([1, 2, 3], "wbs-export.md", aufbau.Stillgelegter.KontributorId))));
 
         faelle.Add(new Fehlerfall(
+            "POST /api/karten/{karteId:long}/dateiverweise",
+            "Dateiverweis eintragen mit leerem Pfad",
+            await webApi.Klient.PostAsJsonAsync($"/api/karten/{aufbau.Karte.KarteId}/dateiverweise", new DateiverweisEintragenAnfrage("   ", aufbau.Kontributor.KontributorId))));
+
+        faelle.Add(new Fehlerfall(
+            "POST /api/karten/{karteId:long}/dateiverweise",
+            "Dateiverweis eintragen mit zu langem Pfad",
+            await webApi.Klient.PostAsJsonAsync($"/api/karten/{aufbau.Karte.KarteId}/dateiverweise", new DateiverweisEintragenAnfrage(new string('a', 501), aufbau.Kontributor.KontributorId))));
+
+        faelle.Add(new Fehlerfall(
+            "POST /api/karten/{karteId:long}/dateiverweise",
+            "Dateiverweis eintragen mit unbekannter KarteId",
+            await webApi.Klient.PostAsJsonAsync("/api/karten/999/dateiverweise", new DateiverweisEintragenAnfrage("Dokumentation/Planung/kanbanc.md", aufbau.Kontributor.KontributorId))));
+
+        faelle.Add(new Fehlerfall(
+            "POST /api/karten/{karteId:long}/dateiverweise",
+            "Dateiverweis eintragen mit unbekannter KontributorId",
+            await webApi.Klient.PostAsJsonAsync($"/api/karten/{aufbau.Karte.KarteId}/dateiverweise", new DateiverweisEintragenAnfrage("Dokumentation/Planung/kanbanc.md", 999))));
+
+        faelle.Add(new Fehlerfall(
+            "POST /api/karten/{karteId:long}/dateiverweise",
+            "Dateiverweis eintragen mit stillgelegter KontributorId",
+            await webApi.Klient.PostAsJsonAsync($"/api/karten/{aufbau.Karte.KarteId}/dateiverweise", new DateiverweisEintragenAnfrage("Dokumentation/Planung/kanbanc.md", aufbau.Stillgelegter.KontributorId))));
+
+        // Der Fall, den es bei den Nachbarn nicht gibt: derselbe Pfad ein zweites Mal. Der
+        // Aufbau traegt ihn deshalb schon — angelegt in LegeAufbauAn, damit dieser Aufruf auf
+        // eine besetzte Stelle trifft.
+        faelle.Add(new Fehlerfall(
+            "POST /api/karten/{karteId:long}/dateiverweise",
+            "Dateiverweis eintragen mit schon vorhandenem Pfad",
+            await webApi.Klient.PostAsJsonAsync($"/api/karten/{aufbau.Karte.KarteId}/dateiverweise", new DateiverweisEintragenAnfrage("Anforderungen/R00000-vision.md", aufbau.Kontributor.KontributorId))));
+
+        faelle.Add(new Fehlerfall(
+            "DELETE /api/karten/{karteId:long}/dateiverweise/{dateiverweisId:long}",
+            "Dateiverweis entfernen mit unbekannter DateiverweisId",
+            await webApi.Klient.DeleteAsync($"/api/karten/{aufbau.Karte.KarteId}/dateiverweise/999")));
+
+        faelle.Add(new Fehlerfall(
+            "DELETE /api/karten/{karteId:long}/dateiverweise/{dateiverweisId:long}",
+            "Dateiverweis entfernen mit unbekannter KarteId",
+            await webApi.Klient.DeleteAsync("/api/karten/999/dateiverweise/1")));
+
+        faelle.Add(new Fehlerfall(
             "GET /api/karten/{karteId:long}/anhaenge/{anhangId:long}",
             "Anhang lesen mit unbekannter AnhangId",
             await webApi.Klient.GetAsync($"/api/karten/{aufbau.Karte.KarteId}/anhaenge/999")));
@@ -339,7 +382,14 @@ public class FehlervertragTests
         Assert.That(maria, Is.Not.Null);
         var stillgelegt = await webApi.Klient.PutAsJsonAsync($"{KontributorenRoute}/{maria!.KontributorId}/stilllegung", new Stilllegung(true));
         stillgelegt.EnsureSuccessStatusCode();
-        return new Aufbau(board, karte!, kontributor!, maria);
+
+        // Ein Dateiverweis im Bestand: den Dublettenfall gibt es nur an einer besetzten Stelle,
+        // und er ist der einzige Fehlerfall dieses Slice, der etwas voraussetzt.
+        var ersterDateiverweis = await webApi.Klient.PostAsJsonAsync(
+            $"/api/karten/{karte!.KarteId}/dateiverweise",
+            new DateiverweisEintragenAnfrage("Anforderungen/R00000-vision.md", kontributor!.KontributorId));
+        ersterDateiverweis.EnsureSuccessStatusCode();
+        return new Aufbau(board, karte, kontributor, maria);
     }
 
     private static MultipartFormDataContent Anhangrumpf(byte[] inhalt, string dateiname, long kontributorId)
