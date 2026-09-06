@@ -5,9 +5,11 @@
 @using KanbanC.Contracts.Fehler
 @using KanbanC.Contracts.Karten
 @using KanbanC.Contracts.Kontributoren
+@using Microsoft.AspNetCore.Components.Forms
 @inject KartenApiKlient KartenKlient
 @inject KontributorenApiKlient KontributorenKlient
 @inject Identitaetsspeicher Identitaetsspeicher
+@inject Anhangbasisadresse Anhangbasis
 @inject IJSRuntime Browser
 
 <PageTitle>Karte @KarteId</PageTitle>
@@ -279,6 +281,71 @@ else
                     <p class="kommentarhinweis" id="kommentar-hinweis">Wähle oben in der Kopfzeile, wer du bist, um zu kommentieren.</p>
                 }
             </section>
+
+            @* Zweispaltige Sektion hinter „Kommentare", wie im Artboard: links die Anhänge, rechts
+               die Verweise aus I0019. Die rechte Hälfte bleibt in diesem Slice leer — sie hält den
+               Platz, damit die linke die halbe Breite bekommt, die gezeichnet ist.
+               **Drei bewusste Abweichungen vom Artboard:** ein `×` am Zeilenende, weil die
+               Entfernen-Route gebaut wird und ohne Bedienelement unerreichbar wäre; Urheber und
+               Zeitpunkt im title statt als zweite Textzeile, damit die gezeichnete einzeilige Form
+               bleibt; und die Leerzeile nennt nur die Anhänge — die gemeinsame Fassung mit den
+               Verweisen entsteht mit I0019. *@
+            <div class="blattzweispalter" id="anhaengeUndVerweise">
+                <section class="blatthalbabschnitt" id="anhangabschnitt">
+                    <h3 class="blattueberschrift">Anhänge</h3>
+
+                    @if (HatAnhaenge)
+                    {
+                        <div class="anhangliste" id="anhangliste">
+                            @* @key hält die Elementkennung über die Neuaufbauten hinweg fest: nach
+                               jedem Anhängen und Entfernen kommt die ganze Liste neu. *@
+                            @foreach (var anhang in _detail.Anhaenge)
+                            {
+                                <div class="anhang" @key="anhang.AnhangId" data-anhang="@anhang.AnhangId" title="@Anhangmeta(anhang)">
+                                    <svg class="bueroklammer" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5 11 20.5a5 5 0 0 1-7-7l9-9a3.5 3.5 0 0 1 5 5l-9 9a2 2 0 0 1-3-3l8.5-8.5"></path></svg>
+                                    <span class="anhangname">@anhang.Dateiname</span>
+                                    <span class="anhanggroesse">@Dateigroesseform.AlsText(anhang.Dateigroesse)</span>
+                                    @* Der Verweis zeigt **direkt auf die WebApi** und nicht auf eine
+                                       Blazor-Route: sonst flössen die Bytes zweimal über das Netz
+                                       und der Browser bekäme keinen echten Download. *@
+                                    <a class="anhangladen"
+                                       href="@Anhangadresse.Fuer(Anhangbasis.Adresse, KarteId, anhang.AnhangId)"
+                                       title="@anhang.Dateiname herunterladen">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"></path><path d="m7 11 5 5 5-5"></path><path d="M5 20h14"></path></svg>
+                                    </a>
+                                    <button type="button" class="anhang-entfernen" title="@anhang.Dateiname entfernen" @onclick="() => EntferneAnhang(anhang)">✕</button>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        @* Die Handlung statt der Null, wie bei den Teilaufgaben und den Kommentaren. *@
+                        <p class="anhangleerstand" id="anhang-leerstand">
+                            Keine Anhänge ·
+                            @* Ein label und kein Knopf: „for" öffnet denselben Dateiwähler wie die
+                               Fläche darunter, ohne einen zweiten Weg dorthin zu bauen. *@
+                            <label class="blatthandlung" id="anhang-hinzufuegen" for="anhang-datei">hinzufügen</label>
+                        </p>
+                    }
+
+                    @* Die Fläche ist ein label um das Dateifeld: ein Klick öffnet den Dateiwähler,
+                       und eine Datei, die darauf fällt, landet im selben Feld. Ohne gewählte
+                       Identität ist das Feld gesperrt — ein Anhang ohne Urheber ist keiner. *@
+                    <label class="ablegeflaeche @Ablegesperre" id="anhang-ablegeflaeche">
+                        <span class="ablegetext">Datei hierher ziehen oder wählen</span>
+                        <InputFile class="ablegefeld" id="anhang-datei" OnChange="NimmDatei" disabled="@(_urheber is null)" />
+                    </label>
+
+                    @if (_urheber is null)
+                    {
+                        <p class="anhanghinweis" id="anhang-hinweis">Wähle oben in der Kopfzeile, wer du bist, um eine Datei anzuhängen.</p>
+                    }
+                </section>
+
+                @* Die rechte Hälfte gehört I0019 und bleibt leer; sie hält den Platz. *@
+                <div class="blatthalbabschnitt" id="verweisplatz" aria-hidden="true"></div>
+            </div>
         </div>
 
         <aside class="eigenschaftenblatt" id="eigenschaftenblatt">
@@ -793,6 +860,95 @@ else
     {
         await Browser.InvokeVoidAsync(ElementEigenschaftenSetzen, _kommentarfeld, new { value = string.Empty });
         await _kommentarfeld.FocusAsync();
+    }
+
+    private bool HatAnhaenge
+    {
+        get
+        {
+            return _detail!.Anhaenge.Count > 0;
+        }
+    }
+
+    // Urheber und Zeitpunkt stehen im title der Zeile und nicht als zweite Textzeile: so bleibt
+    // die gezeichnete einzeilige Form, und die Zusage der Vision — an jeder Karte ist ablesbar,
+    // wer gehandelt hat — wird trotzdem eingelöst. Ein stillgelegter Urheber bleibt an seinen
+    // alten Anhängen stehen und trägt den Zusatz.
+    private static string Anhangmeta(Anhang anhang)
+    {
+        var name = anhang.Urheber.Name;
+        if (anhang.Urheber.StillgelegtAm is not null)
+        {
+            name = $"{name} (stillgelegt)";
+        }
+
+        return $"{name} · {Zeitpunktform.AlsText(anhang.Zeitpunkt, DateTimeOffset.Now)}";
+    }
+
+    // Ohne gewählte Identität ist die Fläche gesperrt; die Klasse zeichnet das, der Hinweis
+    // darunter sagt, was zu tun ist. Board und Kartenseite bleiben im Übrigen bedienbar.
+    private string Ablegesperre
+    {
+        get
+        {
+            if (_urheber is null)
+            {
+                return "ablegeflaeche-gesperrt";
+            }
+
+            return string.Empty;
+        }
+    }
+
+    // Die Wahl wird beim Senden gelesen und nicht beim Laden: zwischen dem letzten Nachlesen und
+    // dem Ablegen kann sie gewechselt haben, und der Anhang trägt dann den neuen Urheber.
+    // Muster SendeKommentar.
+    private async Task NimmDatei(InputFileChangeEventArgs ereignis)
+    {
+        _zurueckweisung = null;
+        _urheber = await GewaehlterUrheber();
+        if (_urheber is null)
+        {
+            return;
+        }
+
+        var datei = ereignis.File;
+        _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(() => UebernimmAnhang(datei, _urheber.KontributorId));
+    }
+
+    // OpenReadStream bricht ohne Angabe schon bei 512 KB ab; die Obergrenze ist dieselbe Konstante
+    // wie im Validator, an der Route und im SignalR-Kreislauf.
+    // Der Strom wird im using geschlossen, sobald der Aufruf durch ist.
+    private async Task UebernimmAnhang(IBrowserFile datei, long kontributorId)
+    {
+        await using var inhalt = datei.OpenReadStream(Anhangsgrenze.HoechsteDateigroesse);
+        var ergebnis = await KartenKlient.HaengeAnhangAn(KarteId, kontributorId, datei.Name, inhalt);
+        if (ergebnis.WurdeZurueckgewiesen)
+        {
+            // Die Liste bleibt, wie sie war: die Meldung erklärt, warum nichts dazugekommen ist.
+            _zurueckweisung = ergebnis.Zurueckweisung;
+            return;
+        }
+
+        _detail = ergebnis.Wert;
+    }
+
+    private async Task EntferneAnhang(Anhang anhang)
+    {
+        _zurueckweisung = null;
+        _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(() => UebernimmEntfernung(anhang));
+    }
+
+    private async Task UebernimmEntfernung(Anhang anhang)
+    {
+        var ergebnis = await KartenKlient.EntferneAnhang(KarteId, anhang.AnhangId);
+        if (ergebnis.WurdeZurueckgewiesen)
+        {
+            _zurueckweisung = ergebnis.Zurueckweisung;
+            return;
+        }
+
+        _detail = ergebnis.Wert;
     }
 
     private bool IstOffen(string feld)
