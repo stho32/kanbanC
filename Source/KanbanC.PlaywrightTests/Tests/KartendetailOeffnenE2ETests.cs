@@ -82,10 +82,9 @@ public class KartendetailOeffnenE2ETests : PageTest
     }
 
     // Die Leerzustandszeile der frischen Karte, wie im Artboard: jeder Abschnitt traegt die
-    // Handlung statt einer Null.
-    // **Der angekuendigte Wechsel ist eingeloest:** wo bis R00020 die halbe Zeile „Keine
-    // Anhaenge · hinzufuegen" stand, steht seit R00021 die gemeinsame ueber beiden Haelften. Der
-    // Kommentar an dieser Stelle hat genau das vorausgesagt.
+    // Handlung statt einer Null. Anhaenge und Dateiverweise teilen sich **eine** Zeile — eine
+    // frische Karte soll nicht zweimal sagen, dass sie leer ist; die beiden halben duerfen
+    // daneben gerade nicht stehen.
     [Test]
     [Category("US-7")]
     public async Task Wenn_eine_frische_Karte_geoeffnet_wird_dann_tragen_Teilaufgaben_Kommentare_und_beide_Haelften_die_Handlung_statt_einer_Null()

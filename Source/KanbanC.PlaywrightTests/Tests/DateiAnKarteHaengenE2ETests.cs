@@ -19,8 +19,8 @@ public class DateiAnKarteHaengenE2ETests : PageTest
 
     // US-1: die Handlung statt der Null, und die gezeichnete Ablegefläche darunter.
     // Die Karte dieses Aufbaus traegt **weder** Anhang **noch** Dateiverweis; die Handlung steht
-    // deshalb seit R00021 in der gemeinsamen Zeile ueber beiden Haelften und nicht mehr in der
-    // halben. Der Wortlaut nennt beide, die Handlung ist dieselbe.
+    // deshalb in der gemeinsamen Zeile ueber beiden Haelften. Sie nennt beide Listen und traegt
+    // dieselbe Handlung wie die halbe Zeile.
     [Test]
     [Category("US-1")]
     public async Task Wenn_die_Karte_keinen_Anhang_traegt_dann_steht_dort_die_Handlung_und_die_Ablegeflaeche()
@@ -235,10 +235,9 @@ public class DateiAnKarteHaengenE2ETests : PageTest
         await Expect(seite.Anhang("wbs-export.md")).ToHaveAttributeAsync("title", new System.Text.RegularExpressions.Regex("Maria Lenz \\(stillgelegt\\)"));
     }
 
-    // US-7 als Gegenprobe: der Abschnitt steht hinter „Kommentare" und **links** neben den
-    // Dateiverweisen. Die rechte Haelfte war bis R00020 leer und ist es seit R00021 gerade
-    // nicht mehr — die Zusicherung wird deshalb ersetzt und nicht geloescht: geprueft wird, dass
-    // beide Haelften nebeneinander stehen und die rechte ihre Ueberschrift traegt.
+    // US-7 als Gegenprobe zur Lage der Abschnitte: die Anhaenge stehen hinter „Kommentare" und
+    // **links**, die Dateiverweise rechts daneben. Gemessen an den Kaesten und nicht am Markup —
+    // eine Flex-Regel kann dastehen und trotzdem nicht greifen.
     [Test]
     [Category("US-7")]
     public async Task Wenn_die_Kartenseite_offen_ist_dann_steht_der_Anhangabschnitt_hinter_den_Kommentaren_und_links_neben_den_Dateiverweisen()

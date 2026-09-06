@@ -33,9 +33,9 @@ public class AnhangabschnittTests
     }
 
     // Der Abschnitt steht hinter „Kommentare" und ist die **linke** Haelfte einer zweispaltigen
-    // Sektion. Die rechte haelt seit R00021 keinen Platz mehr, sondern traegt den
-    // Dateiverweisabschnitt — der Platzhalter „verweisplatz" ist damit weg und darf nicht
-    // wiederkommen.
+    // Sektion; rechts stehen die Dateiverweise. Die Pruefung auf die Abwesenheit von
+    // „verweisplatz" zeigt auf eine Form, die es nicht mehr geben darf: ein leerer Platzhalter
+    // neben einem gebauten Abschnitt waere eine dritte Haelfte.
     [Test]
     public void Wenn_die_Kartenseite_gelesen_wird_dann_steht_der_Abschnitt_links_in_einer_zweispaltigen_Sektion()
     {
@@ -46,7 +46,7 @@ public class AnhangabschnittTests
             Assert.That(seite.IndexOf("id=\"anhangabschnitt\"", StringComparison.Ordinal), Is.GreaterThan(seite.IndexOf("id=\"kommentarabschnitt\"", StringComparison.Ordinal)));
             Assert.That(seite, Does.Contain("id=\"anhaengeUndVerweise\""));
             Assert.That(seite.IndexOf("id=\"anhangabschnitt\"", StringComparison.Ordinal), Is.LessThan(seite.IndexOf("id=\"dateiverweisabschnitt\"", StringComparison.Ordinal)));
-            Assert.That(seite, Does.Not.Contain("id=\"verweisplatz\""), "Der Platzhalter ist mit R00021 gefallen.");
+            Assert.That(seite, Does.Not.Contain("id=\"verweisplatz\""), "Neben dem gebauten Abschnitt darf kein leerer Platzhalter stehen.");
         });
     }
 

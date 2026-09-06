@@ -295,17 +295,14 @@ else
                einzeilige Form bleibt. Und die Überschrift rechts heißt **„Dateiverweise"** und
                nicht „Verweise": das Wort ist in dieser Anwendung schon der Hyperlink, und zwei
                Bedeutungen desselben Worts stünden auf demselben Schirm nebeneinander. *@
-            @* **Eine** Stelle, die **beide** Listen kennt, und vier Zustände daraus. Bis R00020
-               standen hier zwei getrennte `@@if` — je Hälfte einer —, und eine frische Karte sagte
-               damit zweimal, dass sie leer ist. Das Artboard zeichnet eine Zeile (`:425`), und der
-               Testkommentar von R00020 hat den Wechsel angekündigt.
-               **Der Ort ist entschieden und begründet:** die Zeile steht **über** der Sektion und
-               nicht darunter. Sie spricht über beide Hälften, muss also außerhalb beider stehen —
-               innerhalb würde sie zum dritten Flex-Element neben ihnen. Und sie steht an der
-               Stelle, an der die fehlenden Listen stünden: in beiden Hälften kommt die Liste vor
-               der Eingabezeile, eine Zeile darunter läse sich als Nachsatz zu den Eingaben.
-               Das ist eine Frage des Markups und nicht des Verhaltens: die vier Zustände und ihr
-               Wortlaut gelten unabhängig davon. *@
+            @* **Eine** Stelle, die **beide** Listen kennt, und vier Zustände daraus: eine
+               gemeinsame Zeile bei zwei leeren Listen, sonst die halbe Zeile der leeren Hälfte,
+               keine Zeile bei zwei gefüllten. Zwei getrennte Bedingungen ließen eine frische
+               Karte zweimal sagen, dass sie leer ist.
+               Die Zeile spricht über beide Hälften und steht deshalb außerhalb beider — innerhalb
+               der Sektion wäre sie ein drittes Flex-Element neben ihnen. Und sie steht dort, wo
+               die fehlenden Listen stünden: in beiden Hälften kommt die Liste vor der
+               Eingabezeile. *@
             @if (!HatAnhaenge && !HatDateiverweise)
             {
                 <p class="blattleerstand" id="leerstand-beide-haelften">

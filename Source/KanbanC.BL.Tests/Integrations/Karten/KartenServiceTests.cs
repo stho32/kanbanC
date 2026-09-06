@@ -759,6 +759,37 @@ public class KartenServiceTests
         Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("„kanbanc.md“"));
     }
 
+    // Sind Karte **und** Urheber unbekannt, meldet die Antwort den Urheber: geprueft wird in der
+    // Reihenfolge, in der die Kompensationen ausfuehrbar sind — erst der Pfad ohne jeden Zugriff,
+    // dann der Urheber, dann die Karte. Ohne diesen Test liesse sich die Reihenfolge umstellen,
+    // ohne dass etwas rot wird, und ein Agent bekaeme eine Kompensation, die an der falschen
+    // Stelle ansetzt.
+    [Test]
+    public void Wenn_Karte_und_Urheber_zugleich_unbekannt_sind_dann_meldet_TrageDateiverweisEin_den_Urheber()
+    {
+        var kartenRepository = TestKartenRepository.Leer().OhneDieseKarte();
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, new TestKontributorenRepository());
+
+        var ergebnis = service.TrageDateiverweisEin(999, new DateiverweisEintragenAnfrage("kanbanc.md", 999));
+
+        Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("kontributor-unbekannt"));
+        Assert.That(kartenRepository.ErhaltenerDateiverweis, Is.Null);
+    }
+
+    // Und der Pfad geht beiden vor: eine Anfrage, die schon an sich ungueltig ist, kostet keinen
+    // einzigen Bestandszugriff.
+    [Test]
+    public void Wenn_der_Pfad_leer_und_der_Urheber_unbekannt_ist_dann_meldet_TrageDateiverweisEin_den_Pfad()
+    {
+        var kartenRepository = TestKartenRepository.Leer().OhneDieseKarte();
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, new TestKontributorenRepository());
+
+        var ergebnis = service.TrageDateiverweisEin(999, new DateiverweisEintragenAnfrage("   ", 999));
+
+        Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("dateiverweis-pfad-leer"));
+        Assert.That(kartenRepository.ErhaltenerDateiverweis, Is.Null);
+    }
+
     [Test]
     public void Wenn_der_Dateiverweisurheber_unbekannt_ist_dann_meldet_TrageDateiverweisEin_ein_fehlendes_Ding_und_schreibt_nicht()
     {

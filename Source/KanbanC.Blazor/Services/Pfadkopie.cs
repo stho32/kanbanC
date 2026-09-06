@@ -4,16 +4,14 @@ namespace KanbanC.Blazor.Services;
 
 // Der Weg eines Repository-Pfads aus der Zeile in die Zwischenablage — und, wenn es die nicht
 // gibt, wenigstens in die Textauswahl.
-// **Warum der Rückfall keine Zugabe ist:** `navigator.clipboard` existiert nur im sicheren
-// Kontext, und diese Anwendung läuft im LAN über `http://<host>:5180`, also außerhalb davon. Der
-// E2E-Lauf arbeitet auf `127.0.0.1` und steht damit auf der sicheren Seite der Grenze — er sähe
-// den Ausfall von selbst nie. `ZwischenablageProbeE2ETests` erzwingt ihn deshalb durch
-// Fault-Injection und hat belegt, was diese Klasse trägt: der Aufruf **wirft**, statt still
-// nichts zu tun, und die Textauswahl trägt in beiden Kontexten.
-// Gebaut wie der Identitaetsspeicher: Aufrufe über `IJSRuntime` mit Inline-Bezeichnern, **ohne
-// eigene `.js`-Datei** — die brächte einen zweiten Auslieferungsweg und eine Version, die mit dem
-// C#-Code auseinanderlaufen kann. Und mit demselben gefangenen Ausfall: die Kartenseite darf an
-// einem fehlenden Browserbefehl nicht reißen.
+// **Der Rückfall ist der Normalfall und keine Zugabe:** `navigator.clipboard` gibt es nur im
+// sicheren Kontext, und diese Anwendung läuft im LAN über `http://<host>:5180`, also außerhalb
+// davon. Fehlt der Befehl, wirft der Aufruf — er tut nicht still nichts —, und der Pfad wird
+// stattdessen in seiner Zeile markiert.
+// Aufrufe über `IJSRuntime` mit Inline-Bezeichnern, **ohne eigene `.js`-Datei**: die brächte
+// einen zweiten Auslieferungsweg und eine Version, die mit dem C#-Code auseinanderlaufen kann.
+// Der Ausfall wird gefangen wie im Identitaetsspeicher — die Kartenseite darf an einem
+// fehlenden Browserbefehl nicht reißen.
 public sealed class Pfadkopie
 {
     private const string InDieZwischenablageSchreiben = "navigator.clipboard.writeText";

@@ -3,13 +3,12 @@ using KanbanC.Contracts.Fehler;
 namespace KanbanC.BL.Operations.Fehler;
 
 // Eine dritte Lage neben „gibt es nicht" und „ist stillgelegt": das Ding gibt es schon, und
-// genau das ist der Grund. Deshalb eine eigene Stelle — und deshalb 400 statt 404: es fehlt kein
-// Ding, es wurde eine Regel verletzt. `Nichtgefunden.MeldetEinFehlendesDing` kennt diesen Code
-// bewusst nicht; dieselbe Logik wie bei `Stillgelegt`.
-// **Warum es diese Klasse überhaupt gibt:** Anhang, Teilaufgabe und Kommentar lassen Dubletten
-// zu, weil dort zwei gleiche Texte **zwei Dinge** sind — zwei Dateien, zwei Arbeiten, zwei
-// Äußerungen. Beim Dateiverweis ist derselbe Pfad **dasselbe Ding**: zwei Zeilen zeigen auf
-// dieselbe Datei, und die zweite trägt keine Aussage.
+// genau das ist der Grund. 400 statt 404 — es fehlt kein Ding, es wurde eine Regel verletzt;
+// `Nichtgefunden.MeldetEinFehlendesDing` kennt diesen Code deshalb nicht.
+// Die Regel gilt nur für den Dateiverweis: bei Anhang, Teilaufgabe und Kommentar sind zwei
+// gleiche Texte **zwei Dinge** — zwei Dateien, zwei Arbeiten, zwei Äußerungen. Derselbe Pfad an
+// derselben Karte ist **dasselbe Ding**: beide Zeilen zeigen auf dieselbe Datei, und die zweite
+// trägt keine Aussage.
 public static class Doppelt
 {
     private const string DateiverweisDoppelt = "dateiverweis-doppelt";
