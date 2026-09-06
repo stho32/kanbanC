@@ -282,14 +282,18 @@ else
                 }
             </section>
 
-            @* Zweispaltige Sektion hinter „Kommentare", wie im Artboard: links die Anhänge, rechts
-               die Verweise aus I0019. Die rechte Hälfte bleibt in diesem Slice leer — sie hält den
-               Platz, damit die linke die halbe Breite bekommt, die gezeichnet ist.
-               **Drei bewusste Abweichungen vom Artboard:** ein `×` am Zeilenende, weil die
-               Entfernen-Route gebaut wird und ohne Bedienelement unerreichbar wäre; Urheber und
-               Zeitpunkt im title statt als zweite Textzeile, damit die gezeichnete einzeilige Form
-               bleibt; und die Leerzeile nennt nur die Anhänge — die gemeinsame Fassung mit den
-               Verweisen entsteht mit I0019. *@
+            @* Zweispaltige Sektion hinter „Kommentare", wie im Artboard: links die Anhänge,
+               rechts die Dateiverweise. Beide Hälften teilen sich die Breite.
+               **Der Unterschied zwischen ihnen ist der ganze Zweck:** ein Anhang bringt eine
+               Kopie der Datei mit, ein Dateiverweis zeigt auf eine Datei, die dort weiterlebt,
+               wo sie hingehört. Ohne Beschriftung zu unterscheiden sind sie an der Gestaltung —
+               Büroklammer und Größenangabe links, Schreibmaschinenschrift an oliver Kante rechts.
+               **Bewusste Abweichungen vom Artboard, in beiden Hälften:** ein `×` am Zeilenende,
+               weil die Entfernen-Route gebaut wird und ohne Bedienelement unerreichbar wäre;
+               Urheber und Zeitpunkt im title statt als zweite Textzeile, damit die gezeichnete
+               einzeilige Form bleibt. Und die Überschrift rechts heißt **„Dateiverweise"** und
+               nicht „Verweise": das Wort ist in dieser Anwendung schon der Hyperlink, und zwei
+               Bedeutungen desselben Worts stünden auf demselben Schirm nebeneinander. *@
             <div class="blattzweispalter" id="anhaengeUndVerweise">
                 <section class="blatthalbabschnitt" id="anhangabschnitt">
                     <h3 class="blattueberschrift">Anhänge</h3>
@@ -343,8 +347,56 @@ else
                     }
                 </section>
 
-                @* Die rechte Hälfte gehört I0019 und bleibt leer; sie hält den Platz. *@
-                <div class="blatthalbabschnitt" id="verweisplatz" aria-hidden="true"></div>
+                <section class="blatthalbabschnitt" id="dateiverweisabschnitt">
+                    <h3 class="blattueberschrift">Dateiverweise</h3>
+
+                    @if (HatDateiverweise)
+                    {
+                        <div class="dateiverweisliste" id="dateiverweisliste">
+                            @* @key hält die Elementkennung über die Neuaufbauten hinweg fest: nach
+                               jedem Eintragen und Entfernen kommt die ganze Liste neu. *@
+                            @foreach (var dateiverweis in _detail.Dateiverweise)
+                            {
+                                <div class="dateiverweis" @key="dateiverweis.DateiverweisId" data-dateiverweis="@dateiverweis.DateiverweisId" title="@Dateiverweismeta(dateiverweis)">
+                                    <span class="dateiverweispfad">@dateiverweis.Pfad</span>
+                                    @* Noch die Zierde des Artboards; zum Bedienelement, das den Pfad
+                                       kopiert, wird sie mit B0291. *@
+                                    <span class="dateiverweiskopie" aria-hidden="true">↗</span>
+                                    <button type="button" class="dateiverweis-entfernen" title="@dateiverweis.Pfad entfernen" @onclick="() => EntferneDateiverweis(dateiverweis)">✕</button>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        @* Die Handlung statt der Null, wie in den drei Abschnitten davor. *@
+                        <p class="dateiverweisleerstand" id="dateiverweis-leerstand">
+                            Keine Dateiverweise ·
+                            <button type="button" class="blatthandlung" id="dateiverweis-eintragen" @onclick="FokussiereDateiverweisfeld">eintragen</button>
+                        </p>
+                    }
+
+                    @* Den Text des Feldes führt das Feld selbst, nicht der Server: kein value.
+                       Dieselbe Bauform wie das Teilaufgaben-, das Etiketten- und das Kommentarfeld.
+                       Abgeschickt wird mit der **Eingabetaste**; das Artboard zeichnet keinen Knopf,
+                       und ein zweiter Weg wäre einer mehr als gezeichnet. *@
+                    <input class="input dateiverweisfeld"
+                           id="dateiverweis-eingabe"
+                           @ref="_dateiverweisfeld"
+                           placeholder="Pfad im Repository eintragen"
+                           disabled="@(_urheber is null)"
+                           @oninput="TippeDateiverweis"
+                           @onkeydown="AufDateiverweistaste" />
+
+                    @* Ohne gewählte Identität wird nichts eingetragen: ein Dateiverweis ohne Urheber
+                       ist keiner. Gesperrt ist allein diese eine Handlung — die bestehenden Zeilen
+                       bleiben sichtbar, Board und Kartenseite im Übrigen bedienbar. Dasselbe Muster
+                       wie an der Ablegefläche daneben. *@
+                    @if (_urheber is null)
+                    {
+                        <p class="dateiverweishinweis" id="dateiverweis-hinweis">Wähle oben in der Kopfzeile, wer du bist, um einen Pfad einzutragen.</p>
+                    }
+                </section>
             </div>
         </div>
 
@@ -954,6 +1006,114 @@ else
     private async Task UebernimmEntfernung(Anhang anhang)
     {
         var ergebnis = await KartenKlient.EntferneAnhang(KarteId, anhang.AnhangId);
+        if (ergebnis.WurdeZurueckgewiesen)
+        {
+            _zurueckweisung = ergebnis.Zurueckweisung;
+            return;
+        }
+
+        _detail = ergebnis.Wert;
+    }
+
+    private string _dateiverweispfad = string.Empty;
+    private ElementReference _dateiverweisfeld;
+
+    private bool HatDateiverweise
+    {
+        get
+        {
+            return _detail!.Dateiverweise.Count > 0;
+        }
+    }
+
+    // Urheber und Zeitpunkt stehen im title der Zeile und nicht als zweite Textzeile: so bleibt
+    // die gezeichnete einzeilige Form, und die Zusage der Vision — an jeder Karte ist ablesbar,
+    // wer gehandelt hat — wird trotzdem eingelöst. Wörtlich das Vorgehen von Anhangmeta.
+    private static string Dateiverweismeta(Dateiverweis dateiverweis)
+    {
+        var name = dateiverweis.Urheber.Name;
+        if (dateiverweis.Urheber.StillgelegtAm is not null)
+        {
+            name = $"{name} (stillgelegt)";
+        }
+
+        return $"{name} · {Zeitpunktform.AlsText(dateiverweis.Zeitpunkt, DateTimeOffset.Now)}";
+    }
+
+    private async Task FokussiereDateiverweisfeld()
+    {
+        await _dateiverweisfeld.FocusAsync();
+    }
+
+    private void TippeDateiverweis(ChangeEventArgs ereignis)
+    {
+        _dateiverweispfad = Text(ereignis);
+    }
+
+    // Die Eingabetaste trägt ein, was im Feld steht — der Weg ohne Zeiger, wie beim Teilaufgaben-
+    // und beim Kommentarfeld. Ohne Prüfung auf einen leeren Text: die Zurückweisung ist die
+    // Antwort der API, und eine zweite Leerregel in der Oberfläche wäre eine zweite Wahrheit.
+    private async Task AufDateiverweistaste(KeyboardEventArgs taste)
+    {
+        var dieTasteTraegtEin = taste.Key == "Enter";
+        if (!dieTasteTraegtEin)
+        {
+            return;
+        }
+
+        await TrageDateiverweisEin();
+    }
+
+    // Die Wahl wird hier ein letztes Mal gelesen und nicht aus _urheber genommen: zwischen dem
+    // letzten Nachlesen und dem Tastendruck kann sie gewechselt haben, und der Dateiverweis trägt
+    // dann den neuen Urheber. Muster SendeKommentar und NimmDatei.
+    private async Task TrageDateiverweisEin()
+    {
+        _zurueckweisung = null;
+        _urheber = await GewaehlterUrheber();
+        if (_urheber is null)
+        {
+            return;
+        }
+
+        var anfrage = new DateiverweisEintragenAnfrage(_dateiverweispfad, _urheber.KontributorId);
+        _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(() => UebernimmDateiverweis(anfrage));
+    }
+
+    // Nach einer Zurückweisung bleibt der getippte Pfad stehen: er ist der Grund der Meldung, und
+    // die Liste bleibt, wie sie war.
+    private async Task UebernimmDateiverweis(DateiverweisEintragenAnfrage anfrage)
+    {
+        var ergebnis = await KartenKlient.TrageDateiverweisEin(KarteId, anfrage);
+        if (ergebnis.WurdeZurueckgewiesen)
+        {
+            _zurueckweisung = ergebnis.Zurueckweisung;
+            return;
+        }
+
+        _dateiverweispfad = string.Empty;
+        _detail = ergebnis.Wert;
+        await LeereDateiverweisfeld();
+    }
+
+    // Das Feld bleibt nach dem Eintragen stehen, leer und unter dem Cursor: wer die Bezüge einer
+    // Karte einträgt, trägt selten genau einen ein. Dieselbe Antwort wie bei der Teilaufgaben- und
+    // der Kommentarzeile.
+    private async Task LeereDateiverweisfeld()
+    {
+        await Browser.InvokeVoidAsync(ElementEigenschaftenSetzen, _dateiverweisfeld, new { value = string.Empty });
+        await _dateiverweisfeld.FocusAsync();
+    }
+
+    private async Task EntferneDateiverweis(Dateiverweis dateiverweis)
+    {
+        _zurueckweisung = null;
+        _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(() => UebernimmDateiverweisentfernung(dateiverweis));
+    }
+
+    private async Task UebernimmDateiverweisentfernung(Dateiverweis dateiverweis)
+    {
+        var ergebnis = await KartenKlient.EntferneDateiverweis(KarteId, dateiverweis.DateiverweisId);
         if (ergebnis.WurdeZurueckgewiesen)
         {
             _zurueckweisung = ergebnis.Zurueckweisung;

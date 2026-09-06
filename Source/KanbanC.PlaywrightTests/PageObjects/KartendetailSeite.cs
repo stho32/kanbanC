@@ -201,7 +201,42 @@ public sealed class KartendetailSeite
 
     public ILocator AnhangHinweis => _seite.Locator("#anhang-hinweis");
 
-    public ILocator Verweisplatz => _seite.Locator("#verweisplatz");
+    public ILocator Dateiverweisabschnitt => _seite.Locator("#dateiverweisabschnitt");
+
+    public ILocator Dateiverweise => _seite.Locator("#dateiverweisliste .dateiverweis");
+
+    public ILocator Dateiverweispfade => _seite.Locator("#dateiverweisliste .dateiverweispfad");
+
+    public ILocator DateiverweisLeerstand => _seite.Locator("#dateiverweis-leerstand");
+
+    public ILocator Dateiverweisfeld => _seite.Locator("#dateiverweis-eingabe");
+
+    public ILocator DateiverweisHinweis => _seite.Locator("#dateiverweis-hinweis");
+
+    public ILocator Dateiverweis(string pfad)
+    {
+        return Dateiverweise.Filter(new LocatorFilterOptions { HasText = pfad });
+    }
+
+    public ILocator DateiverweisEntfernen(string pfad)
+    {
+        return Dateiverweis(pfad).Locator(".dateiverweis-entfernen");
+    }
+
+    // Getippt wird Zeichen fuer Zeichen wie in den Nachbarfeldern: FillAsync setzt den Wert in
+    // einem Zug und traefe damit nicht die Lage, in der jede Eingabe ueber die Leitung laeuft.
+    public async Task TippeDateiverweis(string pfad)
+    {
+        await Dateiverweisfeld.ClickAsync();
+        await Dateiverweisfeld.PressSequentiallyAsync(pfad);
+    }
+
+    // Abgeschickt wird mit der Eingabetaste: das Artboard zeichnet keinen Knopf.
+    public async Task TrageDateiverweisEin(string pfad)
+    {
+        await TippeDateiverweis(pfad);
+        await Dateiverweisfeld.PressAsync("Enter");
+    }
 
     public ILocator Anhang(string dateiname)
     {

@@ -83,6 +83,11 @@
   --font-heading-weight: 400;
   --font-body: "Figtree", system-ui, sans-serif;
 
+  /* Schreibmaschinenschrift für Werte, die zeichengenau gelesen werden — der Repository-Pfad
+     eines Dateiverweises. Ohne eigene Schriftdatei: die Stapelschrift des Systems genügt, und
+     eine vierte woff2 kostete Ladezeit für einen einzeiligen Zweck. */
+  --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, monospace;
+
   --space-1: 4.4px;
   --space-2: 8.8px;
   --space-3: 13.2px;

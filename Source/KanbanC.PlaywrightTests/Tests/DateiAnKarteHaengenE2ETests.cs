@@ -232,19 +232,26 @@ public class DateiAnKarteHaengenE2ETests : PageTest
         await Expect(seite.Anhang("wbs-export.md")).ToHaveAttributeAsync("title", new System.Text.RegularExpressions.Regex("Maria Lenz \\(stillgelegt\\)"));
     }
 
-    // US-7 als Gegenprobe: der Abschnitt steht hinter „Kommentare", die rechte Haelfte bleibt
-    // leer, und auf der Bahn aendert sich nichts.
+    // US-7 als Gegenprobe: der Abschnitt steht hinter „Kommentare" und **links** neben den
+    // Dateiverweisen. Die rechte Haelfte war bis R00020 leer und ist es seit R00021 gerade
+    // nicht mehr — die Zusicherung wird deshalb ersetzt und nicht geloescht: geprueft wird, dass
+    // beide Haelften nebeneinander stehen und die rechte ihre Ueberschrift traegt.
     [Test]
     [Category("US-7")]
-    public async Task Wenn_die_Kartenseite_offen_ist_dann_steht_der_Abschnitt_hinter_den_Kommentaren_und_rechts_bleibt_die_Haelfte_frei()
+    public async Task Wenn_die_Kartenseite_offen_ist_dann_steht_der_Anhangabschnitt_hinter_den_Kommentaren_und_links_neben_den_Dateiverweisen()
     {
         var aufbau = await KarteOhneAnhang();
 
         var kommentare = await aufbau.Seite.Kommentarabschnitt.BoundingBoxAsync();
         var anhaenge = await aufbau.Seite.Anhangabschnitt.BoundingBoxAsync();
+        var dateiverweise = await aufbau.Seite.Dateiverweisabschnitt.BoundingBoxAsync();
 
-        Assert.That(anhaenge!.Y, Is.GreaterThan(kommentare!.Y));
-        await Expect(aufbau.Seite.Verweisplatz).ToBeEmptyAsync();
+        Assert.Multiple(() =>
+        {
+            Assert.That(anhaenge!.Y, Is.GreaterThan(kommentare!.Y));
+            Assert.That(dateiverweise!.X, Is.GreaterThan(anhaenge.X));
+        });
+        await Expect(aufbau.Seite.Dateiverweisabschnitt).ToContainTextAsync("Dateiverweise");
     }
 
     [Test]

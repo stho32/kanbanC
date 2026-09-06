@@ -613,9 +613,9 @@
     color: color-mix(in srgb, var(--color-text) 55%, transparent);
 }
 
-/* Die zweispaltige Sektion hinter „Kommentare": links die Anhänge, rechts der Platz, den I0019
-   füllen wird. Beide Hälften teilen sich die Breite; min-width 0 hält lange Dateinamen davon ab,
-   die Spalte aufzuziehen. */
+/* Die zweispaltige Sektion hinter „Kommentare": links die Anhänge, rechts die Dateiverweise.
+   Beide Hälften teilen sich die Breite; min-width 0 hält lange Dateinamen und lange Pfade davon
+   ab, die Spalte aufzuziehen. */
 .blattzweispalter {
     display: flex;
     gap: var(--space-6);
@@ -730,6 +730,81 @@
 }
 
 .anhanghinweis {
+    margin: 0;
+    font-size: 12px;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+/* Die rechte Hälfte: Dateiverweise. Sie soll ohne Beschriftung von den Anhängen daneben zu
+   unterscheiden sein — deshalb Schreibmaschinenschrift und die olive Kante, während links die
+   Büroklammer und die Größenangabe stehen. Genau das sagt die Lesehilfe des Artboards. */
+.dateiverweisliste {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+/* Eine Zeile: Pfad in Schreibmaschinenschrift an oliver linker Kante, `↗` und `×` am Zeilenende —
+   wie im Artboard, um das `×` erweitert. */
+.dateiverweis {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 5px 10px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--color-surface);
+    border-left: 3px solid var(--color-accent-2);
+    border-radius: var(--radius-xs);
+}
+
+/* Der Pfad gibt nach, nicht die beiden Bedienelemente: ein langer Pfad wird gekürzt dargestellt
+   und zieht die Spalte nicht auf. Gespeichert und kopiert wird der ganze. */
+.dateiverweispfad {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dateiverweiskopie {
+    margin-left: auto;
+    flex: none;
+    color: var(--color-accent-2);
+}
+
+/* Tritt zurück wie das Kreuz am Anhang und am Etikett und wird erst beim Überfahren der Zeile
+   deutlich. */
+.dateiverweis-entfernen {
+    flex: none;
+    padding: 0;
+    font-size: 12px;
+    line-height: 1;
+    color: color-mix(in srgb, var(--color-text) 45%, transparent);
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+}
+
+.dateiverweis:hover .dateiverweis-entfernen {
+    color: var(--color-text);
+}
+
+.dateiverweisleerstand {
+    margin: 0;
+    font-size: 12px;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+/* Die Eingabezeile aus dem Artboard: eine Pille über die volle Breite, ohne Knopf daneben —
+   abgeschickt wird mit der Eingabetaste. */
+.dateiverweisfeld {
+    width: 100%;
+    min-width: 0;
+}
+
+/* Der Hinweis steht unter der Zeile und nicht in ihr: er erklärt die Sperre und nimmt dem Feld
+   keinen Platz, sobald eine Identität gewählt ist. Dasselbe Muster wie am Anhang. */
+.dateiverweishinweis {
     margin: 0;
     font-size: 12px;
     color: color-mix(in srgb, var(--color-text) 55%, transparent);
