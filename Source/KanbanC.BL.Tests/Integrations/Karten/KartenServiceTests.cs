@@ -465,6 +465,203 @@ public class KartenServiceTests
         });
     }
 
+    [Test]
+    public void Wenn_Datei_und_Urheber_stimmen_dann_reicht_HaengeAnhangAn_das_Detail_durch()
+    {
+        var kontributorenRepository = new TestKontributorenRepository();
+        var stefan = kontributorenRepository.LegeAn(new KontributorAnlegenAnfrage("Stefan", Kontributorart.Mensch));
+        var detail = Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null));
+        var kartenRepository = TestKartenRepository.Leer().MitKartendetail(detail);
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, kontributorenRepository);
+
+        var ergebnis = service.HaengeAnhangAn(7, new AnhangAnlegenAnfrage("wbs-export.md", 41000, stefan.KontributorId), new MemoryStream(new byte[41000]));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.IstErfolg, Is.True);
+            Assert.That(ergebnis.Wert, Is.SameAs(detail));
+            Assert.That(kartenRepository.ErhaltenerAnhang!.Dateiname, Is.EqualTo("wbs-export.md"));
+            Assert.That(kartenRepository.GeaenderteKarteId, Is.EqualTo(7));
+        });
+    }
+
+    [Test]
+    public void Wenn_die_Datei_zu_gross_ist_dann_weist_HaengeAnhangAn_sie_zurueck_und_schreibt_nicht()
+    {
+        var kontributorenRepository = new TestKontributorenRepository();
+        var stefan = kontributorenRepository.LegeAn(new KontributorAnlegenAnfrage("Stefan", Kontributorart.Mensch));
+        var kartenRepository = TestKartenRepository.Leer().MitKartendetail(Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null)));
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, kontributorenRepository);
+
+        var ergebnis = service.HaengeAnhangAn(7, new AnhangAnlegenAnfrage("film.mp4", Anhangsgrenze.HoechsteDateigroesse + 1, stefan.KontributorId), new MemoryStream([1]));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.IstErfolg, Is.False);
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("anhang-zu-gross"));
+            Assert.That(Nichtgefunden.MeldetEinFehlendesDing(ergebnis.Befunde[0]), Is.False);
+            Assert.That(kartenRepository.ErhaltenerAnhang, Is.Null);
+            Assert.That(kartenRepository.AbgelegteBytes, Is.Null);
+        });
+    }
+
+    [Test]
+    public void Wenn_der_Anhangurheber_unbekannt_ist_dann_meldet_HaengeAnhangAn_ein_fehlendes_Ding_und_schreibt_nicht()
+    {
+        var kartenRepository = TestKartenRepository.Leer().MitKartendetail(Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null)));
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, new TestKontributorenRepository());
+
+        var ergebnis = service.HaengeAnhangAn(7, new AnhangAnlegenAnfrage("wbs-export.md", 41000, 999), new MemoryStream(new byte[10]));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("kontributor-unbekannt"));
+            Assert.That(Nichtgefunden.MeldetEinFehlendesDing(ergebnis.Befunde[0]), Is.True);
+            Assert.That(ergebnis.Befunde[0].Kompensation, Does.Contain("GET /api/kontributoren"));
+            Assert.That(kartenRepository.ErhaltenerAnhang, Is.Null);
+        });
+    }
+
+    // Die Meldung passt zum Anhang: weder „kann nicht verantwortlich sein" noch „kann keinen
+    // Kommentar mehr schreiben" waere hier wahr. Der Code bleibt bei allen dreien derselbe.
+    [Test]
+    public void Wenn_der_Anhangurheber_stillgelegt_ist_dann_spricht_seine_Meldung_vom_Anhang_und_nicht_vom_Kommentar()
+    {
+        var kontributorenRepository = new TestKontributorenRepository();
+        var maria = kontributorenRepository.LegeAn(new KontributorAnlegenAnfrage("Maria Lenz", Kontributorart.Mensch));
+        kontributorenRepository.SetzeStilllegung(maria.KontributorId, new Stilllegung(true));
+        var kartenRepository = TestKartenRepository.Leer().MitKartendetail(Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null)));
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, kontributorenRepository);
+
+        var amAnhang = service.HaengeAnhangAn(7, new AnhangAnlegenAnfrage("wbs-export.md", 41000, maria.KontributorId), new MemoryStream(new byte[10]));
+        var amKommentar = service.SchreibeKommentar(7, new KommentarSchreibenAnfrage("Bitte prüfen", maria.KontributorId));
+        var anDerKarte = service.AendereKarte(7, new KarteAendernAnfrage("Playwright-Lizenz klären", null, null, Kartenfarbe.Ohne, maria.KontributorId));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(amAnhang.Befunde[0].Meldung, Does.Not.Contain("verantwortlich"));
+            Assert.That(amAnhang.Befunde[0].Meldung, Does.Not.Contain("Kommentar"));
+            Assert.That(amAnhang.Befunde[0].Meldung, Does.Contain("anhängen"));
+            Assert.That(amAnhang.Befunde[0].Code, Is.EqualTo(amKommentar.Befunde[0].Code));
+            Assert.That(amAnhang.Befunde[0].Code, Is.EqualTo(anDerKarte.Befunde[0].Code));
+            Assert.That(Nichtgefunden.MeldetEinFehlendesDing(amAnhang.Befunde[0]), Is.False);
+            Assert.That(kartenRepository.ErhaltenerAnhang, Is.Null);
+        });
+    }
+
+    [Test]
+    public void Wenn_die_KarteId_unbekannt_ist_dann_meldet_HaengeAnhangAn_die_fehlende_Karte()
+    {
+        var kontributorenRepository = new TestKontributorenRepository();
+        var stefan = kontributorenRepository.LegeAn(new KontributorAnlegenAnfrage("Stefan", Kontributorart.Mensch));
+        var kartenRepository = TestKartenRepository.Leer().OhneDieseKarte();
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, kontributorenRepository);
+
+        var ergebnis = service.HaengeAnhangAn(999, new AnhangAnlegenAnfrage("wbs-export.md", 41000, stefan.KontributorId), new MemoryStream(new byte[10]));
+
+        Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("karte-unbekannt"));
+        Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("999"));
+        Assert.That(ergebnis.Befunde[0].Meldung, Does.Not.Contain("Board"));
+    }
+
+    [Test]
+    public void Wenn_der_Anhang_da_ist_dann_reicht_LiesAnhang_Name_und_Strom_durch()
+    {
+        var kartenRepository = TestKartenRepository.Leer().MitKartendetail(Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null)));
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, new TestKontributorenRepository());
+
+        var ergebnis = service.LiesAnhang(7, 3);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.IstErfolg, Is.True);
+            Assert.That(ergebnis.Wert.Dateiname, Is.EqualTo("wbs-export.md"));
+            Assert.That(kartenRepository.GeleseneAnhangId, Is.EqualTo(3));
+        });
+    }
+
+    [Test]
+    public void Wenn_der_Anhang_an_einer_anderen_Karte_liegt_dann_nennt_der_Befund_beide_Nummern()
+    {
+        var kartenRepository = TestKartenRepository.Leer()
+            .MitKartendetail(Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null)))
+            .OhneDiesenAnhang();
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, new TestKontributorenRepository());
+
+        var ergebnis = service.LiesAnhang(7, 3);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("anhang-unbekannt"));
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("3"));
+            Assert.That(ergebnis.Befunde[0].Meldung, Does.Contain("7"));
+            Assert.That(ergebnis.Befunde[0].Kompensation, Does.Contain("GET /api/karten/7"));
+            Assert.That(Nichtgefunden.MeldetEinFehlendesDing(ergebnis.Befunde[0]), Is.True);
+        });
+    }
+
+    // Gibt es schon die Karte nicht, schickt ein Befund ueber den Anhang den Aufrufer auf eine
+    // Kartenadresse, die selbst 404 antwortet.
+    [Test]
+    public void Wenn_es_schon_die_Karte_nicht_gibt_dann_meldet_LiesAnhang_die_Karte_und_nicht_den_Anhang()
+    {
+        var kartenRepository = TestKartenRepository.Leer().OhneDieseKarte();
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, new TestKontributorenRepository());
+
+        var ergebnis = service.LiesAnhang(999, 3);
+
+        Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("karte-unbekannt"));
+    }
+
+    // Der Fall aus US-2: die Zeile steht, die Datei fehlt. Statt eines leeren Downloads kommt ein
+    // Befund mit eigener Kompensation.
+    [Test]
+    public void Wenn_die_Bytes_in_der_Ablage_fehlen_dann_traegt_die_Antwort_einen_Befund_mit_eigener_Kompensation()
+    {
+        var kartenRepository = TestKartenRepository.Leer()
+            .MitKartendetail(Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null)))
+            .OhneDieBytesDesAnhangs();
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, new TestKontributorenRepository());
+
+        var ergebnis = service.LiesAnhang(7, 3);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.IstErfolg, Is.False);
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("anhang-bytes-fehlen"));
+            Assert.That(ergebnis.Befunde[0].Kompensation, Does.Contain("DELETE /api/karten/7/anhaenge/3"));
+            Assert.That(Nichtgefunden.MeldetEinFehlendesDing(ergebnis.Befunde[0]), Is.True);
+        });
+    }
+
+    [Test]
+    public void Wenn_der_Anhang_da_ist_dann_reicht_EntferneAnhang_das_Detail_durch()
+    {
+        var detail = Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null));
+        var kartenRepository = TestKartenRepository.Leer().MitKartendetail(detail);
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, new TestKontributorenRepository());
+
+        var ergebnis = service.EntferneAnhang(7, 3);
+
+        Assert.That(ergebnis.IstErfolg, Is.True);
+        Assert.That(ergebnis.Wert, Is.SameAs(detail));
+        Assert.That(kartenRepository.EntfernterAnhangId, Is.EqualTo(3));
+    }
+
+    [Test]
+    public void Wenn_der_Anhang_schon_weg_ist_dann_meldet_EntferneAnhang_ein_fehlendes_Ding()
+    {
+        var kartenRepository = TestKartenRepository.Leer()
+            .MitKartendetail(Kartendetail(new Karte(7, "Playwright-Lizenz klären", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null)))
+            .OhneDiesenAnhang();
+        var service = new KartenService(TestSpaltenRepository.MitSpalten(1, "Zu erledigen"), kartenRepository, new TestKontributorenRepository());
+
+        var ergebnis = service.EntferneAnhang(7, 3);
+
+        Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("anhang-unbekannt"));
+        Assert.That(Nichtgefunden.MeldetEinFehlendesDing(ergebnis.Befunde[0]), Is.True);
+    }
+
     private static Kartendetail Kartendetail(Karte karte)
     {
         return new Kartendetail(karte, Board: 3, Boardname: "Entwicklung", Spalte: 5, Spaltenbezeichnung: "In Arbeit", Verantwortlicher: null, Etiketten: [], Etikettvorschlaege: [], Teilaufgaben: [], Kommentare: [], Anhaenge: []);

@@ -13,7 +13,9 @@ public static class Nichtgefunden
     private const string SpalteFremd = "spalte-fremd";
     private const string KontributorUnbekannt = "kontributor-unbekannt";
     private const string TeilaufgabeUnbekannt = "teilaufgabe-unbekannt";
-    private static readonly string[] AlleCodes = [BoardUnbekannt, KarteUnbekannt, KarteFremd, SpalteUnbekannt, SpalteFremd, KontributorUnbekannt, TeilaufgabeUnbekannt];
+    private const string AnhangUnbekannt = "anhang-unbekannt";
+    private const string AnhangbytesFehlen = "anhang-bytes-fehlen";
+    private static readonly string[] AlleCodes = [BoardUnbekannt, KarteUnbekannt, KarteFremd, SpalteUnbekannt, SpalteFremd, KontributorUnbekannt, TeilaufgabeUnbekannt, AnhangUnbekannt, AnhangbytesFehlen];
 
     public static Fehlerbefund Board(long boardId)
     {
@@ -51,6 +53,29 @@ public static class Nichtgefunden
             TeilaufgabeUnbekannt,
             $"Eine Teilaufgabe mit der Nummer {teilaufgabeId} gibt es an der Karte {karteId} nicht.",
             $"`GET /api/karten/{karteId}` abrufen, die TeilaufgabeIds in „teilaufgaben“ ablesen und den Aufruf mit einer vorhandenen wiederholen.");
+    }
+
+    // Die Schwester der Teilaufgabe, eine Ressource weiter. Der Befund nennt beide Nummern, weil
+    // beide in der Adresse stehen — und weil eine AnhangId, die es anderswo gibt, an dieser Karte
+    // trotzdem keine ist. Der Weg zurueck ist die Karte selbst.
+    public static Fehlerbefund Anhang(long karteId, long anhangId)
+    {
+        return new Fehlerbefund(
+            AnhangUnbekannt,
+            $"Einen Anhang mit der Nummer {anhangId} gibt es an der Karte {karteId} nicht.",
+            $"`GET /api/karten/{karteId}` abrufen, die AnhangIds in „anhaenge“ ablesen und den Aufruf mit einer vorhandenen wiederholen.");
+    }
+
+    // Die Zeile steht, die Bytes liegen nicht daneben. Das ist eine andere Lage als „diesen Anhang
+    // gibt es nicht": die Zeile ist da und zeigt weiter einen Anhang, nur die Datei fehlt. Ein
+    // leerer Download waere die schlechtere Antwort — er saehe wie ein Erfolg aus. Ein eigener
+    // Code, weil die Kompensation eine andere ist: entfernen und neu anhaengen.
+    public static Fehlerbefund Anhangbytes(long karteId, long anhangId)
+    {
+        return new Fehlerbefund(
+            AnhangbytesFehlen,
+            $"Zum Anhang {anhangId} der Karte {karteId} liegen in der Ablage keine Bytes; die Datei ist ausserhalb der Anwendung verschwunden.",
+            $"`DELETE /api/karten/{karteId}/anhaenge/{anhangId}` aufrufen und die Datei ueber `POST /api/karten/{karteId}/anhaenge` erneut anhaengen.");
     }
 
     public static Fehlerbefund FremdeKarte(long boardId, long karteId, long boardIdDerKarte)

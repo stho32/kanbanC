@@ -248,7 +248,7 @@ public sealed class KartenService
         // Die Prüfung braucht den Kontributorenbestand und sitzt deshalb hier und nicht im
         // Validator — dieselbe Trennung wie beim Verantwortlichen. Gelesen wird dafür, statt zu
         // schreiben: eine Zurückweisung darf nichts hinterlassen.
-        var befundZumUrheber = BefundZumUrheber(anfrage.Kontributor);
+        var befundZumUrheber = BefundZumKommentarurheber(anfrage.Kontributor);
         if (befundZumUrheber is not null)
         {
             return Zurueckgewiesen<Kartendetail>(befundZumUrheber);
@@ -264,11 +264,91 @@ public sealed class KartenService
         return Ergebnis<Kartendetail>.Erfolg(detail!);
     }
 
-    // Dieselben zwei Regeln wie bei BefundZumVerantwortlichen, nur ohne den dritten Fall: beim
-    // Verantwortlichen ist „niemand" ein gültiger Wert, beim Urheber gibt es ihn nicht — die
-    // Anfrage führt den Kontributor deshalb als long und nicht als long?.
-    // null heißt „mit diesem Urheber ist alles in Ordnung".
-    private Fehlerbefund? BefundZumUrheber(long kontributorId)
+    // Dieselbe Antwortgestalt wie SchreibeKommentar, und geprueft wird in derselben Reihenfolge:
+    // erst Name und Groesse (ohne jeden Zugriff), dann der Urheber, dann die Karte. Der Strom
+    // wird erst angefasst, wenn alle drei durch sind — eine Zurueckweisung darf weder eine Zeile
+    // noch eine halbe Datei hinterlassen.
+    public Ergebnis<Kartendetail> HaengeAnhangAn(long karteId, AnhangAnlegenAnfrage anfrage, Stream inhalt)
+    {
+        var befunde = AnhangValidator.Pruefe(karteId, anfrage);
+        var dieDateiIstUngueltig = !befunde.IstOhneBefund;
+        if (dieDateiIstUngueltig)
+        {
+            return Ergebnis<Kartendetail>.Zurueckgewiesen(befunde);
+        }
+
+        var befundZumUrheber = BefundZumAnhangurheber(anfrage.Kontributor);
+        if (befundZumUrheber is not null)
+        {
+            return Zurueckgewiesen<Kartendetail>(befundZumUrheber);
+        }
+
+        var detail = _kartenRepository.HaengeAnhangAn(karteId, anfrage, inhalt);
+        var dieKarteGibtEsNicht = detail is null;
+        if (dieKarteGibtEsNicht)
+        {
+            return Zurueckgewiesen<Kartendetail>(Nichtgefunden.Karte(karteId));
+        }
+
+        return Ergebnis<Kartendetail>.Erfolg(detail!);
+    }
+
+    // Die einzige Antwort dieses Slices, die keine JSON traegt. Der Fehlerweg bleibt trotzdem
+    // derselbe: ein Befund mit Code, Meldung und Kompensation — auch dann, wenn die Zeile steht
+    // und nur die Datei fehlt.
+    public Ergebnis<Anhanginhalt> LiesAnhang(long karteId, long anhangId)
+    {
+        try
+        {
+            var inhalt = _kartenRepository.LiesAnhang(karteId, anhangId);
+            var derAnhangLiegtNichtAnDieserKarte = inhalt is null;
+            if (derAnhangLiegtNichtAnDieserKarte)
+            {
+                return Zurueckgewiesen<Anhanginhalt>(BefundZumFehlendenAnhang(karteId, anhangId));
+            }
+
+            return Ergebnis<Anhanginhalt>.Erfolg(inhalt!);
+        }
+        catch (FileNotFoundException)
+        {
+            // Die Ablage hat die Datei nicht mehr; jemand hat sie ausserhalb der Anwendung
+            // entfernt. Ein leerer Download saehe wie ein Erfolg aus.
+            return Zurueckgewiesen<Anhanginhalt>(Nichtgefunden.Anhangbytes(karteId, anhangId));
+        }
+    }
+
+    // Kein Validator: eine Nummer hat keinen ungueltigen Fall — dieselbe Ueberlegung wie bei
+    // SetzeAbhakung. Zurueck kommt das ganze Kartendetail, weil dieselbe Seite es verbraucht.
+    public Ergebnis<Kartendetail> EntferneAnhang(long karteId, long anhangId)
+    {
+        var detail = _kartenRepository.EntferneAnhang(karteId, anhangId);
+        var derAnhangLiegtNichtAnDieserKarte = detail is null;
+        if (derAnhangLiegtNichtAnDieserKarte)
+        {
+            return Zurueckgewiesen<Kartendetail>(BefundZumFehlendenAnhang(karteId, anhangId));
+        }
+
+        return Ergebnis<Kartendetail>.Erfolg(detail!);
+    }
+
+    // Gibt es schon die Karte nicht, schickt ein Befund ueber den Anhang den Aufrufer auf eine
+    // Kartenadresse, die selbst 404 antwortet — die Kompensation waere nicht ausfuehrbar.
+    // Dieselbe Trennung wie bei BefundZurFehlendenTeilaufgabe.
+    private Fehlerbefund BefundZumFehlendenAnhang(long karteId, long anhangId)
+    {
+        var dieKarteGibtEsNicht = _kartenRepository.LiesKartendetail(karteId) is null;
+        if (dieKarteGibtEsNicht)
+        {
+            return Nichtgefunden.Karte(karteId);
+        }
+
+        return Nichtgefunden.Anhang(karteId, anhangId);
+    }
+
+    // Dieselben zwei Regeln wie beim Kommentarurheber, nur mit eigener Meldung: „kann keinen
+    // Kommentar mehr schreiben" waere am Anhang eine Falschaussage.
+    // null heisst „mit diesem Urheber ist alles in Ordnung".
+    private Fehlerbefund? BefundZumAnhangurheber(long kontributorId)
     {
         var kontributor = _kontributorenRepository.LadeAlle().FirstOrDefault(eintrag => eintrag.KontributorId == kontributorId);
         var denKontributorGibtEsNicht = kontributor is null;
@@ -280,7 +360,29 @@ public sealed class KartenService
         var derKontributorArbeitetNichtMehrMit = kontributor!.StillgelegtAm is not null;
         if (derKontributorArbeitetNichtMehrMit)
         {
-            return Stillgelegt.Urheber(kontributorId);
+            return Stillgelegt.Anhangurheber(kontributorId);
+        }
+
+        return null;
+    }
+
+    // Dieselben zwei Regeln wie bei BefundZumVerantwortlichen, nur ohne den dritten Fall: beim
+    // Verantwortlichen ist „niemand" ein gültiger Wert, beim Urheber gibt es ihn nicht — die
+    // Anfrage führt den Kontributor deshalb als long und nicht als long?.
+    // null heißt „mit diesem Urheber ist alles in Ordnung".
+    private Fehlerbefund? BefundZumKommentarurheber(long kontributorId)
+    {
+        var kontributor = _kontributorenRepository.LadeAlle().FirstOrDefault(eintrag => eintrag.KontributorId == kontributorId);
+        var denKontributorGibtEsNicht = kontributor is null;
+        if (denKontributorGibtEsNicht)
+        {
+            return Nichtgefunden.Kontributor(kontributorId);
+        }
+
+        var derKontributorArbeitetNichtMehrMit = kontributor!.StillgelegtAm is not null;
+        if (derKontributorArbeitetNichtMehrMit)
+        {
+            return Stillgelegt.Kommentarurheber(kontributorId);
         }
 
         return null;

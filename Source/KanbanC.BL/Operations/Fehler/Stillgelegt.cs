@@ -19,16 +19,27 @@ public static class Stillgelegt
             Kompensationsweg);
     }
 
-    // Die Schwester für den Urheber, mit **demselben** Code: die Lage ist dieselbe, und ein
-    // zweiter Code berührte Nichtgefunden.AlleCodes und die Statusabbildung, ohne dass sich etwas
-    // unterschiede. Eigen ist nur die Meldung — die Schwester oben sagt wörtlich „kann nicht
-    // verantwortlich sein", und das wäre am Kommentar eine Falschaussage: hier wird niemand
-    // zuständig gemacht, hier sagt jemand etwas.
-    public static Fehlerbefund Urheber(long kontributorId)
+    // Die Schwester für den Urheber eines Kommentars, mit **demselben** Code: die Lage ist
+    // dieselbe, und ein zweiter Code berührte Nichtgefunden.AlleCodes und die Statusabbildung,
+    // ohne dass sich etwas unterschiede. Eigen ist nur die Meldung — die Schwester oben sagt
+    // wörtlich „kann nicht verantwortlich sein", und das wäre am Kommentar eine Falschaussage:
+    // hier wird niemand zuständig gemacht, hier sagt jemand etwas.
+    public static Fehlerbefund Kommentarurheber(long kontributorId)
     {
         return new Fehlerbefund(
             KontributorStillgelegt,
             $"Der Kontributor mit der Nummer {kontributorId} ist stillgelegt und kann keinen Kommentar mehr schreiben.",
+            Kompensationsweg);
+    }
+
+    // Die dritte Schwester, wieder mit demselben Code und wieder mit eigener Meldung: „kann nicht
+    // verantwortlich sein" und „kann keinen Kommentar mehr schreiben" wären am Anhang beide eine
+    // Falschaussage — hier legt jemand eine Datei zur Karte.
+    public static Fehlerbefund Anhangurheber(long kontributorId)
+    {
+        return new Fehlerbefund(
+            KontributorStillgelegt,
+            $"Der Kontributor mit der Nummer {kontributorId} ist stillgelegt und kann keine Datei mehr anhängen.",
             Kompensationsweg);
     }
 }

@@ -98,6 +98,39 @@ public class NichtgefundenTests
         });
     }
 
+    // Dieselbe Form wie bei der Teilaufgabe, eine Ressource weiter.
+    [Test]
+    public void Wenn_ein_Anhang_an_dieser_Karte_fehlt_dann_nennt_der_Befund_beide_Nummern_und_den_Weg_ueber_die_Karte()
+    {
+        var befund = Nichtgefunden.Anhang(14, 7);
+
+        Befundpruefung.ErwarteVollstaendigenBefund(befund, "anhang-unbekannt");
+        Assert.Multiple(() =>
+        {
+            Assert.That(befund.Meldung, Does.Contain("7"));
+            Assert.That(befund.Meldung, Does.Contain("14"));
+            Assert.That(befund.Meldung, Does.Not.Contain("Board"));
+            Assert.That(befund.Kompensation, Does.Contain("GET /api/karten/14"));
+            Assert.That(befund.Kompensation, Does.Contain("AnhangIds"));
+        });
+    }
+
+    // Eine andere Lage als „diesen Anhang gibt es nicht": die Zeile steht, die Bytes fehlen. Die
+    // Kompensation ist deshalb eine andere — entfernen und neu anhaengen.
+    [Test]
+    public void Wenn_die_Bytes_eines_Anhangs_fehlen_dann_nennt_der_Befund_den_Weg_ueber_Entfernen_und_neu_Anhaengen()
+    {
+        var befund = Nichtgefunden.Anhangbytes(14, 7);
+
+        Befundpruefung.ErwarteVollstaendigenBefund(befund, "anhang-bytes-fehlen");
+        Assert.Multiple(() =>
+        {
+            Assert.That(befund.Code, Is.Not.EqualTo(Nichtgefunden.Anhang(14, 7).Code));
+            Assert.That(befund.Kompensation, Does.Contain("DELETE /api/karten/14/anhaenge/7"));
+            Assert.That(befund.Kompensation, Does.Contain("POST /api/karten/14/anhaenge"));
+        });
+    }
+
     [Test]
     public void Wenn_ein_Kontributor_fehlt_dann_nennt_der_Befund_seine_Nummer_und_den_Weg_zur_Liste()
     {
@@ -126,6 +159,8 @@ public class NichtgefundenTests
             Assert.That(Nichtgefunden.MeldetEinFehlendesDing(Nichtgefunden.FremdeSpalte(1, 2, 3)), Is.True);
             Assert.That(Nichtgefunden.MeldetEinFehlendesDing(Nichtgefunden.Kontributor(999)), Is.True);
             Assert.That(Nichtgefunden.MeldetEinFehlendesDing(Nichtgefunden.Teilaufgabe(14, 999)), Is.True);
+            Assert.That(Nichtgefunden.MeldetEinFehlendesDing(Nichtgefunden.Anhang(14, 999)), Is.True);
+            Assert.That(Nichtgefunden.MeldetEinFehlendesDing(Nichtgefunden.Anhangbytes(14, 999)), Is.True);
             Assert.That(Nichtgefunden.MeldetEinFehlendesDing(verletzteRegel), Is.False);
         });
     }
