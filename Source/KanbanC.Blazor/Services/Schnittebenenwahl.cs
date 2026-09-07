@@ -39,4 +39,21 @@ public static class Schnittebenenwahl
 
         return $"{kartenzahl} Karten";
     }
+
+    // **Beide Zahlen**, nicht nur die angelegten: ein reiner Aktualisierungslauf hieße sonst
+    // „0 Karten anlegen" und wäre über den Schirm nicht auszulösen.
+    public static string Schreibbeschriftung(int angelegt, int geaendert)
+    {
+        if (geaendert == 0)
+        {
+            return $"{Kartenwortlaut(angelegt)} anlegen";
+        }
+
+        if (angelegt == 0)
+        {
+            return $"{geaendert} ändern";
+        }
+
+        return $"{angelegt} anlegen, {geaendert} ändern";
+    }
 }

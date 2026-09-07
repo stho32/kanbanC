@@ -28,4 +28,11 @@
     <ProjectReference Include="..\KanbanC.WebApi\KanbanC.WebApi.csproj" />
   </ItemGroup>
 
+  <!-- Dieselbe eingefrorene Planungsdatei wie in KanbanC.BL.Tests, verlinkt statt kopiert: zwei
+       Kopien liefen bei der naechsten Verfeinerung auseinander, und die Probe des zweiten Laufs
+       braucht genau die Datei, an der die Zahlen gemessen wurden. -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\KanbanC.BL.Tests\Testdaten\kanbanc-2026-09-07.md" Link="Testdaten\kanbanc-2026-09-07.md" />
+  </ItemGroup>
+
 </Project>

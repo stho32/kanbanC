@@ -36,6 +36,36 @@ public static class Wbswoerter
         ["verworfen"] = Wbsstatus.Verworfen,
     };
 
+    // Der Rückweg für Meldungen: ein Grund, der den Ampelstand nennt, nennt ihn so, wie er in der
+    // Datei steht — „gruen“ und nicht „Gruen“. **Abgeleitet aus derselben Wortliste**, damit ein
+    // verschobenes Wort nicht an zwei Stellen nachgepflegt werden muss; von zwei Schreibweisen
+    // desselben Standes gewinnt die zuerst eingetragene, also die umschriebene Form des Skills.
+    private static readonly Dictionary<Wbsstatus, string> WortJeStatus = ErstesWortJeStatus(); // stil-check: C11 Umkehrung der Wortliste, kein Domaenenbestand
+
+    public static string WortFuer(Wbsstatus status)
+    {
+        if (WortJeStatus.TryGetValue(status, out var wort))
+        {
+            return wort;
+        }
+
+        throw new InvalidOperationException($"Der Status {status} steht in keiner Wortliste.");
+    }
+
+    private static Dictionary<Wbsstatus, string> ErstesWortJeStatus()
+    {
+        var jeStatus = new Dictionary<Wbsstatus, string>();
+        foreach (var eintrag in StatusJeWort)
+        {
+            if (!jeStatus.ContainsKey(eintrag.Value))
+            {
+                jeStatus[eintrag.Value] = eintrag.Key;
+            }
+        }
+
+        return jeStatus;
+    }
+
     public static Wbsebene? EbeneAus(string wort)
     {
         if (EbenenJeWort.TryGetValue(wort.Trim(), out var ebene))

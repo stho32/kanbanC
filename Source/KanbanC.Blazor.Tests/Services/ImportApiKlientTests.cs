@@ -13,9 +13,19 @@ public class ImportApiKlientTests
     private const string JsonInhaltstyp = "application/json";
 
     private const string Bilanzrumpf = """
-        {"angelegt":41,"geaendert":0,"unveraendert":0,"uebersprungen":0,
+        {"angelegt":41,"geaendert":0,"unveraendert":0,"uebersprungen":0,"verwaist":0,
          "kartenzahlen":{"dialog":9,"interaction":41,"feature":79,"bubble":445},
-         "zeilen":[{"kennung":"I0001","ebene":"Interaction","wirkung":"Karte","grund":null}]}
+         "zeilen":[{"kennung":"I0001","ebene":"Interaction","wirkung":"Angelegt","grund":null,"kartennummer":null}]}
+        """;
+
+    // Die Antwort eines zweiten Laufs: fünf Zahlen, vier Wirkungen, Kartennummern und Gründe an
+    // den Zeilen.
+    private const string Zweiterlaufrumpf = """
+        {"angelegt":4,"geaendert":6,"unveraendert":29,"uebersprungen":0,"verwaist":2,
+         "kartenzahlen":{"dialog":9,"interaction":41,"feature":79,"bubble":445},
+         "zeilen":[{"kennung":"I0026","ebene":"Interaction","wirkung":"Geaendert","grund":"1 Abhakung zurückgenommen (`B0446`)","kartennummer":"WBS-26"},
+                   {"kennung":"I0002","ebene":"Interaction","wirkung":"Unveraendert","grund":null,"kartennummer":"WBS-02"},
+                   {"kennung":"I0019","ebene":"Interaction","wirkung":"Verwaist","grund":"steht nicht mehr in der Datei","kartennummer":"WBS-47"}]}
         """;
 
     [Test]
@@ -31,7 +41,7 @@ public class ImportApiKlientTests
         {
             Assert.That(ergebnis.Wert.Angelegt, Is.EqualTo(41));
             Assert.That(ergebnis.Wert.Kartenzahlen.Bubble, Is.EqualTo(445));
-            Assert.That(ergebnis.Wert.Zeilen[0].Wirkung, Is.EqualTo(Importwirkung.Karte));
+            Assert.That(ergebnis.Wert.Zeilen[0].Wirkung, Is.EqualTo(Importwirkung.Angelegt));
         });
     }
 
@@ -116,6 +126,94 @@ public class ImportApiKlientTests
 
         Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
         Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.EqualTo("board-oder-spalte-verschwunden"));
+    }
+
+    // Die fünfte Zahl, die vier Wirkungen und die Kartennummer kommen über die Leitung an — über
+    // den Browser ist dieser Pfad nicht auslösbar.
+    [Test]
+    public async Task Wenn_die_WebApi_die_Bilanz_eines_zweiten_Laufs_liefert_dann_kommen_fuenf_Zahlen_vier_Wirkungen_und_die_Kartennummern_an()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, Zweiterlaufrumpf, JsonInhaltstyp);
+        var klient = new ImportApiKlient(fabrik);
+
+        var ergebnis = await klient.Importiere(4, Auftrag(trocken: true), Datei());
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.False);
+        var bericht = ergebnis.Wert;
+        Assert.Multiple(() =>
+        {
+            Assert.That(bericht.Angelegt, Is.EqualTo(4));
+            Assert.That(bericht.Geaendert, Is.EqualTo(6));
+            Assert.That(bericht.Unveraendert, Is.EqualTo(29));
+            Assert.That(bericht.Uebersprungen, Is.Zero);
+            Assert.That(bericht.Verwaist, Is.EqualTo(2));
+            Assert.That(bericht.Zeilen[0].Wirkung, Is.EqualTo(Importwirkung.Geaendert));
+            Assert.That(bericht.Zeilen[0].Kartennummer, Is.EqualTo("WBS-26"));
+            Assert.That(bericht.Zeilen[0].Grund, Does.Contain("B0446"));
+            Assert.That(bericht.Zeilen[1].Wirkung, Is.EqualTo(Importwirkung.Unveraendert));
+            Assert.That(bericht.Zeilen[2].Wirkung, Is.EqualTo(Importwirkung.Verwaist));
+        });
+    }
+
+    // Die drei flächigen Zurückweisungen werden zu einem lesbaren Befund mit Kompensationsaktion.
+    [Test]
+    public async Task Wenn_die_WebApi_den_abweichenden_Pfad_zurueckweist_dann_traegt_das_Ergebnis_Grund_und_Kompensation()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(
+            HttpStatusCode.BadRequest,
+            """{"befunde":[{"code":"import-pfad-abweichend","meldung":"Die Knoten dieser Datei stehen bereits unter „Dokumentation/Planung/kanbanc.md“.","kompensation":"Das Feld „pfad“ auf den Wert des ersten Laufs setzen."}]}""",
+            JsonInhaltstyp);
+        var klient = new ImportApiKlient(fabrik);
+
+        var ergebnis = await klient.Importiere(4, Auftrag(trocken: true), Datei());
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.EqualTo("import-pfad-abweichend"));
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("Dokumentation/Planung/kanbanc.md"));
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Kompensation, Does.Contain("pfad"));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_WebApi_die_abweichende_Schnittebene_zurueckweist_dann_traegt_das_Ergebnis_beide_Ebenen()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(
+            HttpStatusCode.BadRequest,
+            """{"befunde":[{"code":"import-schnittebene-abweichend","meldung":"Der erste Lauf hat auf der Ebene Interaction geschnitten; die Anfrage nennt Bubble.","kompensation":"Eine zweite Kartenklasse anlegen."}]}""",
+            JsonInhaltstyp);
+        var klient = new ImportApiKlient(fabrik);
+
+        var ergebnis = await klient.Importiere(4, Auftrag(trocken: false), Datei());
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.EqualTo("import-schnittebene-abweichend"));
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("Interaction"));
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("Bubble"));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_WebApi_den_doppelten_Verweis_zurueckweist_dann_traegt_das_Ergebnis_beide_Kartennummern()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(
+            HttpStatusCode.BadRequest,
+            """{"befunde":[{"code":"import-verweis-doppelt","meldung":"Die Karten „WBS-08“ und „WBS-19“ tragen beide denselben Dateiverweis.","kompensation":"Den Verweis an einer der beiden entfernen."}]}""",
+            JsonInhaltstyp);
+        var klient = new ImportApiKlient(fabrik);
+
+        var ergebnis = await klient.Importiere(4, Auftrag(trocken: false), Datei());
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Code, Is.EqualTo("import-verweis-doppelt"));
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("WBS-08"));
+            Assert.That(ergebnis.Zurueckweisung.Befunde[0].Meldung, Does.Contain("WBS-19"));
+        });
     }
 
     private static Importauftrag Auftrag(bool trocken)

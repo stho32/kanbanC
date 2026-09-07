@@ -95,6 +95,47 @@ public class ImportereignisTests
         Assert.That(await leser.BleibtStill(Stillefrist), Is.True, "Eine Zurückweisung hat gemeldet.");
     }
 
+    // **Ein Lauf ohne Wirkung meldet nichts.** Jede offene Sicht lüde sonst umsonst neu, um
+    // dasselbe Board noch einmal zu zeigen — und ein geplanter Import im Hintergrund setzte die
+    // Ansicht bei jedem Durchgang zurück.
+    [Test]
+    public async Task Wenn_ein_Lauf_nichts_anlegt_und_nichts_aendert_dann_meldet_er_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await WbsImportEndpunkteTests.Aufbau(webApi);
+        using var ersterLauf = await webApi.Klient.PostAsync(Importroute(aufbau.Board.BoardId), WbsImportEndpunkteTests.Rumpf(aufbau, trocken: "false"));
+        ersterLauf.EnsureSuccessStatusCode();
+        await using var leser = await Meldungsleser.Oeffne(webApi);
+
+        using var antwort = await webApi.Klient.PostAsync(Importroute(aufbau.Board.BoardId), WbsImportEndpunkteTests.Rumpf(aufbau, trocken: "false"));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        Assert.That(await leser.BleibtStill(Stillefrist), Is.True, "Ein wirkungsloser Lauf hat gemeldet.");
+    }
+
+    // **Kartenzahl ist angelegt plus geändert** — ein Lauf, der zwei Karten anlegt und eine
+    // nachzieht, meldet drei.
+    [Test]
+    public async Task Wenn_ein_Lauf_anlegt_und_aendert_dann_meldet_er_die_Summe_beider_Zahlen()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await WbsImportEndpunkteTests.Aufbau(webApi);
+        using var ersterLauf = await webApi.Klient.PostAsync(Importroute(aufbau.Board.BoardId), WbsImportEndpunkteTests.Rumpf(aufbau, trocken: "false"));
+        ersterLauf.EnsureSuccessStatusCode();
+        await using var leser = await Meldungsleser.Oeffne(webApi);
+
+        using var antwort = await webApi.Klient.PostAsync(
+            Importroute(aufbau.Board.BoardId),
+            WbsImportEndpunkteTests.Rumpf(aufbau, trocken: "false", dateitext: MitZweiNeuenUndEinemGeaendertenKnoten()));
+
+        antwort.EnsureSuccessStatusCode();
+        var meldung = await leser.LiesNaechste();
+        Assert.That(meldung!.Als<Importereignis>().Kartenzahl, Is.EqualTo(3));
+        Assert.That(await leser.BleibtStill(Stillefrist), Is.True, "Es kam mehr als ein Ereignis für einen Lauf.");
+    }
+
     // Zwei Arten auf **einer** Leitung: das Kartenereignis behält Gestalt und Artnamen, das
     // Importereignis tritt daneben — ein Abonnent unterscheidet sie am Artnamen.
     [Test]
@@ -126,6 +167,20 @@ public class ImportereignisTests
     private static string Importroute(long boardId)
     {
         return $"/api/boards/{boardId}/wbs-import";
+    }
+
+    private static string MitZweiNeuenUndEinemGeaendertenKnoten()
+    {
+        var geaendert = WbsImportEndpunkteTests.Probedatei()
+            .Replace(
+                "| I0002 | Interaction | D0001 | Boards auflisten | rot | Die Liste zeigt alle Boards | | | | | R00002 | |",
+                "| I0002 | Interaction | D0001 | Boards auflisten und filtern | rot | Die Liste zeigt alle Boards | | | | | R00002 | |",
+                StringComparison.Ordinal);
+        return string.Join(
+            '\n',
+            geaendert,
+            "| I0003 | Interaction | D0001 | Boards archivieren | rot | | | | | | | |",
+            "| I0004 | Interaction | D0001 | Boards benennen | rot | | | | | | | |");
     }
 
     private static string VieleKnoten(int interactions)

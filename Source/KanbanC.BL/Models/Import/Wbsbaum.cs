@@ -115,4 +115,15 @@ public sealed class Wbsbaum
     {
         return _knotenJeId.ContainsKey(knotenId);
     }
+
+    // null heißt „diesen Knoten führt die Datei nicht“.
+    public Wbsknoten? Knoten(string knotenId)
+    {
+        if (_knotenJeId.TryGetValue(knotenId, out var knoten))
+        {
+            return knoten;
+        }
+
+        return null;
+    }
 }

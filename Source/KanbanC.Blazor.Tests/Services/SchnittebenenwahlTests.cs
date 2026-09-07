@@ -42,4 +42,24 @@ public class SchnittebenenwahlTests
             Assert.That(Schnittebenenwahl.Kartenwortlaut(0), Is.EqualTo("0 Karten"));
         });
     }
+
+    // **Beide Zahlen** stehen auf dem Knopf: ein reiner Aktualisierungslauf hieße sonst „0 Karten
+    // anlegen" und wäre über den Schirm nicht auszulösen.
+    [Test]
+    public void Wenn_der_Lauf_nur_anlegt_dann_nennt_der_Knopf_die_Karten()
+    {
+        Assert.That(Schnittebenenwahl.Schreibbeschriftung(41, 0), Is.EqualTo("41 Karten anlegen"));
+    }
+
+    [Test]
+    public void Wenn_der_Lauf_nur_aendert_dann_nennt_der_Knopf_die_Aenderungen()
+    {
+        Assert.That(Schnittebenenwahl.Schreibbeschriftung(0, 6), Is.EqualTo("6 ändern"));
+    }
+
+    [Test]
+    public void Wenn_der_Lauf_anlegt_und_aendert_dann_nennt_der_Knopf_beide_Zahlen()
+    {
+        Assert.That(Schnittebenenwahl.Schreibbeschriftung(4, 6), Is.EqualTo("4 anlegen, 6 ändern"));
+    }
 }

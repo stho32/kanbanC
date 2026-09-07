@@ -70,15 +70,21 @@ public static class WbsImportEndpunkte
         // Die Meldung entsteht im **Endpunkt** und nicht im Dienst: der Weg steht nur in der
         // Anfrage, und KanbanC.BL bleibt frei von Abonnenten. Das löst die in B0375 wörtlich
         // festgehaltene Schuld ein — ein Weg an der WebApi vorbei muss seine Meldung selbst tragen.
-        // **Ein zurückgewiesener und ein trockener Lauf melden nichts**: es ist nichts entstanden.
-        ereignisdrehscheibe.Melde(AlsImportereignis(boardId, anfrage, ergebnis.Wert, kontext));
+        // **Ein zurückgewiesener, ein trockener und ein wirkungsloser Lauf melden nichts**: es hat
+        // sich nichts bewegt, und jede offene Sicht lüde umsonst neu.
+        var bewegteKarten = ergebnis.Wert.Angelegt + ergebnis.Wert.Geaendert;
+        if (bewegteKarten > 0)
+        {
+            ereignisdrehscheibe.Melde(AlsImportereignis(boardId, anfrage, bewegteKarten, kontext));
+        }
+
         return Results.Created($"/api/boards/{boardId}", ergebnis.Wert);
     }
 
-    private static Importereignis AlsImportereignis(long boardId, Importanfrage anfrage, Importbericht bericht, HttpContext kontext)
+    private static Importereignis AlsImportereignis(long boardId, Importanfrage anfrage, int bewegteKarten, HttpContext kontext)
     {
         var weg = Wegkopf.Aus(kontext.Request.Headers[Wegkopf.Name]);
         var jetzt = DateTimeOffset.UtcNow; // stil-check: C03 keine Uhr-Abstraktion, wie schon beim Kartenereignis
-        return new Importereignis(boardId, anfrage.Kontributor!.Value, bericht.Angelegt, weg, jetzt);
+        return new Importereignis(boardId, anfrage.Kontributor!.Value, bewegteKarten, weg, jetzt);
     }
 }

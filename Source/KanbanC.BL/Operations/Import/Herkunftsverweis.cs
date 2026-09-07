@@ -17,13 +17,51 @@ public static class Herkunftsverweis
 
     public static string Fuer(string? pfadDerAnfrage, string dateiname, string knotenId)
     {
+        return $"{Pfad(pfadDerAnfrage, dateiname)}{Sprungmarke}{knotenId}";
+    }
+
+    public static string Pfad(string? pfadDerAnfrage, string dateiname)
+    {
         var pfad = pfadDerAnfrage?.Trim();
         var dieAnfrageNenntKeinenPfad = string.IsNullOrEmpty(pfad);
         if (dieAnfrageNenntKeinenPfad)
         {
-            pfad = dateiname.Trim();
+            return dateiname.Trim();
         }
 
-        return $"{pfad}{Sprungmarke}{knotenId}";
+        return pfad!;
+    }
+
+    // Der Weg zurück: aus einem abgelegten Verweis wieder Pfad und Knoten-ID. Getrennt wird an
+    // der **letzten** Sprungmarke, weil ein Pfad selbst eine tragen darf.
+    // null heißt „dieser Verweis hat keine Knoten-ID“ und stammt damit nicht aus einem Import.
+    public static string? KnotenIdAus(string verweis)
+    {
+        var stelle = verweis.LastIndexOf(Sprungmarke);
+        var derVerweisTraegtKeineSprungmarke = stelle < 0;
+        if (derVerweisTraegtKeineSprungmarke)
+        {
+            return null;
+        }
+
+        var kennung = verweis[(stelle + 1)..];
+        if (!Knotenkennung.IstKennung(kennung))
+        {
+            return null;
+        }
+
+        return kennung;
+    }
+
+    public static string PfadAus(string verweis)
+    {
+        var stelle = verweis.LastIndexOf(Sprungmarke);
+        var derVerweisTraegtKeineSprungmarke = stelle < 0;
+        if (derVerweisTraegtKeineSprungmarke)
+        {
+            return verweis;
+        }
+
+        return verweis[..stelle];
     }
 }

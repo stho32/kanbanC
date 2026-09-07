@@ -101,7 +101,7 @@
     {
         <section class="importabschnitt importvorschau" id="importschritt-2">
             <div class="importvorschau-kopf">
-                <span id="import-dateiname" class="importdatei">@_dateiname · @_bericht.Zeilen.Count Knoten gelesen</span>
+                <span id="import-dateiname" class="importdatei">@_dateiname · @Gelesenenknoten Knoten gelesen</span>
                 <div class="importregler" id="import-schnittebene">
                     <span class="importregler-titel">Eine Karte je</span>
                     @foreach (var ebene in Schnittebenenwahl.AlleEbenen)
@@ -124,7 +124,9 @@
                         @foreach (var zeile in _bericht.Zeilen)
                         {
                             <li class="importbaumzeile importbaumzeile-@zeile.Wirkung.ToString().ToLowerInvariant()">
+                                <span class="importmarke">@Importzeilenmarke.Fuer(zeile)</span>
                                 <span class="importkennung">@zeile.Kennung</span>
+                                <span class="importnummer">@zeile.Kartennummer</span>
                                 <span class="importwirkung">@Wirkungswort(zeile)</span>
                             </li>
                         }
@@ -135,19 +137,22 @@
                     <h3 class="importueberschrift">Wirkung der Wahl</h3>
                     <div class="importbilanz" id="import-bilanz">
                         <span class="tag tag-accent-2" id="import-angelegt">@_bericht.Angelegt angelegt</span>
-                        <span class="tag tag-neutral">@_bericht.Geaendert geändert</span>
-                        <span class="tag tag-neutral">@_bericht.Unveraendert unverändert</span>
+                        <span class="tag tag-neutral" id="import-geaendert">@_bericht.Geaendert geändert</span>
+                        <span class="tag tag-neutral" id="import-unveraendert">@_bericht.Unveraendert unverändert</span>
                         <span class="tag tag-neutral" id="import-uebersprungen">@_bericht.Uebersprungen übersprungen</span>
+                        <span class="tag tag-neutral" id="import-verwaist">@_bericht.Verwaist nicht mehr in der Datei</span>
                     </div>
 
                     @* Verschweigen wäre dieselbe Sorte stiller Schaden, die die Ablegefläche
-                       behoben hat: dieser Lauf erkennt nichts wieder. *@
+                       behoben hat: der Lauf erkennt am Dateiverweis wieder, und wer am Board
+                       abgehakt hat, findet den Haken zurückgenommen. *@
                     <p class="importhinweis" id="import-zweiterlauf">
-                        Ein zweiter Lauf derselben Datei legt die Karten <strong>erneut</strong> an — eine Wiedererkennung gibt es noch nicht.
+                        Ein zweiter Lauf derselben Datei legt <strong>keine</strong> Karte doppelt an; die Datei zieht Titel,
+                        Beschreibung, Etiketten und Teilaufgaben samt Haken nach, das Board behält Bahn, Nummer, Zeiten und Kommentare.
                     </p>
 
-                    <button type="button" class="btn btn-haupt" id="import-schreiben" disabled="@(_bericht.Angelegt == 0 || _laeuft)" @onclick="Schreibe">
-                        @Schnittebenenwahl.Kartenwortlaut(_bericht.Angelegt) anlegen
+                    <button type="button" class="btn btn-haupt" id="import-schreiben" disabled="@(!EsGibtEtwasZuSchreiben || _laeuft)" @onclick="Schreibe">
+                        @Schnittebenenwahl.Schreibbeschriftung(_bericht.Angelegt, _bericht.Geaendert)
                     </button>
                     <button type="button" class="btn btn-neben" id="import-zurueck" @onclick="ZurueckZurDatei">Zurück</button>
                     <pre class="importaufruf-text" id="import-vorschauaufruf">@Importaufruf.Fuer(BoardId, _gewaehlteKartenklasseId, _schnittebene, trocken: true)</pre>
@@ -160,7 +165,7 @@
         @* **Eine Zeile** und der Weg zum Board — die Zeile je Knoten mit Kartennummer und Grund
            ist ein eigener Slice. *@
         <section class="importabschnitt" id="importschritt-3">
-            <p class="importergebnis" id="import-ergebnis">@Schnittebenenwahl.Kartenwortlaut(_bericht.Angelegt) angelegt</p>
+            <p class="importergebnis" id="import-ergebnis">@Schnittebenenwahl.Kartenwortlaut(_bericht.Angelegt) angelegt, @_bericht.Geaendert geändert, @_bericht.Unveraendert unverändert</p>
             <a class="btn btn-haupt" id="import-zum-board" href="@Boardadresse">Zum Board</a>
         </section>
     }
@@ -187,6 +192,14 @@
     public long BoardId { get; set; }
 
     private string Boardadresse => $"/boards/{BoardId}";
+
+    // **Die Sperre hängt nicht mehr allein an „angelegt"**: ein reiner Aktualisierungslauf wäre
+    // über den Schirm sonst nicht auszulösen.
+    private bool EsGibtEtwasZuSchreiben => _bericht is not null && (_bericht.Angelegt > 0 || _bericht.Geaendert > 0);
+
+    // Verwaiste Karten stehen zwar in den Zeilen, aber nicht in der Datei — sie mitzuzählen
+    // machte aus der Zeilenzahl eine falsche Aussage über die gelesene Datei.
+    private int Gelesenenknoten => _bericht!.Zeilen.Count(zeile => zeile.Wirkung != Importwirkung.Verwaist);
 
     protected override async Task OnParametersSetAsync()
     {
@@ -395,16 +408,48 @@
 
     private static string Wirkungswort(Importzeile zeile)
     {
-        if (zeile.Wirkung == Importwirkung.Uebersprungen)
-        {
-            return $"übersprungen — {zeile.Grund}";
-        }
-
         if (zeile.Wirkung == Importwirkung.Zielboard)
         {
             return "das Zielboard";
         }
 
-        return zeile.Wirkung.ToString();
+        var wort = Wirkungsbenennung(zeile.Wirkung);
+        var anDieserZeileIstEtwasZuSagen = !string.IsNullOrEmpty(zeile.Grund);
+        if (anDieserZeileIstEtwasZuSagen)
+        {
+            return $"{wort} — {zeile.Grund}";
+        }
+
+        return wort;
+    }
+
+    private static string Wirkungsbenennung(Importwirkung wirkung)
+    {
+        if (wirkung == Importwirkung.Uebersprungen)
+        {
+            return "übersprungen";
+        }
+
+        if (wirkung == Importwirkung.Angelegt)
+        {
+            return "angelegt";
+        }
+
+        if (wirkung == Importwirkung.Geaendert)
+        {
+            return "geändert";
+        }
+
+        if (wirkung == Importwirkung.Unveraendert)
+        {
+            return "unverändert";
+        }
+
+        if (wirkung == Importwirkung.Verwaist)
+        {
+            return "nicht mehr in der Datei";
+        }
+
+        return wirkung.ToString();
     }
 }

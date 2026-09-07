@@ -11,7 +11,18 @@ public enum Importwirkung
     // eigene Wirkung da, weil sie sonst als „übersprungen“ gezählt würde — und ein Board ist nicht
     // übersprungen, es ist der Ort.
     Zielboard,
-    Karte,
+
+    // Die drei Fächer, in die ein Knoten mit Karte fällt. „Karte“ sagte, was ein Knoten **wurde**;
+    // sobald ein Lauf wiedererkennt, ist „Karte“ keine Auskunft mehr, sondern die Frage.
+    Angelegt,
+    Geaendert,
+    Unveraendert,
+
+    // Eine Karte, deren Knoten nicht mehr in der Datei steht. Sie heißt nicht „ZuLoeschen“, weil
+    // aus diesem Fach nie gelöscht wird: sie trägt Zeiten, Kommentare und Anhänge, die die Datei
+    // nie hatte.
+    Verwaist,
+
     Etikett,
     Teilaufgabe,
     Uebersprungen,

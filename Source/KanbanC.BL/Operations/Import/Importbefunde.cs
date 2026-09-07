@@ -12,6 +12,9 @@ public static class Importbefunde
     private const string BoardOhneSpalte = "board-ohne-spalte";
     private const string UrheberFehlt = "import-urheber-fehlt";
     private const string HerkunftspfadZuLang = "import-herkunftspfad-zu-lang";
+    private const string VerweisDoppelt = "import-verweis-doppelt";
+    private const string PfadAbweichend = "import-pfad-abweichend";
+    private const string SchnittebeneAbweichend = "import-schnittebene-abweichend";
 
     public static Fehlerbefund KeineWbs(string dateiname, bool derKopfFehlt, bool dieTabelleFehlt)
     {
@@ -78,5 +81,38 @@ public static class Importbefunde
             UrheberFehlt,
             "Der Import nennt keinen Urheber; jede entstehende Karte braucht einen, weil ihr Dateiverweis ohne ihn nicht angelegt werden kann.",
             $"`GET /api/kontributoren` abrufen und `POST /api/boards/{boardId}/wbs-import` mit dem Formularfeld „kontributor“ wiederholen.");
+    }
+
+    // **Unentscheidbar, nicht nur teuer:** hängt derselbe Verweis an zwei Karten, kann niemand
+    // raten, welche von beiden nachzuziehen wäre. Deshalb wird zurückgewiesen, obwohl es ein
+    // Einzelfall ist.
+    public static Fehlerbefund VerweisAnZweiKarten(long boardId, string herkunftsverweis, string ersteKarte, string zweiteKarte)
+    {
+        return new Fehlerbefund(
+            VerweisDoppelt,
+            $"Die Karten „{ersteKarte}“ und „{zweiteKarte}“ des Boards {boardId} tragen beide den Dateiverweis „{herkunftsverweis}“; welche von beiden nachzuziehen wäre, ist nicht entscheidbar.",
+            $"Den Verweis an einer der beiden Karten entfernen (`I0019`) oder eine der beiden archivieren (`I0014`) und `POST /api/boards/{boardId}/wbs-import` wiederholen.");
+    }
+
+    // **Flächiger Ausfall:** die Knoten treffen, die Pfade nicht — jede Karte des Laufs entstünde
+    // ein zweites Mal. Die Kompensation ist ein Feld der Anfrage, deshalb steht der Wert des
+    // ersten Laufs in der Meldung.
+    public static Fehlerbefund PfadWeichtVomErstenLaufAb(long boardId, string pfadDesErstenLaufs, string pfadDerAnfrage, int betroffeneKarten)
+    {
+        return new Fehlerbefund(
+            PfadAbweichend,
+            $"Die Knoten dieser Datei stehen auf dem Board {boardId} bereits unter dem Pfad „{pfadDesErstenLaufs}“; die Anfrage nennt „{pfadDerAnfrage}“. {betroffeneKarten} Karten würden ein zweites Mal entstehen.",
+            $"Das Feld „pfad“ auf den Wert des ersten Laufs setzen („{pfadDesErstenLaufs}“) und `POST /api/boards/{boardId}/wbs-import` wiederholen.");
+    }
+
+    // **Der teuerste Rand:** auf der echten Planungsdatei stehen 41 Karten bei Interaction-Schnitt
+    // gegen 445 bei Bubble-Schnitt — ein Lauf mit der falschen Ebene legte 436 Karten an, bevor
+    // jemand die Meldung liest. Wer beide Schnitte will, bekommt sie über eine zweite Kartenklasse.
+    public static Fehlerbefund SchnittebeneWeichtVomErstenLaufAb(long boardId, string ebeneDesErstenLaufs, string ebeneDerAnfrage, int betroffeneKarten)
+    {
+        return new Fehlerbefund(
+            SchnittebeneAbweichend,
+            $"Der erste Lauf auf dem Board {boardId} hat auf der Ebene {ebeneDesErstenLaufs} geschnitten; die Anfrage nennt {ebeneDerAnfrage}. {betroffeneKarten} vorhandene Karten tragen Knoten der Ebene {ebeneDesErstenLaufs}.",
+            $"Das Feld „schnittebene“ auf {ebeneDesErstenLaufs} setzen — oder für den anderen Schnitt eine zweite Kartenklasse anlegen (`POST /api/boards/{boardId}/kartenklassen`, `I0020`) und den Import auf sie richten.");
     }
 }

@@ -90,7 +90,7 @@ public static class Kartenentwurfsbildner
 
         if (kartenkennungen.Contains(knoten.Id))
         {
-            return Zeile(knoten, Importwirkung.Karte, null);
+            return Zeile(knoten, Importwirkung.Angelegt, null);
         }
 
         // Jeder Nachfahre hängt an der **nächsten** Karte über ihm. Damit steht kein Knoten zweimal
@@ -162,8 +162,10 @@ public static class Kartenentwurfsbildner
         return etiketten;
     }
 
+    // Die Kartennummer bleibt hier leer: dieser Bildner kennt nur die Datei, und ob der Knoten
+    // schon eine Karte auf dem Board hat, entscheidet erst der Soll-Ist-Vergleich.
     private static Importzeile Zeile(Wbsknoten knoten, Importwirkung wirkung, string? grund)
     {
-        return new Importzeile(knoten.Id, knoten.Ebene.ToString(), wirkung, grund);
+        return new Importzeile(knoten.Id, knoten.Ebene.ToString(), wirkung, grund, Kartennummer: null);
     }
 }

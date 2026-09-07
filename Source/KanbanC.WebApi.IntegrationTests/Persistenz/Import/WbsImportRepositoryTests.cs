@@ -1,6 +1,7 @@
 using Dapper;
 using KanbanC.BL.Models.Import;
 using KanbanC.BL.Operations.Boards;
+using KanbanC.BL.Operations.Import;
 using KanbanC.BL.Persistenz.Boards;
 using KanbanC.BL.Persistenz.Import;
 using KanbanC.BL.Persistenz.Klassen;
@@ -52,7 +53,7 @@ public class WbsImportRepositoryTests
         var aufbau = Aufbau(datenbank);
         var repository = new WbsImportRepository(datenbank.Verbindungsfabrik);
 
-        var angelegt = repository.Schreibe(Auftraege(aufbau), aufbau.KartenklasseId, aufbau.KontributorId);
+        var angelegt = repository.Schreibe(Auftraege(aufbau), [], aufbau.KartenklasseId, aufbau.KontributorId);
 
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
         Assert.Multiple(() =>
@@ -76,7 +77,7 @@ public class WbsImportRepositoryTests
         var aufbau = Aufbau(datenbank);
         var repository = new WbsImportRepository(datenbank.Verbindungsfabrik);
 
-        repository.Schreibe(Auftraege(aufbau), aufbau.KartenklasseId, aufbau.KontributorId);
+        repository.Schreibe(Auftraege(aufbau), [], aufbau.KartenklasseId, aufbau.KontributorId);
 
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
         var staende = verbindung.Query<long>("SELECT Zaehlerstand FROM Kartenklassenzuordnung ORDER BY Zaehlerstand").ToList();
@@ -98,7 +99,7 @@ public class WbsImportRepositoryTests
         var aufbau = Aufbau(datenbank);
         var repository = new WbsImportRepository(datenbank.Verbindungsfabrik);
 
-        repository.Schreibe(Auftraege(aufbau), aufbau.KartenklasseId, aufbau.KontributorId);
+        repository.Schreibe(Auftraege(aufbau), [], aufbau.KartenklasseId, aufbau.KontributorId);
 
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
         var erledigungen = verbindung.Query<string>("SELECT ErledigtAm FROM Karteerledigung").ToList();
@@ -119,7 +120,7 @@ public class WbsImportRepositoryTests
         BelegeZaehlerstand(datenbank, aufbau, belegterStand: 2);
         var repository = new WbsImportRepository(datenbank.Verbindungsfabrik);
 
-        Assert.Throws<SqliteException>(() => repository.Schreibe(Auftraege(aufbau), aufbau.KartenklasseId, aufbau.KontributorId));
+        Assert.Throws<SqliteException>(() => repository.Schreibe(Auftraege(aufbau), [], aufbau.KartenklasseId, aufbau.KontributorId));
 
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
         Assert.Multiple(() =>
@@ -144,7 +145,7 @@ public class WbsImportRepositoryTests
             auftraege.Add(Auftrag($"I{nummer:D4}", Wbsstatus.Rot, aufbau.ErsteSpalteId, inDerAbschlussspalte: false));
         }
 
-        new WbsImportRepository(datenbank.Verbindungsfabrik).Schreibe(auftraege, aufbau.KartenklasseId, aufbau.KontributorId);
+        new WbsImportRepository(datenbank.Verbindungsfabrik).Schreibe(auftraege, [], aufbau.KartenklasseId, aufbau.KontributorId);
 
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
         var positionen = verbindung.Query<long>("SELECT Position FROM Karte WHERE Spalte = @Spalte ORDER BY Position", new { Spalte = aufbau.ErsteSpalteId }).ToList();
@@ -155,6 +156,261 @@ public class WbsImportRepositoryTests
             Assert.That(positionen[0], Is.EqualTo(1));
             Assert.That(positionen[^1], Is.EqualTo(40));
         });
+    }
+
+    // **Ein Lesevorgang je Lauf, nicht je Karte:** der Iststand kommt vollständig zurück — Nummer,
+    // Titel, Beschreibung, Etiketten, Teilaufgaben mit Position und Haken, Herkunftsverweis, Bahn,
+    // Archivstand, erfasste Zeit und Kommentarzahl.
+    [Test]
+    public void Wenn_der_Iststand_gelesen_wird_dann_traegt_jede_Karte_alles_was_der_Vergleich_und_die_Meldung_brauchen()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new WbsImportRepository(datenbank.Verbindungsfabrik);
+        repository.Schreibe(Auftraege(aufbau), [], aufbau.KartenklasseId, aufbau.KontributorId);
+
+        var iststand = repository.LiesIststand(aufbau.BoardId, aufbau.KartenklasseId);
+
+        var erste = iststand[0];
+        Assert.Multiple(() =>
+        {
+            Assert.That(iststand.Kartenanzahl, Is.EqualTo(2));
+            Assert.That(erste.Kartennummer, Is.EqualTo("WBS-01"));
+            Assert.That(erste.Titel, Is.EqualTo("[I0001] Knoten I0001"));
+            Assert.That(erste.Beschreibung, Is.EqualTo("Ein neues Board entsteht"));
+            Assert.That(erste.Etiketten, Is.EqualTo(new[] { "Boards führen" }));
+            Assert.That(erste.Teilaufgaben.Select(schritt => schritt.Text), Is.EqualTo(new[] { "F0001 Feature", "B0001 Bubble" }));
+            Assert.That(erste.Teilaufgaben[0].Abgehakt, Is.True);
+            Assert.That(erste.Teilaufgaben[1].Position, Is.EqualTo(2));
+            Assert.That(erste.Dateiverweise, Is.EqualTo(new[] { "Dokumentation/Planung/kanbanc.md#I0001" }));
+            Assert.That(erste.Spaltenbezeichnung, Is.Not.Empty);
+            Assert.That(erste.IstArchiviert, Is.False);
+            Assert.That(erste.ErfassteZeit, Is.EqualTo(TimeSpan.Zero));
+            Assert.That(erste.Kommentarzahl, Is.Zero);
+        });
+    }
+
+    // Erfasste Zeit und Kommentarzahl sind die Werte, mit denen die Meldung an einer verwaisten
+    // Karte um ihr Leben bittet — sie müssen ankommen.
+    [Test]
+    public void Wenn_eine_Karte_Zeiten_und_Kommentare_traegt_dann_kommen_Summe_und_Zahl_im_Iststand_an()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new WbsImportRepository(datenbank.Verbindungsfabrik);
+        repository.Schreibe(Auftraege(aufbau), [], aufbau.KartenklasseId, aufbau.KontributorId);
+        var karteId = ErsteKarteId(datenbank);
+        ErfasseZeit(datenbank, aufbau, karteId, TimeSpan.FromMinutes(140));
+        ErfasseZeit(datenbank, aufbau, karteId, TimeSpan.FromMinutes(120));
+        SchreibeKommentar(datenbank, aufbau, karteId, "Erster");
+        SchreibeKommentar(datenbank, aufbau, karteId, "Zweiter");
+
+        var iststand = repository.LiesIststand(aufbau.BoardId, aufbau.KartenklasseId);
+
+        var karte = Einzelne(iststand, karteId);
+        Assert.Multiple(() =>
+        {
+            Assert.That(karte.ErfassteZeit, Is.EqualTo(TimeSpan.FromMinutes(260)));
+            Assert.That(karte.Kommentarzahl, Is.EqualTo(2));
+        });
+    }
+
+    // **Archivierte Karten stehen im Vergleich wie jede andere** — sie zu übergehen erzeugte eine
+    // zweite Karte für denselben Knoten.
+    [Test]
+    public void Wenn_eine_Karte_archiviert_ist_dann_steht_sie_trotzdem_im_Iststand()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new WbsImportRepository(datenbank.Verbindungsfabrik);
+        repository.Schreibe(Auftraege(aufbau), [], aufbau.KartenklasseId, aufbau.KontributorId);
+        var karteId = ErsteKarteId(datenbank);
+        Archiviere(datenbank, karteId);
+
+        var iststand = repository.LiesIststand(aufbau.BoardId, aufbau.KartenklasseId);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(iststand.Kartenanzahl, Is.EqualTo(2));
+            Assert.That(Einzelne(iststand, karteId).IstArchiviert, Is.True);
+        });
+    }
+
+    // Der Iststand ist auf **eine** Kartenklasse beschränkt: die Karten einer zweiten Klasse
+    // gehören nicht in diesen Vergleich.
+    [Test]
+    public void Wenn_das_Board_eine_zweite_Kartenklasse_fuehrt_dann_bleibt_ihr_Bestand_aus_dem_Iststand_heraus()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new WbsImportRepository(datenbank.Verbindungsfabrik);
+        repository.Schreibe(Auftraege(aufbau), [], aufbau.KartenklasseId, aufbau.KontributorId);
+        var zweite = new KartenklassenRepository(datenbank.Verbindungsfabrik).LegeAn(aufbau.BoardId, new KartenklasseAnlegenAnfrage("BUG", "BUG-"))!.Wert;
+
+        var iststand = repository.LiesIststand(aufbau.BoardId, zweite.KartenklasseId);
+
+        Assert.That(iststand.Kartenanzahl, Is.Zero);
+    }
+
+    // **Die Datei zieht nach, das Board behält.** Titel, Beschreibung, Etiketten und Teilaufgaben
+    // wandern; Bahn, Position, Nummer und Zaehlerstand bleiben unangetastet.
+    [Test]
+    public void Wenn_eine_Karte_nachgezogen_wird_dann_wandern_Titel_Beschreibung_Etiketten_und_Teilaufgaben_und_sonst_nichts()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new WbsImportRepository(datenbank.Verbindungsfabrik);
+        repository.Schreibe(Auftraege(aufbau), [], aufbau.KartenklasseId, aufbau.KontributorId);
+        var karteId = ErsteKarteId(datenbank);
+        var vorher = repository.LiesIststand(aufbau.BoardId, aufbau.KartenklasseId);
+        var karteVorher = Einzelne(vorher, karteId);
+
+        repository.Schreibe([], [Aktualisierung(karteVorher)], aufbau.KartenklasseId, aufbau.KontributorId);
+
+        var karte = Einzelne(repository.LiesIststand(aufbau.BoardId, aufbau.KartenklasseId), karteId);
+        Assert.Multiple(() =>
+        {
+            Assert.That(karte.Titel, Is.EqualTo("[I0001] Neuer Name"));
+            Assert.That(karte.Beschreibung, Is.EqualTo("Neue Beschreibung"));
+            Assert.That(karte.Etiketten, Is.EqualTo(new[] { "WBS-Import" }));
+            Assert.That(karte.Teilaufgaben.Select(schritt => schritt.Text), Is.EqualTo(new[] { "F0001 Feature neu", "B0002 Neue Bubble" }));
+            Assert.That(karte.Teilaufgaben[0].Abgehakt, Is.False, "Die Datei gewinnt auch beim Haken.");
+            Assert.That(karte.Kartennummer, Is.EqualTo("WBS-01"), "Die Nummer bleibt.");
+            Assert.That(karte.Spaltenbezeichnung, Is.EqualTo(karteVorher.Spaltenbezeichnung), "Die Bahn bleibt.");
+            Assert.That(karte.Dateiverweise, Is.EqualTo(karteVorher.Dateiverweise), "Der Verweis bleibt.");
+        });
+    }
+
+    // **Eine von Hand angelegte Teilaufgabe bleibt** — sie steht außerhalb des Abgleichs.
+    [Test]
+    public void Wenn_eine_Karte_eine_fremde_Teilaufgabe_traegt_dann_ueberlebt_sie_das_Nachziehen()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new WbsImportRepository(datenbank.Verbindungsfabrik);
+        repository.Schreibe(Auftraege(aufbau), [], aufbau.KartenklasseId, aufbau.KontributorId);
+        var karteId = ErsteKarteId(datenbank);
+        FuegeTeilaufgabeEin(datenbank, karteId, "Mit Stefan sprechen", position: 9);
+        var karteVorher = Einzelne(repository.LiesIststand(aufbau.BoardId, aufbau.KartenklasseId), karteId);
+
+        repository.Schreibe([], [Aktualisierung(karteVorher)], aufbau.KartenklasseId, aufbau.KontributorId);
+
+        var karte = Einzelne(repository.LiesIststand(aufbau.BoardId, aufbau.KartenklasseId), karteId);
+        Assert.That(karte.Teilaufgaben.Select(schritt => schritt.Text), Does.Contain("Mit Stefan sprechen"));
+    }
+
+    // **Der Zaehlerstand wächst nur je neuer Karte**: ein Lauf, der nur nachzieht, lässt ihn stehen.
+    [Test]
+    public void Wenn_ein_Lauf_nur_nachzieht_dann_bleibt_der_Zaehlerstand_stehen()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new WbsImportRepository(datenbank.Verbindungsfabrik);
+        repository.Schreibe(Auftraege(aufbau), [], aufbau.KartenklasseId, aufbau.KontributorId);
+        var karteVorher = Einzelne(repository.LiesIststand(aufbau.BoardId, aufbau.KartenklasseId), ErsteKarteId(datenbank));
+
+        repository.Schreibe([], [Aktualisierung(karteVorher)], aufbau.KartenklasseId, aufbau.KontributorId);
+
+        var kartenklasse = new KartenklassenRepository(datenbank.Verbindungsfabrik).LadeAlle(aufbau.BoardId)!.Single();
+        Assert.That(kartenklasse.Zaehlerstand, Is.EqualTo(2));
+    }
+
+    // **Anlage und Aktualisierung in derselben Transaktion:** bricht die Anlage ab, ist auch die
+    // Aktualisierung nicht geschehen.
+    [Test]
+    public void Wenn_die_Anlage_mittendrin_abbricht_dann_ist_auch_keine_Karte_halb_nachgezogen()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new WbsImportRepository(datenbank.Verbindungsfabrik);
+        repository.Schreibe(Auftraege(aufbau), [], aufbau.KartenklasseId, aufbau.KontributorId);
+        var karteId = ErsteKarteId(datenbank);
+        var karteVorher = Einzelne(repository.LiesIststand(aufbau.BoardId, aufbau.KartenklasseId), karteId);
+        BelegeZaehlerstand(datenbank, aufbau, belegterStand: 3);
+
+        Assert.Throws<SqliteException>(() => repository.Schreibe(Auftraege(aufbau), [Aktualisierung(karteVorher)], aufbau.KartenklasseId, aufbau.KontributorId));
+
+        var karte = Einzelne(repository.LiesIststand(aufbau.BoardId, aufbau.KartenklasseId), karteId);
+        Assert.Multiple(() =>
+        {
+            Assert.That(karte.Titel, Is.EqualTo(karteVorher.Titel), "Der Titel wurde nachgezogen, obwohl der Lauf abgebrochen ist.");
+            Assert.That(karte.Etiketten, Is.EqualTo(karteVorher.Etiketten));
+        });
+    }
+
+    private static Kartenaktualisierungsauftrag Aktualisierung(Karteniststand karte)
+    {
+        var entwuerfe = new List<Teilaufgabenentwurf> { new("F0001 Feature neu", false), new("B0002 Neue Bubble", false) };
+        return new Kartenaktualisierungsauftrag(
+            karte.KarteId,
+            "[I0001] Neuer Name",
+            "Neue Beschreibung",
+            Etikettenabgleich.Gleiche(["WBS-Import"], karte.Etiketten, new HashSet<string>(["Boards führen", "WBS-Import"], StringComparer.Ordinal)),
+            Teilaufgabenabgleich.Gleiche(entwuerfe, karte.Teilaufgaben));
+    }
+
+    private static Karteniststand Einzelne(Karteniststaende iststaende, long karteId)
+    {
+        foreach (var stand in iststaende)
+        {
+            if (stand.KarteId == karteId)
+            {
+                return stand;
+            }
+        }
+
+        throw new InvalidOperationException($"Die Karte {karteId} steht nicht im Iststand.");
+    }
+
+    private static long ErsteKarteId(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.ExecuteScalar<long>("SELECT MIN(KarteId) FROM Karte");
+    }
+
+    private static void ErfasseZeit(TemporaereDatenbank datenbank, Testaufbau aufbau, long karteId, TimeSpan dauer)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        var beginn = new DateTimeOffset(2026, 9, 1, 8, 0, 0, TimeSpan.Zero);
+        var parameter = new
+        {
+            Karte = karteId,
+            Kontributor = aufbau.KontributorId,
+            Beginn = beginn.ToString("O", System.Globalization.CultureInfo.InvariantCulture),
+            Ende = beginn.Add(dauer).ToString("O", System.Globalization.CultureInfo.InvariantCulture),
+        };
+        verbindung.Execute(@"
+            INSERT INTO Zeiteintrag (Karte, Kontributor, Beginn, Ende)
+            VALUES (@Karte, @Kontributor, @Beginn, @Ende)", parameter);
+    }
+
+    private static void SchreibeKommentar(TemporaereDatenbank datenbank, Testaufbau aufbau, long karteId, string text)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        var parameter = new
+        {
+            Karte = karteId,
+            Kontributor = aufbau.KontributorId,
+            Text = text,
+            Zeitpunkt = DateTimeOffset.UtcNow.ToString("O", System.Globalization.CultureInfo.InvariantCulture),
+        };
+        verbindung.Execute(@"
+            INSERT INTO Kommentar (Karte, Kontributor, Text, Zeitpunkt)
+            VALUES (@Karte, @Kontributor, @Text, @Zeitpunkt)", parameter);
+    }
+
+    private static void Archiviere(TemporaereDatenbank datenbank, long karteId)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute("INSERT INTO Kartenarchivierung (Karte) VALUES (@Karte)", new { Karte = karteId });
+    }
+
+    private static void FuegeTeilaufgabeEin(TemporaereDatenbank datenbank, long karteId, string text, int position)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Teilaufgabe (Karte, Text, Position, Abgehakt)
+            VALUES (@Karte, @Text, @Position, 0)", new { Karte = karteId, Text = text, Position = position });
     }
 
     private static IReadOnlyList<Kartenschreibauftrag> Auftraege(Testaufbau aufbau)

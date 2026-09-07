@@ -12,7 +12,11 @@ public sealed class TestWbsImportRepository : IWbsImportRepository
         [new Importspalte(10, "Bereit", 1, false), new Importspalte(11, "In Arbeit", 2, false), new Importspalte(12, "Erledigt", 3, true)],
         [new Kartenklasse(3, "WBS", "WBS-", 0)]);
 
-    public IReadOnlyList<Kartenschreibauftrag> GeschriebeneAuftraege { get; private set; } = [];
+    public Karteniststaende Iststand { get; set; } = new([]);
+
+    public IReadOnlyList<Kartenschreibauftrag> GeschriebeneAnlagen { get; private set; } = [];
+
+    public IReadOnlyList<Kartenaktualisierungsauftrag> GeschriebeneAktualisierungen { get; private set; } = [];
 
     public bool WurdeGeschrieben { get; private set; }
 
@@ -30,12 +34,22 @@ public sealed class TestWbsImportRepository : IWbsImportRepository
         return Ziel;
     }
 
-    public int Schreibe(IReadOnlyList<Kartenschreibauftrag> auftraege, long kartenklasseId, long kontributorId)
+    public Karteniststaende LiesIststand(long boardId, long kartenklasseId)
+    {
+        return Iststand;
+    }
+
+    public int Schreibe(
+        IReadOnlyList<Kartenschreibauftrag> anlagen,
+        IReadOnlyList<Kartenaktualisierungsauftrag> aktualisierungen,
+        long kartenklasseId,
+        long kontributorId)
     {
         WurdeGeschrieben = true;
-        GeschriebeneAuftraege = auftraege;
+        GeschriebeneAnlagen = anlagen;
+        GeschriebeneAktualisierungen = aktualisierungen;
         GeschriebeneKartenklasse = kartenklasseId;
         GeschriebenerKontributor = kontributorId;
-        return auftraege.Count;
+        return anlagen.Count;
     }
 }

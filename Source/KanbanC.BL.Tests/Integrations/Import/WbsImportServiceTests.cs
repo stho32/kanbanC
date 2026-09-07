@@ -41,7 +41,7 @@ public class WbsImportServiceTests
         Assert.Multiple(() =>
         {
             Assert.That(aufbau.ImportRepository.WurdeGeschrieben, Is.True);
-            Assert.That(aufbau.ImportRepository.GeschriebeneAuftraege, Has.Count.EqualTo(2));
+            Assert.That(aufbau.ImportRepository.GeschriebeneAnlagen, Has.Count.EqualTo(2));
             Assert.That(aufbau.ImportRepository.GeschriebeneKartenklasse, Is.EqualTo(KartenklasseId));
             Assert.That(aufbau.ImportRepository.GeschriebenerKontributor, Is.EqualTo(7));
             Assert.That(ergebnis.Wert.Angelegt, Is.EqualTo(2));
@@ -57,7 +57,7 @@ public class WbsImportServiceTests
 
         aufbau.Dienst.Importiere(BoardId, Anfrage(trocken: false), Datei());
 
-        var auftraege = aufbau.ImportRepository.GeschriebeneAuftraege;
+        var auftraege = aufbau.ImportRepository.GeschriebeneAnlagen;
         Assert.Multiple(() =>
         {
             Assert.That(auftraege[0].Entwurf.Titel, Is.EqualTo("[I0001] Board anlegen"));
@@ -272,6 +272,217 @@ public class WbsImportServiceTests
 
         Assert.That(ergebnis.IstErfolg, Is.True);
         Assert.That(ergebnis.Wert.Angelegt, Is.EqualTo(2));
+    }
+
+    // **Der Dienst vergleicht vor dem Schreiben** — und Vorschau und Schreiben rechnen dasselbe:
+    // dieselbe Datei auf ein Board, das sie schon getragen hat, ergibt 0 angelegt und n unverändert.
+    [Test]
+    public void Wenn_das_Board_die_Datei_schon_traegt_dann_meldet_die_Vorschau_alles_unveraendert_und_legt_nichts_an()
+    {
+        var aufbau = Aufbau();
+        aufbau.ImportRepository.Iststand = EingefahrenesBoard();
+
+        var bericht = aufbau.Dienst.Importiere(BoardId, Anfrage(trocken: true), Datei()).Wert;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(bericht.Angelegt, Is.Zero);
+            Assert.That(bericht.Geaendert, Is.Zero);
+            Assert.That(bericht.Unveraendert, Is.EqualTo(2));
+            Assert.That(bericht.Verwaist, Is.Zero);
+            Assert.That(aufbau.ImportRepository.WurdeGeschrieben, Is.False);
+        });
+    }
+
+    [Test]
+    public void Wenn_das_Board_die_Datei_schon_traegt_dann_schreibt_der_zweite_Lauf_weder_Anlage_noch_Aktualisierung()
+    {
+        var aufbau = Aufbau();
+        aufbau.ImportRepository.Iststand = EingefahrenesBoard();
+
+        var bericht = aufbau.Dienst.Importiere(BoardId, Anfrage(trocken: false), Datei()).Wert;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(bericht.Unveraendert, Is.EqualTo(2));
+            Assert.That(aufbau.ImportRepository.GeschriebeneAnlagen, Is.Empty);
+            Assert.That(aufbau.ImportRepository.GeschriebeneAktualisierungen, Is.Empty);
+        });
+    }
+
+    // Die wiedererkannte Karte zieht Titel, Beschreibung, Etiketten und Teilaufgaben nach — und
+    // bekommt **keine** neue Karte daneben.
+    [Test]
+    public void Wenn_sich_der_Titel_in_der_Datei_geaendert_hat_dann_wird_die_Karte_nachgezogen_statt_verdoppelt()
+    {
+        var aufbau = Aufbau();
+        aufbau.ImportRepository.Iststand = new Karteniststaende([Karte(11, "WBS-01", "[I0001] Alter Name", "I0001"), Karte(12, "WBS-02", "[I0002] Boards auflisten", "I0002")]);
+
+        var bericht = aufbau.Dienst.Importiere(BoardId, Anfrage(trocken: false), Datei()).Wert;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(bericht.Angelegt, Is.Zero);
+            Assert.That(bericht.Geaendert, Is.EqualTo(1));
+            Assert.That(bericht.Unveraendert, Is.EqualTo(1));
+            Assert.That(aufbau.ImportRepository.GeschriebeneAktualisierungen, Has.Count.EqualTo(1));
+            Assert.That(aufbau.ImportRepository.GeschriebeneAktualisierungen[0].KarteId, Is.EqualTo(11));
+            Assert.That(aufbau.ImportRepository.GeschriebeneAktualisierungen[0].Titel, Is.EqualTo("[I0001] Board anlegen"));
+        });
+    }
+
+    // Die Zeile trägt die **Kartennummer** der wiedererkannten Karte.
+    [Test]
+    public void Wenn_eine_Karte_wiedererkannt_wurde_dann_traegt_ihre_Berichtszeile_die_Kartennummer()
+    {
+        var aufbau = Aufbau();
+        aufbau.ImportRepository.Iststand = EingefahrenesBoard();
+
+        var bericht = aufbau.Dienst.Importiere(BoardId, Anfrage(trocken: true), Datei()).Wert;
+
+        Assert.That(bericht.Zeilen.Single(zeile => zeile.Kennung == "I0002").Kartennummer, Is.EqualTo("WBS-02"));
+    }
+
+    // **Gelöscht wird nie**: eine Karte, deren Knoten nicht mehr in der Datei steht, wird gemeldet
+    // und steht **hinter** den Dateizeilen.
+    [Test]
+    public void Wenn_ein_Knoten_nicht_mehr_in_der_Datei_steht_dann_wird_seine_Karte_gemeldet_und_steht_hinter_den_Dateizeilen()
+    {
+        var aufbau = Aufbau();
+        var verwaiste = Karte(13, "WBS-47", "[I0019] Dateiverweise pflegen", "I0019") with
+        {
+            Spaltenbezeichnung = "In Arbeit",
+            ErfassteZeit = TimeSpan.FromMinutes(260),
+            Kommentarzahl = 2,
+        };
+        aufbau.ImportRepository.Iststand = new Karteniststaende([Karte(11, "WBS-01", "[I0001] Board anlegen", "I0001"), Karte(12, "WBS-02", "[I0002] Boards auflisten", "I0002"), verwaiste]);
+
+        var bericht = aufbau.Dienst.Importiere(BoardId, Anfrage(trocken: false), Datei()).Wert;
+
+        var letzte = bericht.Zeilen[^1];
+        Assert.Multiple(() =>
+        {
+            Assert.That(bericht.Verwaist, Is.EqualTo(1));
+            Assert.That(letzte.Kennung, Is.EqualTo("I0019"));
+            Assert.That(letzte.Wirkung, Is.EqualTo(Importwirkung.Verwaist));
+            Assert.That(letzte.Kartennummer, Is.EqualTo("WBS-47"));
+            Assert.That(letzte.Grund, Does.Contain("4:20"));
+            Assert.That(letzte.Grund, Does.Contain("archivieren"));
+            Assert.That(aufbau.ImportRepository.GeschriebeneAktualisierungen, Is.Empty, "Aus dem Fach Verwaist wird nie geschrieben.");
+        });
+    }
+
+    // **Gemeldet, nicht umgezogen**: die Karte bleibt in ihrer Bahn.
+    [Test]
+    public void Wenn_der_Status_von_der_Bahn_der_Karte_abweicht_dann_steht_der_Grund_an_ihrer_Zeile()
+    {
+        var aufbau = Aufbau();
+        var gezogene = Karte(11, "WBS-01", "[I0001] Board anlegen", "I0001") with { Spaltenbezeichnung = "In Arbeit" };
+        aufbau.ImportRepository.Iststand = new Karteniststaende([gezogene, Karte(12, "WBS-02", "[I0002] Boards auflisten", "I0002")]);
+
+        var bericht = aufbau.Dienst.Importiere(BoardId, Anfrage(trocken: true), Datei()).Wert;
+
+        Assert.That(bericht.Zeilen.Single(zeile => zeile.Kennung == "I0001").Grund, Is.EqualTo("Status `gruen`, Karte steht in „In Arbeit“."));
+    }
+
+    // Der einzelne Ausfall: die Karte entsteht, und der Verdacht steht daneben — **der Lauf ist
+    // nicht zurückgewiesen**.
+    [Test]
+    public void Wenn_an_einer_Karte_der_Verweis_fehlt_dann_entsteht_eine_neue_und_der_Dublettenverdacht_steht_an_ihrer_Zeile()
+    {
+        var aufbau = Aufbau();
+        var ohneKupplung = Karte(12, "WBS-02", "[I0002] Boards auflisten", "I0002") with { Dateiverweise = [] };
+        aufbau.ImportRepository.Iststand = new Karteniststaende([Karte(11, "WBS-01", "[I0001] Board anlegen", "I0001"), ohneKupplung]);
+
+        var ergebnis = aufbau.Dienst.Importiere(BoardId, Anfrage(trocken: false), Datei());
+
+        var zeile = ergebnis.Wert.Zeilen.Single(berichtszeile => berichtszeile.Kennung == "I0002");
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.IstErfolg, Is.True);
+            Assert.That(ergebnis.Wert.Angelegt, Is.EqualTo(1));
+            Assert.That(zeile.Wirkung, Is.EqualTo(Importwirkung.Angelegt));
+            Assert.That(zeile.Grund, Does.Contain("ähnlich zu „WBS-02“"));
+            Assert.That(aufbau.ImportRepository.GeschriebeneAnlagen, Has.Count.EqualTo(1));
+        });
+    }
+
+    // Die flächigen Lagen erreichen den Aufrufer als Zurückweisung — **vor** der Vorschau und ohne
+    // dass ein Board berührt wird.
+    [Test]
+    public void Wenn_der_Pfad_vom_ersten_Lauf_abweicht_dann_wird_vor_der_Vorschau_zurueckgewiesen()
+    {
+        var aufbau = Aufbau();
+        aufbau.ImportRepository.Iststand = EingefahrenesBoard();
+
+        var ergebnis = aufbau.Dienst.Importiere(BoardId, Anfrage(trocken: true) with { Pfad = "Planung/probe.md" }, Datei());
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("import-pfad-abweichend"));
+            Assert.That(aufbau.ImportRepository.WurdeGeschrieben, Is.False);
+        });
+    }
+
+    [Test]
+    public void Wenn_die_Schnittebene_vom_ersten_Lauf_abweicht_dann_wird_vor_der_Vorschau_zurueckgewiesen()
+    {
+        var aufbau = Aufbau();
+        aufbau.ImportRepository.Iststand = EingefahrenesBoard();
+
+        var ergebnis = aufbau.Dienst.Importiere(BoardId, Anfrage(trocken: false) with { Schnittebene = Schnittebene.Feature }, Datei());
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("import-schnittebene-abweichend"));
+            Assert.That(aufbau.ImportRepository.WurdeGeschrieben, Is.False);
+        });
+    }
+
+    [Test]
+    public void Wenn_zwei_Karten_denselben_Verweis_tragen_dann_wird_vor_der_Vorschau_zurueckgewiesen()
+    {
+        var aufbau = Aufbau();
+        aufbau.ImportRepository.Iststand = new Karteniststaende([Karte(11, "WBS-01", "[I0001] Board anlegen", "I0001"), Karte(21, "WBS-09", "[I0001] Kopie", "I0001")]);
+
+        var ergebnis = aufbau.Dienst.Importiere(BoardId, Anfrage(trocken: true), Datei());
+
+        Assert.That(ergebnis.IstErfolg, Is.False);
+        Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("import-verweis-doppelt"));
+    }
+
+    private static Karteniststaende EingefahrenesBoard()
+    {
+        return new Karteniststaende([Karte(11, "WBS-01", "[I0001] Board anlegen", "I0001"), Karte(12, "WBS-02", "[I0002] Boards auflisten", "I0002")]);
+    }
+
+    private static Karteniststand Karte(long karteId, string kartennummer, string titel, string knotenId)
+    {
+        return new Karteniststand(
+            karteId,
+            kartennummer,
+            titel,
+            null,
+            ["Boards führen"],
+            [],
+            [$"Dokumentation/Planung/probe.md#{knotenId}"],
+            Spaltenbezeichnung(knotenId),
+            IstArchiviert: false,
+            TimeSpan.Zero,
+            Kommentarzahl: 0);
+    }
+
+    // Der erste Lauf hat I0001 (gruen) in die Abschlussspalte gelegt und I0002 (rot) in die erste.
+    private static string Spaltenbezeichnung(string knotenId)
+    {
+        if (knotenId == "I0001")
+        {
+            return "Erledigt";
+        }
+
+        return "Bereit";
     }
 
     private static Importanfrage Anfrage(bool trocken)

@@ -205,17 +205,37 @@
     line-height: 1.6;
 }
 
+.importmarke {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    min-width: 10px;
+}
+
 .importkennung {
     font-family: var(--font-mono);
     min-width: 60px;
+}
+
+.importnummer {
+    font-family: var(--font-mono);
+    min-width: 60px;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
 }
 
 .importwirkung {
     color: color-mix(in srgb, var(--color-text) 60%, transparent);
 }
 
-.importbaumzeile-karte .importwirkung {
+.importbaumzeile-angelegt .importwirkung {
     color: var(--color-accent-700);
+}
+
+.importbaumzeile-geaendert .importwirkung {
+    color: var(--color-accent-700);
+}
+
+.importbaumzeile-verwaist .importwirkung {
+    color: var(--color-accent-600);
 }
 
 .importbaumzeile-uebersprungen .importwirkung {

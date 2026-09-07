@@ -49,7 +49,23 @@ public sealed class ImportSeite
 
     public ILocator Angelegt => _seite.Locator("#import-angelegt");
 
+    public ILocator Geaendert => _seite.Locator("#import-geaendert");
+
+    public ILocator Unveraendert => _seite.Locator("#import-unveraendert");
+
     public ILocator Uebersprungen => _seite.Locator("#import-uebersprungen");
+
+    public ILocator Verwaist => _seite.Locator("#import-verwaist");
+
+    public ILocator Baumzeile(string kennung)
+    {
+        return Baumzeilen.Filter(new LocatorFilterOptions { Has = _seite.Locator(".importkennung", new PageLocatorOptions { HasTextString = kennung }) });
+    }
+
+    public ILocator MarkeDerZeile(ILocator zeile)
+    {
+        return zeile.Locator(".importmarke");
+    }
 
     public ILocator ZweiterLaufHinweis => _seite.Locator("#import-zweiterlauf");
 

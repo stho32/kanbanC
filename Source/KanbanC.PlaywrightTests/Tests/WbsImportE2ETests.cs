@@ -1,5 +1,6 @@
 using KanbanC.PlaywrightTests.Infrastructure;
 using KanbanC.PlaywrightTests.PageObjects;
+using Microsoft.Playwright;
 using Microsoft.Playwright.NUnit;
 
 namespace KanbanC.PlaywrightTests.Tests;
@@ -79,7 +80,7 @@ public class WbsImportE2ETests : PageTest
         await Expect(seite.SchrittVorschau).ToBeVisibleAsync();
         await Expect(seite.Angelegt).ToHaveTextAsync("2 angelegt");
         await Expect(seite.Baumzeilen).ToHaveCountAsync(6);
-        await Expect(seite.ZweiterLaufHinweis).ToContainTextAsync("erneut");
+        await Expect(seite.ZweiterLaufHinweis).ToContainTextAsync("keine");
         await Expect(seite.Schnittebenenstellung("Interaction")).ToContainTextAsync("2");
         await Expect(seite.Schnittebenenstellung("Dialog")).ToContainTextAsync("1");
 
@@ -98,7 +99,7 @@ public class WbsImportE2ETests : PageTest
         await seite.Schreibknopf.ClickAsync();
 
         // Schritt 3: **eine Zeile** und der Weg zum Board.
-        await Expect(seite.Ergebniszeile).ToHaveTextAsync("2 Karten angelegt");
+        await Expect(seite.Ergebniszeile).ToContainTextAsync("2 Karten angelegt");
         await Expect(seite.ZumBoard).ToBeVisibleAsync();
         await seite.ZumBoard.ClickAsync();
 
@@ -106,6 +107,75 @@ public class WbsImportE2ETests : PageTest
         await Expect(boardSeite.Karten).ToHaveCountAsync(2);
         await Expect(boardSeite.Kartentitel.Nth(0)).ToHaveTextAsync("[I0002] Boards auflisten");
         await Expect(boardSeite.Kartennummern.Nth(0)).ToHaveTextAsync("WBS-02");
+    }
+
+    // **Der Lauf dieses Slice:** importieren, am Board abhaken und eine Karte in eine andere Bahn
+    // ziehen, denselben Import wiederholen — und sehen, dass nichts doppelt entsteht, die Nummern
+    // dieselben bleiben, die Karte in ihrer Bahn steht und der Haken zurückgenommen **und
+    // gemeldet** wird.
+    [Test]
+    [Category("US-3")]
+    public async Task Wenn_derselbe_Import_nach_Handarbeit_am_Board_wiederholt_wird_dann_entsteht_keine_Dublette_und_die_Ruecknahme_wird_gemeldet()
+    {
+        var aufbau = await BoardMitKlasseUndIdentitaet();
+        var seite = new ImportSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await seite.Oeffne(aufbau.BoardId);
+        await seite.LegeDateiAb("kanbanc.md", KleineWbs());
+        await Expect(seite.Schreibknopf).ToHaveTextAsync("2 Karten anlegen");
+        await seite.Schreibknopf.ClickAsync();
+        await Expect(seite.Ergebniszeile).ToContainTextAsync("2 Karten angelegt");
+
+        // Handarbeit am Board: eine Teilaufgabe abhaken und eine Karte in eine andere Bahn ziehen.
+        var boardSeite = new BoardSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await boardSeite.Oeffne(aufbau.BoardId);
+        await Expect(boardSeite.Karten).ToHaveCountAsync(2);
+        var kartendetail = new KartendetailSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        using var webApi = new WebApiKlient(Testumgebung.Aktuelle.WebApiAdresse);
+        var gruene = await KarteMitTitel(webApi, aufbau.BoardId, "[I0001] Board anlegen");
+        await kartendetail.Oeffne(gruene);
+        await kartendetail.Teilaufgabenkaestchen("B0001").ClickAsync();
+        await Expect(kartendetail.AbgehakteTeilaufgaben).ToHaveCountAsync(2);
+
+        await boardSeite.Oeffne(aufbau.BoardId);
+        var offene = boardSeite.Karten.Filter(new LocatorFilterOptions { HasText = "[I0002] Boards auflisten" });
+        var zweiteBahn = boardSeite.Spaltenbahnen.Nth(1);
+        await boardSeite.ZieheKarteAufsBahnende(offene, zweiteBahn);
+        await Expect(boardSeite.KartenDerBahn(zweiteBahn)).ToHaveCountAsync(1);
+
+        // Derselbe Import ein zweites Mal.
+        await seite.Oeffne(aufbau.BoardId);
+        await seite.LegeDateiAb("kanbanc.md", KleineWbs());
+
+        await Expect(seite.SchrittVorschau).ToBeVisibleAsync();
+        await Expect(seite.Angelegt).ToHaveTextAsync("0 angelegt");
+        await Expect(seite.Geaendert).ToHaveTextAsync("1 geändert");
+        await Expect(seite.Unveraendert).ToHaveTextAsync("1 unverändert");
+        await Expect(seite.Verwaist).ToHaveTextAsync("0 nicht mehr in der Datei");
+        var geaenderteZeile = seite.Baumzeile("I0001");
+        await Expect(seite.MarkeDerZeile(geaenderteZeile)).ToHaveTextAsync("!");
+        await Expect(geaenderteZeile).ToContainTextAsync("1 Abhakung zurückgenommen (`B0001`)");
+        await Expect(geaenderteZeile).ToContainTextAsync("WBS-01");
+
+        // **Die Sperre haengt nicht mehr allein an „angelegt"**: ein reiner Aktualisierungslauf
+        // ist ausloesbar.
+        await Expect(seite.Schreibknopf).ToHaveTextAsync("1 ändern");
+        await Expect(seite.Schreibknopf).ToBeEnabledAsync();
+        await seite.Schreibknopf.ClickAsync();
+        await Expect(seite.Ergebniszeile).ToContainTextAsync("0 Karten angelegt");
+
+        await seite.ZumBoard.ClickAsync();
+        await Expect(boardSeite.Karten).ToHaveCountAsync(2);
+        await Expect(boardSeite.KartenDerBahn(zweiteBahn)).ToHaveCountAsync(1);
+        await Expect(boardSeite.Kartennummern.Filter(new LocatorFilterOptions { HasTextString = "WBS-03" })).ToHaveCountAsync(0);
+
+        await kartendetail.Oeffne(gruene);
+        await Expect(kartendetail.AbgehakteTeilaufgaben).ToHaveCountAsync(1);
+    }
+
+    private static async Task<long> KarteMitTitel(WebApiKlient webApi, long boardId, string titel)
+    {
+        var board = await webApi.LadeBoard(boardId);
+        return board.Spalten.SelectMany(spalte => spalte.Karten).Single(karte => karte.Titel == titel).KarteId;
     }
 
     // Rand A: was keine WBS ist, wird mit Grund und Kompensation zurückgewiesen — nie mit

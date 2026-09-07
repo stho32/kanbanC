@@ -105,6 +105,9 @@ public sealed class WbsImportService
 
     // Der Baum wird **einmal** gelesen und viermal ausgewertet: die Kartenzahl je Wahl der
     // Schnittebene steht in jeder Antwort, damit der Regler sie ohne zweiten Aufruf hat.
+    // Danach kommt der Iststand dazu, und **Vorschau und Schreiben rechnen dasselbe**: eine
+    // Vorschau, die die Wiedererkennung überspränge, verspräche etwas, das der dritte Schritt nicht
+    // hält.
     private Ergebnis<Importbericht> Bilanziere(Importziel ziel, Importanfrage anfrage, Wbsbestand bestand)
     {
         var gefiltert = Umfangsfilter.Filtere(bestand.Baum);
@@ -118,14 +121,76 @@ public sealed class WbsImportService
             return Zurueckgewiesen(befundZumHerkunftspfad);
         }
 
-        if (anfrage.Trocken)
+        var pfad = Herkunftsverweis.Pfad(anfrage.Pfad, anfrage.Dateiname);
+        var iststaende = _importRepository.LiesIststand(ziel.BoardId, anfrage.Kartenklasse);
+        var befundZurWiedererkennung = Wiedererkennungspruefung.Pruefe(ziel.BoardId, iststaende, pfad, anfrage.Schnittebene, Sollknoten(bildung.Entwuerfe));
+        if (befundZurWiedererkennung is not null)
         {
-            return Ergebnis<Importbericht>.Erfolg(Importberichtbildner.Bilde(bildung, uebersprungene, kartenzahlen, bildung.Entwuerfe.Kartenanzahl));
+            return Zurueckgewiesen(befundZurWiedererkennung);
         }
 
-        var auftraege = Schreibauftraege(ziel, bildung.Entwuerfe);
-        var angelegt = _importRepository.Schreibe(auftraege, anfrage.Kartenklasse, anfrage.Kontributor!.Value);
-        return Ergebnis<Importbericht>.Erfolg(Importberichtbildner.Bilde(bildung, uebersprungene, kartenzahlen, angelegt));
+        var dateietiketten = Dateietiketten(bildung.Entwuerfe);
+        var vergleich = Vergleiche(bildung.Entwuerfe, iststaende, pfad, dateietiketten);
+        var wirkungsbildung = Importwirkungsbildner.Bilde(vergleich, gefiltert.Baum, iststaende.Ungekuppelte(pfad), dateietiketten, ziel.Spalten, pfad);
+        var bericht = Importberichtbildner.Bilde(bildung, uebersprungene, kartenzahlen, wirkungsbildung.Wirkungen, wirkungsbildung.Verwaistenzeilen);
+        if (anfrage.Trocken)
+        {
+            return Ergebnis<Importbericht>.Erfolg(bericht);
+        }
+
+        var anlagen = Schreibauftraege(ziel, vergleich.ZuErstellen);
+        _importRepository.Schreibe(anlagen, wirkungsbildung.Aktualisierungen, anfrage.Kartenklasse, anfrage.Kontributor!.Value);
+        return Ergebnis<Importbericht>.Erfolg(bericht);
+    }
+
+    // **Der Schlüssel ist der Herkunftsverweis, nicht der Titel**, und er ist auf beiden Seiten
+    // verschieden zu holen: links steht er am Entwurf, rechts hängt er als Dateiverweis an der
+    // Karte.
+    private static SollIstVergleichErgebnis<Kartenentwurf, Karteniststand> Vergleiche(Kartenentwuerfe entwuerfe, Karteniststaende iststaende, string pfad, IReadOnlySet<string> dateietiketten)
+    {
+        var vergleicher = new SollIstVergleicher<Kartenentwurf, Karteniststand>(
+            entwurf => entwurf.Dateiverweis,
+            stand => Karteniststaende.Kupplung(stand, pfad)!,
+            (soll, ist) => Kartenabbildvergleich.SindGleich(Kartenabbildbildner.AusEntwurf(soll), Kartenabbildbildner.AusIststand(ist), dateietiketten));
+        return vergleicher.Vergleiche(Alle(entwuerfe), iststaende.Gekuppelte(pfad));
+    }
+
+    // Alle Etiketten, die **diese Datei** erzeugen kann. Was an einer Karte darüber hinaus steht,
+    // hat ein Mensch gesetzt und bleibt.
+    private static IReadOnlySet<string> Dateietiketten(Kartenentwuerfe entwuerfe)
+    {
+        var etiketten = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var entwurf in entwuerfe)
+        {
+            foreach (var etikett in entwurf.Etiketten)
+            {
+                etiketten.Add(etikett);
+            }
+        }
+
+        return etiketten;
+    }
+
+    private static IReadOnlySet<string> Sollknoten(Kartenentwuerfe entwuerfe)
+    {
+        var kennungen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var entwurf in entwuerfe)
+        {
+            kennungen.Add(entwurf.Knoten.Id);
+        }
+
+        return kennungen;
+    }
+
+    private static IReadOnlyList<Kartenentwurf> Alle(Kartenentwuerfe entwuerfe)
+    {
+        var alle = new List<Kartenentwurf>();
+        foreach (var entwurf in entwuerfe)
+        {
+            alle.Add(entwurf);
+        }
+
+        return alle;
     }
 
     // Geprüft wird **vor** der Vorschau und nicht erst vor dem Schreiben: eine Vorschau, die etwas
@@ -145,7 +210,7 @@ public sealed class WbsImportService
         return null;
     }
 
-    private static IReadOnlyList<Kartenschreibauftrag> Schreibauftraege(Importziel ziel, Kartenentwuerfe entwuerfe)
+    private static IReadOnlyList<Kartenschreibauftrag> Schreibauftraege(Importziel ziel, IReadOnlyList<Kartenentwurf> entwuerfe)
     {
         var auftraege = new List<Kartenschreibauftrag>();
         foreach (var entwurf in entwuerfe)
