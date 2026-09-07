@@ -1,0 +1,90 @@
+@using System.Globalization
+@using KanbanC.Contracts.Auswertungen
+
+@* Die Zahlen kommen gerechnet aus der API — der Schirm zählt nichts nach. Der Verweis ist nichts
+   als die Adresse, die ein Agent ohnehin ruft. *@
+<div class="zeitexportflaeche" id="zeitexport-flaeche">
+    @if (DerAusschnittIstLeer)
+    {
+        @if (EineSpanneIstGewaehlt)
+        {
+            <p class="zeitexporthinweis" id="zeitexport-leerer-ausschnitt">
+                Im Zeitraum @Spanne() ist kein Zeiteintrag erfasst. Wähle eine andere Spanne oder lass beide Grenzen leer.
+            </p>
+        }
+        else
+        {
+            <p class="zeitexporthinweis" id="zeitexport-ohne-zeiten">
+                Für diesen Kartenbestand ist kein einziger Zeiteintrag erfasst.
+                Starte einen Timer auf einer Karte oder trage eine Zeit nach.
+            </p>
+        }
+    }
+    else
+    {
+        <div class="zeitexportumfang" id="zeitexport-umfang">
+            <p class="zeitexportzaehlzeile" id="zeitexport-zaehlzeile">
+                <strong>@Stand.Eintraege</strong> Einträge · <strong>@Stand.Karten</strong> Karten · <strong>@Stand.Kontributoren</strong> Kontributoren
+            </p>
+            @* Dieselbe Trennung, die der Zeitenblock der Kartenseite schon macht: eine mitlaufende
+               Dauer wäre ab der ersten Sekunde falsch. *@
+            @if (Stand.Laufende > 0)
+            {
+                <p class="zeitexportlaufende" id="zeitexport-laufende">
+                    davon @Stand.Laufende laufend — ohne Ende und ohne Dauer in der Datei
+                </p>
+            }
+            <p class="zeitexportdateiname" id="zeitexport-dateiname">@Stand.Dateiname</p>
+            @* Ein nacktes `<a href>` direkt auf die WebApi: über den Blazor-Prozess flössen die
+               Bytes zweimal über das Netz, und der Browser bekäme keinen echten Download. *@
+            <a class="zeitexportverweis" id="zeitexport-verweis" href="@Verweisadresse">CSV</a>
+        </div>
+    }
+
+    <p class="zeitexportregel" id="zeitexport-regel">
+        Eine Zeile je Zeiteintrag, nicht je Summe: Kartennummer, Kartentitel, Kontributor, Art, Beginn, Ende, Dauer.
+        Die Datei glättet nichts — überlappende Einträge stehen unkorrigiert darin, und eine Dauer läuft über 24 Stunden hinaus.
+    </p>
+</div>
+
+@code {
+    private const string Isodatumsformat = "yyyy-MM-dd";
+    private const string OffeneGrenze = "…";
+
+    [Parameter]
+    [EditorRequired]
+    public required Zeitexportstand Stand { get; set; }
+
+    [Parameter]
+    [EditorRequired]
+    public required string Verweisadresse { get; set; }
+
+    [Parameter]
+    public DateOnly? Von { get; set; }
+
+    [Parameter]
+    public DateOnly? Bis { get; set; }
+
+    // Der Verweis verschwindet bei null Einträgen — die API liefert trotzdem 200 mit der Kopfzeile
+    // für den, der die Adresse direkt ruft: die Oberfläche darf weniger anbieten als die API.
+    private bool DerAusschnittIstLeer => Stand.Eintraege == 0;
+
+    // Der Unterschied muss lesbar sein: „hier wurde nie etwas erfasst" ist eine andere Lage als
+    // „in dieser Spanne nicht".
+    private bool EineSpanneIstGewaehlt => Von is not null || Bis is not null;
+
+    private string Spanne()
+    {
+        return $"{Grenze(Von)} bis {Grenze(Bis)}";
+    }
+
+    private static string Grenze(DateOnly? grenze)
+    {
+        if (grenze is null)
+        {
+            return OffeneGrenze;
+        }
+
+        return grenze.Value.ToString(Isodatumsformat, CultureInfo.InvariantCulture);
+    }
+}

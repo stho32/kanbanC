@@ -17,7 +17,7 @@
 @inject Laufzeitmelder Laufzeitmelder
 @inject Identitaetsspeicher Identitaetsspeicher
 @inject Pfadkopie Pfadkopie
-@inject Anhangbasisadresse Anhangbasis
+@inject WebApibasisadresse WebApibasis
 @inject IJSRuntime Browser
 @inject Ereignisverteiler Ereignisverteiler
 @inject Markenstandzeit Markenstandzeit
@@ -376,7 +376,7 @@ else
                                        Blazor-Route: sonst flössen die Bytes zweimal über das Netz
                                        und der Browser bekäme keinen echten Download. *@
                                     <a class="anhangladen"
-                                       href="@Anhangadresse.Fuer(Anhangbasis.Adresse, KarteId, anhang.AnhangId)"
+                                       href="@Anhangadresse.Fuer(WebApibasis.Adresse, KarteId, anhang.AnhangId)"
                                        title="@anhang.Dateiname herunterladen">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"></path><path d="m7 11 5 5 5-5"></path><path d="M5 20h14"></path></svg>
                                     </a>

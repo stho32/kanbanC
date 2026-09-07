@@ -487,6 +487,46 @@ public class FehlervertragTests
             await webApi.Klient.GetAsync($"{BoardsRoute}/{board.BoardId}/kartenklassen/999/burndown?seit=gestern")));
 
         faelle.Add(new Fehlerfall(
+            "GET /api/boards/{boardId:long}/kartenklassen/{kartenklasseId:long}/zeitexport",
+            "Zeitexportstand mit unbekannter BoardId",
+            await webApi.Klient.GetAsync($"{BoardsRoute}/999/kartenklassen/{aufbau.FremdeKartenklasse.KartenklasseId}/zeitexport")));
+
+        faelle.Add(new Fehlerfall(
+            "GET /api/boards/{boardId:long}/kartenklassen/{kartenklasseId:long}/zeitexport",
+            "Zeitexportstand mit unbekannter KartenklasseId",
+            await webApi.Klient.GetAsync($"{BoardsRoute}/{board.BoardId}/kartenklassen/999/zeitexport")));
+
+        faelle.Add(new Fehlerfall(
+            "GET /api/boards/{boardId:long}/kartenklassen/{kartenklasseId:long}/zeitexport",
+            "Zeitexportstand mit der Kartenklasse eines fremden Boards",
+            await webApi.Klient.GetAsync($"{BoardsRoute}/{board.BoardId}/kartenklassen/{aufbau.FremdeKartenklasse.KartenklasseId}/zeitexport")));
+
+        faelle.Add(new Fehlerfall(
+            "GET /api/boards/{boardId:long}/kartenklassen/{kartenklasseId:long}/zeitexport",
+            "Zeitexportstand mit unlesbarer Zeitraumgrenze",
+            await webApi.Klient.GetAsync($"{BoardsRoute}/{board.BoardId}/kartenklassen/999/zeitexport?von=gestern")));
+
+        faelle.Add(new Fehlerfall(
+            "GET /api/boards/{boardId:long}/kartenklassen/{kartenklasseId:long}/zeitexport.csv",
+            "Zeitexportdatei mit unbekannter BoardId",
+            await webApi.Klient.GetAsync($"{BoardsRoute}/999/kartenklassen/{aufbau.FremdeKartenklasse.KartenklasseId}/zeitexport.csv")));
+
+        faelle.Add(new Fehlerfall(
+            "GET /api/boards/{boardId:long}/kartenklassen/{kartenklasseId:long}/zeitexport.csv",
+            "Zeitexportdatei mit unbekannter KartenklasseId",
+            await webApi.Klient.GetAsync($"{BoardsRoute}/{board.BoardId}/kartenklassen/999/zeitexport.csv")));
+
+        faelle.Add(new Fehlerfall(
+            "GET /api/boards/{boardId:long}/kartenklassen/{kartenklasseId:long}/zeitexport.csv",
+            "Zeitexportdatei mit der Kartenklasse eines fremden Boards",
+            await webApi.Klient.GetAsync($"{BoardsRoute}/{board.BoardId}/kartenklassen/{aufbau.FremdeKartenklasse.KartenklasseId}/zeitexport.csv")));
+
+        faelle.Add(new Fehlerfall(
+            "GET /api/boards/{boardId:long}/kartenklassen/{kartenklasseId:long}/zeitexport.csv",
+            "Zeitexportdatei mit verdrehter Spanne",
+            await webApi.Klient.GetAsync($"{BoardsRoute}/{board.BoardId}/kartenklassen/{aufbau.FremdeKartenklasse.KartenklasseId}/zeitexport.csv?von=2026-09-07&bis=2026-09-01")));
+
+        faelle.Add(new Fehlerfall(
             "PUT /api/karten/{karteId:long}/kartenklasse",
             "Kartenklasse zuordnen an unbekannter Karte",
             await webApi.Klient.PutAsJsonAsync("/api/karten/999/kartenklasse", new KartenklasseZuordnenAnfrage(1))));

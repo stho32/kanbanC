@@ -1,0 +1,67 @@
+/* Der Umfang links, die Regel darunter — Kanbanflow-dicht: die Zahlen bekommen den Platz, das
+   Beiwerk tritt zurück. Farben, Abstände und Radien kommen aus gestaltung.css; Schriftgrößen
+   stehen als Wert, weil das Token-Sheet für sie keine Variable führt. */
+.zeitexportflaeche {
+    min-width: 0;
+}
+
+.zeitexportumfang {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+}
+
+.zeitexportzaehlzeile {
+    margin: 0;
+    font-size: 14px;
+    color: var(--color-neutral-700);
+}
+
+.zeitexportzaehlzeile > strong {
+    font-size: 22px;
+    margin-right: var(--space-1);
+    color: var(--color-accent-800);
+}
+
+.zeitexportlaufende {
+    margin: 0;
+    font-size: 12px;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.zeitexportdateiname {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    overflow-wrap: anywhere;
+    color: color-mix(in srgb, var(--color-text) 62%, transparent);
+}
+
+.zeitexportverweis {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-lg);
+    font-size: 13px;
+    white-space: nowrap;
+    text-decoration: none;
+    color: var(--color-bg);
+    background: var(--color-accent);
+}
+
+.zeitexporthinweis {
+    margin: var(--space-4) 0;
+    color: color-mix(in srgb, var(--color-text) 62%, transparent);
+}
+
+.zeitexportregel {
+    margin: var(--space-4) 0 0;
+    font-size: 12px;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}

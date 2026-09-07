@@ -9,6 +9,7 @@
 @inject BoardApiKlient BoardKlient
 @inject KartenklassenApiKlient KartenklassenKlient
 @inject AuswertungenApiKlient AuswertungenKlient
+@inject WebApibasisadresse WebApibasis
 
 <PageTitle>Auswertungen</PageTitle>
 
@@ -76,6 +77,19 @@
                     <input id="auswertung-seit" class="input" type="date" value="@Beginnwert()" @onchange="WaehleZeitraum" />
                 </div>
             }
+            @if (_gewaehlteAuswertung == Auswertungswahl.Zeitexport)
+            {
+                @* Zwei Grenzen statt der einen des Burndowns: eine Exportdatei ist ein Dokument
+                   über eine abgeschlossene Spanne. Beide dürfen leer bleiben. *@
+                <div class="field">
+                    <label for="auswertung-von">von</label>
+                    <input id="auswertung-von" class="input" type="date" value="@Tageswert(_von)" @onchange="WaehleVon" />
+                </div>
+                <div class="field">
+                    <label for="auswertung-bis">bis</label>
+                    <input id="auswertung-bis" class="input" type="date" value="@Tageswert(_bis)" @onchange="WaehleBis" />
+                </div>
+            }
         </div>
 
         @if (_ausfallmeldung is not null)
@@ -123,6 +137,10 @@
         {
             <Burndownflaeche Auswertung="_burndown" />
         }
+        else if (_zeitexportstand is not null)
+        {
+            <Zeitexportflaeche Stand="_zeitexportstand" Verweisadresse="@Zeitexportverweis()" Von="_von" Bis="_bis" />
+        }
 
         @* Derselbe Weg für einen Agenten — die einzige Stelle, an der die API im Schirm sichtbar
            wird; er folgt der gewählten Auswertung. *@
@@ -140,14 +158,14 @@
     [
         new(Auswertungswahl.SollIst, "soll-ist", "Soll-Ist gegen die WBS"),
         new(Auswertungswahl.Burndown, "burndown", "Burndown"),
+        new(Auswertungswahl.Zeitexport, "zeitexport", "Zeiten exportieren"),
     ];
 
-    // Die drei übrigen Auswertungen des Dialogs stehen gesperrt daneben: sie sind bestellt und
+    // Die zwei übrigen Auswertungen des Dialogs stehen gesperrt daneben: sie sind bestellt und
     // noch nicht gebaut, und eine Fläche, die sie verschweigt, sähe vollständig aus.
     private static readonly Kuenftigeauswertung[] NochNichtGebaut =
     [
         new("puffer", "Puffer-Verbrauch"),
-        new("zeitexport", "Zeiten exportieren"),
         new("rohdaten", "Rohdaten über die API"),
     ];
 
@@ -157,8 +175,11 @@
     private long? _gewaehltesBoard;
     private long? _gewaehlteKartenklasse;
     private DateOnly? _seit;
+    private DateOnly? _von;
+    private DateOnly? _bis;
     private SollIstAuswertung? _sollIst;
     private Burndownauswertung? _burndown;
+    private Zeitexportstand? _zeitexportstand;
     private Zurueckweisung? _zurueckweisung;
     private string? _ausfallmeldung;
     private bool _boardFuehrtKeineKartenklasse;
@@ -182,7 +203,7 @@
     private async Task WaehleAuswertung(Auswertungswahl wahl)
     {
         _gewaehlteAuswertung = wahl;
-        _seit = null;
+        VergissZeitraum();
         VergissAuswertung();
         var derBestandStehtSchon = _gewaehltesBoard is not null && _gewaehlteKartenklasse is not null;
         if (derBestandStehtSchon)
@@ -196,7 +217,7 @@
         _gewaehltesBoard = Nummer(ereignis.Value);
         _gewaehlteKartenklasse = null;
         _kartenklassen = [];
-        _seit = null;
+        VergissZeitraum();
         VergissAuswertung();
         _boardFuehrtKeineKartenklasse = false;
         if (_gewaehltesBoard is null)
@@ -234,7 +255,7 @@
     private async Task WaehleKartenklasse(ChangeEventArgs ereignis)
     {
         _gewaehlteKartenklasse = Nummer(ereignis.Value);
-        _seit = null;
+        VergissZeitraum();
         VergissAuswertung();
         if (_gewaehlteKartenklasse is null)
         {
@@ -247,6 +268,27 @@
     private async Task WaehleZeitraum(ChangeEventArgs ereignis)
     {
         _seit = Tag(ereignis.Value);
+        await LadeWennDerBestandSteht();
+    }
+
+    // Eine Änderung an einer Grenze lässt Zahlen, Dateiname und Verweis folgen — über einen
+    // erneuten Abruf des Stands, nicht über eine zweite Rechnung im Schirm.
+    // Eine verdrehte Spanne wird **nicht** hier geprüft: sie kommt als Zurückweisung der API
+    // zurück, sonst stünde dieselbe Regel an zwei Stellen.
+    private async Task WaehleVon(ChangeEventArgs ereignis)
+    {
+        _von = Tag(ereignis.Value);
+        await LadeWennDerBestandSteht();
+    }
+
+    private async Task WaehleBis(ChangeEventArgs ereignis)
+    {
+        _bis = Tag(ereignis.Value);
+        await LadeWennDerBestandSteht();
+    }
+
+    private async Task LadeWennDerBestandSteht()
+    {
         var derBestandStehtSchon = _gewaehltesBoard is not null && _gewaehlteKartenklasse is not null;
         if (derBestandStehtSchon)
         {
@@ -259,6 +301,12 @@
         if (_gewaehlteAuswertung == Auswertungswahl.Burndown)
         {
             await LadeBurndown();
+            return;
+        }
+
+        if (_gewaehlteAuswertung == Auswertungswahl.Zeitexport)
+        {
+            await LadeZeitexportstand();
             return;
         }
 
@@ -297,11 +345,36 @@
         });
     }
 
+    private async Task LadeZeitexportstand()
+    {
+        _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(async () =>
+        {
+            var ergebnis = await AuswertungenKlient.LadeZeitexportstand(_gewaehltesBoard!.Value, _gewaehlteKartenklasse!.Value, _von, _bis);
+            if (ergebnis.WurdeZurueckgewiesen)
+            {
+                _zurueckweisung = ergebnis.Zurueckweisung;
+                _zeitexportstand = null;
+                return;
+            }
+
+            _zurueckweisung = null;
+            _zeitexportstand = ergebnis.Wert;
+        });
+    }
+
     private void VergissAuswertung()
     {
         _sollIst = null;
         _burndown = null;
+        _zeitexportstand = null;
         _zurueckweisung = null;
+    }
+
+    private void VergissZeitraum()
+    {
+        _seit = null;
+        _von = null;
+        _bis = null;
     }
 
     private string Titel()
@@ -309,6 +382,11 @@
         if (_gewaehlteAuswertung == Auswertungswahl.Burndown)
         {
             return "Burndown über Kalendertage";
+        }
+
+        if (_gewaehlteAuswertung == Auswertungswahl.Zeitexport)
+        {
+            return "Zeiten exportieren";
         }
 
         return "Soll-Ist gegen die WBS-Zählung";
@@ -340,7 +418,19 @@
             return $"GET /api/boards/{boardId}/kartenklassen/{kartenklasseId}/burndown{Zeitraumabfrage()}";
         }
 
+        if (_gewaehlteAuswertung == Auswertungswahl.Zeitexport)
+        {
+            return $"GET /api/boards/{boardId}/kartenklassen/{kartenklasseId}/zeitexport.csv{Zeitexportadresse.Zeitraumabfrage(_von, _bis)}";
+        }
+
         return $"GET /api/boards/{boardId}/kartenklassen/{kartenklasseId}/soll-ist";
+    }
+
+    // Der Verweis ist nichts als die Adresse, die ein Agent ohnehin ruft — absolut und direkt auf
+    // die WebApi.
+    private string Zeitexportverweis()
+    {
+        return Zeitexportadresse.Fuer(WebApibasis.Adresse, _gewaehltesBoard!.Value, _gewaehlteKartenklasse!.Value, _von, _bis);
     }
 
     private string Zeitraumabfrage()
@@ -408,10 +498,21 @@
         return DateOnly.ParseExact(text, Isodatumsformat, CultureInfo.InvariantCulture);
     }
 
+    private static string Tageswert(DateOnly? grenze)
+    {
+        if (grenze is null)
+        {
+            return string.Empty;
+        }
+
+        return grenze.Value.ToString(Isodatumsformat, CultureInfo.InvariantCulture);
+    }
+
     private enum Auswertungswahl
     {
         SollIst,
         Burndown,
+        Zeitexport,
     }
 
     private sealed record Gebauteauswertung(Auswertungswahl Wahl, string Kennung, string Beschriftung);

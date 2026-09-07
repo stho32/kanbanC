@@ -34,7 +34,7 @@ if (!string.IsNullOrWhiteSpace(gesetzteOeffentlicheAdresse))
     oeffentlicheBasisAdresse = gesetzteOeffentlicheAdresse;
 }
 
-builder.Services.AddSingleton(new Anhangbasisadresse(oeffentlicheBasisAdresse));
+builder.Services.AddSingleton(new WebApibasisadresse(oeffentlicheBasisAdresse));
 
 // Der Weg reist im Kopf und wird an **genau einer Stelle** gesetzt: hier. Damit trägt ihn jeder
 // Aufruf der Oberfläche, ohne dass ein einziger Aufrufer davon weiß — eine vergessene Aufrufstelle

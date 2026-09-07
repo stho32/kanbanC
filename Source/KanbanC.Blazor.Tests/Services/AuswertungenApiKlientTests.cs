@@ -240,4 +240,107 @@ public class AuswertungenApiKlientTests
 
         Assert.That(async () => await klient.LadeBurndown(4, 2, seit: null), Throws.InstanceOf<HttpRequestException>());
     }
+
+    // Der Stand trägt **keine Zeilen** — er ist kein zweiter Weg zu den Daten.
+    private const string EinZeitexportstand = """
+        {
+          "eintraege": 5,
+          "karten": 3,
+          "kontributoren": 2,
+          "laufende": 1,
+          "von": "2026-08-31",
+          "bis": "2026-09-07",
+          "dateiname": "kanbanc-release-2-zeiten-2026-08-31_2026-09-07.csv"
+        }
+        """;
+
+    [Test]
+    public async Task Wenn_die_WebApi_den_Zeitexportstand_liefert_dann_traegt_das_Ergebnis_Zaehlung_Grenzen_und_Dateiname()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, EinZeitexportstand, JsonInhaltstyp);
+        var klient = new AuswertungenApiKlient(fabrik);
+
+        var ergebnis = await klient.LadeZeitexportstand(4, 2, von: null, bis: null);
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Wert.Eintraege, Is.EqualTo(5));
+            Assert.That(ergebnis.Wert.Karten, Is.EqualTo(3));
+            Assert.That(ergebnis.Wert.Kontributoren, Is.EqualTo(2));
+            Assert.That(ergebnis.Wert.Laufende, Is.EqualTo(1));
+            Assert.That(ergebnis.Wert.Von, Is.EqualTo(new DateOnly(2026, 8, 31)));
+            Assert.That(ergebnis.Wert.Bis, Is.EqualTo(new DateOnly(2026, 9, 7)));
+            Assert.That(ergebnis.Wert.Dateiname, Is.EqualTo("kanbanc-release-2-zeiten-2026-08-31_2026-09-07.csv"));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_der_Zeitexportstand_ohne_Grenzen_abgerufen_wird_dann_traegt_die_Adresse_keinen_Abfrageparameter()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, EinZeitexportstand, JsonInhaltstyp);
+        var klient = new AuswertungenApiKlient(fabrik);
+
+        await klient.LadeZeitexportstand(4, 2, von: null, bis: null);
+
+        Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("GET http://webapi.test/api/boards/4/kartenklassen/2/zeitexport"));
+    }
+
+    [Test]
+    public async Task Wenn_beide_Grenzen_gewaehlt_sind_dann_stehen_sie_als_von_und_bis_in_der_Adresse()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, EinZeitexportstand, JsonInhaltstyp);
+        var klient = new AuswertungenApiKlient(fabrik);
+
+        await klient.LadeZeitexportstand(4, 2, new DateOnly(2026, 9, 1), new DateOnly(2026, 9, 6));
+
+        Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("GET http://webapi.test/api/boards/4/kartenklassen/2/zeitexport?von=2026-09-01&bis=2026-09-06"));
+    }
+
+    // Die verdrehte Spanne weist die API zurück; der Schirm zeigt genau diesen Befund. Über den
+    // Browser ist dieser Pfad nicht auslösbar — die Oberfläche prüft nicht selbst nach.
+    [Test]
+    public async Task Wenn_die_WebApi_die_Spanne_als_verdreht_zurueckweist_dann_traegt_die_Zurueckweisung_den_gemeldeten_Befund()
+    {
+        const string Zurueckgewiesen = """
+            {"befunde":[{"code":"zeitraum-filter-verdreht","meldung":"„von“ ist „2026-09-07“ und „bis“ ist „2026-09-01“; „bis“ liegt vor „von“.","kompensation":"`/api/boards/4/kartenklassen/2/zeitexport.csv?von=2026-09-01&bis=2026-09-07` aufrufen — die beiden Grenzen tauschen."}]}
+            """;
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.BadRequest, Zurueckgewiesen, JsonInhaltstyp);
+        var klient = new AuswertungenApiKlient(fabrik);
+
+        var ergebnis = await klient.LadeZeitexportstand(4, 2, new DateOnly(2026, 9, 7), new DateOnly(2026, 9, 1));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        var befund = ergebnis.Zurueckweisung.Befunde.Single();
+        Assert.Multiple(() =>
+        {
+            Assert.That(befund.Code, Is.EqualTo("zeitraum-filter-verdreht"));
+            Assert.That(befund.Meldung, Does.Contain("2026-09-07"));
+            Assert.That(befund.Kompensation, Does.Contain("tauschen"));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_WebApi_das_Board_des_Zeitexports_nicht_kennt_dann_traegt_die_Zurueckweisung_den_gemeldeten_Befund()
+    {
+        const string Zurueckgewiesen = """
+            {"befunde":[{"code":"board-unbekannt","meldung":"Ein Board mit der Nummer 999 gibt es nicht.","kompensation":"`GET /api/boards` abrufen und den Aufruf mit einer der gelieferten BoardIds wiederholen."}]}
+            """;
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.NotFound, Zurueckgewiesen, JsonInhaltstyp);
+        var klient = new AuswertungenApiKlient(fabrik);
+
+        var ergebnis = await klient.LadeZeitexportstand(999, 2, von: null, bis: null);
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.That(ergebnis.Zurueckweisung.Befunde.Single().Code, Is.EqualTo("board-unbekannt"));
+    }
+
+    [Test]
+    public void Wenn_die_WebApi_beim_Zeitexportstand_ausfaellt_dann_laeuft_der_Fehler_bis_zum_Aufrufer_durch()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.ServiceUnavailable, string.Empty, JsonInhaltstyp);
+        var klient = new AuswertungenApiKlient(fabrik);
+
+        Assert.That(async () => await klient.LadeZeitexportstand(4, 2, von: null, bis: null), Throws.InstanceOf<HttpRequestException>());
+    }
 }

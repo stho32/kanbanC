@@ -35,6 +35,42 @@ public class AuswertungsflaecheTests
         ErwarteOhneLiterale(Kurvenstilvorlage());
     }
 
+    [Test]
+    public void Wenn_die_Stilvorlage_der_Zeitexportflaeche_gelesen_wird_dann_traegt_sie_kein_Farb_Abstands_oder_Radius_Literal()
+    {
+        ErwarteOhneLiterale(Zeitexportflaechenstilvorlage());
+    }
+
+    // Der Verweis ist ein nacktes `<a href>` auf die WebApi — kein JS-Interop, kein Blob und keine
+    // Blazor-Route, über die die Bytes ein zweites Mal liefen.
+    [Test]
+    public void Wenn_die_Zeitexportflaeche_gelesen_wird_dann_traegt_sie_einen_nackten_Verweis_und_keinen_JS_Aufruf()
+    {
+        var flaeche = OhneKommentare(File.ReadAllText(Quelltextbaum.BlazorDatei("Components", "Auswertungen", "Zeitexportflaeche.razor"))); // stil-check: C03 die Ablage ist der Prüfgegenstand
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(flaeche, Does.Contain("href=\"@Verweisadresse\""));
+            Assert.That(flaeche, Does.Not.Contain("IJSRuntime"));
+            Assert.That(flaeche, Does.Not.Contain("InvokeVoidAsync"));
+            Assert.That(flaeche, Does.Not.Contain("createObjectURL"));
+        });
+    }
+
+    // Der Schirm prüft die Spanne nicht selbst nach: eine verdrehte Spanne kommt als
+    // Zurückweisung der API zurück, sonst stünde dieselbe Regel an zwei Stellen.
+    [Test]
+    public void Wenn_der_Schirm_gelesen_wird_dann_prueft_er_die_Spanne_nicht_selbst_nach()
+    {
+        var schirm = OhneKommentare(File.ReadAllText(Quelltextbaum.BlazorDatei("Components", "Pages", "Auswertungen.razor")));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(schirm, Does.Not.Contain("_bis < _von"));
+            Assert.That(schirm, Does.Not.Contain("verdreht").IgnoreCase);
+        });
+    }
+
     // **Die Kurve trägt ihre Gestaltung nicht im Markup.** Ein `fill`- oder `stroke`-Wert im SVG
     // wäre genau die Stelle, an der eine Farbe am Token-Sheet vorbei in die Anwendung käme.
     [Test]
@@ -146,6 +182,11 @@ public class AuswertungsflaecheTests
     private static string Kurvenstilvorlage()
     {
         return File.ReadAllText(Quelltextbaum.BlazorDatei("Components", "Auswertungen", "Burndownkurve.razor.css"));
+    }
+
+    private static string Zeitexportflaechenstilvorlage()
+    {
+        return File.ReadAllText(Quelltextbaum.BlazorDatei("Components", "Auswertungen", "Zeitexportflaeche.razor.css"));
     }
 
     // Razor-Kommentare und C#-Zeilenkommentare heraus: der Prüfgegenstand ist, was der Schirm

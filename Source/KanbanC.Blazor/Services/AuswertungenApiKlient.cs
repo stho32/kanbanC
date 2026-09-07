@@ -28,11 +28,20 @@ public sealed class AuswertungenApiKlient
     public async Task<ApiErgebnis<Burndownauswertung>> LadeBurndown(long boardId, long kartenklasseId, DateOnly? seit)
     {
         using var klient = _klientFabrik.CreateClient(KlientName);
-        using var antwort = await klient.GetAsync($"{BoardsRoute}/{boardId}/kartenklassen/{kartenklasseId}/burndown{Zeitraumabfrage(seit)}");
+        using var antwort = await klient.GetAsync($"{BoardsRoute}/{boardId}/kartenklassen/{kartenklasseId}/burndown{Achsenabfrage(seit)}");
         return await ApiAntwortleser.AlsErgebnisMitGemeldetenBefunden<Burndownauswertung>(antwort);
     }
 
-    private static string Zeitraumabfrage(DateOnly? seit)
+    // **Nur der Stand reist über den Klienten** — die Datei holt der Browser selbst von der WebApi
+    // (Zeitexportadresse), sonst flössen ihre Bytes zweimal über das Netz.
+    public async Task<ApiErgebnis<Zeitexportstand>> LadeZeitexportstand(long boardId, long kartenklasseId, DateOnly? von, DateOnly? bis)
+    {
+        using var klient = _klientFabrik.CreateClient(KlientName);
+        using var antwort = await klient.GetAsync($"{BoardsRoute}/{boardId}/kartenklassen/{kartenklasseId}/zeitexport{Zeitexportadresse.Zeitraumabfrage(von, bis)}");
+        return await ApiAntwortleser.AlsErgebnisMitGemeldetenBefunden<Zeitexportstand>(antwort);
+    }
+
+    private static string Achsenabfrage(DateOnly? seit)
     {
         if (seit is null)
         {

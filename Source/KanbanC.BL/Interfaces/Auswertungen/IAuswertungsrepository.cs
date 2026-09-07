@@ -14,4 +14,11 @@ public interface IAuswertungsrepository
     // Erledigungstag, ihr Archivstand und die Auskunft, ob sie in einer Abschlussspalte steht.
     // Archivierte Karten stehen mit darin; der Umfang war da.
     Erledigungsstandkarten LiesErledigungsstaende(long boardId, long kartenklasseId);
+
+    // Die Zeiteinträge desselben Bestands, ebenfalls in **einem** Lesevorgang je Bestand und nicht
+    // je Karte: je Eintrag Kartennummer, Kartentitel, Kontributor, Art, Beginn und Ende.
+    // **Laufende Einträge kommen mit** — sie stehen in der Datei mit leerem Ende und leerer Dauer;
+    // archivierte Karten und stillgelegte Kontributoren ebenfalls, denn ihre Zeit wurde geleistet.
+    // Der Boardname reist mit, weil der Dateiname aus ihm entsteht.
+    Zeitexportzeilen LiesZeiteintraege(long boardId, long kartenklasseId);
 }

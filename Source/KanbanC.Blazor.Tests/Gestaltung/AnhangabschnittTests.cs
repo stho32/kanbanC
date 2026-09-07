@@ -73,7 +73,7 @@ public class AnhangabschnittTests
     {
         var seite = Kartenseite();
 
-        Assert.That(seite, Does.Contain("Anhangadresse.Fuer(Anhangbasis.Adresse, KarteId, anhang.AnhangId)"));
+        Assert.That(seite, Does.Contain("Anhangadresse.Fuer(WebApibasis.Adresse, KarteId, anhang.AnhangId)"));
         Assert.That(seite, Does.Not.Contain("href=\"/karten/@KarteId/anhaenge"));
     }
 

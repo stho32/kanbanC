@@ -52,6 +52,37 @@ public sealed class AuswertungsService
         return Ergebnis<Burndownauswertung>.Erfolg(new Burndownauswertung(reihe, Burndownrechner.Kopfzahlen(bestand, reihe)));
     }
 
+    // Die Zeiten desselben Bestands als Datei — dieselbe Vorprüfung, dieselben drei Befunde.
+    // **Ein Aufruf für beide Routen**: Zeilen und Stand entstehen aus derselben Rechnung, sonst
+    // zählte der Schirm etwas anderes, als die Datei enthält.
+    // Ein Bestand ohne jeden Zeiteintrag ist kein Fehler: die Datei mit der Kopfzeile allein ist
+    // die Antwort „hier wurde nichts erfasst".
+    public Ergebnis<Zeitexport> Zeitexport(long boardId, long kartenklasseId, DateOnly? von, DateOnly? bis)
+    {
+        var befundZumBestand = PruefeBestand(boardId, kartenklasseId);
+        if (befundZumBestand is not null)
+        {
+            return Zurueckgewiesen<Zeitexport>(befundZumBestand);
+        }
+
+        var bestand = _auswertungsrepository.LiesZeiteintraege(boardId, kartenklasseId);
+        var ausschnitt = Zeitausschnitt.Schneide(bestand, von, bis, Heute());
+        return Ergebnis<Zeitexport>.Erfolg(new Zeitexport(ausschnitt.Zeilen, Stand(ausschnitt)));
+    }
+
+    private static Zeitexportstand Stand(Zeitexportausschnitt ausschnitt)
+    {
+        var zeilen = ausschnitt.Zeilen;
+        return new Zeitexportstand(
+            zeilen.Zeilenanzahl,
+            zeilen.Kartenanzahl,
+            zeilen.Kontributorenanzahl,
+            zeilen.LaufendeAnzahl,
+            ausschnitt.Von,
+            ausschnitt.Bis,
+            Zeitexportname.Fuer(zeilen.Boardname, ausschnitt.Von, ausschnitt.Bis));
+    }
+
     // Erst das Board, dann die Kartenklasse: die Karten einer fremden Kartenklasse werden gar
     // nicht erst gelesen. Kein Befund heißt, der Bestand steht.
     private Fehlerbefund? PruefeBestand(long boardId, long kartenklasseId)

@@ -81,6 +81,44 @@ public sealed class AuswertungenSeite
 
     public ILocator OhneErledigungHinweis => _seite.Locator("#burndown-ohne-erledigung");
 
+    public ILocator PunktZeitexport => _seite.Locator("#auswertung-zeitexport");
+
+    public ILocator Vonwahl => _seite.Locator("#auswertung-von");
+
+    public ILocator Biswahl => _seite.Locator("#auswertung-bis");
+
+    public ILocator Zeitexportflaeche => _seite.Locator("#zeitexport-flaeche");
+
+    public ILocator Zaehlzeile => _seite.Locator("#zeitexport-zaehlzeile");
+
+    public ILocator LaufendeZeile => _seite.Locator("#zeitexport-laufende");
+
+    public ILocator Zeitexportdateiname => _seite.Locator("#zeitexport-dateiname");
+
+    public ILocator Zeitexportverweis => _seite.Locator("#zeitexport-verweis");
+
+    public ILocator OhneZeitenHinweis => _seite.Locator("#zeitexport-ohne-zeiten");
+
+    public ILocator LeererAusschnittHinweis => _seite.Locator("#zeitexport-leerer-ausschnitt");
+
+    public ILocator Zurueckweisung => _seite.Locator("#auswertung-zurueckweisung");
+
+    public async Task WaehleZeitexport()
+    {
+        await PunktZeitexport.ClickAsync();
+        await Assertions.Expect(Auswertungstitel).ToContainTextAsync("Zeiten exportieren");
+    }
+
+    public async Task WaehleVon(DateOnly von)
+    {
+        await Vonwahl.FillAsync(von.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+    }
+
+    public async Task WaehleBis(DateOnly bis)
+    {
+        await Biswahl.FillAsync(bis.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+    }
+
     // Die Punktpaare der Polylinie — die Zahlen, an denen die Kurve prüfbar ist statt an einem Bild.
     public async Task<IReadOnlyList<string>> Kurvenpunkte()
     {

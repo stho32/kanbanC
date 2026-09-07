@@ -6,6 +6,7 @@ using KanbanC.BL.Interfaces.Persistenz;
 using KanbanC.BL.Models.Auswertungen;
 using KanbanC.Contracts.Auswertungen;
 using KanbanC.Contracts.Klassen;
+using KanbanC.Contracts.Kontributoren;
 
 namespace KanbanC.BL.Persistenz.Auswertungen;
 
@@ -186,4 +187,91 @@ public sealed class Auswertungsrepository : IAuswertungsrepository
         string? ErledigtAm,
         long? ArchivierteKarte,
         long IstAbschlussspalte);
+
+
+    // Derselbe Schnitt über Spalte, Kartenklassenzuordnung und Kartenklasse wie oben, dazu der
+    // JOIN auf Kontributor — und **ohne** `AND z.Ende IS NOT NULL`: die laufenden Einträge gehören
+    // in die Datei. Ein stillgelegter Kontributor und eine archivierte Karte fallen ebenfalls nicht
+    // heraus; ihre Zeit wurde geleistet.
+    // Beginn und Ende liegen als ISO-Text in der Spalte und werden in C# umgerechnet, wie im
+    // Zeitenleser: Microsoft.Data.Sqlite meldet für sie den Typ String, und Dapper materialisiert
+    // daraus keinen DateTimeOffset.
+    public Zeitexportzeilen LiesZeiteintraege(long boardId, long kartenklasseId)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+
+        var parameter = new { BoardId = boardId, KartenklasseId = kartenklasseId };
+        var zeilen = verbindung.Query<Zeitexportzeilenzeile>(@"
+            SELECT z.ZeiteintragId, z.Beginn, z.Ende,
+                   k.Titel AS Kartentitel,
+                   n.Praefix AS Kartenklassenpraefix, w.Zaehlerstand AS VergebenerZaehlerstand,
+                   c.KontributorId, c.Name AS Kontributorname, c.Kontributorart
+              FROM Zeiteintrag z
+              JOIN Karte k ON k.KarteId = z.Karte
+              JOIN Spalte s ON s.SpalteId = k.Spalte
+              JOIN Kartenklassenzuordnung w ON w.Karte = k.KarteId
+              JOIN Kartenklasse n ON n.KartenklasseId = w.Kartenklasse
+              JOIN Kontributor c ON c.KontributorId = z.Kontributor
+             WHERE s.Board = @BoardId
+               AND w.Kartenklasse = @KartenklasseId
+             ORDER BY z.Beginn, z.ZeiteintragId", parameter);
+
+        var exportzeilen = new List<Zeitexportzeile>();
+        foreach (var zeile in zeilen)
+        {
+            exportzeilen.Add(AlsExportzeile(zeile));
+        }
+
+        return new Zeitexportzeilen(Boardname(verbindung, boardId), exportzeilen);
+    }
+
+    private static Zeitexportzeile AlsExportzeile(Zeitexportzeilenzeile zeile)
+    {
+        return new Zeitexportzeile(
+            zeile.ZeiteintragId,
+            Kartennummer.Aus(zeile.Kartenklassenpraefix, (int)zeile.VergebenerZaehlerstand),
+            zeile.Kartentitel,
+            zeile.KontributorId,
+            zeile.Kontributorname,
+            Enum.Parse<Kontributorart>(zeile.Kontributorart),
+            AlsZeitpunkt(zeile.Beginn),
+            AlsEndeOderNichts(zeile.Ende));
+    }
+
+    // Ein Board ohne einen einzigen Zeiteintrag hat trotzdem einen Namen, und der Dateiname
+    // braucht ihn — deshalb steht er in einer eigenen Zeile und nicht als Spalte an jedem Eintrag.
+    private static string Boardname(IDbConnection verbindung, long boardId)
+    {
+        var name = verbindung.QuerySingleOrDefault<string>(@"
+            SELECT Name
+              FROM Board
+             WHERE BoardId = @BoardId", new { BoardId = boardId });
+        if (name is null)
+        {
+            return string.Empty;
+        }
+
+        return name;
+    }
+
+    private static DateTimeOffset? AlsEndeOderNichts(string? isoText)
+    {
+        if (isoText is null)
+        {
+            return null; // stil-check: C25 null heisst „dieser Eintrag laeuft noch"
+        }
+
+        return AlsZeitpunkt(isoText);
+    }
+
+    private sealed record Zeitexportzeilenzeile(
+        long ZeiteintragId,
+        string Beginn,
+        string? Ende,
+        string Kartentitel,
+        string Kartenklassenpraefix,
+        long VergebenerZaehlerstand,
+        long KontributorId,
+        string Kontributorname,
+        string Kontributorart);
 }

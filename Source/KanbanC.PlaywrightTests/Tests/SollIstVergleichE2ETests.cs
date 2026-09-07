@@ -162,10 +162,10 @@ public class SollIstVergleichE2ETests : PageTest
 
     // Der Umschalter links kommt ohne Abruf aus: die noch nicht gebauten Auswertungen stehen
     // sichtbar und ohne Weg daneben. Seit R00037 ist der Burndown einer der Wege — es bleiben
-    // drei gesperrte.
+    // zwei gesperrte.
     [Test]
     [Category("US-3")]
-    public async Task Wenn_der_Schirm_offen_ist_dann_steht_Soll_Ist_waehlbar_und_die_uebrigen_drei_gesperrt_daneben()
+    public async Task Wenn_der_Schirm_offen_ist_dann_steht_Soll_Ist_waehlbar_und_die_uebrigen_zwei_gesperrt_daneben()
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
         var seite = new AuswertungenSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
@@ -173,7 +173,7 @@ public class SollIstVergleichE2ETests : PageTest
         await seite.Oeffne();
 
         await Expect(seite.Auswertungspunkte).ToHaveCountAsync(5);
-        await Expect(seite.GesperrteAuswertungen).ToHaveCountAsync(3);
+        await Expect(seite.GesperrteAuswertungen).ToHaveCountAsync(2);
         await Expect(seite.OhneBestandHinweis).ToBeVisibleAsync();
     }
 

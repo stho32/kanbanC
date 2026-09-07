@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace KanbanC.Blazor.Services;
+namespace KanbanC.Contracts;
 
 // Eine Zeitspanne als „h:mm" — Stunde ohne führende Null, Minute zweistellig.
 // **Die Stunden laufen über 24 hinaus** („26:03", „30:00") statt in Tage umzubrechen: eine Karte

@@ -1,6 +1,6 @@
-using KanbanC.Blazor.Services;
+using KanbanC.Contracts;
 
-namespace KanbanC.Blazor.Tests.Services;
+namespace KanbanC.BL.Tests.Operations.Zeiten;
 
 // Die Dauer einer Zeile und die Summe einer Karte tragen dieselbe Form: „h:mm". Geprüft wird die
 // Zahl, die dabei herauskommt — reine Operation, kein Browser noetig.
