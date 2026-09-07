@@ -1,7 +1,9 @@
 using System.Globalization;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
 using KanbanC.Contracts.Boards;
+using KanbanC.Contracts.Import;
 using KanbanC.Contracts.Karten;
 using KanbanC.Contracts.Klassen;
 using KanbanC.Contracts.Kontributoren;
@@ -230,6 +232,30 @@ public sealed class WebApiKlient : IDisposable
         var antwort = await _klient.PostAsync($"api/karten/{karteId}/anhaenge", rumpf);
         antwort.EnsureSuccessStatusCode();
         return await AlsKartendetail(antwort);
+    }
+
+    // Der Weg des Agenten in den WBS-Import: dieselbe Route, die der Schirm ruft, nur ohne
+    // Browser — und mit trocken=false, weil dieser Aufrufer schreiben will.
+    public async Task<Importbericht> ImportiereWbs(long boardId, string dateiname, string inhalt, long kartenklasseId, long kontributorId, string pfad)
+    {
+        using var rumpf = new MultipartFormDataContent();
+        var datei = new ByteArrayContent(Encoding.UTF8.GetBytes(inhalt));
+        datei.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+        rumpf.Add(datei, "datei", dateiname);
+        rumpf.Add(new StringContent(kartenklasseId.ToString(CultureInfo.InvariantCulture)), "klasse");
+        rumpf.Add(new StringContent("Interaction"), "schnittebene");
+        rumpf.Add(new StringContent(pfad), "pfad");
+        rumpf.Add(new StringContent("false"), "trocken");
+        rumpf.Add(new StringContent(kontributorId.ToString(CultureInfo.InvariantCulture)), "kontributor");
+        var antwort = await _klient.PostAsync($"{BoardsRoute}/{boardId}/wbs-import", rumpf);
+        antwort.EnsureSuccessStatusCode();
+        var bericht = await antwort.Content.ReadFromJsonAsync<Importbericht>();
+        if (bericht is null)
+        {
+            throw new InvalidOperationException("Die WebApi hat keinen Importbericht zurückgegeben.");
+        }
+
+        return bericht;
     }
 
     private static async Task<Kartendetail> AlsKartendetail(HttpResponseMessage antwort)

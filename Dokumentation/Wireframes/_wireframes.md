@@ -12,16 +12,16 @@ zurueckgeholt: 2026-09-03
 
 # Wireframes — KanbanC
 
-Der Canvas trägt acht Artboards: `Main.dc.html`, den Screen-Flow über alle neun
-Dialogs, sowie `D0001.dc.html` bis `D0007.dc.html`, die sieben ausdetaillierten
-Dialogs. Die
-übrigen Dialogs bleiben Kästen im Flow; ihr Detail-Artboard entsteht mit
+Der Canvas trägt neun Artboards: `Main.dc.html`, den Screen-Flow über alle neun
+Dialogs, sowie `D0001.dc.html` bis `D0008.dc.html`, die acht ausdetaillierten
+Dialogs. Der
+übrige Dialog bleibt ein Kasten im Flow; sein Detail-Artboard entsteht mit
 `/wireframe verfeinern <dialog>`, wenn der Dialog dran ist (Rolling Wave). Woraus
 ein solcher Lauf schöpft, sagt die
 [Zuordnung Schirm → Dialog](#zuordnung-schirm--dialog).
 
-Reife je Dialog wird aus dem Dateibestand gerechnet: `D0001` bis `D0007` stehen auf
-`wireframe`, die zwei übrigen (`D0008`, `D0009`) auf `flow`.
+Reife je Dialog wird aus dem Dateibestand gerechnet: `D0001` bis `D0008` stehen auf
+`wireframe`, der übrige (`D0009`) auf `flow`.
 
 **`D0007` ist der eine Dialog ohne eigenen Schirm** und trotzdem ein Artboard: sein
 Gegenstand ist ein *Verhalten an vorhandenen Schirmen*. Gezeichnet sind deshalb
@@ -38,7 +38,8 @@ kein neuer Bildschirm.
 | `D0005.dc.html` | **Karten-Klassen**, Rahmen 1440×1980 (gemessen 1877,5) — der Klassenbereich sitzt **im Layout-Modus des Boards**, unter der Zeile für die neue Spalte: Hauptzustand mit Liste und Anlegezeile (I0020), Leerzustand, drei Ränder, die Zuordnung an der Karte (I0021) und der Abruf als API-Aufruf (I0022). Alle drei Interactions sind sichtbar; nichts davon ist gebaut, das ganze Artboard ist Zielform |
 | `D0006.dc.html` | **Zeiterfassung**, Rahmen 1440×3480 (gemessen 3304,1) — die Zeiterfassung sitzt **auf der Kartenseite**, in dem Kasten, den `D0004.dc.html` dafür freihält: Hauptzustand als echtes Fenster 1440×900, der Zeitenblock in seinen übrigen Fassungen (mein Timer läuft, leer, Anatomie eines Eintrags), die Karte in der Bahn in drei Fassungen (I0023), die laufenden Timer in **Zone 3 der Kopfzeile** (I0027), Nachtragen und Ändern (I0025) und drei Ränder. Alle fünf Interactions I0023–I0027 sind sichtbar; nichts davon ist gebaut, das ganze Artboard ist Zielform |
 | `D0007.dc.html` | **Live-Aktualisierung**, Rahmen 1440×4420 (gemessen 4200,7) — **kein eigener Schirm, sondern Zustände an vorhandenen**: die fremde Bewegung am Board als Fenster 1440×900 (I0028), die fremde Änderung an der offenen Kartenseite als zweites Fenster mit der Trennung „zieht nach“ / „wird angeboten“, die Anatomie der Einflugmarke in drei Fassungen, die Gleichstellung von Browser und API samt markierter Lücke im Rückweg, die drei Stufen des Verbindungsabbruchs (I0029) und das Aufschließen, dazu drei Ränder. Beide Interactions I0028 und I0029 sind sichtbar; nichts davon ist gebaut, das ganze Artboard ist Zielform |
-| `canvas.json` | Layout des Canvas: der Flow oben, D0003, D0002, D0001, D0004, D0005, D0006 und D0007 in der Reihe darunter, Start in der Canvas-Ansicht |
+| `D0008.dc.html` | **WBS-Import**, Rahmen 1440×5100 (gemessen 4844,3) — der Einstieg im **Layout-Modus des Boards** unter der Klassenpflege, dann drei Schritte auf eigener Adresse `/boards/2/import`: Datei (Fenster 1440×900, die gebaute Ablegefläche aus R00024), Vorschau (Fenster 1440×900, Baum links / Wirkung rechts, mit der **Schnittebene** als dem einen Regler), Bericht (I0032). Dazu die **Anatomie Baum → Board** Feld für Feld, der zweite Lauf mit vier Fächern und der Trennung „was die Datei nachzieht / was das Board behält" (I0031) und drei Ränder. Alle drei Interactions I0030–I0032 sind sichtbar; nichts davon ist gebaut, das ganze Artboard ist Zielform |
+| `canvas.json` | Layout des Canvas: der Flow oben, D0003, D0002, D0001, D0004, D0005, D0006, D0007 und D0008 in der Reihe darunter, Start in der Canvas-Ansicht |
 | `kanbanc-wireframes.html`, `wireframes.js`, `styles.css`, `README.md` | **älterer Satz, unangetastet** — acht gezeichnete Schirme mit Varianten, aus denen `verfeinern` schöpft; siehe Offene Fragen |
 
 ## Richtung
@@ -206,6 +207,17 @@ gehört in eine Anforderung, nicht ins Bild.
 | 2026-09-07 | Löst der Live-Kanal die **Kopfzeilen-Plakette** aus ihrer Schuld? | **nur zur Hälfte**: die Zahl wächst jetzt ohne Ladeanlass, aber sie bleibt eine **Zahl**; die Dauer bekommt das Popover | R00030 nennt zwei Gründe für die fehlende Dauer. Der erste (ohne Live-Kanal ab der ersten Sekunde falsch) fällt hier weg. Der zweite überlebt: über alle Boards dürfen mehrere eigene Timer laufen (I0023, Entscheidung 1), und eine Dauer in der Plakette müsste einen davon auswählen — jede Auswahl wäre eine Zusage, die sie nicht halten kann. I0027 hat den Ausweg schon benannt: „Dauer und ,welcher denn‘ beantwortet einen Klick weiter das Popover, wo eine Zeile **ein** Eintrag ist". |
 | 2026-09-07 | Wie kommt eine Änderung **der API** in die offenen Sichten? | **nicht entschieden — als markierte Lücke gezeichnet** (Zustand 4, gestricheltes Feld mit „?") | Der Weg vom WebApi-Prozess (5280) zurück in die Blazor-Sichten (5180) existiert nicht; `KanbanC.Contracts/Ereignisse/` liegt leer im Bestand und ist genau dafür freigehalten (belegt in `B0295`). **Wie** er gebaut wird, ist eine Architektur- und Bubble-Frage, keine Gestaltungsfrage — dasselbe Muster wie die markierten Lücken in `D0001` (I0038/I0039) und `D0005` (Klassenfilter). Gezeichnet ist deshalb nur, **was das Bild verspricht**: gleiche Kante, gleiche Zeile, derselbe Augenblick, egal wer gehandelt hat. |
 | 2026-09-07 | Rahmenhöhe und Platz von `D0007` auf dem Canvas | **1440×4420** bei `x` 9360, `y` 1300 | Gemessen, nicht geschätzt (Chrome headless, Google-Fonts-Fassung derselben Schriften, `document.fonts.ready` abgewartet): 4200,7 px. 4420 trägt rund 5 % Reserve — dieselbe Rechnung wie bei `D0005` und `D0006`. Der Platz schließt die Reihe nach rechts an `D0006` an, mit 120 px Abstand. |
+| 2026-09-07 | **D0008** — wo fängt ein Import an? | **im Layout-Modus des Boards**, unter der Klassenpflege; die Arbeit selbst auf eigener Adresse `/boards/{BoardId}/import` | Der ältere Satz zeichnet den Schirm, nicht den Weg dorthin. Drei Belege führen an dieselbe Stelle: (1) der Layout-Modus ist der Ort, an dem ein Board **eingerichtet** wird — Spalten (I0003/I0040) und Klassen (I0020) —, und ein Import richtet ein, er bedient nicht; (2) ein Import braucht eine **Kartenklasse**, sonst bekämen die Karten keine Nummer, und die wohnt genau dort (D0005, Zustand 1); (3) der Screen-Flow trägt die Kante **D0005 → D0008** bereits (`Main.dc.html:128`) — sie ist damit gezeichnet, und `Main.dc.html` bleibt unverändert. Die eigene Adresse folgt der Begründung von D0004 (Variante C, 2026-09-05): Mensch und Agent zeigen auf dieselbe Stelle, und drei Schritte brauchen die ganze Höhe. Ein eigener Dialog-Knoten „Import-Schirm" wäre eine erfundene Interaction. |
+| 2026-09-07 | Welche Variante des älteren Satzes wird der Schirm? | **A als Gerüst, B als Inhalt von Schritt 2** | A allein (drei Schritte, Bilanz, Bericht) beantwortet die schwierigste Frage nicht — was aus einem Baum wird. B allein (Baum links, Wirkung rechts) hat keinen Bericht und damit kein `I0032`. Beide Interactions verlangen beides; der Zusammenbau erfindet nichts, er setzt B als Inhalt der Station „2 Vorschau" ein. |
+| 2026-09-07 | **Welche Ebene der WBS wird eine Karte?** | **die Interaction**, sichtbar als Regler **Schnittebene** (Dialog · Interaction · Feature · Bubble), Vorgabe Interaction | Der ältere Satz bildet in **beiden** Varianten Bubbles auf Karten ab (`B0043`, `B0019`, `B0020`). Angewandt auf die WBS dieses Repositorys wären das **431 Karten** aus einer Datei — genau der unbesehene Massenimport, gegen den die Vorschau steht. Die Interaction ist im Bestand die Einheit der Arbeit: der Vertical Slice, auf dem `/implementierung im-pair` arbeitet, und die Ebene, die `/github` als **ein Issue** projiziert. 37 Karten sind ein Board. Die Vorgabe wird trotzdem **nicht versteckt**: der Regler steht im Bild und nennt die Zahl, die aus jeder Wahl folgt, bevor jemand sie erzeugt. |
+| 2026-09-07 | **Was trägt die Eltern-Kind-Beziehung, wenn aus einem Baum ein Board wird?** | **drei Dinge, die es schon gibt** — Etikett (I0015) für den Dialog, Teilaufgaben (I0016) für Features und Bubbles, Dateiverweis (I0019) für die Herkunft; die Application wird das Zielboard und nie ein Knoten | Ein Board hat Spalten und Karten, kein Baum. Statt eine Hierarchie zu erfinden, gilt **eine Regel**: alles über der Schnittebene wird Ort und Etikett, die Schnittebene wird Karte, alles darunter wird Teilaufgabe. Jedes Ziel ist ein Feld, das die WBS als eigenen Knoten führt und das `R00017` bis `R00023` gebaut haben — `I0019` nennt „Verweise auf Pfade (Anforderungs-, **Planungs**-, Architekturdateien)" wörtlich, das ist die WBS-Datei selbst. Die Ebene **Feature** verliert dabei ihre Schachtelung: Features und Bubbles stehen flach nebeneinander in Dateireihenfolge, mit der ID vorn. Eine Teilaufgabenliste ist nach `I0016` flach; eine zweite Ebene wäre ein Knoten, den die WBS nicht hat. |
+| 2026-09-07 | Titel der Karte: Name oder ID plus Name? | **`[I0001] Board anlegen`** | Die Hausform für die Projektion eines WBS-Knotens nach außen steht schon fest: `/github` gibt einem Issue den Titel `[I0003] Name`. Der Preis ist benannt — die Karte trägt dann **zwei** Nummern, die Kartennummer `WBS-32` der Klasse und die Knoten-ID der Datei. Sie sagen Verschiedenes: `WBS-32` gehört dem Board, `I0001` gehört der Datei, und beide werden in Gesprächen, Commits und Zweignamen benutzt. |
+| 2026-09-07 | Woran erkennt der zweite Lauf eine Karte wieder? | **am Dateiverweis** `…/kanbanc.md#I0001`, mit benanntem Preis | Der Schlüssel darf nicht der Titel sein (änderbar) und nicht die Kartennummer (die vergibt die Klasse, nicht die Datei). Der Dateiverweis ist der einzige Ort im Bestand, der eine **Herkunft** trägt, und zugleich der Weg vom Board zurück in die Quelle. Der Preis: `I0019` erlaubt dem Menschen, einen Dateiverweis zu **entfernen** — dann entsteht beim nächsten Lauf eine zweite Karte für denselben Knoten. Ein eigenes Feld an der Karte bräuchte einen Knoten, den die WBS nicht hat. Siehe Frage 29. |
+| 2026-09-07 | Was macht der zweite Lauf mit Karten, deren Knoten aus der Datei verschwunden ist? | **melden, nicht anfassen** — das Fach `ZuLoeschen` des Soll-Ist-Musters bleibt leer | `SollIstVergleich.md` (`.claude/app-architectures/Common/snippets/`) liefert vier Fächer; drei sind wörtlich übernommen, das vierte heißt hier „nicht mehr in der Datei". Eine Karte trägt, was die Datei nie hatte — Zeiteinträge, Kommentare, Anhänge, ihre Lage in der Bahn —, und genau daraus rechnet `D0009` Soll-Ist und Burndown. Die Vision führt außerdem als offene Richtungsfrage, dass der Import **in eine Richtung** geht; er darf nicht rückwärts löschen, was er nie geschrieben hat. Gemeldet wird trotzdem, mit der Kompensationsaktion daneben (archivieren, `I0014`) — keine stille Korrektur. |
+| 2026-09-07 | Was zieht der zweite Lauf nach, und was bleibt? | **Datei**: Titel, Beschreibung, Etikett, Teilaufgaben samt Haken, Dateiverweise · **Board**: Spalte und Position, Verantwortlicher, Fälligkeit, Farbe, Zeiten, Kommentare, Anhänge, Kartennummer | Die Trennung folgt zwei Sätzen, die beide im Bestand stehen. Projekt-CLAUDE.md: „**Die WBS ist die Fortschrittswahrheit**; weicht eine andere Liste ab, hat die WBS recht" — also gewinnt die Datei bei allem, was sie führt, bis hin zum Haken an der Teilaufgabe. Vision: „Vision, Anforderungen und WBS bleiben als Markdown-Dokumente die Wahrheit; **das Board führt den Arbeitsfluss**" — also gewinnt das Board bei der Spalte. Deshalb wird die Spalte **nur beim Anlegen** aus dem Status gesetzt: „Bereit" und „Prüfung" haben in der WBS kein Gegenstück, und eine Karte, die der zweite Lauf aus „Prüfung" zurückzöge, verlöre eine Aussage, die nur das Board kennt. Der Preis steht als Frage 30. |
+| 2026-09-07 | Was sieht der Mensch, wenn ein **Agent** importiert? | **denselben Vorgang ohne Schirm** — `POST /api/boards/{id}/wbs-import` mit `trocken=true` für die Vorschau, danach der Live-Kanal aus D0007 | Die Zusage der Vision gilt auch für das Zeigen-vor-Schreiben: wäre die Vorschau nur ein Schirm, könnte ein Agent nicht prüfen, was er anrichtet. `trocken=true` gibt dieselbe Antwort, die Schritt 2 zeichnet, ohne dass etwas entsteht. Dass die entstehenden Karten in offenen Sichten erscheinen, ist keine Zutat, sondern eine **offene Schuld aus dem Bestand**: die WBS hält an `I0028`/`B0375` fest, die Meldung entstehe im Endpunkt, und „entsteht ein Weg an der WebApi vorbei (etwa der WBS-Import `I0030`), muss er die Meldung selbst tragen". Gezeichnet ist nur, dass es **ein** Vorgang ist und nicht 31 Bewegungen; wie ein Sammelereignis aussieht, gehört den Bubbles. |
+| 2026-09-07 | Bekommt die Karte eine **Sollzeit** aus der Spalte `Aufwand`? | **nein — gestrichelter Kasten statt erfundener Ablage** | `I0026` hat es entschieden und begründet: „eine Sollzeit gibt es im Bestand nicht; sie gehört `I0033`". `I0033` wiederum braucht `I0030` — die Zählung kommt also über den Import ins System, aber **wo sie landet**, ist nicht entschieden. Ein Feld danebenzuzeichnen hieße, `I0033` seine Entscheidung vorwegzunehmen. Dieselbe Haltung wie bei den markierten Lücken in `D0001` (I0038/I0039), `D0005` (Klassenfilter) und `D0007` (Rückweg der API). Siehe Frage 23, die damit geschärft ist. |
+| 2026-09-07 | Rahmenhöhe und Platz von `D0008` auf dem Canvas | **1440×5100** bei `x` 10920, `y` 1300 | Gemessen, nicht geschätzt (Chrome headless, Google-Fonts-Fassung derselben Schriften, `document.fonts.ready` abgewartet): 4844,3 px. 5100 trägt rund 5 % Reserve — dieselbe Rechnung wie bei `D0005` bis `D0007`. Der Platz schließt die Reihe nach rechts an `D0007` an, mit 120 px Abstand; Positionen der übrigen Artboards bleiben unverändert. |
 
 ## Zuordnung Schirm → Dialog
 
@@ -230,7 +242,7 @@ Auffüllen.
 | **D0005** Karten-Klassen | „Board anlegen & gestalten" **B**, Abschnitt *Klassen* (I0020) · „Kartendetail" und die Kartenform in „Board" (I0021, Nummer auf der Karte) | Klassen-Teil aus **B** gesetzt | **I0022** — reine API-Zusage, absichtlich ohne Schirm; die Oberflächenentsprechung wäre der Klassenfilter, der mit R00005 aus dem Boardkopf nach Zone 3 gewandert ist. Seit 2026-09-06 als `D0005.dc.html` gezeichnet: der Aufruf steht im Bild, der Filter als markierte Lücke. **Ändern und Entfernen einer Klasse** hat keinen Knoten — Frage 17 |
 | **D0006** Zeiterfassung | „Kartendetail" (Zeitentabelle und Timerzeile, in allen drei Varianten dieselbe Spalte) · „Zeiten je Kontributor" (nur die **Bausteine**: laufender Eintrag mit Beginn/Ende/Quelle, Nachtragezeile, Banner der laufenden Timer) · „Start B" Banner (I0027, als Inhalt — nicht als Ort) | **keine der beiden** Zeiten-Varianten wird ein Schirm, entschieden 2026-09-06 — A und B sind Auswertungen über Kontributoren hinweg und gehören zu **D0009** | — alle fünf gezeichnet; seit 2026-09-06 als `D0006.dc.html`. Ohne Vorlage im alten Satz waren der **erzwungene Identitätsschritt** vor dem ersten Timer (in D0002 nur als Preis von Variante C benannt) und der **zweite Timer während einer läuft** — beide stehen jetzt als Rand im Bild, der zweite ausdrücklich unentschieden (Frage 20) |
 | **D0007** Live-Aktualisierung | **kein eigener Schirm** — nur als Merkmal *innerhalb* von „Board": Ereignisspur rechts (**A**) oder Laufband oben (**B**), dazu die Marke „● live" in der Kopfzeile und der Live-Punkt in „Start B" | **keine von beiden** — entschieden 2026-09-07: weder Spur noch Laufband, weil kein Fertig-Kriterium eine Liste vergangener Ereignisse verlangt; ebenso fällt die dauerhafte Marke „● live" | — beide Interactions gezeichnet; seit 2026-09-07 als `D0007.dc.html`. **I0029** hatte im älteren Satz keine Vorlage und ist entworfen, nicht abgeschrieben: drei Stufen des Abbruchs und das Aufschließen. Ohne Vorlage waren ebenso die **Einflugmarke** und die Regel **Angebot statt Austausch** für offene Felder |
-| **D0008** WBS-Import | „WBS-Import" (ganz) | **offen** — A oder B, Wahl bei I0030–I0032 | — |
+| **D0008** WBS-Import | „WBS-Import" (ganz) | **A als Gerüst, B als Inhalt von Schritt 2** — entschieden 2026-09-07. A allein (drei Schritte, Bilanz, Bericht) sagt nicht, was aus einem Baum wird; B allein (Baum links, Wirkung rechts) hat keinen Bericht und damit kein `I0032`. Beide Interactions verlangen beides | — alle drei gezeichnet; seit 2026-09-07 als `D0008.dc.html`. Ohne Vorlage im alten Satz waren der **Einstieg** (wo ein Import anfängt — der alte Satz zeigt den Schirm, nicht den Weg dorthin), die **Anatomie Baum → Board** Feld für Feld, die **Schnittebene** und das vierte Fach des zweiten Laufs (*„nicht mehr in der Datei"*). Der alte Satz bildet in beiden Varianten **Bubbles** auf Karten ab (`B0043`, `B0019`); das ist hier zur **Interaction** verschoben und als Regler sichtbar gemacht — Frage 28 |
 | **D0009** Auswertungen | „Auswertungen" (ganz) | **offen** — A oder B, Wahl bei I0033–I0037 | **I0037** — reine API-Zusage, absichtlich ohne Schirm |
 
 **Ein Dialog ist von keinem Schirm gedeckt: D0007.** Live-Aktualisierung ist im
@@ -489,6 +501,13 @@ Die Gegenrichtung, Schirm → Dialogs, in Kurzform:
     `I0033` bereits voraus („der erfassten Zeit steht die WBS-Zählung gegenüber").
     Ob das Soll ein Feld der Karte ist oder aus dem WBS-Import (`D0008`) kommt,
     ist nicht entschieden — im Bild steht es als Zahl, im Index als Frage.
+    **Geschärft am 2026-09-07 mit `D0008`.** Die Quelle ist gefunden: die WBS
+    führt je Bubble eine Spalte `Aufwand`, und `I0033` braucht laut WBS
+    ausdrücklich `I0030` — die Zählung kommt also über den Import ins System.
+    Was fehlt, ist das **Ziel**: `I0026` hat festgehalten, dass es im Bestand
+    keine Sollzeit gibt. `D0008.dc.html`, Zustand 4 zeichnet die Zeile deshalb
+    als **gestrichelten Kasten** („Aufwand → kein Ort im Bestand"), statt ein
+    Feld zu erfinden, das `I0033` seine Entscheidung vorwegnähme.
 
 24. **Der Weg von der API zurück in die offenen Sichten fehlt — und ist der Kern
     von `I0028`.** Das Fertig-Kriterium sagt „bewegt ein Browser **oder die API**
@@ -525,3 +544,49 @@ Die Gegenrichtung, Schirm → Dialogs, in Kurzform:
     Der erste Grund fällt mit `I0028` weg, **der zweite nicht**: ob die Dauer im
     Browser weiterzählt oder vom Server getaktet wird, entscheidet der Slice.
     Gezeichnet ist nur, dass sie dasteht und beim Abbruch anhält.
+
+28. **Die Schnittebene ist gesetzt, nicht abgestimmt — und sie ist ein Regler,
+    den kein Fertig-Kriterium verlangt.** `I0030` sagt nur „ihre Knoten stehen
+    als Karten"; *welche* Knoten, sagt es nicht. Der ältere Satz bildet in beiden
+    Varianten **Bubbles** auf Karten ab (`B0043`, `B0019`); angewandt auf
+    `Dokumentation/Planung/kanbanc.md` wären das 431 Karten aus einer Datei.
+    `D0008.dc.html`, Zustand 3 setzt deshalb die **Interaction** als Vorgabe —
+    die Einheit, auf der `/implementierung im-pair` arbeitet und die `/github`
+    als ein Issue projiziert — und macht die Wahl als Regler sichtbar, samt der
+    Zahl, die aus ihr folgt. Zwei Dinge bleiben offen: ob der Regler überhaupt
+    gebraucht wird oder ob „Interaction" für immer gilt, und was mit einer WBS
+    geschieht, die **oberhalb** der Schnittebene keinen Dialog hat (eine
+    Application mit nur einer Interaction hat nach `/planung anlegen` keinen
+    Dialog-Knoten — dann fehlt das Etikett, und das ist gezeichnet nicht).
+
+29. **Die Kupplung zwischen Karte und WBS-Knoten hängt an einem Feld, das der
+    Mensch löschen darf.** `D0008.dc.html`, Zustand 4 trägt die Herkunft als
+    **Dateiverweis** `Dokumentation/Planung/kanbanc.md#I0001` — der einzige Ort
+    im Bestand, der eine Herkunft trägt, und zugleich der Weg vom Board zurück
+    in die Quelle (`I0019` nennt Planungsdateien wörtlich). `I0019` erlaubt aber
+    auch das **Entfernen** eines Dateiverweises; wer ihn löscht, bekommt beim
+    nächsten Lauf eine zweite Karte für denselben Knoten. Geprüft und verworfen:
+    die Wiedererkennung am Titelpräfix `[I0001]` — auch der Titel ist änderbar,
+    und er führt nirgendwohin zurück. Ein **eigenes Feld** an der Karte wäre der
+    saubere Träger, hat aber keinen Knoten; das ist ein Befund für `/planung`,
+    keine Lücke zum Auffüllen — dieselbe Haltung wie bei den Fragen 15 und 17.
+
+30. **Der zweite Lauf überschreibt Haken, die jemand am Board gesetzt hat.**
+    `D0008.dc.html`, Zustand 6 trennt „was die Datei nachzieht" von „was das
+    Board behält" und stellt die Teilaufgaben samt ihren Haken auf die Seite der
+    Datei — mit Beleg: die Projekt-CLAUDE.md sagt „**Die WBS ist die
+    Fortschrittswahrheit**; weicht eine andere Liste ab, hat die WBS recht". Der
+    Preis ist real und nicht gezeichnet: hakt ein Mensch am Board eine
+    Teilaufgabe ab und importiert danach dieselbe unveränderte Datei, ist der
+    Haken wieder weg. Ob das gewollt ist (die Datei hat recht) oder ob der Import
+    Haken nur **setzen** und nie zurücknehmen darf, entscheidet der Slice.
+
+31. **Der Bericht ist flüchtig, und ob er das bleiben darf, ist offen.**
+    `I0032` sagt „**nach dem Import** ist ablesbar, was angelegt, geändert und
+    übersprungen wurde" — nicht „jederzeit nachlesbar". Gezeichnet ist deshalb
+    Schritt 3 als Bericht des gerade gelaufenen Vorgangs, dazu die Zeile „zuletzt
+    eingefahren · am 02.09. · 37 Karten" im Layout-Modus als einziger bleibender
+    Rest. Ein **Archiv der Läufe** hätte keinen Knoten (dieselbe Lage wie der
+    Verlauf der Karte, Frage 15). Wer die Seite verlässt, bevor er den Bericht
+    gelesen hat, bekommt ihn nicht wieder — das ist eine Entscheidung, die der
+    Slice ausdrücklich treffen sollte, statt sie zu erben.

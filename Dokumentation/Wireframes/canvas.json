@@ -79,6 +79,16 @@
       "title": "D0007 · Live-Aktualisierung",
       "expand": "fit",
       "print": "fixed"
+    },
+    {
+      "file": "D0008.dc.html",
+      "x": 10920,
+      "y": 1300,
+      "w": 1440,
+      "h": 5100,
+      "title": "D0008 · WBS-Import",
+      "expand": "fit",
+      "print": "fixed"
     }
   ],
   "launch": {

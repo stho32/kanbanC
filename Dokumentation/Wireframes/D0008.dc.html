@@ -1,0 +1,695 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@300..900&display=swap">
+  <style>
+    /* D0008 „WBS-Import" — Werte exakt aus dem Bestand uebernommen, nichts gerundet:
+       Source/KanbanC.Blazor/wwwroot/gestaltung.css und oberflaeche.css (Tokens und Formen),
+       Components/Layout/Kopfzeile.razor(.css) (drei Zonen, min-height 35.2px),
+       Components/Pages/Board.razor (Layout-Modus: Spaltenpflege + Klassenpflege, Zone 3
+       traegt im Layout-Modus das ✓), Components/Pages/Kartendetail.razor(.css) (die
+       Ablegeflaeche .ablegeflaeche/.ablegefeld samt ihren zwei Sperrgruenden aus R00024,
+       die Teilaufgabenliste, die Dateiverweise).
+       Formsprache uebernommen aus D0005.dc.html (Layout-Modus, Klassenzeile, Randmeldungen),
+       D0003.dc.html (Bahnen, Kartenform, Einfuegelinie) und D0004.dc.html (Kartenseite,
+       Eigenschaftenblock, gestrichelter Kasten fuer markierte Luecken).
+       Beispieldaten sind **echt**: die importierte Datei ist Dokumentation/Planung/kanbanc.md
+       dieses Repositorys, die Knoten A0001, D0001, I0001, F0001-F0003, B0001-B0014, I0030
+       stehen dort woertlich. Board „KanbanC — Release 2" und die Klasse WBS wie in
+       D0003.dc.html und D0005.dc.html.
+       D0008 ist vollstaendig rot — das ganze Artboard ist Zielform, nichts davon gebaut. */
+    :root {
+      --color-bg: #f5ead8;
+      --color-surface: #ebddc5;
+      --color-text: #201e1d;
+      --color-accent: #c67139;
+      --color-accent-2: #7a8a5e;
+      --color-divider: color-mix(in srgb, #201e1d 16%, transparent);
+
+      --color-neutral-100: #f9f4ed;
+      --color-neutral-200: #eee7db;
+      --color-neutral-300: #dcd3c4;
+      --color-neutral-800: #474238;
+
+      --color-accent-100: #fff2eb;
+      --color-accent-200: #ffe1d0;
+      --color-accent-700: #8c491a;
+      --color-accent-800: #643312;
+
+      --color-accent-2-100: #f0fae1;
+      --color-accent-2-200: #e1eecc;
+      --color-accent-2-800: #3d472b;
+
+      /* Ampel — dieselben drei Werte wie in Main.dc.html, dort in OKLCH auf die
+         Sandpalette gerechnet. Sie leben nur im Wireframe (Index, Frage 3). */
+      --status-rot: #b8482f;
+      --status-gelb: #d9a03c;
+      --status-gruen: #7a8a5e;
+
+      --font-heading: "Caprasimo", system-ui, sans-serif;
+      --font-body: "Figtree", system-ui, sans-serif;
+
+      --space-1: 4.4px;
+      --space-2: 8.8px;
+      --space-3: 13.2px;
+      --space-4: 17.6px;
+      --space-6: 26.4px;
+
+      --radius-xs: 4px;
+      --radius-md: 16px;
+      --radius-lg: 28px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-family: var(--font-body);
+      font-size: 15px;
+      line-height: 1.55;
+      font-weight: 400;
+    }
+    h1, h2, h3, h4 {
+      font-family: var(--font-heading);
+      font-weight: 400;
+      line-height: 1.12;
+      letter-spacing: -0.015em;
+      margin: 0;
+    }
+    a { color: var(--color-accent); text-underline-offset: 3px; text-decoration: none; }
+    svg { display: block; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #ebddc5; display: flex; flex-direction: column">
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 1 — Wo ein Import anfaengt.
+
+     Die WBS kennt keinen Knoten „Import-Schirm oeffnen"; der Einstieg muss also
+     an einer Flaeche liegen, die es schon gibt. Er liegt im **Layout-Modus des
+     Boards**, unter der Klassenpflege — aus drei Gruenden, die alle im Bestand
+     stehen: (1) der Layout-Modus ist der Ort, an dem ein Board *eingerichtet*
+     wird (Spalten, Klassen), und ein Import richtet ein, er bedient nicht;
+     (2) ein Import braucht eine Kartenklasse, und die wird genau dort gepflegt
+     (D0005, Zustand 1) — eine Kartenklasse gehoert einem Board; (3) der
+     Screen-Flow fuehrt bereits die Kante D0005 → D0008 (Main.dc.html:128), und
+     genau diese Kante ist damit gezeichnet. Main.dc.html bleibt unveraendert.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 26.4px 26.4px 8.8px">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 1 · Einstieg · Layout-Modus des Boards · /boards/2 · Ausschnitt · Zielform, nichts davon gebaut</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Der Einstieg liegt dort, wo das Board <span style="color: #201e1d">eingerichtet</span> wird — im Layout-Modus, unter der Klassenpflege aus <span style="color: #201e1d">D0005</span>. Ein Import braucht eine Kartenklasse, und die wohnt hier. Die <span style="color: #201e1d">Arbeit</span> selbst geschieht auf einer eigenen Adresse: <span style="color: #201e1d">/boards/2/import</span>, aus demselben Grund, aus dem die Karte eine eigene Seite hat (D0004, Variante C, 2026-09-05) — Mensch und Agent zeigen auf dieselbe Adresse, und drei Schritte brauchen die ganze Hoehe.</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; overflow: hidden; display: flex; flex-direction: column">
+
+  <!-- Navigationszeile im Layout-Modus, unveraendert aus D0005.dc.html Zustand 1. -->
+  <header style="display: flex; align-items: stretch; gap: 17.6px; min-height: 35.2px; padding: 0 17.6px; overflow: hidden; background: #ebddc5; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent); flex: 0 0 auto">
+    <div style="display: flex; flex: none; align-items: center; gap: 8.8px; min-width: 0; max-width: 45%">
+      <span style="display: flex; flex: none; align-items: center; justify-content: center; width: 26.4px; height: 26.4px; font-size: 15px; line-height: 1; color: color-mix(in srgb, #201e1d 60%, transparent); border-radius: 4px">←</span>
+      <h1 style="margin: 0; font-size: 17px; line-height: 1.2; white-space: nowrap">KanbanC — Release 2</h1>
+      <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #fff2eb; color: #643312">Projekt</span>
+      <span style="overflow: hidden; white-space: nowrap; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">Start 2026-08-01 · Ziel 2026-09-30</span>
+    </div>
+    <div style="display: flex; flex: 1; align-items: center; gap: 17.6px; min-width: 0; padding-left: 17.6px; border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+      <nav style="display: flex; align-self: stretch; align-items: stretch; gap: 13.2px">
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: color-mix(in srgb, #201e1d 35%, transparent); border-bottom: 2px solid transparent">Auswertungen</span>
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: color-mix(in srgb, #201e1d 35%, transparent); border-bottom: 2px solid transparent">Kontributoren</span>
+      </nav>
+    </div>
+    <div style="display: flex; flex: none; align-items: center; gap: 8.8px">
+      <span style="display: inline-flex; align-items: center; justify-content: center; width: 26.4px; height: 26.4px; padding: 0; font-family: Caprasimo, system-ui, sans-serif; font-size: 14px; line-height: 1; color: #f5ead8; background: #c67139; border: 1px solid transparent; border-radius: 4px">✓</span>
+      <span style="padding-left: 8.8px; font-size: 13px; color: color-mix(in srgb, #201e1d 55%, transparent); border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">Stefan</span>
+    </div>
+  </header>
+
+  <main style="display: flex; flex-direction: column; padding: 13.2px 17.6px 26.4px">
+
+    <!-- Spaltenpflege und Klassenpflege nur als Baender: gezeichnet sind sie in
+         D0001.dc.html (Zustand 3) und D0005.dc.html (Zustand 1). Zweimal
+         gezeichnet waeren es zwei Fassungen derselben Flaeche. -->
+    <div style="display: flex; align-items: center; gap: 13.2px; min-height: 44px; padding: 8.8px 13.2px; background: #ebddc5; border: 1px dashed color-mix(in srgb, #201e1d 35%, transparent)">
+      <span style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">Spaltenpflege</span>
+      <span style="font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">fünf Bahnen, Abschlussspalte, Anzeigegrenze — gebaut, gezeichnet in <span style="color: #201e1d">D0001.dc.html · Zustand 3</span></span>
+      <span style="margin-left: auto; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: #f9f4ed; color: #474238">D0001 · I0003</span>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 13.2px; min-height: 44px; margin-top: 8.8px; padding: 8.8px 13.2px; background: #ebddc5; border: 1px dashed color-mix(in srgb, #201e1d 35%, transparent)">
+      <span style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">Klassen</span>
+      <span style="font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">WBS · Bugmeldungen · Beschaffung, mit Präfix und Zählerstand — gezeichnet in <span style="color: #201e1d">D0005.dc.html · Zustand 1</span></span>
+      <span style="margin-left: auto; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: #f9f4ed; color: #474238">D0005 · I0020</span>
+    </div>
+
+    <!-- ══ Der neue Abschnitt · #wbs-import ═══════════════════════════════════
+         Eigene Kennung, wie #klassenpflege sich unter #neue-spalte legt: kein
+         Element faellt unter #spaltenbahnen oder #neue-spalte, an denen die
+         LayoutModusE2ETests zaehlen. Eine Zeile, ein Knopf — der Schirm ist
+         woanders. ═══════════════════════════════════════════════════════ -->
+    <div style="margin-top: 26.4px; padding-top: 26.4px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent); display: flex; flex-direction: column; gap: 13.2px">
+
+      <div style="display: flex; align-items: baseline; gap: 8.8px">
+        <h3 style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">WBS-Import</h3>
+        <span style="font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">Eine Planungsdatei einlesen; ihre Knoten werden Karten der Klasse WBS</span>
+        <span style="margin-left: auto; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: #ffe1d0; color: #643312">I0030</span>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 13.2px; min-height: 44px; padding: 8.8px 13.2px; background: #ebddc5; border-radius: 4px">
+        <span style="font-size: 14px">Zuletzt eingefahren</span>
+        <span style="font-family: ui-monospace, monospace; font-size: 12px; color: color-mix(in srgb, #201e1d 70%, transparent)">Dokumentation/Planung/kanbanc.md</span>
+        <span style="font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">am 02.09. · 37 Karten</span>
+        <span style="margin-left: auto; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-size: 14px; line-height: 1.2; color: #f5ead8; background: #c67139; border: 1px solid transparent; padding: 8.8px 15.84px; border-radius: 999px">WBS importieren →</span>
+      </div>
+
+      <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Die Zeile „zuletzt eingefahren" ist der einzige bleibende Rest eines Laufs an dieser Stelle — genug, um zu wissen, ob dieses Board schon einmal eine WBS gesehen hat. <span style="color: #201e1d">Ohne Kartenklasse</span> steht statt des Knopfes der Weg dorthin (Rand B). <span style="font-family: ui-monospace, monospace">gleiche Wirkung: POST /api/boards/2/wbs-import</span> — der Agent braucht diesen Schirm nicht, er schickt die Datei.</p>
+
+    </div>
+
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 2 — Schritt 1: die Datei. I0030.
+
+     Die Ablegeflaeche ist **nicht neu**: R00024 hat sie an der Kartenseite
+     gebaut (.ablegeflaeche/.ablegefeld, InputFile), samt ihren zwei
+     Sperrgruenden — keine Identitaet gewaehlt, und ein laufender Vorgang. Der
+     Import erbt beide Zustaende und erfindet keine dritte Form.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 26.4px 26.4px 8.8px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 2 · Schritt 1 von 3 · Datei wählen · /boards/2/import · Fenster 1440×900 · Zielform</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Drei Schritte, und <span style="color: #201e1d">nichts wird vor Schritt 3 geschrieben</span> — das ist die Antwort auf „eine Datei mit 500 Zeilen erzeugt sonst unbesehen hunderte Karten". Die Ablegefläche ist die gebaute aus <span style="color: #201e1d">R00024</span>, mit ihren zwei Sperrgründen. Neu ist nur, was daneben steht: die Zielklasse und der gleichwertige Aufruf.</p>
+</div>
+
+<div style="width: 1440px; height: 900px; background: #f5ead8; overflow: hidden; display: flex; flex-direction: column">
+
+  <header style="display: flex; align-items: stretch; gap: 17.6px; min-height: 35.2px; padding: 0 17.6px; overflow: hidden; background: #ebddc5; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent); flex: 0 0 auto">
+    <div style="display: flex; flex: none; align-items: center; gap: 8.8px; min-width: 0; max-width: 45%">
+      <span style="display: flex; flex: none; align-items: center; justify-content: center; width: 26.4px; height: 26.4px; font-size: 15px; line-height: 1; color: color-mix(in srgb, #201e1d 60%, transparent); border-radius: 4px">←</span>
+      <h1 style="margin: 0; font-size: 17px; line-height: 1.2; white-space: nowrap">KanbanC — Release 2</h1>
+      <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #fff2eb; color: #643312">Projekt</span>
+      <span style="overflow: hidden; white-space: nowrap; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">WBS-Import</span>
+    </div>
+    <div style="display: flex; flex: 1; align-items: center; gap: 17.6px; min-width: 0; padding-left: 17.6px; border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+      <nav style="display: flex; align-self: stretch; align-items: stretch; gap: 13.2px">
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: color-mix(in srgb, #201e1d 35%, transparent); border-bottom: 2px solid transparent">Auswertungen</span>
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: color-mix(in srgb, #201e1d 35%, transparent); border-bottom: 2px solid transparent">Kontributoren</span>
+      </nav>
+    </div>
+    <div style="display: flex; flex: none; align-items: center; gap: 8.8px">
+      <span style="padding-left: 8.8px; font-size: 13px; color: color-mix(in srgb, #201e1d 55%, transparent); border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">Stefan</span>
+    </div>
+  </header>
+
+  <main style="flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 26.4px 26.4px 26.4px">
+
+    <!-- Die Schrittleiste. Drei Stationen, die aktive im Akzentton; sie steht
+         auf allen drei Zustaenden an derselben Stelle. -->
+    <div style="display: flex; align-items: center; gap: 8.8px; font-size: 12px">
+      <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4.4px 13.2px; border-radius: 999px; background: #c67139; color: #f5ead8">1 Datei</span>
+      <span style="width: 26.4px; height: 1px; background: color-mix(in srgb, #201e1d 30%, transparent)"></span>
+      <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4.4px 13.2px; border-radius: 999px; background: #ebddc5; color: color-mix(in srgb, #201e1d 45%, transparent)">2 Vorschau</span>
+      <span style="width: 26.4px; height: 1px; background: color-mix(in srgb, #201e1d 30%, transparent)"></span>
+      <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4.4px 13.2px; border-radius: 999px; background: #ebddc5; color: color-mix(in srgb, #201e1d 45%, transparent)">3 Bericht</span>
+      <span style="margin-left: auto; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">Es wird erst in Schritt 3 geschrieben.</span>
+    </div>
+
+    <h2 style="margin-top: 26.4px; font-size: 32px">WBS importieren</h2>
+    <p style="margin: 8.8px 0 0; font-size: 15px; max-width: 720px; text-wrap: pretty; color: color-mix(in srgb, #201e1d 70%, transparent)">Eine WBS-Datei (Markdown mit Frontmatter und Knotentabelle) wird eingelesen; ihre Knoten stehen danach als Karten der Klasse <span style="color: #201e1d">WBS</span> auf diesem Board.</p>
+
+    <div style="display: flex; gap: 26.4px; margin-top: 26.4px; align-items: flex-start">
+
+      <!-- Die Ablegeflaeche — Form aus Kartendetail.razor.css: gestrichelte
+           Kante, Radius 16, das InputFile liegt unsichtbar darueber. -->
+      <div style="flex: 1 1 0; min-width: 0">
+        <div style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8.8px; min-height: 220px; padding: 26.4px; border: 1px dashed color-mix(in srgb, #201e1d 45%, transparent); border-radius: 16px; background: #ebddc5">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#8c491a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M5 8V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-3"/><path d="M2 13h10"/><path d="m9 10 3 3-3 3"/></svg>
+          <p style="margin: 0; font-size: 15px">Datei hier ablegen oder <span style="color: #8c491a; text-decoration: underline; text-underline-offset: 3px">auswählen</span></p>
+          <p style="margin: 0; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">Markdown (.md), höchstens 10 MB</p>
+        </div>
+        <p style="margin: 8.8px 0 0; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Dieselbe Fläche wie an der Karte (<span style="color: #201e1d">R00024</span>), samt ihren zwei Sperrgründen: <span style="color: #201e1d">ohne gewählte Identität</span> tritt sie zurück und nimmt keinen Zeiger an, <span style="color: #201e1d">während ein Lauf läuft</span> bekommt sie die durchgezogene olive Kante. Wer importiert, ist der Urheber der entstehenden Karten — deshalb gilt hier derselbe Zwang wie beim Anhang.</p>
+      </div>
+
+      <!-- Die zwei Angaben, die der Import ausser der Datei braucht. -->
+      <div style="flex: 0 0 420px; display: flex; flex-direction: column; gap: 17.6px">
+
+        <div>
+          <label style="display: block; font-size: 12px; margin-bottom: 5px; color: color-mix(in srgb, #201e1d 70%, transparent)">Zielboard</label>
+          <div style="width: 100%; min-height: 36px; padding: 6px 14px; font-size: 14px; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px; display: flex; align-items: center">KanbanC — Release 2</div>
+          <p style="margin: 4.4px 0 0; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">Steht fest — der Schirm gehört diesem Board. Der Import legt <span style="color: #201e1d">nie</span> ein Board an; die Application der Datei ist der Ort, nicht ein Knoten (siehe Zustand 4).</p>
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 12px; margin-bottom: 5px; color: color-mix(in srgb, #201e1d 70%, transparent)">Kartenklasse</label>
+          <div style="width: 100%; min-height: 36px; padding: 6px 14px; font-size: 14px; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px; display: flex; align-items: center; gap: 8.8px">
+            WBS
+            <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-</span>
+            <span style="margin-left: auto; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">31 vergeben ▾</span>
+          </div>
+          <p style="margin: 4.4px 0 0; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">Jede entstehende Karte bekommt die <span style="color: #201e1d">nächste</span> Nummer dieser Klasse (I0021). Der Zählerstand wächst nur — eine Nummer, die es einmal gab, kommt nie wieder.</p>
+        </div>
+
+        <div style="padding: 13.2px; border-radius: 16px; background: #ebddc5">
+          <p style="margin: 0 0 4.4px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">Derselbe Weg für einen Agenten</p>
+          <p style="margin: 0; font-family: ui-monospace, monospace; font-size: 12px; line-height: 1.6; color: color-mix(in srgb, #201e1d 70%, transparent)">POST /api/boards/2/wbs-import<br>&nbsp;&nbsp;multipart: datei, klasse=3,<br>&nbsp;&nbsp;schnittebene=Interaction, trocken=true</p>
+          <p style="margin: 8.8px 0 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Ein Agent hat keinen Schirm, er hat <span style="color: #201e1d">trocken=true</span>: derselbe Aufruf gibt die Vorschau zurück, ohne zu schreiben. Was der Mensch als Schritt 2 sieht, ist die Antwort dieses Aufrufs. Damit gilt „was die Oberfläche kann, kann die API" auch für das Zeigen-vor-Schreiben.</p>
+        </div>
+
+      </div>
+    </div>
+
+    <div style="margin-top: auto; display: flex; align-items: center; gap: 13.2px; padding-top: 26.4px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+      <span style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-size: 14px; line-height: 1.2; color: color-mix(in srgb, #201e1d 35%, transparent); background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); padding: 8.8px 15.84px; border-radius: 999px">Weiter zur Vorschau</span>
+      <span style="font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">wartet auf eine Datei</span>
+      <span style="margin-left: auto; font-size: 14px; color: #8c491a">Abbrechen</span>
+    </div>
+
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 3 — Schritt 2: die Vorschau. I0030.
+
+     Hier faellt die Variantenwahl des aelteren Satzes: **A als Geruest, B als
+     Inhalt von Schritt 2**. A allein (drei Schritte, Bilanz, Bericht)
+     beantwortet die schwierigste Frage nicht — was aus einem Baum wird; B allein
+     hat keinen Bericht und damit kein I0032. Beide Interactions verlangen beides,
+     also traegt Schritt 2 den Baum aus B.
+
+     Die Datei ist echt: Dokumentation/Planung/kanbanc.md dieses Repositorys, 527
+     Zeilen, 9 Dialogs, 37 Interactions, ueber 400 Bubbles. Genau daran zeigt sich
+     der Zweck der **Schnittebene**: ohne sie erzeugte diese Datei 400+ Karten.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 26.4px 26.4px 8.8px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 3 · Schritt 2 von 3 · Vorschau · Fenster 1440×900 · Zielform · der Kern des Dialogs</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Links die WBS in ihrer Gliederung, rechts die Wirkung — das ist Variante <span style="color: #201e1d">B</span> des älteren Satzes, eingesetzt als Schritt 2 des Gerüsts aus Variante <span style="color: #201e1d">A</span>. Die <span style="color: #201e1d">Schnittebene</span> ist der eine Regler, der aus einem Baum ein Board macht: <span style="color: #201e1d">welche Ebene wird eine Karte</span>. Alles darüber wird Ort und Etikett, alles darunter wird Teilaufgabe. Geschrieben ist noch nichts.</p>
+</div>
+
+<div style="width: 1440px; height: 900px; background: #f5ead8; overflow: hidden; display: flex; flex-direction: column">
+
+  <header style="display: flex; align-items: stretch; gap: 17.6px; min-height: 35.2px; padding: 0 17.6px; background: #ebddc5; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent); flex: 0 0 auto">
+    <div style="display: flex; flex: none; align-items: center; gap: 8.8px">
+      <span style="display: flex; align-items: center; justify-content: center; width: 26.4px; height: 26.4px; font-size: 15px; color: color-mix(in srgb, #201e1d 60%, transparent)">←</span>
+      <h1 style="margin: 0; font-size: 17px; line-height: 1.2; white-space: nowrap">KanbanC — Release 2</h1>
+      <span style="font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">WBS-Import</span>
+    </div>
+    <div style="flex: 1"></div>
+    <div style="display: flex; flex: none; align-items: center; gap: 8.8px">
+      <span style="padding-left: 8.8px; font-size: 13px; color: color-mix(in srgb, #201e1d 55%, transparent); border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">Stefan</span>
+    </div>
+  </header>
+
+  <main style="flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 17.6px 26.4px 17.6px">
+
+    <div style="display: flex; align-items: center; gap: 8.8px; font-size: 12px; flex: 0 0 auto">
+      <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4.4px 13.2px; border-radius: 999px; background: #ebddc5; color: color-mix(in srgb, #201e1d 45%, transparent)">1 Datei ✓</span>
+      <span style="width: 26.4px; height: 1px; background: color-mix(in srgb, #201e1d 30%, transparent)"></span>
+      <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4.4px 13.2px; border-radius: 999px; background: #c67139; color: #f5ead8">2 Vorschau</span>
+      <span style="width: 26.4px; height: 1px; background: color-mix(in srgb, #201e1d 30%, transparent)"></span>
+      <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4.4px 13.2px; border-radius: 999px; background: #ebddc5; color: color-mix(in srgb, #201e1d 45%, transparent)">3 Bericht</span>
+      <span style="margin-left: auto; display: inline-flex; align-items: center; gap: 8.8px; font-family: ui-monospace, monospace; font-size: 12px; color: color-mix(in srgb, #201e1d 70%, transparent)">kanbanc.md · 527 Zeilen · gelesen</span>
+    </div>
+
+    <!-- Die Schnittebene: ein Feld, drei Werte, und die Zahl, die daraus folgt. -->
+    <div style="display: flex; align-items: center; gap: 13.2px; margin-top: 17.6px; padding: 13.2px 17.6px; background: #ebddc5; border-radius: 16px; flex: 0 0 auto">
+      <span style="font-size: 14px">Eine Karte je</span>
+      <span style="display: inline-flex; align-items: center; gap: 4.4px; padding: 4.4px 6px; border-radius: 999px; background: #f5ead8; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+        <span style="padding: 3px 12px; border-radius: 999px; font-size: 13px; color: color-mix(in srgb, #201e1d 45%, transparent)">Dialog</span>
+        <span style="padding: 3px 12px; border-radius: 999px; font-size: 13px; background: #c67139; color: #f5ead8">Interaction</span>
+        <span style="padding: 3px 12px; border-radius: 999px; font-size: 13px; color: color-mix(in srgb, #201e1d 45%, transparent)">Feature</span>
+        <span style="padding: 3px 12px; border-radius: 999px; font-size: 13px; color: color-mix(in srgb, #201e1d 45%, transparent)">Bubble</span>
+      </span>
+      <span style="font-size: 13px; color: color-mix(in srgb, #201e1d 55%, transparent)">→ <span style="color: #201e1d">37 Karten</span> mit <span style="color: #201e1d">431 Teilaufgaben</span></span>
+      <span style="margin-left: auto; font-size: 12px; color: #8c491a; text-wrap: pretty; max-width: 460px; text-align: right">Auf <span style="font-weight: 600">Bubble</span> wären es 431 Karten. Die Zahl steht hier, <span style="font-weight: 600">bevor</span> jemand sie erzeugt.</span>
+    </div>
+
+    <div style="display: flex; gap: 26.4px; margin-top: 17.6px; flex: 1; min-height: 0">
+
+      <!-- Links: der Baum, wie er in der Datei steht. Haekchen je Teilbaum. -->
+      <div style="flex: 0 0 560px; display: flex; flex-direction: column; min-height: 0; padding: 13.2px; background: #ebddc5; border-radius: 16px">
+        <div style="display: flex; align-items: baseline; gap: 8.8px; flex: 0 0 auto">
+          <h3 style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">Die Datei</h3>
+          <span style="font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">Häkchen je Teilbaum — nur der Ast, der wirklich aufs Board soll</span>
+          <span style="margin-left: auto; font-size: 11px; color: #8c491a">alles abwählen</span>
+        </div>
+        <div style="flex: 1; min-height: 0; margin-top: 8.8px; overflow: hidden; font-family: ui-monospace, monospace; font-size: 12px; line-height: 1.85; display: flex; flex-direction: column">
+          <span>☑ <span style="color: #474238">A0001</span> KanbanC <span style="color: color-mix(in srgb, #201e1d 45%, transparent)">· Application</span></span>
+          <span style="padding-left: 17.6px">☑ <span style="color: #474238">D0001</span> Boards führen</span>
+          <span style="padding-left: 35.2px; background: #f5ead8; border-radius: 4px">☑ <span style="color: #474238">I0001</span> Board anlegen <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #7a8a5e; vertical-align: middle"></span></span>
+          <span style="padding-left: 52.8px; color: color-mix(in srgb, #201e1d 60%, transparent)">☑ F0001 Board anlegen und abrufen</span>
+          <span style="padding-left: 70.4px; color: color-mix(in srgb, #201e1d 60%, transparent)">☑ B0001 Standardspalten erzeugen</span>
+          <span style="padding-left: 70.4px; color: color-mix(in srgb, #201e1d 60%, transparent)">☑ B0015 Datenbankverbindung öffnen</span>
+          <span style="padding-left: 70.4px; color: color-mix(in srgb, #201e1d 45%, transparent)">☑ … 8 weitere Bubbles</span>
+          <span style="padding-left: 52.8px; color: color-mix(in srgb, #201e1d 60%, transparent)">☑ F0002 Ungültige Eingaben zurückweisen</span>
+          <span style="padding-left: 52.8px; color: color-mix(in srgb, #201e1d 60%, transparent)">☑ F0003 Datenbestand überlebt Neustart</span>
+          <span style="padding-left: 35.2px">☑ <span style="color: #474238">I0002</span> Boards auflisten und öffnen <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #7a8a5e; vertical-align: middle"></span></span>
+          <span style="padding-left: 35.2px">☑ <span style="color: #474238">I0038</span> Board exportieren <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #b8482f; vertical-align: middle"></span></span>
+          <span style="padding-left: 17.6px">☑ <span style="color: #474238">D0006</span> Zeiterfassung</span>
+          <span style="padding-left: 17.6px">☐ <span style="color: color-mix(in srgb, #201e1d 45%, transparent)">D0008</span> <span style="color: color-mix(in srgb, #201e1d 45%, transparent)">WBS-Import</span></span>
+          <span style="padding-left: 35.2px; color: color-mix(in srgb, #201e1d 40%, transparent)">☐ I0030 WBS-Datei importieren</span>
+          <span style="padding-left: 35.2px; color: color-mix(in srgb, #201e1d 40%, transparent)">☐ I0031 Import wiederholen</span>
+          <span style="padding-left: 35.2px; color: color-mix(in srgb, #201e1d 40%, transparent)">☐ I0032 Import-Ergebnis sehen</span>
+          <span style="padding-left: 17.6px; color: color-mix(in srgb, #201e1d 45%, transparent)">☑ D0009 Auswertungen</span>
+        </div>
+        <p style="margin: 8.8px 0 0; font-size: 11px; line-height: 1.4; color: color-mix(in srgb, #201e1d 55%, transparent); flex: 0 0 auto; text-wrap: pretty">Die Ampelpunkte sind der <span style="color: #201e1d">Status</span> aus der Datei; er entscheidet über die Spalte (Zustand 4). Ein abgewählter Teilbaum wird weder angelegt noch berührt — und beim nächsten Lauf auch nicht als verwaist gemeldet.</p>
+      </div>
+
+      <!-- Rechts: die Wirkung. Bilanz und Kartenliste. -->
+      <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; min-height: 0">
+
+        <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent); flex: 0 0 auto">Wirkung der Auswahl</p>
+
+        <div style="display: flex; gap: 8.8px; margin-top: 8.8px; flex: 0 0 auto">
+          <span style="flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 8.8px 13.2px; border-radius: 16px; background: #f0fae1"><b style="font-family: Caprasimo, system-ui, sans-serif; font-size: 25px; line-height: 1.12; color: #3d472b">31</b><span style="font-size: 11px; color: #3d472b">angelegt</span></span>
+          <span style="flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 8.8px 13.2px; border-radius: 16px; background: #ffe1d0"><b style="font-family: Caprasimo, system-ui, sans-serif; font-size: 25px; line-height: 1.12; color: #643312">0</b><span style="font-size: 11px; color: #643312">geändert</span></span>
+          <span style="flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 8.8px 13.2px; border-radius: 16px; background: #eee7db"><b style="font-family: Caprasimo, system-ui, sans-serif; font-size: 25px; line-height: 1.12; color: #474238">0</b><span style="font-size: 11px; color: #474238">unverändert</span></span>
+          <span style="flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 8.8px 13.2px; border-radius: 16px; background: #eee7db"><b style="font-family: Caprasimo, system-ui, sans-serif; font-size: 25px; line-height: 1.12; color: #474238">3</b><span style="font-size: 11px; color: #474238">übersprungen</span></span>
+        </div>
+
+        <div style="flex: 1; min-height: 0; margin-top: 13.2px; display: flex; flex-direction: column; gap: 4.4px; overflow: hidden">
+          <div style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">
+            <span style="flex: 0 0 20px"></span><span style="flex: 0 0 64px">Knoten</span><span style="flex: 1">wird zu</span><span style="flex: 0 0 130px">Spalte</span><span style="flex: 0 0 96px; text-align: right">Teilaufgaben</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8.8px; padding: 8.8px 13.2px; font-size: 13px; background: #ebddc5; border-radius: 4px">
+            <span style="flex: 0 0 20px; color: #3d472b">+</span><span style="flex: 0 0 64px; font-family: ui-monospace, monospace; font-size: 12px">I0001</span><span style="flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis"><span style="display: inline-flex; align-items: center; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-32</span> [I0001] Board anlegen</span><span style="flex: 0 0 130px; font-size: 12px; color: color-mix(in srgb, #201e1d 60%, transparent)">Fertig ✓</span><span style="flex: 0 0 96px; text-align: right; font-size: 12px; color: color-mix(in srgb, #201e1d 60%, transparent)">17</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8.8px; padding: 8.8px 13.2px; font-size: 13px; background: #ebddc5; border-radius: 4px">
+            <span style="flex: 0 0 20px; color: #3d472b">+</span><span style="flex: 0 0 64px; font-family: ui-monospace, monospace; font-size: 12px">I0002</span><span style="flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis"><span style="display: inline-flex; align-items: center; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-33</span> [I0002] Boards auflisten und öffnen</span><span style="flex: 0 0 130px; font-size: 12px; color: color-mix(in srgb, #201e1d 60%, transparent)">Fertig ✓</span><span style="flex: 0 0 96px; text-align: right; font-size: 12px; color: color-mix(in srgb, #201e1d 60%, transparent)">6</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8.8px; padding: 8.8px 13.2px; font-size: 13px; background: #ebddc5; border-radius: 4px">
+            <span style="flex: 0 0 20px; color: #3d472b">+</span><span style="flex: 0 0 64px; font-family: ui-monospace, monospace; font-size: 12px">I0038</span><span style="flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis"><span style="display: inline-flex; align-items: center; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-34</span> [I0038] Board exportieren</span><span style="flex: 0 0 130px; font-size: 12px; color: color-mix(in srgb, #201e1d 60%, transparent)">Rückstand</span><span style="flex: 0 0 96px; text-align: right; font-size: 12px; color: color-mix(in srgb, #201e1d 40%, transparent)">—</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8.8px; padding: 8.8px 13.2px; font-size: 13px; background: #ebddc5; border-radius: 4px">
+            <span style="flex: 0 0 20px; color: #8c491a">!</span><span style="flex: 0 0 64px; font-family: ui-monospace, monospace; font-size: 12px">I0022</span><span style="flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: color-mix(in srgb, #201e1d 60%, transparent)">übersprungen — Status <span style="color: #201e1d">verworfen</span> zählt nicht zum Umfang</span><span style="flex: 0 0 130px"></span><span style="flex: 0 0 96px"></span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8.8px; padding: 8.8px 13.2px; font-size: 13px; background: #ebddc5; border-radius: 4px">
+            <span style="flex: 0 0 20px; color: #8c491a">!</span><span style="flex: 0 0 64px; font-family: ui-monospace, monospace; font-size: 12px">Z. 118</span><span style="flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: color-mix(in srgb, #201e1d 60%, transparent)">übersprungen — Zeile ohne Name; die ID bliebe ohne Titel</span><span style="flex: 0 0 130px"></span><span style="flex: 0 0 96px"></span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8.8px; padding: 4.4px 13.2px; font-size: 12px; color: color-mix(in srgb, #201e1d 45%, transparent)">… 29 weitere Zeilen</div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 13.2px; margin-top: 13.2px; padding-top: 13.2px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent); flex: 0 0 auto">
+          <span style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-size: 14px; line-height: 1.2; color: #f5ead8; background: #c67139; border: 1px solid transparent; padding: 8.8px 15.84px; border-radius: 999px">31 Karten anlegen</span>
+          <span style="font-size: 14px; color: #8c491a">Zurück</span>
+          <span style="margin-left: auto; font-family: ui-monospace, monospace; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">dieselbe Antwort: POST … trocken=true</span>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 4 — Anatomie: aus einem Knoten wird eine Karte.
+
+     Das ist die Zeichnung, die die schwierigste Frage beantwortet — aus einem
+     **Baum** wird ein **Board**. Die Abbildung ist nicht erfunden: jedes Ziel
+     ist ein Feld, das die WBS als Knoten fuehrt und das R00017 bis R00023 gebaut
+     haben. Wo es kein Ziel gibt, steht ein gestrichelter Kasten und keine
+     erfundene Ablage.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 26.4px 26.4px 8.8px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 4 · Anatomie · Baum → Board · I0030 · Zielform</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Ein Board hat Spalten und Karten, eine WBS hat Ebenen. Die Übersetzung ist <span style="color: #201e1d">eine Regel</span>: alles <span style="color: #201e1d">über</span> der Schnittebene wird Ort (Board) und Etikett, die Schnittebene selbst wird Karte, alles <span style="color: #201e1d">darunter</span> wird Teilaufgabe. Die Eltern-Kind-Beziehung trägt also nicht ein neues Feld, sondern <span style="color: #201e1d">drei Dinge, die es schon gibt</span>: Etikett (I0015), Teilaufgabe (I0016) und Dateiverweis (I0019).</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; padding: 0 26.4px 26.4px; display: flex; gap: 26.4px; align-items: flex-start">
+
+  <!-- Links: die Zeile, wie sie in der Datei steht. -->
+  <div style="flex: 0 0 520px; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">In der Datei</p>
+    <div style="padding: 13.2px; border-radius: 16px; background: #ebddc5; font-family: ui-monospace, monospace; font-size: 11px; line-height: 1.75; color: color-mix(in srgb, #201e1d 75%, transparent)">
+      <p style="margin: 0 0 8.8px; font-family: Figtree, system-ui, sans-serif; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">Dokumentation/Planung/kanbanc.md · Zeile 17</p>
+      <p style="margin: 0"><span style="color: #201e1d">| I0001 | Interaction | D0001 |</span><br>
+      <span style="color: #201e1d">Board anlegen | gruen |</span><br>
+      Ein neues Board entsteht mit Name und Art<br>
+      (Linie oder Projekt) und erscheint in der<br>
+      Board-Liste | | | | | <span style="color: #201e1d">R00001</span> | |</p>
+      <p style="margin: 8.8px 0 0; font-family: Figtree, system-ui, sans-serif; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">darunter in der Datei: F0001, F0002, F0003 und siebzehn Bubbles</p>
+    </div>
+    <div style="padding: 13.2px; border-radius: 16px; background: #ebddc5">
+      <p style="margin: 0 0 4.4px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">Die eine Regel</p>
+      <p style="margin: 0; font-size: 12px; line-height: 1.5; text-wrap: pretty; color: color-mix(in srgb, #201e1d 70%, transparent)"><span style="color: #201e1d">Application</span> → das Zielboard, gewählt und nie angelegt<br><span style="color: #201e1d">Dialog</span> → ein Etikett an jeder Karte darunter<br><span style="color: #201e1d">Interaction</span> → <span style="color: #8c491a">die Karte</span> (Schnittebene)<br><span style="color: #201e1d">Feature, Bubble</span> → Teilaufgaben, flach, in Dateireihenfolge</p>
+    </div>
+  </div>
+
+  <!-- Mitte: die Abbildungstabelle. -->
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">Feld für Feld</p>
+    <div style="display: flex; flex-direction: column; gap: 2px; font-size: 12px">
+      <div style="display: flex; gap: 8.8px; padding: 6px 0; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 50%, transparent)"><span style="flex: 0 0 132px">WBS</span><span style="flex: 1">Karte</span><span style="flex: 0 0 78px">Knoten</span></div>
+      <div style="display: flex; gap: 8.8px; padding: 6px 8.8px; background: #ebddc5; border-radius: 4px"><span style="flex: 0 0 132px; color: color-mix(in srgb, #201e1d 65%, transparent)">ID + Name</span><span style="flex: 1">Titel <span style="color: color-mix(in srgb, #201e1d 55%, transparent)">„[I0001] Board anlegen"</span></span><span style="flex: 0 0 78px; color: color-mix(in srgb, #201e1d 45%, transparent)">I0015</span></div>
+      <div style="display: flex; gap: 8.8px; padding: 6px 8.8px; background: #ebddc5; border-radius: 4px"><span style="flex: 0 0 132px; color: color-mix(in srgb, #201e1d 65%, transparent)">Fertig-Kriterium</span><span style="flex: 1">Beschreibung, erste Zeile</span><span style="flex: 0 0 78px; color: color-mix(in srgb, #201e1d 45%, transparent)">I0015</span></div>
+      <div style="display: flex; gap: 8.8px; padding: 6px 8.8px; background: #ebddc5; border-radius: 4px"><span style="flex: 0 0 132px; color: color-mix(in srgb, #201e1d 65%, transparent)">Notiz · Braucht</span><span style="flex: 1">Beschreibung, darunter</span><span style="flex: 0 0 78px; color: color-mix(in srgb, #201e1d 45%, transparent)">I0015</span></div>
+      <div style="display: flex; gap: 8.8px; padding: 6px 8.8px; background: #ebddc5; border-radius: 4px"><span style="flex: 0 0 132px; color: color-mix(in srgb, #201e1d 65%, transparent)">Eltern (Dialog)</span><span style="flex: 1">Etikett <span style="color: color-mix(in srgb, #201e1d 55%, transparent)">„D0001 Boards führen"</span></span><span style="flex: 0 0 78px; color: color-mix(in srgb, #201e1d 45%, transparent)">I0015</span></div>
+      <div style="display: flex; gap: 8.8px; padding: 6px 8.8px; background: #ebddc5; border-radius: 4px"><span style="flex: 0 0 132px; color: color-mix(in srgb, #201e1d 65%, transparent)">Kinder</span><span style="flex: 1">Teilaufgaben, ID vorn, in Dateireihenfolge</span><span style="flex: 0 0 78px; color: color-mix(in srgb, #201e1d 45%, transparent)">I0016</span></div>
+      <div style="display: flex; gap: 8.8px; padding: 6px 8.8px; background: #ebddc5; border-radius: 4px"><span style="flex: 0 0 132px; color: color-mix(in srgb, #201e1d 65%, transparent)">Status des Kindes</span><span style="flex: 1"><span style="color: #3d472b">gruen</span> → Haken gesetzt, sonst offen</span><span style="flex: 0 0 78px; color: color-mix(in srgb, #201e1d 45%, transparent)">I0016</span></div>
+      <div style="display: flex; gap: 8.8px; padding: 6px 8.8px; background: #ebddc5; border-radius: 4px"><span style="flex: 0 0 132px; color: color-mix(in srgb, #201e1d 65%, transparent)">Status des Knotens</span><span style="flex: 1">Spalte — nur beim <span style="color: #201e1d">Anlegen</span> (Zustand 6)</span><span style="flex: 0 0 78px; color: color-mix(in srgb, #201e1d 45%, transparent)">I0012</span></div>
+      <div style="display: flex; gap: 8.8px; padding: 6px 8.8px; background: #ebddc5; border-radius: 4px"><span style="flex: 0 0 132px; color: color-mix(in srgb, #201e1d 65%, transparent)">Herkunft <span style="color: #8c491a">↔</span></span><span style="flex: 1">Dateiverweis <span style="font-family: ui-monospace, monospace; font-size: 11px">…/kanbanc.md#I0001</span> — <span style="color: #8c491a">die Kupplung</span></span><span style="flex: 0 0 78px; color: color-mix(in srgb, #201e1d 45%, transparent)">I0019</span></div>
+      <div style="display: flex; gap: 8.8px; padding: 6px 8.8px; background: #ebddc5; border-radius: 4px"><span style="flex: 0 0 132px; color: color-mix(in srgb, #201e1d 65%, transparent)">Requirement</span><span style="flex: 1">Dateiverweis <span style="font-family: ui-monospace, monospace; font-size: 11px">Anforderungen/R00001-….md</span></span><span style="flex: 0 0 78px; color: color-mix(in srgb, #201e1d 45%, transparent)">I0019</span></div>
+      <div style="display: flex; gap: 8.8px; padding: 6px 8.8px; background: #ebddc5; border-radius: 4px"><span style="flex: 0 0 132px; color: color-mix(in srgb, #201e1d 65%, transparent)">Kartenklasse</span><span style="flex: 1">Nummer WBS-32 aus dem Zählerstand</span><span style="flex: 0 0 78px; color: color-mix(in srgb, #201e1d 45%, transparent)">I0021</span></div>
+      <div style="display: flex; gap: 8.8px; padding: 6px 8.8px; border: 1px dashed color-mix(in srgb, #201e1d 45%, transparent); border-radius: 4px"><span style="flex: 0 0 132px; color: #8c491a">Aufwand</span><span style="flex: 1; color: #8c491a">kein Ort im Bestand — <span style="color: color-mix(in srgb, #201e1d 65%, transparent)">eine Sollzeit gibt es nicht (I0026)</span></span><span style="flex: 0 0 78px; color: #8c491a">I0033?</span></div>
+      <div style="display: flex; gap: 8.8px; padding: 6px 8.8px; background: #ebddc5; border-radius: 4px"><span style="flex: 0 0 132px; color: color-mix(in srgb, #201e1d 65%, transparent)">Eingabe→Ausgabe<br>Ausbaustufe</span><span style="flex: 1; color: color-mix(in srgb, #201e1d 55%, transparent)">nicht übernommen — Entwurfsangaben der Bubble-Ebene, die auf dem Board niemand liest</span><span style="flex: 0 0 78px"></span></div>
+      <div style="display: flex; gap: 8.8px; padding: 6px 8.8px; background: #ebddc5; border-radius: 4px"><span style="flex: 0 0 132px; color: color-mix(in srgb, #201e1d 65%, transparent)">Verantwortlicher<br>Fälligkeit · Farbe</span><span style="flex: 1; color: color-mix(in srgb, #201e1d 55%, transparent)">bleiben leer — die WBS kennt sie nicht, und ein erfundener Wert wäre nicht von einem gesetzten zu unterscheiden</span><span style="flex: 0 0 78px"></span></div>
+    </div>
+  </div>
+
+  <!-- Rechts: was daraus wird — die Karte in der Bahn und die Kartenseite. -->
+  <div style="flex: 0 0 320px; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">Auf dem Board</p>
+
+    <div style="padding: 8.8px; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 4px">
+      <div style="display: flex; align-items: baseline; gap: 8.8px; padding: 0 4.4px 8.8px">
+        <span style="font-family: Caprasimo, system-ui, sans-serif; font-size: 15px">Fertig ✓</span>
+        <span style="margin-left: auto; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">20+</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+        <div style="display: flex; align-items: center; gap: 8.8px">
+          <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-32</span>
+        </div>
+        <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty; overflow-wrap: anywhere">[I0001] Board anlegen</p>
+        <div style="display: flex; align-items: center; gap: 8.8px; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">
+          <span style="display: inline-flex; align-items: center; gap: 4.4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="m8 12 3 3 5-6"/></svg>17/17</span>
+        </div>
+      </div>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Die Bahn zeichnet nur, was sie zeichnet (D0003): Nummer, Titel, Teilaufgabenfortschritt. Etiketten und Dateiverweise stehen nicht auf der Bahn — sie stehen auf der Kartenseite.</p>
+
+    <div style="margin-top: 8.8px; padding: 13.2px; background: #ebddc5; border-radius: 16px; display: flex; flex-direction: column; gap: 8.8px">
+      <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">Kartenseite /karten/214</p>
+      <div style="display: flex; flex-wrap: wrap; gap: 4.4px">
+        <span style="display: inline-flex; align-items: center; font-size: 11px; padding: 3px 10px; border-radius: 999px; background: #e1eecc; color: #3d472b">D0001 Boards führen</span>
+        <span style="display: inline-flex; align-items: center; font-size: 11px; padding: 3px 10px; border-radius: 999px; background: #eee7db; color: #474238">Import</span>
+      </div>
+      <div style="font-size: 12px; line-height: 1.5; color: color-mix(in srgb, #201e1d 70%, transparent)">Ein neues Board entsteht mit Name und Art (Linie oder Projekt) und erscheint in der Board-Liste.</div>
+      <div style="display: flex; flex-direction: column; gap: 2px; font-size: 12px">
+        <span style="color: color-mix(in srgb, #201e1d 55%, transparent); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase">Teilaufgaben 17/17</span>
+        <span>☑ F0001 Board anlegen und abrufen</span>
+        <span>☑ B0001 Standardspalten erzeugen</span>
+        <span>☑ B0015 Datenbankverbindung öffnen</span>
+        <span style="color: color-mix(in srgb, #201e1d 45%, transparent)">… 14 weitere</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 2px; font-family: ui-monospace, monospace; font-size: 11px; padding-left: 8.8px; border-left: 2px solid #7a8a5e; color: color-mix(in srgb, #201e1d 70%, transparent)">
+        <span>Dokumentation/Planung/kanbanc.md#I0001</span>
+        <span>Anforderungen/R00001-board-anlegen.md</span>
+      </div>
+      <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Der erste Dateiverweis ist die <span style="color: #201e1d">Kupplung</span>: an ihm erkennt der zweite Lauf diese Karte wieder, und über ihn kommt ein Mensch von der Karte zurück in die Datei. Er ist zugleich der wunde Punkt — siehe Lesehilfe.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 5 — Schritt 3: der Bericht. I0032.
+
+     „Nach dem Import ist ablesbar, was angelegt, geaendert und uebersprungen
+     wurde." Die vierte Zahl — unveraendert — steht daneben, weil der zweite Lauf
+     sonst nichts zu zeigen haette (Zustand 6).
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 26.4px 26.4px 8.8px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 5 · Schritt 3 von 3 · Bericht · I0032 · Ausschnitt · Zielform</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Derselbe Bau wie die Vorschau — <span style="color: #201e1d">und das ist der Punkt</span>: was in Schritt 2 angekündigt war, steht in Schritt 3 mit der Kartennummer daneben. Jede Zeile führt auf ihre Karte. Übersprungene Zeilen bleiben mit ihrem Grund stehen; ein Import ist nicht alles-oder-nichts.</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; padding: 0 26.4px 26.4px">
+
+  <div style="padding: 17.6px 26.4px 26.4px; background: #ebddc5; border-radius: 16px">
+
+    <div style="display: flex; align-items: center; gap: 8.8px; font-size: 12px">
+      <span style="display: inline-flex; align-items: center; padding: 4.4px 13.2px; border-radius: 999px; background: #f5ead8; color: color-mix(in srgb, #201e1d 45%, transparent)">1 Datei ✓</span>
+      <span style="width: 26.4px; height: 1px; background: color-mix(in srgb, #201e1d 30%, transparent)"></span>
+      <span style="display: inline-flex; align-items: center; padding: 4.4px 13.2px; border-radius: 999px; background: #f5ead8; color: color-mix(in srgb, #201e1d 45%, transparent)">2 Vorschau ✓</span>
+      <span style="width: 26.4px; height: 1px; background: color-mix(in srgb, #201e1d 30%, transparent)"></span>
+      <span style="display: inline-flex; align-items: center; padding: 4.4px 13.2px; border-radius: 999px; background: #c67139; color: #f5ead8">3 Bericht</span>
+      <span style="margin-left: auto; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">07.09. 14:12 · Stefan · aus kanbanc.md</span>
+    </div>
+
+    <h3 style="margin-top: 17.6px; font-size: 25px">31 Karten angelegt</h3>
+
+    <div style="display: flex; gap: 8.8px; margin-top: 13.2px">
+      <span style="flex: 0 0 176px; display: flex; flex-direction: column; gap: 2px; padding: 8.8px 13.2px; border-radius: 16px; background: #f0fae1"><b style="font-family: Caprasimo, system-ui, sans-serif; font-size: 25px; line-height: 1.12; color: #3d472b">31</b><span style="font-size: 11px; color: #3d472b">angelegt</span></span>
+      <span style="flex: 0 0 176px; display: flex; flex-direction: column; gap: 2px; padding: 8.8px 13.2px; border-radius: 16px; background: #ffe1d0"><b style="font-family: Caprasimo, system-ui, sans-serif; font-size: 25px; line-height: 1.12; color: #643312">0</b><span style="font-size: 11px; color: #643312">geändert</span></span>
+      <span style="flex: 0 0 176px; display: flex; flex-direction: column; gap: 2px; padding: 8.8px 13.2px; border-radius: 16px; background: #eee7db"><b style="font-family: Caprasimo, system-ui, sans-serif; font-size: 25px; line-height: 1.12; color: #474238">0</b><span style="font-size: 11px; color: #474238">unverändert</span></span>
+      <span style="flex: 0 0 176px; display: flex; flex-direction: column; gap: 2px; padding: 8.8px 13.2px; border-radius: 16px; background: #eee7db"><b style="font-family: Caprasimo, system-ui, sans-serif; font-size: 25px; line-height: 1.12; color: #474238">3</b><span style="font-size: 11px; color: #474238">übersprungen</span></span>
+      <span style="flex: 1; display: flex; align-items: center; padding: 8.8px 13.2px; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Vier Zahlen, dieselben vier wie im Soll-Ist-Vergleich des Bestands — <span style="color: #201e1d">zu erstellen, zu aktualisieren, unverändert, nicht mehr in der Datei</span>. Die vierte heißt hier „übersprungen", solange es keinen zweiten Lauf gab.</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 4.4px; margin-top: 17.6px">
+      <div style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">
+        <span style="flex: 0 0 20px"></span><span style="flex: 0 0 72px">Knoten</span><span style="flex: 0 0 88px">Karte</span><span style="flex: 1">Titel</span><span style="flex: 0 0 150px">Spalte</span><span style="flex: 0 0 120px; text-align: right">Teilaufgaben</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8.8px; padding: 8.8px 13.2px; font-size: 13px; background: #f5ead8; border-radius: 4px">
+        <span style="flex: 0 0 20px; color: #3d472b">+</span><span style="flex: 0 0 72px; font-family: ui-monospace, monospace; font-size: 12px">I0001</span><span style="flex: 0 0 88px"><span style="display: inline-flex; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-32</span></span><span style="flex: 1">[I0001] Board anlegen</span><span style="flex: 0 0 150px; font-size: 12px; color: color-mix(in srgb, #201e1d 60%, transparent)">Fertig ✓</span><span style="flex: 0 0 120px; text-align: right; font-size: 12px; color: color-mix(in srgb, #201e1d 60%, transparent)">17 · alle gesetzt</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8.8px; padding: 8.8px 13.2px; font-size: 13px; background: #f5ead8; border-radius: 4px">
+        <span style="flex: 0 0 20px; color: #3d472b">+</span><span style="flex: 0 0 72px; font-family: ui-monospace, monospace; font-size: 12px">I0030</span><span style="flex: 0 0 88px"><span style="display: inline-flex; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-58</span></span><span style="flex: 1">[I0030] WBS-Datei importieren</span><span style="flex: 0 0 150px; font-size: 12px; color: color-mix(in srgb, #201e1d 60%, transparent)">Rückstand</span><span style="flex: 0 0 120px; text-align: right; font-size: 12px; color: color-mix(in srgb, #201e1d 40%, transparent)">—</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8.8px; padding: 8.8px 13.2px; font-size: 13px; background: #f5ead8; border-radius: 4px">
+        <span style="flex: 0 0 20px; color: #8c491a">!</span><span style="flex: 0 0 72px; font-family: ui-monospace, monospace; font-size: 12px">I0022</span><span style="flex: 0 0 88px; color: color-mix(in srgb, #201e1d 40%, transparent)">—</span><span style="flex: 1; color: color-mix(in srgb, #201e1d 65%, transparent)">übersprungen — Status <span style="color: #201e1d">verworfen</span> zählt nicht zum Umfang. Um sie doch zu bekommen: den Status in der Datei ändern und erneut einfahren.</span><span style="flex: 0 0 150px"></span><span style="flex: 0 0 120px"></span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8.8px; padding: 4.4px 13.2px; font-size: 12px; color: color-mix(in srgb, #201e1d 45%, transparent)">… 31 weitere Zeilen</div>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 13.2px; margin-top: 17.6px">
+      <span style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-size: 14px; line-height: 1.2; color: #f5ead8; background: #c67139; border: 1px solid transparent; padding: 8.8px 15.84px; border-radius: 999px">Zum Board</span>
+      <span style="font-size: 14px; color: #8c491a">Bericht als Text kopieren</span>
+      <span style="margin-left: auto; font-family: ui-monospace, monospace; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">gleiche Antwort: 200 mit demselben Bericht als JSON</span>
+    </div>
+
+    <!-- Der Live-Kanal: eine Zusage aus dem Bestand, die dieser Slice einloest. -->
+    <div style="margin-top: 17.6px; padding: 13.2px; border-left: 3px solid #7a8a5e; border-radius: 16px; background: #f5ead8">
+      <p style="margin: 0 0 4.4px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">Was die anderen offenen Sichten sehen</p>
+      <p style="margin: 0; font-size: 12px; line-height: 1.5; text-wrap: pretty; color: color-mix(in srgb, #201e1d 70%, transparent)">31 Karten erscheinen <span style="color: #201e1d">ohne Reload</span> in jeder offenen Sicht — mit der Einflugmarke aus <span style="color: #201e1d">D0007</span>, aber ohne 31 einzelne Marken: der Import meldet <span style="color: #201e1d">einen</span> Vorgang, nicht 31 Bewegungen. Das ist keine Zutat, sondern eine offene Schuld aus dem Bestand: die WBS hält an <span style="font-family: ui-monospace, monospace; font-size: 11px">I0028/B0375</span> fest, die Meldung entstehe im Endpunkt, und „entsteht ein Weg an der WebApi vorbei (etwa der WBS-Import I0030), muss er die Meldung selbst tragen". <span style="color: #201e1d">Wie</span> ein Sammelereignis aussieht, gehört den Bubbles, nicht dem Bild.</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 6 — Der zweite Lauf. I0031.
+
+     „Ein erneuter Import derselben Datei aktualisiert die vorhandenen Karten,
+     statt Dubletten zu erzeugen." Das Muster liegt bereit:
+     .claude/app-architectures/Common/snippets/SollIstVergleich.md mit seinen
+     vier Faechern ZuErstellen / ZuAktualisieren / ZuLoeschen / Unveraendert.
+     Uebernommen sind drei davon woertlich; das vierte heisst hier **nicht**
+     „zu loeschen", und das ist die tragende Entscheidung dieses Zustands.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 26.4px 26.4px 8.8px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 6 · Der zweite Lauf · I0031 · Ausschnitt · Zielform</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Dieselbe Datei ein zweites Mal, fünf Tage später. Die Bilanz kippt nach <span style="color: #201e1d">unverändert</span> — das ist der Beweis der Idempotenz fürs Auge. Neu ist nur die vierte Spalte: Karten, deren Knoten <span style="color: #201e1d">nicht mehr in der Datei steht</span>.</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; padding: 0 26.4px 26.4px; display: flex; gap: 26.4px; align-items: flex-start">
+
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 13.2px">
+
+    <div style="display: flex; gap: 8.8px">
+      <span style="flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 8.8px 13.2px; border-radius: 16px; background: #f0fae1"><b style="font-family: Caprasimo, system-ui, sans-serif; font-size: 25px; line-height: 1.12; color: #3d472b">4</b><span style="font-size: 11px; color: #3d472b">angelegt</span></span>
+      <span style="flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 8.8px 13.2px; border-radius: 16px; background: #ffe1d0"><b style="font-family: Caprasimo, system-ui, sans-serif; font-size: 25px; line-height: 1.12; color: #643312">6</b><span style="font-size: 11px; color: #643312">geändert</span></span>
+      <span style="flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 8.8px 13.2px; border-radius: 16px; background: #eee7db"><b style="font-family: Caprasimo, system-ui, sans-serif; font-size: 25px; line-height: 1.12; color: #474238">25</b><span style="font-size: 11px; color: #474238">unverändert</span></span>
+      <span style="flex: 1.4; display: flex; flex-direction: column; gap: 2px; padding: 8.8px 13.2px; border-radius: 16px; background: #ebddc5; border: 1px dashed color-mix(in srgb, #201e1d 45%, transparent)"><b style="font-family: Caprasimo, system-ui, sans-serif; font-size: 25px; line-height: 1.12; color: #8c491a">2</b><span style="font-size: 11px; color: #8c491a">nicht mehr in der Datei</span></span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 4.4px">
+      <div style="display: flex; align-items: center; gap: 8.8px; padding: 8.8px 13.2px; font-size: 13px; background: #ebddc5; border-radius: 4px">
+        <span style="flex: 0 0 20px; color: #643312">~</span><span style="flex: 0 0 72px; font-family: ui-monospace, monospace; font-size: 12px">I0026</span><span style="flex: 0 0 88px"><span style="display: inline-flex; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-54</span></span><span style="flex: 1; color: color-mix(in srgb, #201e1d 70%, transparent)">Status <span style="color: #201e1d">gelb → gruen</span> · 3 Teilaufgaben abgehakt · Beschreibung neu</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8.8px; padding: 8.8px 13.2px; font-size: 13px; background: #ebddc5; border-radius: 4px">
+        <span style="flex: 0 0 20px; color: #3d472b">+</span><span style="flex: 0 0 72px; font-family: ui-monospace, monospace; font-size: 12px">I0041</span><span style="flex: 0 0 88px"><span style="display: inline-flex; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-63</span></span><span style="flex: 1; color: color-mix(in srgb, #201e1d 70%, transparent)">neu in der Datei — angelegt in <span style="color: #201e1d">Rückstand</span></span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8.8px; padding: 8.8px 13.2px; font-size: 13px; background: #ebddc5; border: 1px dashed color-mix(in srgb, #201e1d 45%, transparent); border-radius: 4px">
+        <span style="flex: 0 0 20px; color: #8c491a">?</span><span style="flex: 0 0 72px; font-family: ui-monospace, monospace; font-size: 12px">I0019</span><span style="flex: 0 0 88px"><span style="display: inline-flex; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-47</span></span><span style="flex: 1; color: #8c491a">steht nicht mehr in der Datei — <span style="color: color-mix(in srgb, #201e1d 70%, transparent)">unberührt geblieben, trägt 4:20 erfasste Zeit. Wenn sie weg soll: archivieren (I0014).</span></span>
+      </div>
+    </div>
+
+    <p style="margin: 0; font-size: 12px; line-height: 1.5; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty"><span style="color: #201e1d">Warum nichts gelöscht wird.</span> Der Soll-Ist-Vergleicher des Bestands hätte ein Fach <span style="font-family: ui-monospace, monospace; font-size: 11px">ZuLoeschen</span>; hier bleibt es leer. Eine Karte trägt, was die Datei nie hatte — Zeiteinträge, Kommentare, Anhänge, ihre Lage in der Bahn —, und genau daraus rechnet <span style="color: #201e1d">D0009</span> Soll-Ist und Burndown. Der Import geht <span style="color: #201e1d">in eine Richtung</span> (Vision, offene Richtungsfragen); er darf nicht rückwärts löschen, was er nie geschrieben hat. Gemeldet wird trotzdem, mit der Kompensationsaktion daneben — keine stille Korrektur.</p>
+
+  </div>
+
+  <!-- Die zwei Spalten, die den Slice tragen: was die Datei nachzieht, was das
+       Board behaelt. -->
+  <div style="flex: 0 0 560px; display: flex; gap: 13.2px">
+
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 8.8px; padding: 13.2px; border-radius: 16px; background: #ebddc5; border-left: 3px solid #7a8a5e">
+      <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: #3d472b">Die Datei zieht nach</p>
+      <div style="font-size: 12px; line-height: 1.85; color: color-mix(in srgb, #201e1d 75%, transparent)">Titel<br>Beschreibung<br>Etikett des Dialogs<br>Teilaufgaben und ihre Haken<br>Dateiverweise</div>
+      <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Diese Felder sind <span style="color: #201e1d">Abschrift</span> — sie stehen in der Datei, und die Datei ist die Wahrheit über den Umfang und den Fortschritt.</p>
+    </div>
+
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 8.8px; padding: 13.2px; border-radius: 16px; background: #ebddc5; border-left: 3px solid #c67139">
+      <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: #643312">Das Board behält</p>
+      <div style="font-size: 12px; line-height: 1.85; color: color-mix(in srgb, #201e1d 75%, transparent)">Spalte und Position<br>Verantwortlicher · Fälligkeit · Farbe<br>Zeiteinträge<br>Kommentare · Anhänge<br>Kartennummer</div>
+      <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Diese Felder sind <span style="color: #201e1d">Arbeit am Board</span>. Die Spalte wird nur beim <span style="color: #201e1d">Anlegen</span> aus dem Status gesetzt: „Bereit" und „Prüfung" haben in der WBS kein Gegenstück, und eine Karte, die der zweite Lauf aus „Prüfung" zurückzöge, verlöre eine Aussage, die nur das Board kennt.</p>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 7 — Die Raender. Zurueckweisungen, keine Serverfehler: jede nennt
+     Grund **und** Kompensationsaktion, damit ein Agent daraus handeln kann.
+     Form aus D0005.dc.html Zustand 3 (.meldung.meldung-abweisung).
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 26.4px 26.4px 8.8px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Ränder · I0030 · Zielform</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Der erste Rand ist der wahrscheinlichste: jemand legt eine Datei ab, die keine WBS ist. Die Meldung sagt, <span style="color: #201e1d">woran</span> es lag — nicht „ungültiges Format".</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; padding: 0 26.4px 26.4px; display: flex; gap: 26.4px; align-items: flex-start">
+
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">A · keine WBS-Datei</p>
+    <div style="margin: 0; padding: 13.2px; border-left: 3px solid #8c491a; border-radius: 16px; background: #ebddc5">
+      <p style="margin: 0 0 4.4px; font-size: 15px">Die Datei wurde nicht eingelesen:</p>
+      <ul style="margin: 0; padding-left: 17.6px; font-size: 15px">
+        <li>„Protokoll.md" hat kein Frontmatter mit <span style="font-family: ui-monospace, monospace; font-size: 13px">application:</span> und keine Knotentabelle mit den Spalten ID, Ebene, Eltern, Name, Status. Lege eine Datei ab, die <span style="font-family: ui-monospace, monospace; font-size: 13px">/planung anlegen</span> erzeugt hat.</li>
+      </ul>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent)">Die Prüfung sitzt vor Schritt 2: eine Datei, aus der keine Vorschau entsteht, kommt gar nicht erst in die Vorschau.</p>
+  </div>
+
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">B · das Board hat keine Kartenklasse</p>
+    <div style="margin: 0; padding: 13.2px; border-left: 3px solid #8c491a; border-radius: 16px; background: #ebddc5">
+      <p style="margin: 0 0 4.4px; font-size: 15px">Der Import wurde nicht begonnen:</p>
+      <ul style="margin: 0; padding-left: 17.6px; font-size: 15px">
+        <li>Das Board „Beschaffung" führt keine Kartenklasse; ohne sie bekämen die Karten keine Nummer. Lege im Layout-Modus eine Klasse an (etwa WBS mit Präfix WBS-) und wiederhole.</li>
+      </ul>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent);">Im Layout-Modus steht an dieser Stelle statt des Knopfes derselbe Satz — die Sperre ist dort sichtbar, wo sie aufzulösen ist.</p>
+  </div>
+
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">C · WebApi nicht erreichbar</p>
+    <div style="margin: 0; padding: 13.2px; border-left: 3px solid #c67139; border-radius: 16px; background: #ebddc5">
+      <p style="margin: 0; font-size: 15px">Die WebApi ist nicht erreichbar. Bitte später erneut versuchen.</p>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Wie überall: <span style="color: #201e1d">WebApiAusfall.Meldung</span>, derselbe Satz auf allen Seiten. Bricht die Verbindung <span style="color: #201e1d">während</span> des Schreibens ab, hilft die Wiedererkennung aus I0031: der zweite Lauf legt nicht doppelt an, er meldet „unverändert".</p>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     Lesehilfe — gehoert zum Wireframe, nicht zum Schirm
+     ══════════════════════════════════════════════════════════════════════ -->
+<footer style="display: flex; flex-direction: column; gap: 4.4px; padding: 17.6px 26.4px; background: #ebddc5; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent); font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent)">
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">D0008 zeigt hier:</span> <span style="color: #8c491a">I0030</span> der Einstieg im Layout-Modus, die drei Schritte Datei → Vorschau → Bericht und die Anatomie Baum → Board, dazu drei Ränder · <span style="color: #8c491a">I0031</span> der zweite Lauf mit vier Fächern und der Trennung „was die Datei nachzieht / was das Board behält" · <span style="color: #8c491a">I0032</span> der Bericht als Schritt 3, mit der Kartennummer neben jeder angekündigten Zeile. <span style="color: #201e1d">Nichts davon ist gebaut</span> — das ganze Artboard ist Zielform.</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Die Variantenwahl ist damit gefallen:</span> <span style="color: #201e1d">A als Gerüst, B als Inhalt von Schritt 2</span>. A allein (drei Schritte, Bilanz, Bericht) sagt nicht, was aus einem Baum wird; B allein (Baum links, Wirkung rechts) hat keinen Bericht und damit kein I0032. Der Index führt die Wahl unter „Zuordnung Schirm → Dialog".</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Wo ein Import anfängt und warum:</span> im Layout-Modus, unter der Klassenpflege — der Ort, an dem ein Board eingerichtet wird, und der Ort, an dem die Kartenklasse wohnt, die der Import braucht. Der Screen-Flow trägt die Kante <span style="color: #201e1d">D0005 → D0008</span> bereits (<span style="color: #201e1d">Main.dc.html</span>); sie ist damit gezeichnet, und <span style="color: #201e1d">Main.dc.html bleibt unverändert</span>. Die Arbeit selbst hat eine eigene Adresse <span style="font-family: ui-monospace, monospace">/boards/2/import</span>, aus demselben Grund wie die Kartenseite: Mensch und Agent zeigen auf dieselbe Stelle.</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Was der Mensch sieht, wenn ein Agent importiert:</span> nichts von diesem Schirm — der Agent schickt die Datei an <span style="font-family: ui-monospace, monospace">POST /api/boards/2/wbs-import</span>. Damit die Zusage der Vision auch für das Zeigen-vor-Schreiben gilt, trägt der Aufruf <span style="font-family: ui-monospace, monospace">trocken=true</span>: dieselbe Antwort, die Schritt 2 zeichnet, ohne dass etwas entsteht. Was der Mensch <span style="color: #201e1d">danach</span> sieht, ist der Live-Kanal aus D0007 — und der ist hier keine Zutat, sondern die in <span style="font-family: ui-monospace, monospace">I0028/B0375</span> festgehaltene Schuld: ein Weg an der WebApi vorbei muss seine Meldung selbst tragen.</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Der wunde Punkt, ausdrücklich benannt:</span> die Wiedererkennung hängt am Dateiverweis <span style="font-family: ui-monospace, monospace">…/kanbanc.md#I0001</span>. Ein Dateiverweis ist nach <span style="color: #201e1d">I0019</span> vom Menschen entfernbar — wer ihn löscht, bekommt beim nächsten Lauf eine zweite Karte für denselben Knoten. Gezeichnet ist er trotzdem als Kupplung, weil er der einzige Ort im Bestand ist, der eine Herkunft trägt, und weil ein eigenes Feld an der Karte einen Knoten bräuchte, den die WBS nicht hat. Verworfen: die Wiedererkennung am Titelpräfix <span style="font-family: ui-monospace, monospace">[I0001]</span> — auch der Titel ist änderbar, aber ohne Weg zurück in die Datei. Beides steht als Frage im Index.</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Nicht gezeichnet und bewusst so:</span> <span style="color: #201e1d">ein Rückfluss ins Markdown</span> — die Vision führt ihn als offene Richtungsfrage und der Import geht in eine Richtung; <span style="color: #201e1d">ein Verlauf der Läufe</span> — I0032 sagt „nach dem Import ist ablesbar", nicht „jederzeit nachlesbar", und ein Archiv der Läufe hätte keinen Knoten; <span style="color: #201e1d">eine Sollzeit an der Karte</span> — die Spalte <span style="color: #201e1d">Aufwand</span> der WBS steht als gestrichelter Kasten in Zustand 4, weil es im Bestand keine Sollzeit gibt (I0026) und I0033 sie voraussetzt (Index, Frage 23).</p>
+</footer>
+
+</div>
+</x-dc>
+</body>
+</html>

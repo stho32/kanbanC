@@ -1,5 +1,5 @@
+using System.Net.ServerSentEvents;
 using System.Runtime.CompilerServices;
-using KanbanC.Contracts.Ereignisse;
 
 namespace KanbanC.WebApi.Endpunkte;
 
@@ -10,10 +10,6 @@ public static class EreignisEndpunkte
 {
     private const string Ereignisroute = "/api/ereignisse";
 
-    // Die Art steht an jedem Element, damit ein Abonnent später weitere Arten unterscheiden kann,
-    // ohne den Rumpf zu lesen.
-    private const string Ereignisart = "kartenereignis";
-
     public static void Registriere(IEndpointRouteBuilder routen)
     {
         routen.MapGet(Ereignisroute, Abonniere).WithName("EreignisseLesen");
@@ -21,20 +17,24 @@ public static class EreignisEndpunkte
 
     // **Immer 200, nie 404:** bewegt sich nichts, bleibt der Strom offen und leer — das ist die
     // richtige und vollständige Antwort, wie bei GET /api/zeiten/laufend.
+    // Die Art steht an **jedem Element** und nicht am Strom: so laufen Kartenereignis und
+    // Importereignis über dieselbe Leitung, und ein Abonnent unterscheidet sie am Artnamen, ohne
+    // den Rumpf zu lesen. Dass die Überladung mit SseItem das trägt und der Rumpf dabei der des
+    // Laufzeittyps bleibt, ist gemessen (EreignisstromProbeTests) und nicht vermutet.
     private static IResult Abonniere(HttpContext kontext, Ereignisdrehscheibe drehscheibe, CancellationToken abbruch)
     {
-        return TypedResults.ServerSentEvents(Melde(kontext, drehscheibe, abbruch), Ereignisart);
+        return TypedResults.ServerSentEvents(Melde(kontext, drehscheibe, abbruch));
     }
 
     // Der Rumpf wird gespült, bevor gewartet wird: sonst schickt der Rahmen den Kopf erst mit dem
     // ersten Ereignis, und ein Abonnent hinge an einem Strom, den es für ihn noch gar nicht gibt.
     // Nachgemessen, nicht vermutet — EreignisstromProbeTests hält beide Fälle fest.
-    private static async IAsyncEnumerable<Kartenereignis> Melde(HttpContext kontext, Ereignisdrehscheibe drehscheibe, [EnumeratorCancellation] CancellationToken abbruch)
+    private static async IAsyncEnumerable<SseItem<object>> Melde(HttpContext kontext, Ereignisdrehscheibe drehscheibe, [EnumeratorCancellation] CancellationToken abbruch)
     {
         await kontext.Response.Body.FlushAsync(abbruch);
-        await foreach (var ereignis in drehscheibe.Abonniere(abbruch))
+        await foreach (var meldung in drehscheibe.Abonniere(abbruch))
         {
-            yield return ereignis;
+            yield return new SseItem<object>(meldung.Rumpf, meldung.Art);
         }
     }
 }

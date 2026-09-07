@@ -11,7 +11,9 @@ public static class TeilaufgabenValidator
     // steht und mit 100 Zeichen auskommt. Das Doppelte davon trägt auch einen Schritt wie
     // „Rückfrage an den Hersteller zur Mehrplatzlizenz stellen und Antwort abwarten"; der Titel
     // mit seinen 1000 Zeichen bleibt der Ort für lange Sätze.
-    private const int HoechsteTeilaufgabenlaenge = 200;
+    // Oeffentlich, weil der WBS-Import dieselbe Grenze braucht: sie ist die einzige, die bei einer
+    // fremden WBS wirklich eng wird.
+    public const int HoechsteTeilaufgabenlaenge = 200;
 
     // Wie beim EtikettenValidator nennt die Kompensation die Route des Aufrufers samt seiner
     // Nummer. **Kein Dublettenbefund:** zwei gleichlautende Teilaufgaben an derselben Karte sind

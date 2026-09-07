@@ -66,4 +66,15 @@ public static class Stillgelegt
             $"Der Kontributor mit der Nummer {kontributorId} ist stillgelegt und kann keine Zeit mehr erfassen.",
             Kompensationsweg);
     }
+
+    // Die sechste Schwester, wieder mit demselben Code und wieder mit eigener Meldung: wer
+    // importiert, ist der Urheber der entstehenden Karten und ihrer Dateiverweise — und ein
+    // Kontributor, der nicht mehr mitarbeitet, legt keinen Bestand mehr an.
+    public static Fehlerbefund Importurheber(long kontributorId)
+    {
+        return new Fehlerbefund(
+            KontributorStillgelegt,
+            $"Der Kontributor mit der Nummer {kontributorId} ist stillgelegt und kann keine WBS-Datei mehr einfahren.",
+            Kompensationsweg);
+    }
 }

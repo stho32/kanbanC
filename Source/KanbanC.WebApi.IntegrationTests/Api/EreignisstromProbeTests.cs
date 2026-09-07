@@ -155,6 +155,89 @@ public class EreignisstromProbeTests
         quelle.Writer.Complete();
     }
 
+    // Die Frage aus B0433, die den Umfang bewegen konnte: traegt TypedResults.ServerSentEvents
+    // **zwei** Ereignisarten auf einer Leitung? Die Ueberladung mit einem festen Artnamen tut es
+    // nicht — sie hat genau einen Typparameter und genau einen Namen. Die Ueberladung mit
+    // SseItem<T> tut es: jedes Element traegt seinen eigenen EventType.
+    // **Gemessen, nicht vermutet** — und mit ihr faellt die Antwort auf die zweite Frage: mit T =
+    // object serialisiert System.Text.Json den **Laufzeittyp**, der Rumpf des Kartenereignisses
+    // bleibt also unveraendert. Ein gemeinsamer Umschlag mit Artfeld waere nicht noetig, und er
+    // haette die Gestalt des bestehenden Kartenereignisses auf der Leitung geaendert.
+    [Test]
+    public async Task PROBE_Wenn_der_Strom_SseItem_traegt_dann_reisen_zwei_Arten_mit_eigenem_Artnamen_und_vollem_Rumpf()
+    {
+        var quelle = Channel.CreateUnbounded<SseItem<object>>();
+        using var probe = new Zweiartenprobe(quelle.Reader);
+        using var abbruch = new CancellationTokenSource(Zeitschranke);
+        using var antwort = await probe.OeffneStrom(abbruch.Token);
+        await using var strom = await antwort.Content.ReadAsStreamAsync(abbruch.Token);
+        var gelesene = SseParser.Create(strom).EnumerateAsync(abbruch.Token).GetAsyncEnumerator(abbruch.Token);
+
+        await quelle.Writer.WriteAsync(new SseItem<object>(new Erstesprobeereignis(7, "sieben"), "ersteart"), abbruch.Token);
+        await gelesene.MoveNextAsync();
+        var erstes = gelesene.Current;
+        await quelle.Writer.WriteAsync(new SseItem<object>(new Zweitesprobeereignis(41), "zweiteart"), abbruch.Token);
+        await gelesene.MoveNextAsync();
+        var zweites = gelesene.Current;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(erstes.EventType, Is.EqualTo("ersteart"));
+            Assert.That(erstes.Data, Does.Contain("\"sieben\""));
+            Assert.That(erstes.Data, Does.Contain("7"));
+            Assert.That(zweites.EventType, Is.EqualTo("zweiteart"));
+            Assert.That(zweites.Data, Does.Contain("41"));
+            Assert.That(zweites.Data, Does.Not.Contain("sieben"), "Der Rumpf der zweiten Art trug Felder der ersten.");
+        });
+
+        quelle.Writer.Complete();
+        await gelesene.DisposeAsync();
+    }
+
+    private sealed record Erstesprobeereignis(long Nummer, string Name);
+
+    private sealed record Zweitesprobeereignis(int Zahl);
+
+    // Dieselbe Probeanwendung wie oben, nur mit der Ueberladung, die je Element einen Artnamen
+    // traegt.
+    private sealed class Zweiartenprobe : IDisposable
+    {
+        private readonly WebApplication _anwendung;
+
+        public Zweiartenprobe(ChannelReader<SseItem<object>> quelle)
+        {
+            var erbauer = WebApplication.CreateBuilder();
+            erbauer.WebHost.UseTestServer();
+            _anwendung = erbauer.Build();
+            _anwendung.MapGet(Route, (HttpContext kontext, CancellationToken abbruch) => TypedResults.ServerSentEvents(Melde(kontext, quelle, abbruch)));
+            _anwendung.StartAsync().GetAwaiter().GetResult();
+            Klient = _anwendung.GetTestClient();
+        }
+
+        public HttpClient Klient { get; }
+
+        public async Task<HttpResponseMessage> OeffneStrom(CancellationToken abbruch)
+        {
+            return await Klient.GetAsync(Route, HttpCompletionOption.ResponseHeadersRead, abbruch);
+        }
+
+        private static async IAsyncEnumerable<SseItem<object>> Melde(HttpContext kontext, ChannelReader<SseItem<object>> quelle, [EnumeratorCancellation] CancellationToken abbruch)
+        {
+            await kontext.Response.Body.FlushAsync(abbruch);
+            await foreach (var element in quelle.ReadAllAsync(abbruch))
+            {
+                yield return element;
+            }
+        }
+
+        public void Dispose()
+        {
+            Klient.Dispose();
+            _anwendung.StopAsync().GetAwaiter().GetResult();
+            ((IDisposable)_anwendung).Dispose();
+        }
+    }
+
     // Die Probeanwendung mit genau einer Route: ein Strom, der offen bleibt, bis der Kanal
     // schliesst oder der Leser geht.
     private sealed class Stromprobe : IDisposable

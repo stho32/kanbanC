@@ -1,0 +1,43 @@
+/* Die Kachel sitzt im Layout-Modus unter der Klassenpflege — dort, wo ein Board eingerichtet wird
+   und wo die Kartenklasse wohnt, die der Import braucht. Alle Werte kommen aus gestaltung.css. */
+.importkachel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    margin-top: var(--space-4);
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+}
+
+.importkachel-kopf {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+
+.importkachel-titel {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-weight: var(--font-heading-weight);
+    font-size: 16px;
+}
+
+.importkachel-hinweis {
+    font-size: 12px;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+/* Statt des Knopfes der Weg dorthin: eine graue Schaltfläche sagte nur „nein", dieser Satz sagt
+   „so geht es". */
+.importkachel-sperre {
+    margin: 0;
+    font-size: 12px;
+    color: color-mix(in srgb, var(--color-text) 70%, transparent);
+}
+
+#zum-wbs-import {
+    align-self: flex-start;
+    text-decoration: none;
+}

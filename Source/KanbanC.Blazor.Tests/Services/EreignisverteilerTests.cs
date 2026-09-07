@@ -181,4 +181,38 @@ public class EreignisverteilerTests
             Assert.That(gemeldeteStaende, Has.Count.EqualTo(1));
         });
     }
+
+    // Zwei Arten auf einer Leitung: das Importereignis tritt **neben** das Kartenereignis, nicht
+    // an seine Stelle — ein Hoerer der einen Art hoert die andere nicht.
+    [Test]
+    public void Wenn_ein_Importereignis_gemeldet_wird_dann_erreicht_es_nur_seine_Hoerer()
+    {
+        var verteiler = new Ereignisverteiler();
+        var kartenereignisse = new List<Kartenereignis>();
+        var importereignisse = new List<Importereignis>();
+        verteiler.Gemeldet += kartenereignisse.Add;
+        verteiler.Importgemeldet += importereignisse.Add;
+
+        verteiler.Melde(new Importereignis(4, 7, 41, Ereignisweg.Api, DateTimeOffset.UnixEpoch));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(kartenereignisse, Is.Empty);
+            Assert.That(importereignisse, Has.Count.EqualTo(1));
+            Assert.That(importereignisse[0].Kartenzahl, Is.EqualTo(41));
+            Assert.That(importereignisse[0].Board, Is.EqualTo(4));
+        });
+    }
+
+    [Test]
+    public void Wenn_ein_Kartenereignis_gemeldet_wird_dann_erreicht_es_die_Importhoerer_nicht()
+    {
+        var verteiler = new Ereignisverteiler();
+        var importereignisse = new List<Importereignis>();
+        verteiler.Importgemeldet += importereignisse.Add;
+
+        verteiler.Melde(new Kartenereignis(4, 14, 7, 2, Ereignisweg.Api, DateTimeOffset.UnixEpoch));
+
+        Assert.That(importereignisse, Is.Empty);
+    }
 }

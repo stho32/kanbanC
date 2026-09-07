@@ -1,5 +1,6 @@
 @page "/boards/{BoardId:long}"
 @using KanbanC.Blazor.Components.Karten
+@using KanbanC.Blazor.Components.Import
 @using KanbanC.Blazor.Components.Klassen
 @using KanbanC.Blazor.Services
 @using KanbanC.Contracts.Boards
@@ -102,6 +103,7 @@ else
         {
             <Spaltenpflege BoardId="BoardId" Spalten="_board.Spalten" SpaltenHabenSichGeaendert="LadeBoard" />
             <Klassenpflege BoardId="BoardId" />
+            <Importkachel BoardId="BoardId" />
         }
         else
         {
@@ -186,6 +188,7 @@ else
     protected override void OnInitialized()
     {
         Ereignisverteiler.Gemeldet += NimmEreignisAn;
+        Ereignisverteiler.Importgemeldet += NimmImportereignisAn;
         Ereignisverteiler.Verbindungsstandgewechselt += NimmVerbindungsstandAn;
         _abrissZeitpunkt = Ereignisverteiler.Verbindungsstand.GetrenntSeit;
     }
@@ -324,7 +327,7 @@ else
     // in den Renderfaden zurück, sonst rendert Blazor aus einem fremden Faden.
     private void NimmEreignisAn(Kartenereignis ereignis)
     {
-        var dasEreignisGehoertZuEinemAnderenBoard = ereignis.Board != BoardId;
+        var dasEreignisGehoertZuEinemAnderenBoard = !Boardereignisse.GehoertZurSicht(ereignis.Board, BoardId);
         if (dasEreignisGehoertZuEinemAnderenBoard)
         {
             return;
@@ -343,6 +346,26 @@ else
         }
 
         await SpieleEinMitAusfallmeldung([ereignis]);
+    }
+
+    // Ein WBS-Import meldet **einen** Vorgang, nicht eine Bewegung je Karte: die Sicht lädt einmal
+    // neu und bekommt **keine Einflugmarke je Karte** — einundvierzig Marken wären Rauschen, keine
+    // Auskunft. Ein Ereignis eines anderen Boards geht die Sicht nichts an.
+    private void NimmImportereignisAn(Importereignis ereignis)
+    {
+        var dasEreignisGehoertZuEinemAnderenBoard = !Boardereignisse.GehoertZurSicht(ereignis.Board, BoardId);
+        if (dasEreignisGehoertZuEinemAnderenBoard)
+        {
+            return;
+        }
+
+        _ = InvokeAsync(LadeNachImportNach);
+    }
+
+    private async Task LadeNachImportNach()
+    {
+        _zugFehlermeldung = await WebApiAufruf.MitAusfallmeldung(LadeBoard);
+        StateHasChanged();
     }
 
     // Der Neuabruf laeuft ueber HTTP wie jeder andere: faellt die WebApi zwischen Meldung und
@@ -578,6 +601,7 @@ else
     public void Dispose()
     {
         Ereignisverteiler.Gemeldet -= NimmEreignisAn;
+        Ereignisverteiler.Importgemeldet -= NimmImportereignisAn;
         Ereignisverteiler.Verbindungsstandgewechselt -= NimmVerbindungsstandAn;
         BeendeAlleFristen(_markenfristen);
         BeendeAlleFristen(_zugfristen);

@@ -77,13 +77,42 @@ public sealed class Ereignisleitung : BackgroundService
         await using var strom = await antwort.Content.ReadAsStreamAsync(abbruch);
         await foreach (var element in SseParser.Create(strom).EnumerateAsync(abbruch))
         {
-            MeldeWeiter(element.Data);
+            MeldeWeiter(element.EventType, element.Data);
         }
     }
 
-    private void MeldeWeiter(string rumpf)
+    // Die Art steht am Element und nicht im Rumpf: die Leitung entscheidet am Artnamen, welchen
+    // Vertrag sie liest, ohne hineinzusehen.
+    // **Eine unbekannte Art wird übergangen** und reißt die Leitung nicht ab: eine WebApi darf
+    // eine dritte Art hinzufügen, ohne dass eine ältere Oberfläche daran zerbricht.
+    private void MeldeWeiter(string? art, string rumpf)
+    {
+        if (art == Ereignisarten.Kartenereignis)
+        {
+            MeldeKartenereignis(rumpf);
+            return;
+        }
+
+        if (art == Ereignisarten.Importereignis)
+        {
+            MeldeImportereignis(rumpf);
+        }
+    }
+
+    private void MeldeKartenereignis(string rumpf)
     {
         var ereignis = JsonSerializer.Deserialize<Kartenereignis>(rumpf, Jsonform);
+        if (ereignis is null)
+        {
+            return;
+        }
+
+        _verteiler.Melde(ereignis);
+    }
+
+    private void MeldeImportereignis(string rumpf)
+    {
+        var ereignis = JsonSerializer.Deserialize<Importereignis>(rumpf, Jsonform);
         if (ereignis is null)
         {
             return;

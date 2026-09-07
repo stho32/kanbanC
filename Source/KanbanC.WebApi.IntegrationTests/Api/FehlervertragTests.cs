@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
 using KanbanC.Contracts.Klassen;
@@ -465,6 +466,26 @@ public class FehlervertragTests
             "Kartenklasse zuordnen mit der Kartenklasse eines fremden Boards",
             await webApi.Klient.PutAsJsonAsync($"/api/karten/{aufbau.Karte.KarteId}/kartenklasse", new KartenklasseZuordnenAnfrage(aufbau.FremdeKartenklasse.KartenklasseId))));
 
+        faelle.Add(new Fehlerfall(
+            "POST /api/boards/{boardId:long}/wbs-import",
+            "WBS-Import auf ein unbekanntes Board",
+            await webApi.Klient.PostAsync($"{BoardsRoute}/999/wbs-import", Importrumpf(Wbsdatei(), aufbau.FremdeKartenklasse.KartenklasseId, aufbau.Kontributor.KontributorId, mitKontributor: true))));
+
+        faelle.Add(new Fehlerfall(
+            "POST /api/boards/{boardId:long}/wbs-import",
+            "WBS-Import mit einer Datei, die keine WBS ist",
+            await webApi.Klient.PostAsync($"{BoardsRoute}/{board.BoardId}/wbs-import", Importrumpf("# Protokoll", aufbau.FremdeKartenklasse.KartenklasseId, aufbau.Kontributor.KontributorId, mitKontributor: true))));
+
+        faelle.Add(new Fehlerfall(
+            "POST /api/boards/{boardId:long}/wbs-import",
+            "WBS-Import mit der Kartenklasse eines fremden Boards",
+            await webApi.Klient.PostAsync($"{BoardsRoute}/{board.BoardId}/wbs-import", Importrumpf(Wbsdatei(), aufbau.FremdeKartenklasse.KartenklasseId, aufbau.Kontributor.KontributorId, mitKontributor: true))));
+
+        faelle.Add(new Fehlerfall(
+            "POST /api/boards/{boardId:long}/wbs-import",
+            "WBS-Import ohne Urheber",
+            await webApi.Klient.PostAsync($"{BoardsRoute}/{board.BoardId}/wbs-import", Importrumpf(Wbsdatei(), aufbau.FremdeKartenklasse.KartenklasseId, aufbau.Kontributor.KontributorId, mitKontributor: false))));
+
         return faelle;
     }
 
@@ -524,6 +545,34 @@ public class FehlervertragTests
         rumpf.Add(datei, "datei", dateiname);
         rumpf.Add(new StringContent(kontributorId.ToString(CultureInfo.InvariantCulture)), "kontributor");
         return rumpf;
+    }
+
+    private static MultipartFormDataContent Importrumpf(string dateitext, long kartenklasseId, long kontributorId, bool mitKontributor)
+    {
+        var rumpf = new MultipartFormDataContent();
+        var datei = new ByteArrayContent(Encoding.UTF8.GetBytes(dateitext));
+        datei.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+        rumpf.Add(datei, "datei", "kanbanc.md");
+        rumpf.Add(new StringContent(kartenklasseId.ToString(CultureInfo.InvariantCulture)), "klasse");
+        rumpf.Add(new StringContent("true"), "trocken");
+        if (mitKontributor)
+        {
+            rumpf.Add(new StringContent(kontributorId.ToString(CultureInfo.InvariantCulture)), "kontributor");
+        }
+
+        return rumpf;
+    }
+
+    private static string Wbsdatei()
+    {
+        return string.Join(
+            '\n',
+            "---",
+            "application: Probe",
+            "---",
+            "| ID | Ebene | Eltern | Name | Status | a | b | c | d | e | f | g |",
+            "|---|---|---|---|---|---|---|---|---|---|---|---|",
+            "| A0001 | Application | — | Probe | gelb | | | | | | | |");
     }
 
     private sealed record Aufbau(Board Board, Karte Karte, Kontributor Kontributor, Kontributor Stillgelegter, Kartenklasse FremdeKartenklasse);

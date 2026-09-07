@@ -24,6 +24,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Testdaten\**\*.md" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\KanbanC.BL\KanbanC.BL.csproj" />
   </ItemGroup>
 

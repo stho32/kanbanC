@@ -8,7 +8,8 @@ public static class EtikettenValidator
 {
     // Ein Etikett ist eine Marke, kein Satz: es steht als Pille an der Karte und muss dort
     // lesbar bleiben. Der Titel darf 1000 Zeichen tragen, ein Etikett braucht das nicht.
-    private const int HoechsteEtikettlaenge = 100;
+    // Oeffentlich, weil der WBS-Import dieselbe Grenze braucht.
+    public const int HoechsteEtikettlaenge = 100;
 
     // Wie beim KartenValidator nennt die Kompensation die Route des Aufrufers samt seiner Nummer.
     public static Pruefbefunde Pruefe(long karteId, Kartenetiketten etiketten)

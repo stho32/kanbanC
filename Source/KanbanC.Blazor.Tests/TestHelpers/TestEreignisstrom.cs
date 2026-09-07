@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Channels;
+using KanbanC.Contracts.Ereignisse;
 
 namespace KanbanC.Blazor.Tests.TestHelpers;
 
@@ -112,7 +113,14 @@ public sealed class Stromverbindung
 
     public async Task Sende(string rumpf)
     {
-        var rahmen = $"event: kartenereignis\ndata: {rumpf}\n\n";
+        await Sende(Ereignisarten.Kartenereignis, rumpf);
+    }
+
+    // Zwei Arten laufen ueber dieselbe Leitung; der Artname steht am Element, damit ein Test die
+    // zweite Art so senden kann, wie die WebApi sie sendet.
+    public async Task Sende(string art, string rumpf)
+    {
+        var rahmen = $"event: {art}\ndata: {rumpf}\n\n";
         await _schreiber.WriteAsync(Encoding.UTF8.GetBytes(rahmen));
     }
 

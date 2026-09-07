@@ -9,7 +9,8 @@ public static class DateiverweisValidator
     // Zwischen Teilaufgabe (200) und Kartentitel (1000). 500 Zeichen tragen einen tief
     // verschachtelten Repository-Pfad samt langem Dateinamen und bleiben deutlich unter dem
     // Titel — mehr wäre kein Pfad mehr, sondern ein Text.
-    private const int HoechstePfadlaenge = 500;
+    // Oeffentlich, weil der WBS-Import dieselbe Grenze braucht.
+    public const int HoechstePfadlaenge = 500;
 
     // Wie beim Kommentar-, Teilaufgaben- und AnhangValidator nennt die Kompensation die Route
     // des Aufrufers samt seiner Nummer.

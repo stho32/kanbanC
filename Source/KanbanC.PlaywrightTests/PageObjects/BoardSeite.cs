@@ -42,6 +42,14 @@ public sealed class BoardSeite
 
     public ILocator Kartenzahlstellen => _seite.Locator("#spaltenbahnen .spaltenbahn-kartenzahl");
 
+    // Der Einstieg des WBS-Imports sitzt im Layout-Modus unter der Klassenpflege — dort, wo ein
+    // Board eingerichtet wird und wo die Kartenklasse wohnt, die der Import braucht.
+    public ILocator Importkachel => _seite.Locator("#importkachel");
+
+    public ILocator ImportKnopf => _seite.Locator("#zum-wbs-import");
+
+    public ILocator ImportOhneKlasse => _seite.Locator("#import-ohne-klasse");
+
     public ILocator Kartenzahlschalter => _seite.Locator("#kartenzahl-schalter");
 
     public ILocator KartenzahlFehlermeldung => _seite.Locator("#kartenzahl-fehlermeldung");

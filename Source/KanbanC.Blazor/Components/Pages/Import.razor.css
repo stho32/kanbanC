@@ -1,0 +1,247 @@
+/* Der WBS-Import in drei Schritten. Alle Werte kommen aus gestaltung.css — kein Literal steht
+   hier, damit die Gestaltung an einer Stelle bleibt. */
+.importflaeche {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--space-3);
+    min-height: 0;
+    padding: var(--space-4);
+}
+
+/* Die drei Schritte als Leiste: der jetzige trägt die Akzentfarbe, die erledigten den Haken. */
+.importschritte {
+    display: flex;
+    gap: var(--space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.importschritt {
+    font-size: 13px;
+    color: color-mix(in srgb, var(--color-text) 45%, transparent);
+}
+
+.importschritt-jetzt {
+    font-weight: 600;
+    color: var(--color-accent-700);
+}
+
+.importschritt-erledigt {
+    color: var(--color-accent-2-700);
+}
+
+.importschritt-erledigt::after {
+    content: " ✓";
+}
+
+.importhinweis {
+    margin: 0;
+    font-size: 12px;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.importabschnitt {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+}
+
+.importueberschrift {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-weight: var(--font-heading-weight);
+    font-size: 16px;
+}
+
+.importbeschreibung {
+    margin: 0;
+    font-size: 13px;
+}
+
+.importfeld {
+    max-width: 420px;
+}
+
+/* Der gleichwertige Aufruf steht neben der Fläche und nicht in einer Fußnote: er ist die
+   eingelöste Zusage, dass ein Agent denselben Weg geht. */
+.importaufruf {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.importaufruf-titel {
+    font-size: 12px;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.importaufruf-text {
+    margin: 0;
+    padding: var(--space-2);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    white-space: pre-wrap;
+    background: var(--color-neutral-100);
+    border-radius: var(--radius-xs);
+}
+
+/* Die gestrichelte Fläche aus dem Artboard — dieselbe wie an der Karte, samt ihren zwei
+   Sperrgründen. */
+.ablegeflaeche {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60px;
+    font-size: 13px;
+    color: color-mix(in srgb, var(--color-text) 45%, transparent);
+    border: 1px dashed color-mix(in srgb, var(--color-text) 30%, transparent);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+.ablegefeld {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.ablegeflaeche-gesperrt {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.ablegeflaeche-gesperrt .ablegefeld {
+    cursor: not-allowed;
+}
+
+.ablegeflaeche-laeuft {
+    color: var(--color-accent-2-700);
+    border-style: solid;
+    border-color: var(--color-accent-2);
+}
+
+/* Schritt 2: links der Baum lesend, rechts die Wirkung. */
+.importvorschau-kopf {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.importdatei {
+    font-family: var(--font-mono);
+    font-size: 12px;
+}
+
+/* Der eine Regler, der aus einem Baum ein Board macht — mit der Kartenzahl je Stellung daneben. */
+.importregler {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.importregler-titel {
+    font-size: 12px;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.importregler-stellung {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.importregler-gewaehlt {
+    background: var(--color-accent-100);
+    border-color: var(--color-accent);
+    color: var(--color-accent-800);
+}
+
+.importregler-zahl {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: color-mix(in srgb, var(--color-text) 60%, transparent);
+}
+
+.importvorschau-spalten {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--space-4);
+    min-height: 0;
+}
+
+.importbaum,
+.importwirkungsseite {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
+.importbaumliste {
+    margin: 0;
+    padding: var(--space-2);
+    max-height: 420px;
+    overflow-y: auto;
+    list-style: none;
+    background: var(--color-neutral-100);
+    border-radius: var(--radius-xs);
+}
+
+.importbaumzeile {
+    display: flex;
+    gap: var(--space-2);
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.importkennung {
+    font-family: var(--font-mono);
+    min-width: 60px;
+}
+
+.importwirkung {
+    color: color-mix(in srgb, var(--color-text) 60%, transparent);
+}
+
+.importbaumzeile-karte .importwirkung {
+    color: var(--color-accent-700);
+}
+
+.importbaumzeile-uebersprungen .importwirkung {
+    color: var(--color-accent-600);
+}
+
+.importbilanz {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.importergebnis {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-weight: var(--font-heading-weight);
+    font-size: 18px;
+}
+
+.importkompensation {
+    display: block;
+    font-size: 12px;
+    color: color-mix(in srgb, var(--color-text) 60%, transparent);
+}
+
+#import-zum-board {
+    align-self: flex-start;
+    text-decoration: none;
+}

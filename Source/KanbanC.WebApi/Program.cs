@@ -1,9 +1,11 @@
 using KanbanC.BL.Integrations.Boards;
+using KanbanC.BL.Integrations.Import;
 using KanbanC.BL.Integrations.Karten;
 using KanbanC.BL.Integrations.Klassen;
 using KanbanC.BL.Integrations.Kontributoren;
 using KanbanC.BL.Integrations.Zeiten;
 using KanbanC.BL.Interfaces.Boards;
+using KanbanC.BL.Interfaces.Import;
 using KanbanC.BL.Interfaces.Karten;
 using KanbanC.BL.Interfaces.Klassen;
 using KanbanC.BL.Interfaces.Kontributoren;
@@ -11,6 +13,7 @@ using KanbanC.BL.Interfaces.Persistenz;
 using KanbanC.BL.Interfaces.Zeiten;
 using KanbanC.BL.Persistenz;
 using KanbanC.BL.Persistenz.Boards;
+using KanbanC.BL.Persistenz.Import;
 using KanbanC.BL.Persistenz.Karten;
 using KanbanC.BL.Persistenz.Klassen;
 using KanbanC.BL.Persistenz.Kontributoren;
@@ -49,12 +52,14 @@ builder.Services.AddSingleton<IKartenRepository, KartenRepository>();
 builder.Services.AddSingleton<IKontributorenRepository, KontributorenRepository>();
 builder.Services.AddSingleton<IKartenklassenRepository, KartenklassenRepository>();
 builder.Services.AddSingleton<IZeitenRepository, ZeitenRepository>();
+builder.Services.AddSingleton<IWbsImportRepository, WbsImportRepository>();
 builder.Services.AddSingleton<BoardService>();
 builder.Services.AddSingleton<SpaltenService>();
 builder.Services.AddSingleton<KartenService>();
 builder.Services.AddSingleton<KontributorenService>();
 builder.Services.AddSingleton<KartenklassenService>();
 builder.Services.AddSingleton<ZeitenService>();
+builder.Services.AddSingleton<WbsImportService>();
 
 // Eine Drehscheibe je Prozess: sie nimmt die Meldungen der Endpunkte an und gibt jedem Abonnenten
 // von GET /api/ereignisse seinen eigenen Strom.
@@ -80,6 +85,7 @@ KartenEndpunkte.Registriere(app);
 KontributorenEndpunkte.Registriere(app);
 KartenklassenEndpunkte.Registriere(app);
 ZeitenEndpunkte.Registriere(app);
+WbsImportEndpunkte.Registriere(app);
 EreignisEndpunkte.Registriere(app);
 
 app.Run();

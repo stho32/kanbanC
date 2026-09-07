@@ -6,7 +6,9 @@ namespace KanbanC.BL.Operations.Karten;
 
 public static class KartenValidator
 {
-    private const int HoechsteTitellaenge = 1000;
+    // Oeffentlich, weil der WBS-Import dieselbe Grenze braucht: aendert sie sich hier, muss sich
+    // der Import zwingend mitaendern — eine zweite Zahl dort liefe beim ersten Sonderfall auseinander.
+    public const int HoechsteTitellaenge = 1000;
     private const string Anlegeroute = "POST /api/boards/{boardId}/spalten/{spalteId}/karten";
 
     public static Pruefbefunde Pruefe(KarteAnlegenAnfrage anfrage)

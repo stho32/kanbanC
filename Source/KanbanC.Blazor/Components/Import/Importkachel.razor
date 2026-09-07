@@ -1,0 +1,55 @@
+@using KanbanC.Blazor.Services
+@using KanbanC.Contracts.Klassen
+@inject KartenklassenApiKlient KartenklassenKlient
+
+<div id="importkachel" class="importkachel">
+    <div class="importkachel-kopf">
+        <h3 class="importkachel-titel">WBS-Import</h3>
+        <span class="importkachel-hinweis">Eine Planungsdatei einlesen; ihre Knoten werden Karten dieses Boards</span>
+    </div>
+
+    @if (_fehlermeldung is not null)
+    {
+        <div class="meldung" role="alert" id="importkachel-fehlermeldung">@_fehlermeldung</div>
+    }
+    else if (_dasBoardFuehrtKeineKartenklasse)
+    {
+        @* Die Sperre steht dort, wo sie aufzulösen ist: die Klassenpflege ist die Zeile darüber. *@
+        <p id="import-ohne-klasse" class="importkachel-sperre">
+            Ohne Kartenklasse geht es nicht — die entstehenden Karten bekämen keine Nummer.
+            Lege oben eine Klasse an (etwa „WBS“ mit Präfix „WBS-“) und komm wieder her.
+        </p>
+    }
+    else
+    {
+        <a id="zum-wbs-import" class="btn btn-haupt" href="@Importadresse">WBS importieren →</a>
+    }
+</div>
+
+@code {
+    private bool _dasBoardFuehrtKeineKartenklasse = true;
+    private string? _fehlermeldung;
+
+    [Parameter]
+    [EditorRequired]
+    public long BoardId { get; set; }
+
+    private string Importadresse => $"/boards/{BoardId}/import";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _fehlermeldung = await WebApiAufruf.MitAusfallmeldung(LiesKartenklassen);
+    }
+
+    private async Task LiesKartenklassen()
+    {
+        var ergebnis = await KartenklassenKlient.LadeKartenklassen(BoardId);
+        if (ergebnis.WurdeZurueckgewiesen)
+        {
+            _dasBoardFuehrtKeineKartenklasse = true;
+            return;
+        }
+
+        _dasBoardFuehrtKeineKartenklasse = ergebnis.Wert.Count == 0;
+    }
+}

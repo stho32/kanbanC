@@ -308,6 +308,72 @@ public class EreignisleitungTests
 
     // Was beim Hörer ankommt, gesammelt statt gezählt: der Test wartet auf das nächste Ereignis
     // mit Zeitschranke, statt eine Pause zu raten.
+    // Zwei Arten auf **einer** Leitung: die Leitung entscheidet am Artnamen, welchen Vertrag sie
+    // liest — ueber den Browser ist das nicht zu zeigen.
+    [Test]
+    public async Task Wenn_ein_Importereignis_aus_dem_Strom_kommt_dann_erreicht_es_die_Importhoerer()
+    {
+        using var strom = TestEreignisstrom.DerAntwortet();
+        var verteiler = new Ereignisverteiler();
+        var angekommene = new Importfang(verteiler);
+        using var abbruch = new CancellationTokenSource(Zeitschranke);
+        using var leitung = new Ereignisleitung(strom, verteiler, TimeSpan.Zero, () => Abrisszeitpunkt, NullLogger<Ereignisleitung>.Instance);
+        await leitung.StartAsync(abbruch.Token);
+        var verbindung = await strom.NaechsteVerbindung(abbruch.Token);
+
+        await verbindung.Sende(Ereignisarten.Importereignis, JsonSerializer.Serialize(new Importereignis(4, 7, 41, Ereignisweg.Api, DateTimeOffset.UnixEpoch), Jsonform));
+
+        var ereignis = await angekommene.WarteAufNaechstes(abbruch.Token);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ereignis.Board, Is.EqualTo(4));
+            Assert.That(ereignis.Urheber, Is.EqualTo(7));
+            Assert.That(ereignis.Kartenzahl, Is.EqualTo(41));
+        });
+        await leitung.StopAsync(CancellationToken.None);
+    }
+
+    // Eine Art, die diese Oberflaeche nicht kennt, wird uebergangen und reisst die Leitung nicht
+    // ab: eine spaetere WebApi darf eine dritte Art hinzufuegen.
+    [Test]
+    public async Task Wenn_eine_unbekannte_Art_kommt_dann_laeuft_die_Leitung_weiter()
+    {
+        using var strom = TestEreignisstrom.DerAntwortet();
+        var verteiler = new Ereignisverteiler();
+        var angekommene = new Ereignisfang(verteiler);
+        using var abbruch = new CancellationTokenSource(Zeitschranke);
+        using var leitung = new Ereignisleitung(strom, verteiler, TimeSpan.Zero, () => Abrisszeitpunkt, NullLogger<Ereignisleitung>.Instance);
+        await leitung.StartAsync(abbruch.Token);
+        var verbindung = await strom.NaechsteVerbindung(abbruch.Token);
+
+        await verbindung.Sende("drittesart", """{"irgendwas":1}""");
+        await verbindung.Sende(AlsRumpf(new Kartenereignis(3, 14, 7, 2, Ereignisweg.Api, DateTimeOffset.UnixEpoch)));
+
+        var ereignis = await angekommene.WarteAufNaechstes(abbruch.Token);
+        Assert.That(ereignis.Karte, Is.EqualTo(14), "Die unbekannte Art hat die Leitung aufgehalten.");
+        await leitung.StopAsync(CancellationToken.None);
+    }
+
+    private sealed class Importfang
+    {
+        private readonly System.Threading.Channels.Channel<Importereignis> _angekommene = System.Threading.Channels.Channel.CreateUnbounded<Importereignis>();
+
+        public Importfang(Ereignisverteiler verteiler)
+        {
+            verteiler.Importgemeldet += Nimm;
+        }
+
+        public async Task<Importereignis> WarteAufNaechstes(CancellationToken abbruch)
+        {
+            return await _angekommene.Reader.ReadAsync(abbruch);
+        }
+
+        private void Nimm(Importereignis ereignis)
+        {
+            _angekommene.Writer.TryWrite(ereignis);
+        }
+    }
+
     private sealed class Ereignisfang
     {
         private readonly System.Threading.Channels.Channel<Kartenereignis> _angekommene = System.Threading.Channels.Channel.CreateUnbounded<Kartenereignis>();

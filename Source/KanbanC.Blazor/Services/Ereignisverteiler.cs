@@ -24,6 +24,16 @@ public sealed class Ereignisverteiler
         Gemeldet?.Invoke(ereignis);
     }
 
+    // **Ein Lauf, eine Meldung.** Ein WBS-Import legt viele Karten an und meldet einen Vorgang;
+    // die offene Sicht des Boards lädt danach einmal neu — ohne Einflugmarke je Karte, die bei
+    // einundvierzig Karten Rauschen wäre.
+    public event Action<Importereignis>? Importgemeldet;
+
+    public void Melde(Importereignis ereignis)
+    {
+        Importgemeldet?.Invoke(ereignis);
+    }
+
     public event Action<Verbindungsstand>? Verbindungsstandgewechselt;
 
     // Vor dem ersten Abriss gilt „verbunden": eine frisch gestartete Anwendung, deren Leitung noch

@@ -130,10 +130,10 @@ public sealed class KartenklassenRepository : IKartenklassenRepository
              WHERE KartenklasseId = @KartenklasseId", new { KartenklasseId = kartenklasseId });
     }
 
-    // Hier wächst der Zaehlerstand — die einzige Stelle. Erhöhen und Zuordnen stehen unter
-    // **einem** Schloss, weil zwischen „nächste Nummer lesen“ und „Nummer vergeben“ ein Fenster
-    // zwei Karten dieselbe Identität gäbe; eine Identität, die zweimal vorkommt, ist keine.
-    // Die drei Fälle liegen deshalb in derselben Transaktion: erstmalig, Wechsel und dieselbe
+    // Hier wächst der Zaehlerstand für eine **einzelne** Karte; die Regel selbst steht im
+    // Kartenklassenzuordnungsschreiber, weil der WBS-Import sie in seiner eigenen Transaktion
+    // ebenfalls braucht.
+    // Die drei Fälle liegen in derselben Transaktion: erstmalig, Wechsel und dieselbe
     // Kartenklasse erneut.
     public Kartenklassenzuordnung? OrdneZu(long karteId, long kartenklasseId)
     {
@@ -165,9 +165,9 @@ public sealed class KartenklassenRepository : IKartenklassenRepository
 
         // Der Zählerstand der **alten** Kartenklasse bleibt stehen: die alte Nummer verfällt und
         // wird nie wieder vergeben.
-        var vergebenerStand = ErhoeheZaehlerstand(verbindung, transaktion, kartenklasseId);
+        var vergebenerStand = Kartenklassenzuordnungsschreiber.VergibNaechstenZaehlerstand(verbindung, transaktion, kartenklasseId);
         EntferneZuordnung(verbindung, transaktion, karteId);
-        var zuordnungId = FuegeZuordnungEin(verbindung, transaktion, karteId, kartenklasseId, vergebenerStand);
+        var zuordnungId = Kartenklassenzuordnungsschreiber.FuegeZuordnungEin(verbindung, transaktion, karteId, kartenklasseId, vergebenerStand);
         transaktion.Commit();
         return new Kartenklassenzuordnung(zuordnungId, karteId, kartenklasseId, vergebenerStand);
     }
@@ -215,32 +215,12 @@ public sealed class KartenklassenRepository : IKartenklassenRepository
         return new Kartenklassenzuordnung(zeile.KartenklassenzuordnungId, zeile.Karte, zeile.Kartenklasse, (int)zeile.Zaehlerstand);
     }
 
-    // RETURNING liefert den **neuen** Stand: gelesen und erhöht wird in einer Anweisung, damit
-    // zwischen beidem kein Fenster steht.
-    private static int ErhoeheZaehlerstand(IDbConnection verbindung, IDbTransaction transaktion, long kartenklasseId)
-    {
-        return verbindung.ExecuteScalar<int>(@"
-            UPDATE Kartenklasse
-               SET Zaehlerstand = Zaehlerstand + 1
-             WHERE KartenklasseId = @KartenklasseId
-            RETURNING Zaehlerstand", new { KartenklasseId = kartenklasseId }, transaktion);
-    }
-
     private static void EntferneZuordnung(IDbConnection verbindung, IDbTransaction transaktion, long karteId)
     {
         verbindung.Execute(@"
             DELETE
               FROM Kartenklassenzuordnung
              WHERE Karte = @KarteId", new { KarteId = karteId }, transaktion);
-    }
-
-    private static long FuegeZuordnungEin(IDbConnection verbindung, IDbTransaction transaktion, long karteId, long kartenklasseId, int zaehlerstand)
-    {
-        var parameter = new { Karte = karteId, Kartenklasse = kartenklasseId, Zaehlerstand = zaehlerstand };
-        return verbindung.ExecuteScalar<long>(@"
-            INSERT INTO Kartenklassenzuordnung (Karte, Kartenklasse, Zaehlerstand)
-            VALUES (@Karte, @Kartenklasse, @Zaehlerstand);
-            SELECT last_insert_rowid();", parameter, transaktion);
     }
 
     private sealed record Kartenklassenzuordnungszeile(long KartenklassenzuordnungId, long Karte, long Kartenklasse, long Zaehlerstand);
