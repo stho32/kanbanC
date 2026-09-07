@@ -309,6 +309,15 @@ public sealed class ZeitenRepository : IZeitenRepository
         return geloeschteZeilen > 0;
     }
 
+    // Ohne Transaktion und ohne Nummer: eine reine Auskunft über den Bestand, wie die lesenden
+    // Glieder des BoardService.
+    public IReadOnlyList<LaufendeZeitmessung> LiesLaufende()
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+
+        return Zeitenleser.LiesAlleLaufenden(verbindung, transaktion: null);
+    }
+
     // Derselbe ISO-Text in UTC wie beim Start und beim Stopp: Microsoft.Data.Sqlite meldet für
     // die Spalte den Typ String, und nur bei einheitlichem Versatz sortiert Text lexikografisch
     // wie chronologisch.

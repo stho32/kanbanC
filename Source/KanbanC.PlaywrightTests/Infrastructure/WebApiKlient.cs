@@ -14,6 +14,7 @@ public sealed class WebApiKlient : IDisposable
 {
     private const string BoardsRoute = "api/boards";
     private const string KontributorenRoute = "api/kontributoren";
+    private const string KartenRoute = "api/karten";
     private readonly HttpClient _klient;
 
     public WebApiKlient(string webApiAdresse)
@@ -255,6 +256,34 @@ public sealed class WebApiKlient : IDisposable
         }
 
         return kartenklasse;
+    }
+
+    public async Task<Kartendetail> OrdneKartenklasseZu(long karteId, long kartenklasseId)
+    {
+        var antwort = await _klient.PutAsJsonAsync($"{KartenRoute}/{karteId}/kartenklasse", new KartenklasseZuordnenAnfrage(kartenklasseId));
+        antwort.EnsureSuccessStatusCode();
+        var detail = await antwort.Content.ReadFromJsonAsync<Kartendetail>();
+        if (detail is null)
+        {
+            throw new InvalidOperationException("Die WebApi hat kein Kartendetail zurückgegeben.");
+        }
+
+        return detail;
+    }
+
+    // Zurück kommen die Spalten des Boards ohne die archivierte Karte — Hausform der
+    // Kartenarchivierung.
+    public async Task<IReadOnlyList<Spalte>> SchalteKartenarchivierung(long boardId, long karteId, bool istArchiviert)
+    {
+        var antwort = await _klient.PutAsJsonAsync($"{BoardsRoute}/{boardId}/karten/{karteId}/archivierung", new Archivierung(istArchiviert));
+        antwort.EnsureSuccessStatusCode();
+        var spalten = await antwort.Content.ReadFromJsonAsync<List<Spalte>>();
+        if (spalten is null)
+        {
+            throw new InvalidOperationException("Die WebApi hat keine Spalten zurückgegeben.");
+        }
+
+        return spalten;
     }
 
     public async Task<Kontributor> LegeKontributorAn(string name, Kontributorart art)

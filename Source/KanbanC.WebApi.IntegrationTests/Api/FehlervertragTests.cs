@@ -19,11 +19,14 @@ public class FehlervertragTests
     private const string KontributorenRoute = "/api/kontributoren";
     private static readonly DateTimeOffset GesternZwoelfUhr = new(2026, 9, 5, 12, 0, 0, TimeSpan.Zero);
     private static readonly DateTimeOffset GesternHalbZwei = new(2026, 9, 5, 13, 30, 0, TimeSpan.Zero);
+    // Diese Routen weisen nichts zurück: sie tragen keine Nummer im Aufruf und setzen keinen
+    // Bestand voraus — die leere Liste ist ihre vollständige Antwort.
     private static readonly string[] RoutenOhneFehlerantwort =
     [
         "GET /openapi/{documentName}.json",
         "GET /api/zustand",
         "GET /api/kontributoren",
+        "GET /api/zeiten/laufend",
     ];
 
     [Test]

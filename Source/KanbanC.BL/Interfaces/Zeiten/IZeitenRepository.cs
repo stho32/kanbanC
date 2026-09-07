@@ -43,4 +43,9 @@ public interface IZeitenRepository
     // EntferneAnhang, weil dieselbe Seite es verbraucht.
     // null heißt: diesen Zeiteintrag gibt es an dieser Karte nicht.
     Kartendetail? Loesche(long karteId, long zeiteintragId);
+
+    // Alle gerade laufenden Einträge über alle Boards, samt dem Ort, an dem gemessen wird.
+    // **Kein null-Fall:** der Aufruf trägt keine Nummer und setzt keinen Bestand voraus — läuft
+    // nichts, ist die leere Liste die vollständige Antwort.
+    IReadOnlyList<LaufendeZeitmessung> LiesLaufende();
 }

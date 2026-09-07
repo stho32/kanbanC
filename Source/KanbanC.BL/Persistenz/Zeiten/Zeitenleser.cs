@@ -1,13 +1,14 @@
 using System.Data;
 using System.Globalization;
 using Dapper;
+using KanbanC.BL.Persistenz.Karten;
 using KanbanC.Contracts.Kontributoren;
 using KanbanC.Contracts.Zeiten;
 
 namespace KanbanC.BL.Persistenz.Zeiten;
 
-// Die zwei Blickwinkel auf denselben Bestand: alle Einträge einer Karte für die Kartenseite, alle
-// laufenden eines Boards für die Bahn.
+// Die drei Blickwinkel auf denselben Bestand: alle Einträge einer Karte für die Kartenseite, alle
+// laufenden eines Boards für die Bahn und alle laufenden über alle Boards für die Kopfzeile.
 // Die beiden JOINs auf Kontributor und Kontributorstilllegung stehen im Kommentarleser schon und
 // werden hier wiederholt: der Kontributor reist als ganzer Kontributor mit, damit die Zeile Name,
 // Kürzel und den Zusatz „stillgelegt" ohne einen zweiten Abruf zeigt. Ein stillgelegter
@@ -53,6 +54,78 @@ internal static class Zeitenleser
                AND z.Ende IS NULL
              ORDER BY z.Beginn, z.ZeiteintragId", new { BoardId = boardId }, transaktion);
         return zeilen.Select(AlsZeiteintrag).ToList();
+    }
+
+    // Über alle Boards und nur die offenen Einträge — die einzige Leseform dieses Lesers ohne
+    // Karte und ohne Board im Aufruf: ein Timer hängt an einer Karte, nicht an dem Board, das
+    // gerade offen ist, und die Frage „was läuft gerade?" kennt keinen Ausschnitt.
+    // Der Ort reist mit, weil ein Kartentitel allein nicht sagt, wo die Karte liegt. Archiviert
+    // fasst Karte und Board zusammen: für den Leser ist die Folge dieselbe — die Karte steht in
+    // keiner Bahn mehr — und gerade dann ist diese Liste der einzige Ort, an dem der Eintrag noch
+    // erreichbar ist.
+    public static IReadOnlyList<LaufendeZeitmessung> LiesAlleLaufenden(IDbConnection verbindung, IDbTransaction? transaktion)
+    {
+        var zeilen = verbindung.Query<Zeitmessungszeile>(@"
+            SELECT z.ZeiteintragId, z.Karte, z.Beginn, z.Ende,
+                   k.KontributorId AS Kontributor, k.Name AS Kontributorname, k.Kontributorart AS Kontributorart,
+                   t.StillgelegtAm AS KontributorStillgelegtAm,
+                   a.Spalte, a.Titel, a.Position, e.ErledigtAm,
+                   p.Beschreibung, p.FaelligAm, p.Farbe, p.Kontributor AS Kartenkontributor,
+                   n.Praefix AS Kartenklassenpraefix, w.Zaehlerstand AS VergebenerZaehlerstand,
+                   b.BoardId AS Board, b.Name AS Boardname,
+                   ka.Karte AS ArchivierteKarte, ba.Board AS ArchiviertesBoard
+              FROM Zeiteintrag z
+              JOIN Karte a ON a.KarteId = z.Karte
+              JOIN Spalte s ON s.SpalteId = a.Spalte
+              JOIN Board b ON b.BoardId = s.Board
+              JOIN Kontributor k ON k.KontributorId = z.Kontributor
+              LEFT JOIN Kontributorstilllegung t ON t.Kontributor = k.KontributorId
+              LEFT JOIN Karteerledigung e ON e.Karte = a.KarteId
+              LEFT JOIN Karteneigenschaft p ON p.Karte = a.KarteId
+              LEFT JOIN Kartenklassenzuordnung w ON w.Karte = a.KarteId
+              LEFT JOIN Kartenklasse n ON n.KartenklasseId = w.Kartenklasse
+              LEFT JOIN Kartenarchivierung ka ON ka.Karte = a.KarteId
+              LEFT JOIN Boardarchivierung ba ON ba.Board = b.BoardId
+             WHERE z.Ende IS NULL
+             ORDER BY z.Beginn, z.ZeiteintragId", param: null, transaktion);
+        return zeilen.Select(AlsLaufendeZeitmessung).ToList();
+    }
+
+    private static LaufendeZeitmessung AlsLaufendeZeitmessung(Zeitmessungszeile zeile)
+    {
+        var zeiteintrag = AlsZeiteintrag(AlsZeiteintragszeile(zeile));
+        var karte = Kartenleser.AlsKarte(AlsKartenzeile(zeile));
+        var dieKarteStehtInKeinerBahnMehr = zeile.ArchivierteKarte is not null || zeile.ArchiviertesBoard is not null;
+        return new LaufendeZeitmessung(zeiteintrag, karte, zeile.Board, zeile.Boardname, dieKarteStehtInKeinerBahnMehr);
+    }
+
+    private static Zeiteintragszeile AlsZeiteintragszeile(Zeitmessungszeile zeile)
+    {
+        return new Zeiteintragszeile(
+            zeile.ZeiteintragId,
+            zeile.Karte,
+            zeile.Beginn,
+            zeile.Ende,
+            zeile.Kontributor,
+            zeile.Kontributorname,
+            zeile.Kontributorart,
+            zeile.KontributorStillgelegtAm);
+    }
+
+    private static Kartenleser.Kartenzeile AlsKartenzeile(Zeitmessungszeile zeile)
+    {
+        return new Kartenleser.Kartenzeile(
+            zeile.Karte,
+            zeile.Spalte,
+            zeile.Titel,
+            zeile.Position,
+            zeile.ErledigtAm,
+            zeile.Beschreibung,
+            zeile.FaelligAm,
+            zeile.Farbe,
+            zeile.Kartenkontributor,
+            zeile.Kartenklassenpraefix,
+            zeile.VergebenerZaehlerstand);
     }
 
     // Ein einzelner Eintrag in derselben Gestalt wie die Listen: der Start liefert genau den
@@ -109,6 +182,33 @@ internal static class Zeitenleser
 
         return DateOnly.ParseExact(isoText, "yyyy-MM-dd", CultureInfo.InvariantCulture);
     }
+
+    // Die flache Zeile der Kopfzeilenabfrage: Eintrag, Kontributor, Karte und Ort in einem Zug.
+    // Sie füttert beide Aufbauwege — AlsZeiteintrag und AlsKarte —, damit keiner von beiden ein
+    // zweites Mal entsteht.
+    private sealed record Zeitmessungszeile(
+        long ZeiteintragId,
+        long Karte,
+        string Beginn,
+        string? Ende,
+        long Kontributor,
+        string Kontributorname,
+        string Kontributorart,
+        string? KontributorStillgelegtAm,
+        long Spalte,
+        string Titel,
+        long Position,
+        string? ErledigtAm,
+        string? Beschreibung,
+        string? FaelligAm,
+        string? Farbe,
+        long? Kartenkontributor,
+        string? Kartenklassenpraefix,
+        long? VergebenerZaehlerstand,
+        long Board,
+        string Boardname,
+        long? ArchivierteKarte,
+        long? ArchiviertesBoard);
 
     private sealed record Zeiteintragszeile(
         long ZeiteintragId,

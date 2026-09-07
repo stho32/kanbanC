@@ -558,6 +558,38 @@ public class ZeitenServiceTests
         return repository;
     }
 
+    // **Kein Ergebnis<T> und keine Prüfung davor:** der Aufruf trägt keine Nummer und setzt keinen
+    // Bestand voraus — es gibt nichts zurückzuweisen.
+    [Test]
+    public void Wenn_Timer_laufen_dann_reicht_der_Dienst_sie_ohne_Ergebnishuelle_durch()
+    {
+        var zeitenRepository = TestZeitenRepository.Leer()
+            .MitLaufendemEintrag(14, 3, AchtUhrVier)
+            .MitAbgeschlossenemEintrag(14, 4, GesternZwoelfUhr, GesternZweiUhr);
+        var service = new ZeitenService(zeitenRepository, MitKontributor(3, "Stefan"), MitDieserKarte());
+
+        var laufende = service.LiesLaufende();
+
+        Assert.That(laufende, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(laufende[0].Zeiteintrag.Kontributor.KontributorId, Is.EqualTo(3));
+            Assert.That(laufende[0].Zeiteintrag.Ende, Is.Null);
+            Assert.That(zeitenRepository.Schreibzugriffe, Is.EqualTo(0));
+        });
+    }
+
+    // Läuft nichts, ist die leere Liste die vollständige Antwort — nie null und nie ein Befund.
+    [Test]
+    public void Wenn_kein_Timer_laeuft_dann_liefert_der_Dienst_eine_leere_Liste()
+    {
+        var service = new ZeitenService(TestZeitenRepository.Leer(), MitKontributor(3, "Stefan"), MitDieserKarte());
+
+        var laufende = service.LiesLaufende();
+
+        Assert.That(laufende, Is.Empty);
+    }
+
     private static TestKontributorenRepository MitStillgelegtemKontributor()
     {
         var repository = new TestKontributorenRepository();

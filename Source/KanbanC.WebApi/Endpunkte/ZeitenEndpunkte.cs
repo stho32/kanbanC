@@ -8,9 +8,13 @@ public static class ZeitenEndpunkte
 {
     // Boardlose Unterressource der Karte wie Teilaufgaben, Kommentare, Anhänge und Dateiverweise.
     // Die Adresse endet auf „laufend" und nicht auf „zeiten": POST …/zeiten bleibt dem Nachtragen
-    // aus I0025 — einem Eintrag mit Beginn **und** Ende —, und GET /api/zeiten/laufend bleibt
-    // I0027. Start und Nachtrag sind zwei Fragen und bekommen zwei Adressen.
+    // aus I0025 — einem Eintrag mit Beginn **und** Ende. Start und Nachtrag sind zwei Fragen und
+    // bekommen zwei Adressen.
     private const string Zeitmessungsroute = "/api/karten/{karteId:long}/zeiten/laufend";
+
+    // Die erste board- und kartenlose Zeitenroute: der Gegenstand hängt an keiner Karte und an
+    // keinem Board, und eine kartengebundene Adresse könnte die Frage „alle" gar nicht stellen.
+    private const string LaufendeZeitmessungenroute = "/api/zeiten/laufend";
 
     // Geschachtelte Nummer wie bei Teilaufgabe, Anhang und Dateiverweis, „/ende" als gesetzter
     // Zustand wie „/archivierung" und „/stilllegung". Kein Konflikt mit „…/zeiten/laufend": anderes
@@ -33,6 +37,7 @@ public static class ZeitenEndpunkte
         routen.MapPost(Nachtragsroute, TrageZeiteintragNach).WithName("ZeiteintragNachtragen");
         routen.MapPut(Zeiteintragsroute, AendereZeiteintrag).WithName("ZeiteintragAendern");
         routen.MapDelete(Zeiteintragsroute, LoescheZeiteintrag).WithName("ZeiteintragLoeschen");
+        routen.MapGet(LaufendeZeitmessungenroute, LiesLaufendeZeitmessungen).WithName("ZeitmessungenLaufend");
     }
 
     // **Zwei Erfolgsstatus an einer Route**, und das mit Absicht: 201 sagt „jetzt läuft er", 200
@@ -107,6 +112,13 @@ public static class ZeitenEndpunkte
         }
 
         return Zurueckweisungen.AlsFehlerantwort(ergebnis.Befunde);
+    }
+
+    // **Immer 200, nie 404:** läuft nichts, ist die leere Liste die richtige und vollständige
+    // Antwort — es fehlt nichts, und ein 404 wäre eine Meldung ohne Kompensationsaktion.
+    private static IResult LiesLaufendeZeitmessungen(ZeitenService zeitenService)
+    {
+        return Results.Ok(zeitenService.LiesLaufende());
     }
 
     // Kein Location-Kopf: ein einzelner Zeiteintrag hat in diesem Slice keine Leseadresse — er

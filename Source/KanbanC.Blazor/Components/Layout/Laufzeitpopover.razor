@@ -1,0 +1,90 @@
+@using KanbanC.Contracts.Zeiten
+
+<ul class="laufzeitliste" id="laufzeitliste">
+    @foreach (var messung in _geordnete)
+    {
+        <li class="laufzeitzeile" data-laufzeit="@messung.Zeiteintrag.ZeiteintragId">
+            <div class="laufzeitkopf">
+                <span class="kuerzel @Kontributorartform.Kuerzelklasse(messung.Zeiteintrag.Kontributor.Art)">@Kontributorartform.Kuerzel(messung.Zeiteintrag.Kontributor.Name)</span>
+                @* Der Weg auf die Karte — und bei einer archivierten Karte der einzige. *@
+                <a class="laufzeitkarte"
+                   id="laufzeit-karte-@messung.Zeiteintrag.ZeiteintragId"
+                   href="karten/@messung.Karte.KarteId">@Kartenbezeichnung(messung.Karte)</a>
+                <span class="laufzeitbeginn">seit @Zeitpunktform.AlsTageszeit(messung.Zeiteintrag.Beginn)</span>
+                @* An **jeder** Zeile, auch an einer fremden und auch ohne gewählte Identität:
+                   beenden darf jeder. Einen Start gibt es hier nicht — der braucht eine Karte. *@
+                <button type="button"
+                        class="laufzeitstopp"
+                        id="laufzeit-stoppen-@messung.Zeiteintrag.ZeiteintragId"
+                        title="Timer beenden"
+                        @onclick="() => Gestoppt.InvokeAsync(messung)">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg>
+                </button>
+            </div>
+            <span class="laufzeitmeta">@Herkunft(messung)</span>
+        </li>
+    }
+</ul>
+
+@code {
+    private IReadOnlyList<LaufendeZeitmessung> _geordnete = [];
+
+    [Parameter]
+    [EditorRequired]
+    public IReadOnlyList<LaufendeZeitmessung> Laufende { get; set; } = [];
+
+    [Parameter]
+    public long? GewaehlteKontributorId { get; set; }
+
+    [Parameter]
+    public EventCallback<LaufendeZeitmessung> Gestoppt { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _geordnete = Laufzeitliste.Geordnet(Laufende, GewaehlteKontributorId);
+    }
+
+    // Eine Karte ohne Kartenklasse trägt keine Nummer — dann steht dort nur der Titel, ohne Lücke
+    // und ohne Platzhalter.
+    private static string Kartenbezeichnung(KanbanC.Contracts.Karten.Karte karte)
+    {
+        if (karte.Kartennummer is null)
+        {
+            return karte.Titel;
+        }
+
+        return $"{karte.Kartennummer} {karte.Titel}";
+    }
+
+    // Wo die Karte liegt und für wen gemessen wird — das Board steht dabei, weil die Liste über
+    // alle Boards geht und ein Kartentitel allein nicht sagt, wo die Karte liegt.
+    // Die Zusätze „archiviert" und „stillgelegt" stehen dahinter: gerade dann ist diese Zeile der
+    // einzige Ort, an dem der Eintrag noch erreichbar ist.
+    private string Herkunft(LaufendeZeitmessung messung)
+    {
+        var teile = new List<string> { messung.Boardname, Zeitmesser(messung) };
+        if (messung.Archiviert)
+        {
+            teile.Add("archiviert");
+        }
+
+        var derZeitmesserArbeitetNichtMehrMit = messung.Zeiteintrag.Kontributor.StillgelegtAm is not null;
+        if (derZeitmesserArbeitetNichtMehrMit)
+        {
+            teile.Add("stillgelegt");
+        }
+
+        return string.Join(" · ", teile);
+    }
+
+    private string Zeitmesser(LaufendeZeitmessung messung)
+    {
+        var derTimerGehoertMir = Laufzeitliste.GehoertMir(messung, GewaehlteKontributorId);
+        if (derTimerGehoertMir)
+        {
+            return "für mich";
+        }
+
+        return messung.Zeiteintrag.Kontributor.Name;
+    }
+}

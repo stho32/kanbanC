@@ -159,6 +159,23 @@ public sealed class TestZeitenRepository : IZeitenRepository
         return new Kartendetail(karte, 1, "Entwicklung", 1, "Backlog", null, [], [], [], [], [], [], null, verbliebene);
     }
 
+    // Hält denselben Vertrag wie das echte Repository: alle Einträge ohne Ende, in Beginn-Folge
+    // mit der ZeiteintragId als Zweitschlüssel — und nie null, auch wenn keiner läuft.
+    // Karte und Ort entstehen als Hülle wie beim Restkartendetail: der Dienst reicht die Liste
+    // unverändert durch, und mehr braucht kein Test dieser Ebene.
+    public IReadOnlyList<LaufendeZeitmessung> LiesLaufende()
+    {
+        var laufende = _zeiteintraege.Where(eintrag => eintrag.Ende is null);
+        var inBeginnFolge = laufende.OrderBy(eintrag => eintrag.Beginn).ThenBy(eintrag => eintrag.ZeiteintragId);
+        return inBeginnFolge.Select(AlsLaufendeZeitmessung).ToList();
+    }
+
+    private static LaufendeZeitmessung AlsLaufendeZeitmessung(Zeiteintrag eintrag)
+    {
+        var karte = new Karte(eintrag.Karte, "Migration schreiben", 1, null, null, null, Kartenfarbe.Ohne, Kontributor: null, Kartennummer: null);
+        return new LaufendeZeitmessung(eintrag, karte, 1, "Entwicklung", Archiviert: false);
+    }
+
     // Ein Eintrag, den es gibt — nur an einer anderen Karte. Für den Stopp ist er wie ein
     // unbekannter.
     public TestZeitenRepository MitLaufendemEintrag(long karteId, long kontributorId, DateTimeOffset beginn)

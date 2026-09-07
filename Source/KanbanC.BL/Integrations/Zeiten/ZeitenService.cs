@@ -165,6 +165,13 @@ public sealed class ZeitenService
         return Ergebnis<Kartendetail>.Erfolg(detail!);
     }
 
+    // **Kein Ergebnis<T>:** es gibt nichts zurückzuweisen — der Aufruf nennt keine Nummer und
+    // setzt keinen Bestand voraus. Läuft nichts, ist die leere Liste die vollständige Antwort.
+    public IReadOnlyList<LaufendeZeitmessung> LiesLaufende()
+    {
+        return _zeitenRepository.LiesLaufende();
+    }
+
     // Gibt es schon die Karte nicht, schickt ein Befund über den Zeiteintrag den Aufrufer auf eine
     // Kartenadresse, die selbst 404 antwortet — die Kompensation wäre nicht ausführbar. Dieselbe
     // Trennung wie bei BefundZumFehlendenDateiverweis.

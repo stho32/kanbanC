@@ -15,6 +15,7 @@ public class ZeitenEndpunkteTests
 {
     private const string BoardsRoute = "/api/boards";
     private const string KontributorenRoute = "/api/kontributoren";
+    private const string LaufendeZeitmessungenroute = "/api/zeiten/laufend";
     private static readonly DateTimeOffset GesternZwoelfUhr = new(2026, 9, 5, 12, 0, 0, TimeSpan.Zero);
     private static readonly DateTimeOffset GesternHalbZwei = new(2026, 9, 5, 13, 30, 0, TimeSpan.Zero);
     private static readonly DateTimeOffset GesternZweiUhr = new(2026, 9, 5, 14, 0, 0, TimeSpan.Zero);
@@ -574,10 +575,10 @@ public class ZeitenEndpunkteTests
         Assert.That(detail.Zeiteintraege[0].Beginn, Is.EqualTo(gestarteter.Beginn));
     }
 
-    // Genau fünf Zeitenrouten: starten, beenden, nachtragen, ändern und löschen.
-    // GET /api/zeiten/laufend bleibt der Kopfzeilenübersicht aus I0027 und entsteht hier nicht.
+    // Genau sechs Zeitenrouten: starten, beenden, nachtragen, ändern, löschen — und die eine
+    // board- und kartenlose, die alle laufenden Timer nennt.
     [Test]
-    public void Wenn_die_Routen_der_WebApi_gelesen_werden_dann_gibt_es_genau_die_fuenf_Zeitenrouten()
+    public void Wenn_die_Routen_der_WebApi_gelesen_werden_dann_gibt_es_genau_die_sechs_Zeitenrouten()
     {
         using var datenbank = new TemporaereDatenbank();
         using var webApi = new TestWebApi(datenbank.Dateipfad);
@@ -591,7 +592,147 @@ public class ZeitenEndpunkteTests
             "POST /api/karten/{karteId:long}/zeiten",
             "PUT /api/karten/{karteId:long}/zeiten/{zeiteintragId:long}",
             "DELETE /api/karten/{karteId:long}/zeiten/{zeiteintragId:long}",
+            "GET /api/zeiten/laufend",
         }));
+    }
+
+    // Die Adresse nennt weder ein Board noch eine Karte: der Gegenstand hängt an keinem von
+    // beiden, und eine kartengebundene Adresse könnte die Frage „alle" gar nicht stellen.
+    [Test]
+    public void Wenn_die_Routen_der_WebApi_gelesen_werden_dann_traegt_die_Uebersicht_der_laufenden_Timer_weder_Board_noch_Karte()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+
+        var uebersichtsroute = Zeitenrouten(webApi.Routen).Single(route => route.StartsWith("GET ", StringComparison.Ordinal));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(uebersichtsroute, Does.Not.Contain("boardId"));
+            Assert.That(uebersichtsroute, Does.Not.Contain("karteId"));
+        });
+    }
+
+    // Über **alle** Boards: das ist die Auskunft, die Board.LaufendeZeiteintraege nicht geben kann.
+    [Test]
+    public async Task Wenn_auf_zwei_Boards_ein_Timer_laeuft_dann_antwortet_die_Uebersicht_mit_200_und_beiden_Eintraegen()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await LegeAufbauAn(webApi);
+        await StarteZeitmessung(webApi, aufbau.ErsteKarteId, aufbau.Stefan.KontributorId);
+        await StarteZeitmessung(webApi, aufbau.NachbarkarteId, aufbau.Agent.KontributorId);
+
+        var antwort = await webApi.Klient.GetAsync(LaufendeZeitmessungenroute);
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var laufende = await antwort.Content.ReadFromJsonAsync<List<LaufendeZeitmessung>>();
+        Assert.That(laufende, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(laufende![0].Karte.KarteId, Is.EqualTo(aufbau.ErsteKarteId));
+            Assert.That(laufende[0].Boardname, Is.EqualTo("Entwicklung"));
+            Assert.That(laufende[1].Karte.KarteId, Is.EqualTo(aufbau.NachbarkarteId));
+            Assert.That(laufende[1].Boardname, Is.EqualTo("Beschaffung"));
+            Assert.That(laufende[1].Board, Is.Not.EqualTo(laufende[0].Board));
+        });
+    }
+
+    // Der Umschlag traegt den **unveraenderten** Zeiteintrag: dieselbe Gestalt wie in
+    // GET /api/karten/{karteId} — es gibt kein zweites Zeiteintrag-DTO.
+    [Test]
+    public async Task Wenn_ein_Timer_laeuft_dann_hat_sein_Zeiteintrag_dieselbe_Gestalt_wie_im_Kartendetail()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await LegeAufbauAn(webApi);
+        await StarteZeitmessung(webApi, aufbau.ErsteKarteId, aufbau.Agent.KontributorId);
+        var detail = await LadeKartendetail(webApi, aufbau.ErsteKarteId);
+
+        var laufende = await LadeLaufendeZeitmessungen(webApi);
+
+        Assert.That(laufende, Has.Count.EqualTo(1));
+        Assert.That(laufende[0].Zeiteintrag, Is.EqualTo(detail.Zeiteintraege[0]));
+        Assert.Multiple(() =>
+        {
+            Assert.That(laufende[0].Zeiteintrag.Ende, Is.Null);
+            Assert.That(laufende[0].Zeiteintrag.Kontributor.Name, Is.EqualTo("Claude-Agent"));
+            Assert.That(laufende[0].Zeiteintrag.Kontributor.Art, Is.EqualTo(Kontributorart.Agent));
+            Assert.That(laufende[0].Karte.Titel, Is.EqualTo("Migration schreiben"));
+            Assert.That(laufende[0].Archiviert, Is.False);
+        });
+    }
+
+    // **Immer 200, nie 404:** es fehlt nichts, und ein 404 waere eine Meldung ohne
+    // Kompensationsaktion.
+    [Test]
+    public async Task Wenn_kein_Timer_laeuft_dann_antwortet_die_Uebersicht_mit_200_und_einer_leeren_Liste()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        await LegeAufbauAn(webApi);
+
+        var antwort = await webApi.Klient.GetAsync(LaufendeZeitmessungenroute);
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var laufende = await antwort.Content.ReadFromJsonAsync<List<LaufendeZeitmessung>>();
+        Assert.That(laufende, Is.Empty);
+    }
+
+    // Ein beendeter Eintrag zaehlt nicht mehr mit — und die neue Route verdeckt die bestehende
+    // Stoppadresse nicht.
+    [Test]
+    public async Task Wenn_ein_Timer_ueber_die_Stoppadresse_beendet_wird_dann_faellt_er_aus_der_Uebersicht()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await LegeAufbauAn(webApi);
+        await StarteZeitmessung(webApi, aufbau.ErsteKarteId, aufbau.Stefan.KontributorId);
+        var zweiter = await StarteZeitmessung(webApi, aufbau.NachbarkarteId, aufbau.Agent.KontributorId);
+
+        var beendeter = await BeendeZeitmessung(webApi, aufbau.NachbarkarteId, zweiter.ZeiteintragId);
+
+        var laufende = await LadeLaufendeZeitmessungen(webApi);
+        Assert.That(laufende, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(laufende[0].Karte.KarteId, Is.EqualTo(aufbau.ErsteKarteId));
+            Assert.That(beendeter.Ende, Is.Not.Null);
+            Assert.That(beendeter.Kontributor.KontributorId, Is.EqualTo(aufbau.Agent.KontributorId));
+        });
+    }
+
+    // Die Reihenfolge ist Beginn aufsteigend; „eigene zuerst" entsteht in der Oberflaeche, weil
+    // die API kein „mich" kennt.
+    [Test]
+    public async Task Wenn_mehrere_Timer_laufen_dann_kommen_sie_in_Beginn_Folge()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await LegeAufbauAn(webApi);
+        var erster = await StarteZeitmessung(webApi, aufbau.ErsteKarteId, aufbau.Stefan.KontributorId);
+        var zweiter = await StarteZeitmessung(webApi, aufbau.ZweiteKarteId, aufbau.Stefan.KontributorId);
+
+        var laufende = await LadeLaufendeZeitmessungen(webApi);
+
+        Assert.That(laufende.Select(messung => messung.Zeiteintrag.ZeiteintragId), Is.EqualTo(new[] { erster.ZeiteintragId, zweiter.ZeiteintragId }));
+    }
+
+    // Ein stillgelegter Zeitmesser behaelt seine Zeile: sonst waere sein Timer unbeendbar.
+    [Test]
+    public async Task Wenn_der_Zeitmesser_nach_dem_Start_stillgelegt_wird_dann_bleibt_seine_Zeile_in_der_Uebersicht()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await LegeAufbauAn(webApi);
+        await StarteZeitmessung(webApi, aufbau.ErsteKarteId, aufbau.Agent.KontributorId);
+        var stillgelegt = await webApi.Klient.PutAsJsonAsync($"{KontributorenRoute}/{aufbau.Agent.KontributorId}/stilllegung", new Stilllegung(true));
+        stillgelegt.EnsureSuccessStatusCode();
+
+        var laufende = await LadeLaufendeZeitmessungen(webApi);
+
+        Assert.That(laufende, Has.Count.EqualTo(1));
+        Assert.That(laufende[0].Zeiteintrag.Kontributor.StillgelegtAm, Is.Not.Null);
     }
 
     // Der long-Constraint trennt die Nummer vom Wort: „…/zeiten/laufend" und
@@ -1097,6 +1238,13 @@ public class ZeitenEndpunkteTests
         var zeiteintrag = await antwort.Content.ReadFromJsonAsync<Zeiteintrag>();
         Assert.That(zeiteintrag, Is.Not.Null);
         return zeiteintrag!;
+    }
+
+    private static async Task<IReadOnlyList<LaufendeZeitmessung>> LadeLaufendeZeitmessungen(TestWebApi webApi)
+    {
+        var laufende = await webApi.Klient.GetFromJsonAsync<List<LaufendeZeitmessung>>(LaufendeZeitmessungenroute);
+        Assert.That(laufende, Is.Not.Null);
+        return laufende!;
     }
 
     private static IReadOnlyList<string> Zeitenrouten(IReadOnlyList<string> alleRouten)

@@ -12,6 +12,7 @@
 @inject KartenklassenApiKlient KartenklassenKlient
 @inject KontributorenApiKlient KontributorenKlient
 @inject ZeitenApiKlient ZeitenKlient
+@inject Laufzeitmelder Laufzeitmelder
 @inject Identitaetsspeicher Identitaetsspeicher
 @inject Pfadkopie Pfadkopie
 @inject Anhangbasisadresse Anhangbasis
@@ -1355,6 +1356,7 @@ else
         }
 
         _detail = _detail! with { Zeiteintraege = MitEintrag(_detail.Zeiteintraege, ergebnis.Wert) };
+        Laufzeitmelder.Melde();
     }
 
     // Zurück kommt der Zeiteintrag und nicht die ganze Seite: die Route legt eine Zeile an, und
@@ -1369,6 +1371,7 @@ else
         }
 
         _detail = _detail! with { Zeiteintraege = MitEintrag(_detail.Zeiteintraege, ergebnis.Wert) };
+        Laufzeitmelder.Melde();
     }
 
     // Höchstens **ein** Zeitenformular steht offen: der Nachtrag am Fuß oder genau eine Zeile.
@@ -1459,6 +1462,9 @@ else
 
         _detail = _detail! with { Zeiteintraege = MitEintrag(_detail.Zeiteintraege, ergebnis.Wert) };
         _offeneZeiteintragId = null;
+        // Eine Änderung kann einen Eintrag beenden oder wieder laufen lassen — für die Kopfzeile
+        // ist das derselbe Anlass wie ein Start oder Stopp.
+        Laufzeitmelder.Melde();
     }
 
     private async Task LoescheZeiteintrag(Zeiteintrag eintrag)
@@ -1480,6 +1486,9 @@ else
 
         _detail = ergebnis.Wert;
         _offeneZeiteintragId = null;
+        // Gelöscht wird auch ein laufender Eintrag; ohne die Meldung zählte die Kopfzeile ihn
+        // weiter mit.
+        Laufzeitmelder.Melde();
     }
 
     // Ersetzen statt anhängen: ein zweiter Start auf derselben Karte liefert **denselben** Eintrag

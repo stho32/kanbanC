@@ -319,3 +319,4 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-06 | R00027 Timer stoppen | I0024 Lauf gesamt, 7 Bubbles B0330-B0336 (Station S6 ohne Bubble-Commits) | Standard | 9,2-12,3h | 0,8h | 0,8h | autonom |
 | 2026-09-06 | R00028 Zeiten einer Karte sehen | I0026 Lauf gesamt, 9 Bubbles B0349-B0357 (Station S6 ohne Bubble-Commits) | Standard | 8,4-13,7h | 1,3h | 1,3h | autonom |
 | 2026-09-06 | R00029 Zeiteintrag nachtragen und ändern | I0025 Lauf gesamt, 12 Bubbles B0337-B0348 (Station S6 ohne Bubble-Commits, inkl. Review und Nacharbeit) | Standard | 12,8-18,1h | 1,7h | — | autonom |
+| 2026-09-07 | R00030 Laufende Timer sehen | I0027 Lauf gesamt, 11 Bubbles B0358-B0368 (Station S6 ohne Bubble-Commits, inkl. Review und Nacharbeit) | Standard | 12,4-18,8h | 1,4h | — | autonom |

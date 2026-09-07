@@ -1,0 +1,80 @@
+/* Flach und chronologisch: eine Zeile je laufendem Eintrag, keine Gruppen und keine Trenner
+   dazwischen — die Zeitfolge ist die Ordnung. */
+.laufzeitliste {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.laufzeitkopf {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    font-size: 13px;
+    border-radius: var(--radius-lg);
+}
+
+.laufzeitzeile .kuerzel {
+    flex: 0 0 20px;
+    width: 20px;
+    height: 20px;
+    font-size: 9px;
+}
+
+/* Der Titel ist der Weg auf die Kartenseite und trägt die Grundfarbe weiter — ein blauer Link
+   stünde quer zum Klima. Er kürzt mit Auslassungspunkten, damit ein langer Kartentitel das
+   Popover nicht breiter macht. */
+.laufzeitkarte {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--color-text);
+    text-decoration: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.laufzeitkarte:hover {
+    text-decoration: underline;
+    text-decoration-color: var(--color-accent);
+}
+
+/* Die Startzeit statt einer Dauer: auf einer Zeile wäre die Dauer zwar eindeutig, aber ab der
+   ersten Sekunde ebenso falsch wie in der Plakette. */
+.laufzeitbeginn {
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-accent-700);
+}
+
+/* Die einzige Handlung der Zeile — an **jeder**, auch an einer fremden. Einen Startknopf gibt es
+   hier nicht: ein Start braucht eine Karte. */
+.laufzeitstopp {
+    display: inline-flex;
+    flex: 0 0 20px;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    color: var(--color-bg);
+    background: var(--color-accent);
+    border: none;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+}
+
+.laufzeitstopp svg {
+    display: block;
+}
+
+/* Board und Kontributor stehen unter der Zeile, eingerückt bis unter den Kartentitel. */
+.laufzeitmeta {
+    display: block;
+    padding: 0 var(--space-2) var(--space-1) var(--space-8);
+    font-size: 11px;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}

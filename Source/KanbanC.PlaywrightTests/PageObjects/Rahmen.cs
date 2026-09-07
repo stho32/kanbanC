@@ -55,9 +55,44 @@ public sealed class Rahmen
 
     public ILocator Seitenleiste => _seite.Locator(".sidebar");
 
+    // Die Plakette der laufenden Timer und ihr Popover wohnen in derselben Kopfzeile wie die
+    // Identitätswahl — ein zweites Seitenobjekt wäre eine zweite Adresse für denselben Ort.
+    public ILocator Laufzeitzaehler => _seite.Locator("#laufzeitzaehler");
+
+    public ILocator Laufzeitpopover => _seite.Locator("#laufzeitpopover");
+
+    public ILocator Laufzeitzeilen => _seite.Locator("#laufzeitliste .laufzeitzeile");
+
+    public ILocator Laufzeitzeile(long zeiteintragId)
+    {
+        return _seite.Locator($"#laufzeitliste [data-laufzeit='{zeiteintragId}']");
+    }
+
+    public ILocator LaufzeitKartenverweis(long zeiteintragId)
+    {
+        return _seite.Locator($"#laufzeit-karte-{zeiteintragId}");
+    }
+
+    public ILocator LaufzeitStoppquadrat(long zeiteintragId)
+    {
+        return _seite.Locator($"#laufzeit-stoppen-{zeiteintragId}");
+    }
+
+    public ILocator Laufzeitbeginne => _seite.Locator("#laufzeitliste .laufzeitbeginn");
+
+    public ILocator Laufzeitherkuenfte => _seite.Locator("#laufzeitliste .laufzeitmeta");
+
+    public ILocator Laufzeitkuerzel => _seite.Locator("#laufzeitliste .kuerzel");
+
     public async Task OeffneIdentitaetswahl()
     {
         await Identitaetsplatz.ClickAsync();
         await Assertions.Expect(Identitaetspopover).ToBeVisibleAsync();
+    }
+
+    public async Task OeffneLaufzeitliste()
+    {
+        await Laufzeitzaehler.ClickAsync();
+        await Assertions.Expect(Laufzeitpopover).ToBeVisibleAsync();
     }
 }

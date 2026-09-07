@@ -13,6 +13,7 @@ public class ZeitenApiKlientTests
     private const string BeendeterEintrag = """{"zeiteintragId":7,"karte":14,"kontributor":{"kontributorId":3,"name":"Stefan","art":"Mensch","stillgelegtAm":null},"beginn":"2026-09-06T08:04:00+00:00","ende":"2026-09-06T09:40:00+00:00"}""";
     private const string LeeresKartendetail = """{"karte":{"karteId":14,"titel":"Migration schreiben","spalte":1,"beschreibung":null,"faelligAm":null,"startAm":null,"farbe":"Ohne","kontributor":null,"kartennummer":null},"board":1,"boardname":"Entwicklung","spalte":1,"spaltenbezeichnung":"Backlog","verantwortlicher":null,"etiketten":[],"etikettvorschlaege":[],"teilaufgaben":[],"kommentare":[],"anhaenge":[],"dateiverweise":[],"kartenklasse":null,"zeiteintraege":[]}""";
     private const string LaufenderEintrag = """{"zeiteintragId":7,"karte":14,"kontributor":{"kontributorId":3,"name":"Stefan","art":"Mensch","stillgelegtAm":null},"beginn":"2026-09-06T08:04:00+00:00","ende":null}""";
+    private const string ZweiLaufendeZeitmessungen = """[{"zeiteintrag":{"zeiteintragId":8,"karte":21,"kontributor":{"kontributorId":3,"name":"Stefan","art":"Mensch","stillgelegtAm":null},"beginn":"2026-09-06T08:04:00+00:00","ende":null},"karte":{"karteId":21,"titel":"Timer starten und stoppen","position":1,"erledigtAm":null,"beschreibung":null,"faelligAm":null,"farbe":"Ohne","kontributor":null,"kartennummer":"WBS-21"},"board":1,"boardname":"KanbanC \u2014 Release 2","archiviert":false},{"zeiteintrag":{"zeiteintragId":9,"karte":14,"kontributor":{"kontributorId":4,"name":"Claude","art":"Agent","stillgelegtAm":null},"beginn":"2026-09-06T09:12:00+00:00","ende":null},"karte":{"karteId":14,"titel":"WBS-Import: Markdown-Baum","position":1,"erledigtAm":null,"beschreibung":null,"faelligAm":null,"farbe":"Ohne","kontributor":null,"kartennummer":"WBS-14"},"board":2,"boardname":"Beschaffung","archiviert":true}]""";
 
     [Test]
     public async Task Wenn_die_WebApi_den_Timer_startet_dann_traegt_das_Ergebnis_den_Eintrag_ohne_Ende()
@@ -314,5 +315,81 @@ public class ZeitenApiKlientTests
         var klient = new ZeitenApiKlient(fabrik);
 
         Assert.That(async () => await klient.Loesche(14, 7), Throws.InvalidOperationException);
+    }
+
+    // Die Adresse trägt weder Board noch Karte: der Gegenstand hängt an keinem von beiden.
+    [Test]
+    public async Task Wenn_die_laufenden_Timer_geladen_werden_dann_lautet_die_Adresse_api_zeiten_laufend_und_der_Aufruf_traegt_keinen_Rumpf()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, ZweiLaufendeZeitmessungen, JsonInhaltstyp);
+        var klient = new ZeitenApiKlient(fabrik);
+
+        await klient.LadeLaufende();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("GET http://webapi.test/api/zeiten/laufend"));
+            Assert.That(fabrik.GesendeterRumpf, Is.Null);
+        });
+    }
+
+    // Der Umschlag trägt den unveränderten Zeiteintrag, die ganze Karte und den Ort — sonst
+    // müsste die Zeile Kartennummer und Boardname nachladen.
+    [Test]
+    public async Task Wenn_zwei_Timer_laufen_dann_traegt_das_Ergebnis_je_Eintrag_Zeiteintrag_Karte_und_Ort()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, ZweiLaufendeZeitmessungen, JsonInhaltstyp);
+        var klient = new ZeitenApiKlient(fabrik);
+
+        var laufende = await klient.LadeLaufende();
+
+        Assert.That(laufende, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(laufende[0].Zeiteintrag.ZeiteintragId, Is.EqualTo(8));
+            Assert.That(laufende[0].Zeiteintrag.Kontributor.Name, Is.EqualTo("Stefan"));
+            Assert.That(laufende[0].Zeiteintrag.Ende, Is.Null);
+            Assert.That(laufende[0].Karte.Kartennummer, Is.EqualTo("WBS-21"));
+            Assert.That(laufende[0].Board, Is.EqualTo(1));
+            Assert.That(laufende[0].Archiviert, Is.False);
+            Assert.That(laufende[1].Boardname, Is.EqualTo("Beschaffung"));
+            Assert.That(laufende[1].Archiviert, Is.True);
+        });
+    }
+
+    // Läuft nichts, ist die leere Liste die vollständige Antwort — nicht null und kein Fehler.
+    [Test]
+    public async Task Wenn_kein_Timer_laeuft_dann_ergibt_der_Abruf_eine_leere_Liste()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, "[]", JsonInhaltstyp);
+        var klient = new ZeitenApiKlient(fabrik);
+
+        var laufende = await klient.LadeLaufende();
+
+        Assert.That(laufende, Is.Empty);
+    }
+
+    // Eine Antwort ohne Rumpf ist keine Liste: der Klient gibt die leere zurück, statt null
+    // weiterzureichen.
+    [Test]
+    public async Task Wenn_die_WebApi_keine_Liste_liefert_dann_ergibt_der_Abruf_eine_leere_Liste()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, "null", JsonInhaltstyp);
+        var klient = new ZeitenApiKlient(fabrik);
+
+        var laufende = await klient.LadeLaufende();
+
+        Assert.That(laufende, Is.Empty);
+    }
+
+    // Der Ausfall läuft bis zum Aufrufer durch: die Ausfallmeldung entsteht in der Kopfzeile,
+    // nicht im Klienten. Über den Browser ist dieser Pfad nicht auslösbar.
+    [Test]
+    public void Wenn_die_WebApi_beim_Laden_der_laufenden_Timer_ausfaellt_dann_laeuft_der_Fehler_bis_zum_Aufrufer_durch()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.ServiceUnavailable, string.Empty, JsonInhaltstyp);
+        var klient = new ZeitenApiKlient(fabrik);
+
+        Assert.That(async () => await klient.LadeLaufende(), Throws.InstanceOf<HttpRequestException>());
     }
 }

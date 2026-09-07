@@ -673,6 +673,200 @@ public class ZeitenRepositoryTests
         Assert.That(Zeiteintragszeilen(datenbank), Has.Length.EqualTo(1));
     }
 
+    // Der Test, den Board.LaufendeZeiteintraege nicht leisten kann: zwei laufende Einträge auf
+    // **zwei verschiedenen Boards** kommen beide zurück.
+    [Test]
+    public void Wenn_auf_zwei_Boards_ein_Timer_laeuft_dann_kommen_beide_mit_ihrem_Ort_zurueck()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var nachbarboard = LegeZweitesBoardAn(datenbank);
+        var nachbarkarteId = LegeKarteAn(datenbank, nachbarboard.BoardId, nachbarboard.Spalten[0].SpalteId, "WBS-Import: Markdown-Baum");
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+        repository.StarteZeitmessung(aufbau.ErsteKarteId, aufbau.StefanId, AchtUhrVier);
+        repository.StarteZeitmessung(nachbarkarteId, aufbau.AgentId, NeunUhrZwoelf);
+
+        var laufende = repository.LiesLaufende();
+
+        Assert.That(laufende, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(laufende[0].Karte.KarteId, Is.EqualTo(aufbau.ErsteKarteId));
+            Assert.That(laufende[0].Board, Is.EqualTo(aufbau.BoardId));
+            Assert.That(laufende[0].Boardname, Is.EqualTo("Entwicklung"));
+            Assert.That(laufende[1].Karte.KarteId, Is.EqualTo(nachbarkarteId));
+            Assert.That(laufende[1].Board, Is.EqualTo(nachbarboard.BoardId));
+            Assert.That(laufende[1].Boardname, Is.EqualTo("Beschaffung"));
+        });
+    }
+
+    // Der Umschlag legt nur den Ort dazu: der Zeiteintrag reist unverändert weiter, mit ganzem
+    // Kontributor und ohne Ende.
+    [Test]
+    public void Wenn_ein_Timer_laeuft_dann_traegt_der_Umschlag_den_unveraenderten_Zeiteintrag()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+        var start = repository.StarteZeitmessung(aufbau.ErsteKarteId, aufbau.StefanId, AchtUhrVier);
+
+        var laufende = repository.LiesLaufende();
+
+        Assert.That(laufende, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(laufende[0].Zeiteintrag.ZeiteintragId, Is.EqualTo(start!.Zeiteintrag.ZeiteintragId));
+            Assert.That(laufende[0].Zeiteintrag.Karte, Is.EqualTo(aufbau.ErsteKarteId));
+            Assert.That(laufende[0].Zeiteintrag.Kontributor.Name, Is.EqualTo("Stefan"));
+            Assert.That(laufende[0].Zeiteintrag.Kontributor.Art, Is.EqualTo(Kontributorart.Mensch));
+            Assert.That(laufende[0].Zeiteintrag.Beginn, Is.EqualTo(AchtUhrVier));
+            Assert.That(laufende[0].Zeiteintrag.Ende, Is.Null);
+        });
+    }
+
+    // Kartennummer und Titel stehen ohne zweiten Abruf in der Zeile — die Karte reist als ganze
+    // Karte, wie überall.
+    [Test]
+    public void Wenn_die_Karte_eine_Kartenklasse_traegt_dann_steht_ihre_Nummer_ohne_zweiten_Abruf_in_der_Zeile()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        OrdneKartenklasseZu(datenbank, aufbau.BoardId, aufbau.ErsteKarteId, "WBS-", 21);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+        repository.StarteZeitmessung(aufbau.ErsteKarteId, aufbau.StefanId, AchtUhrVier);
+
+        var laufende = repository.LiesLaufende();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(laufende[0].Karte.Kartennummer, Is.EqualTo("WBS-21"));
+            Assert.That(laufende[0].Karte.Titel, Is.EqualTo("Migration schreiben"));
+        });
+    }
+
+    // Eine Karte ohne Klasse trägt keine Nummer — die Zeile zeigt dann nur den Titel.
+    [Test]
+    public void Wenn_die_Karte_keine_Kartenklasse_traegt_dann_bleibt_die_Kartennummer_leer()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+        repository.StarteZeitmessung(aufbau.ErsteKarteId, aufbau.StefanId, AchtUhrVier);
+
+        var laufende = repository.LiesLaufende();
+
+        Assert.That(laufende[0].Karte.Kartennummer, Is.Null);
+    }
+
+    [Test]
+    public void Wenn_ein_Eintrag_abgeschlossen_ist_dann_kommt_er_nicht_mit()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+        var laufender = repository.StarteZeitmessung(aufbau.ErsteKarteId, aufbau.StefanId, AchtUhrVier);
+        var abgeschlossener = repository.TrageNach(aufbau.ZweiteKarteId, new ZeiteintragNachtragenAnfrage(aufbau.AgentId, AchtUhrVier, NeunUhrVierzig));
+
+        var laufende = repository.LiesLaufende();
+
+        Assert.That(laufende.Select(messung => messung.Zeiteintrag.ZeiteintragId), Is.EqualTo(new[] { laufender!.Zeiteintrag.ZeiteintragId }));
+        Assert.That(laufende.Select(messung => messung.Zeiteintrag.ZeiteintragId), Has.No.Member(abgeschlossener!.ZeiteintragId));
+    }
+
+    [Test]
+    public void Wenn_kein_Timer_laeuft_dann_ist_die_Liste_leer_und_nicht_null()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+
+        var laufende = repository.LiesLaufende();
+
+        Assert.That(laufende, Is.Empty);
+    }
+
+    // Ein laufender Timer auf einer archivierten Karte ist ein Befund, kein Rauschen — und diese
+    // Liste ist dann der einzige Ort, an dem er noch erreichbar ist.
+    [Test]
+    public void Wenn_die_Karte_archiviert_wird_dann_bleibt_ihr_laufender_Eintrag_stehen_und_ist_gekennzeichnet()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+        repository.StarteZeitmessung(aufbau.ErsteKarteId, aufbau.StefanId, AchtUhrVier);
+        ArchiviereKarte(datenbank, aufbau.ErsteKarteId);
+
+        var laufende = repository.LiesLaufende();
+
+        Assert.That(laufende, Has.Count.EqualTo(1));
+        Assert.That(laufende[0].Archiviert, Is.True);
+    }
+
+    // **Ein** Feld für Karte und Board: für den Leser ist die Folge dieselbe — die Karte steht in
+    // keiner Bahn mehr.
+    [Test]
+    public void Wenn_das_Board_archiviert_wird_dann_ist_der_laufende_Eintrag_seiner_Karte_ebenso_gekennzeichnet()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+        repository.StarteZeitmessung(aufbau.ErsteKarteId, aufbau.StefanId, AchtUhrVier);
+        ArchiviereBoard(datenbank, aufbau.BoardId);
+
+        var laufende = repository.LiesLaufende();
+
+        Assert.That(laufende, Has.Count.EqualTo(1));
+        Assert.That(laufende[0].Archiviert, Is.True);
+    }
+
+    [Test]
+    public void Wenn_weder_Karte_noch_Board_archiviert_sind_dann_ist_der_Eintrag_nicht_gekennzeichnet()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+        repository.StarteZeitmessung(aufbau.ErsteKarteId, aufbau.StefanId, AchtUhrVier);
+
+        var laufende = repository.LiesLaufende();
+
+        Assert.That(laufende[0].Archiviert, Is.False);
+    }
+
+    // Ein nach dem Start Stillgelegter behält seine Zeit: seine erfasste Zeit bleibt seine, und
+    // ohne diese Zeile wäre sein Timer unbeendbar.
+    [Test]
+    public void Wenn_der_Zeitmesser_nach_dem_Start_stillgelegt_wird_dann_bleibt_seine_Zeile_mit_ihrem_Stilllegungsstand()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+        repository.StarteZeitmessung(aufbau.ErsteKarteId, aufbau.AgentId, AchtUhrVier);
+        LegeKontributorStill(datenbank, aufbau.AgentId, "2026-09-06");
+
+        var laufende = repository.LiesLaufende();
+
+        Assert.That(laufende, Has.Count.EqualTo(1));
+        Assert.That(laufende[0].Zeiteintrag.Kontributor.StillgelegtAm, Is.EqualTo(new DateOnly(2026, 9, 6)));
+    }
+
+    // Beginn aufsteigend, die ZeiteintragId als Zweitschlüssel: die Vorrangordnung „eigene zuerst"
+    // entsteht in der Oberfläche, weil die Datenbank kein „mich" kennt.
+    [Test]
+    public void Wenn_mehrere_Timer_laufen_dann_stehen_sie_in_Beginn_Folge_mit_der_ZeiteintragId_als_Zweitschluessel()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new ZeitenRepository(datenbank.Verbindungsfabrik);
+        var spaeterer = repository.StarteZeitmessung(aufbau.ErsteKarteId, aufbau.StefanId, NeunUhrZwoelf);
+        var frueherer = repository.StarteZeitmessung(aufbau.ZweiteKarteId, aufbau.StefanId, AchtUhrVier);
+        var gleichzeitiger = repository.StarteZeitmessung(aufbau.KarteDerZweitenSpalteId, aufbau.StefanId, AchtUhrVier);
+
+        var laufende = repository.LiesLaufende();
+
+        var erwarteteFolge = new[] { frueherer!.Zeiteintrag.ZeiteintragId, gleichzeitiger!.Zeiteintrag.ZeiteintragId, spaeterer!.Zeiteintrag.ZeiteintragId };
+        Assert.That(laufende.Select(messung => messung.Zeiteintrag.ZeiteintragId), Is.EqualTo(erwarteteFolge));
+    }
+
     private static Testaufbau Aufbau(TemporaereDatenbank datenbank)
     {
         var board = LegeBoardAn(datenbank);
@@ -712,6 +906,34 @@ public class ZeitenRepositoryTests
         verbindung.Execute(@"
             INSERT INTO Kontributorstilllegung (Kontributor, StillgelegtAm)
             VALUES (@Kontributor, @StillgelegtAm)", new { Kontributor = kontributorId, StillgelegtAm = stillgelegtAm });
+    }
+
+    private static Board LegeZweitesBoardAn(TemporaereDatenbank datenbank)
+    {
+        var repository = new BoardRepository(datenbank.Verbindungsfabrik);
+        return repository.LegeAn(new BoardAnlegenAnfrage("Beschaffung", BoardArt.Linie, null, null), StandardspaltenVorlage.FuerNeuesBoard());
+    }
+
+    // Am Dienst vorbei: die Zuordnung einer Kartenklasse gehoert einem anderen Slice, hier braucht
+    // der Test nur ihre Wirkung auf die gebildete Kartennummer.
+    private static void OrdneKartenklasseZu(TemporaereDatenbank datenbank, long boardId, long karteId, string praefix, int zaehlerstand)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        var kartenklasseId = verbindung.ExecuteScalar<long>(@"
+            INSERT INTO Kartenklasse (Board, Name, Praefix, Zaehlerstand)
+            VALUES (@Board, @Name, @Praefix, @Zaehlerstand);
+            SELECT last_insert_rowid();", new { Board = boardId, Name = "Arbeitspaket", Praefix = praefix, Zaehlerstand = zaehlerstand });
+        verbindung.Execute(@"
+            INSERT INTO Kartenklassenzuordnung (Karte, Kartenklasse, Zaehlerstand)
+            VALUES (@Karte, @Kartenklasse, @Zaehlerstand)", new { Karte = karteId, Kartenklasse = kartenklasseId, Zaehlerstand = zaehlerstand });
+    }
+
+    private static void ArchiviereBoard(TemporaereDatenbank datenbank, long boardId)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Boardarchivierung (Board)
+            VALUES (@Board)", new { Board = boardId });
     }
 
     private static void ArchiviereKarte(TemporaereDatenbank datenbank, long karteId)

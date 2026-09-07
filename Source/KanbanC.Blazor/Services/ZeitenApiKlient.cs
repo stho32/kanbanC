@@ -10,6 +10,10 @@ public sealed class ZeitenApiKlient
 
     // Ohne Board in der Adresse: wer /karten/14 offen hat, kennt das Board nur aus der Antwort.
     private const string KartenRoute = "api/karten";
+
+    // Ohne Karte und ohne Board: die Kopfzeile fragt nach allen laufenden Timern und kennt
+    // keinen Ausschnitt.
+    private const string LaufendeRoute = "api/zeiten/laufend";
     private readonly IHttpClientFactory _klientFabrik;
 
     public ZeitenApiKlient(IHttpClientFactory klientFabrik)
@@ -66,6 +70,21 @@ public sealed class ZeitenApiKlient
         using var klient = _klientFabrik.CreateClient(KlientName);
         using var antwort = await klient.DeleteAsync($"{KartenRoute}/{karteId}/zeiten/{zeiteintragId}");
         return await AlsKartendetail(antwort);
+    }
+
+    // **Ohne ApiErgebnis:** die Route weist nichts zurück — es gibt keine Nummer im Aufruf und
+    // keinen Bestand, der fehlen könnte. Muster KontributorenApiKlient.LadeAlle; ein Ausfall
+    // läuft beim Aufrufer über WebApiAufruf.MitAusfallmeldung.
+    public async Task<IReadOnlyList<LaufendeZeitmessung>> LadeLaufende()
+    {
+        using var klient = _klientFabrik.CreateClient(KlientName);
+        var laufende = await klient.GetFromJsonAsync<List<LaufendeZeitmessung>>(LaufendeRoute);
+        if (laufende is null)
+        {
+            return [];
+        }
+
+        return laufende;
     }
 
     // 400 und 404 laufen denselben Weg, weil beide einen Befund der WebApi tragen.

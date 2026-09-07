@@ -148,7 +148,10 @@ internal static class Kartenleser
             Zeitenleser.LiesZeiteintraegeDerKarte(verbindung, transaktion, karteId));
     }
 
-    private static Karte AlsKarte(Kartenzeile zeile)
+    // Die Karte entsteht überall in derselben Gestalt — auch dort, wo ein anderer Leser sie
+    // als Beifang mitbringt. Ein zweiter Aufbau derselben Karte liefe bei der nächsten
+    // Ergänzung auseinander.
+    internal static Karte AlsKarte(Kartenzeile zeile)
     {
         return new Karte(
             zeile.KarteId,
@@ -246,7 +249,7 @@ internal static class Kartenleser
         return Enum.Parse<Kartenfarbe>(text);
     }
 
-    private sealed record Kartenzeile(
+    internal sealed record Kartenzeile(
         long KarteId,
         long Spalte,
         string Titel,

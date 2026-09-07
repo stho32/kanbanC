@@ -147,6 +147,61 @@
     transform: rotate(180deg);
 }
 
+/* Neben dem Identitätsplatz und nicht im Ausgabefeld kopfzeile-bedienung: das füllt die offene
+   Seite, diese Plakette gilt seitenübergreifend. Über der Auffangfläche wie der Identitätsplatz,
+   damit ein zweiter Klick auf die Plakette selbst sie wieder schließt. */
+.laufzeitplatz {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+}
+
+/* Dieselbe Pillenform wie der Identitätsplatz — zwei Fragen, zwei Knöpfe, eine Gestalt. */
+.kopfzeile-laufzeit {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    font: inherit;
+    font-size: 13px;
+    line-height: 1.2;
+    cursor: pointer;
+    border: 1px solid var(--color-accent);
+    border-radius: var(--radius-lg);
+}
+
+/* Gefüllt, sobald einer der laufenden Timer meiner ist; laufen nur fremde, ist sie ruhig und
+   zählt nur. Unterschieden wird über die **Füllung** und nicht über den Farbton: Olive und
+   Terrakotta tragen in diesem Canvas die Art des Kontributors. */
+.kopfzeile-laufzeit-eigen {
+    color: var(--color-bg);
+    background: var(--color-accent);
+}
+
+.kopfzeile-laufzeit-fremd {
+    color: var(--color-accent);
+    background: transparent;
+}
+
+.kopfzeile-laufzeit-fremd:hover {
+    background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+}
+
+.laufzeit-uhr {
+    display: block;
+}
+
+.kopfzeile-laufzeit[aria-expanded="true"] .identitaets-chevron {
+    transform: rotate(180deg);
+}
+
+/* Breiter als die Identitätswahl: eine Zeile trägt Kartennummer, Titel, Startzeit und das
+   Stoppquadrat. */
+.laufzeitpopover {
+    width: 316px;
+}
+
 /* Rechtsbündig unter der Pille, wie im Artboard (D0002.dc.html:355-386): der rechte Rand des
    Bandes ist derselbe Innenabstand, den die Zeile trägt. */
 .identitaetspopover {

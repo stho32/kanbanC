@@ -1,8 +1,11 @@
 @implements IDisposable
 @using KanbanC.Contracts.Kontributoren
+@using KanbanC.Contracts.Zeiten
 @inject NavigationManager Navigation
 @inject KontributorenApiKlient ApiKlient
+@inject ZeitenApiKlient ZeitenKlient
 @inject Identitaetsspeicher Identitaetsspeicher
+@inject Laufzeitmelder Laufzeitmelder
 
 <div class="kopfzeilenband" @onkeydown="AufTaste">
     <header class="kopfzeile" id="kopfzeile">
@@ -39,6 +42,20 @@
         @* Zone 3 — Werkzeuge und Identität, rechtsbündig. *@
         <div class="kopfzeile-werkzeuge">
             <SectionOutlet SectionName="kopfzeile-bedienung" />
+            @* Läuft nichts, steht hier nichts — kein Nullwert und keine graue Attrappe. Der
+               knappste Platz der Anwendung gehört dem, was gerade gilt. *@
+            @if (_laufzaehler is not null)
+            {
+                <div class="laufzeitplatz">
+                    <button type="button"
+                            class="kopfzeile-laufzeit @_laufzaehler.Fuellungsklasse"
+                            id="laufzeitzaehler"
+                            title="@_laufzaehler.Titel"
+                            aria-haspopup="true"
+                            aria-expanded="@Laufzeitstand()"
+                            @onclick="SchalteLaufzeitliste"><svg class="laufzeit-uhr" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3.5 2"></path></svg>@_laufzaehler.Beschriftung<svg class="identitaets-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
+                </div>
+            }
             <div class="identitaetsplatz">
                 <button type="button"
                         class="kopfzeile-identitaet"
@@ -52,7 +69,7 @@
 
     @* Die Wahl hängt am Band, nicht in der Zeile: die Zeile beschneidet ihren Inhalt, damit sie die
        Seite nicht breiter macht als das Fenster, und würde das Popover mit abschneiden. *@
-    @if (_popoverIstOffen)
+    @if (_offenesPopover == Kopfzeilenpopover.Identitaetswahl)
     {
         <div class="identitaets-auffangflaeche" id="identitaet-auffangflaeche" @onclick="SchliessePopover"></div>
         @* tabindex="-1": ein Klick auf einen Text im Popover setzt den Fokus damit auf das
@@ -64,25 +81,68 @@
                              Gewaehlt="UebernimmWahl" />
         </div>
     }
+
+    @if (_offenesPopover == Kopfzeilenpopover.Laufzeitliste)
+    {
+        <div class="identitaets-auffangflaeche" id="laufzeit-auffangflaeche" @onclick="SchliessePopover"></div>
+        <div class="identitaetspopover laufzeitpopover" id="laufzeitpopover" tabindex="-1">
+            <p class="identitaetspopover-titel">Läuft gerade …</p>
+            <Laufzeitpopover Laufende="_laufende"
+                             GewaehlteKontributorId="_gewaehlteKontributorId"
+                             Gestoppt="StoppeZeile" />
+        </div>
+    }
 </div>
 
 @code {
     private const string NichtGewaehlt = "nicht gewählt";
 
     private bool _einBoardIstOffen;
-    private bool _popoverIstOffen;
+
+    // **Ein** Zustand statt zweier Wahrheitswerte: höchstens eines der beiden Popover ist offen,
+    // und zwei Booleans ließen den Zustand zu, den es nicht geben darf.
+    private enum Kopfzeilenpopover
+    {
+        Keines,
+        Identitaetswahl,
+        Laufzeitliste,
+    }
+
+    private Kopfzeilenpopover _offenesPopover = Kopfzeilenpopover.Keines;
     private IReadOnlyList<Kontributor> _kontributoren = [];
+    private IReadOnlyList<LaufendeZeitmessung> _laufende = [];
     private long? _gewaehlteKontributorId;
+
+    private Laufzaehler? _laufzaehler;
 
     protected override async Task OnInitializedAsync()
     {
         UebernimmAdresse();
         Navigation.LocationChanged += AufAdresswechsel;
         Identitaetsspeicher.Gewechselt += AufIdentitaetswechsel;
+        Laufzeitmelder.Gemeldet += AufLaufzeitmeldung;
         // App.razor rendert mit prerender: false — der Kreislauf steht hier schon, ein
         // Interop-Aufruf trägt (belegt in SessionStorageProbeE2ETests).
         _gewaehlteKontributorId = await Identitaetsspeicher.Lies();
         await LadeKontributoren();
+        await LadeLaufende();
+    }
+
+    // Anders als die Kontributorenliste wird die Laufzeitliste bei **jedem** Anlass frisch geholt:
+    // eine Zahl in der Kopfzeile, die eine halbe Stunde alt ist, lügt — eine ungeänderte
+    // Kontributorenliste veraltet nur.
+    // Fällt die WebApi aus, bleibt die Stelle leer statt zu reißen: die Kopfzeile steht auf jeder
+    // Seite.
+    private async Task LadeLaufende()
+    {
+        var ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(async () => _laufende = await ZeitenKlient.LadeLaufende());
+        var dieWebApiIstNichtErreichbar = ausfallmeldung is not null;
+        if (dieWebApiIstNichtErreichbar)
+        {
+            _laufende = [];
+        }
+
+        _laufzaehler = Laufzaehler.Fuer(_laufende, _gewaehlteKontributorId);
     }
 
     // Die Liste wird je Blazor-Kreislauf einmal geholt, nicht je Seitenwechsel: die Kopfzeile
@@ -96,6 +156,27 @@
     {
         Navigation.LocationChanged -= AufAdresswechsel;
         Identitaetsspeicher.Gewechselt -= AufIdentitaetswechsel;
+        Laufzeitmelder.Gemeldet -= AufLaufzeitmeldung;
+    }
+
+    // Ein eigener Start oder Stopp auf der Kartenseite meldet sich, damit die Kopfzeile nicht
+    // unmittelbar nach der eigenen Handlung eine falsche Zahl zeigt.
+    // **Kein Live-Kanal:** was ein anderer Browser tut, erfährt diese Sitzung erst beim nächsten
+    // der vier Anlässe.
+    private void AufLaufzeitmeldung()
+    {
+        _ = HoleLaufendeNach();
+    }
+
+    // Beide Anlässe kommen aus einem Ereignis und damit möglicherweise von einem fremden Faden:
+    // der Abruf und das Neuzeichnen laufen deshalb über InvokeAsync im Kreislauf dieser Sitzung.
+    private async Task HoleLaufendeNach()
+    {
+        await InvokeAsync(async () =>
+        {
+            await LadeLaufende();
+            StateHasChanged();
+        });
     }
 
     // Gewählt wird auch auf der Kartenseite, wenn der Timer die Wahl erzwingt. Der Platz nennt
@@ -105,6 +186,8 @@
     private void AufIdentitaetswechsel(long? gewaehlteKontributorId)
     {
         _gewaehlteKontributorId = gewaehlteKontributorId;
+        // Die Füllung hängt an der Wahl: derselbe Bestand, ein anderes „mich".
+        _laufzaehler = Laufzaehler.Fuer(_laufende, _gewaehlteKontributorId);
         _ = InvokeAsync(StateHasChanged);
     }
 
@@ -113,6 +196,7 @@
         UebernimmAdresse();
         SchliessePopover();
         StateHasChanged();
+        _ = HoleLaufendeNach();
     }
 
     private void UebernimmAdresse()
@@ -125,19 +209,62 @@
     // weiterhin nichts geholt.
     private async Task SchaltePopover()
     {
-        _popoverIstOffen = !_popoverIstOffen;
-        var dieWahlWurdeGeschlossen = !_popoverIstOffen;
-        if (dieWahlWurdeGeschlossen)
+        var dieWahlStehtSchonOffen = _offenesPopover == Kopfzeilenpopover.Identitaetswahl;
+        if (dieWahlStehtSchonOffen)
         {
+            SchliessePopover();
             return;
         }
 
+        _offenesPopover = Kopfzeilenpopover.Identitaetswahl;
         await LadeKontributoren();
+    }
+
+    // Wer die Liste öffnet, will den jetzigen Stand sehen — sie geht über alle Boards und kann
+    // sich anderswo geändert haben. Geholt wird **vor** dem Öffnen, damit das Popover nie einen
+    // alten Stand zeigt.
+    private async Task SchalteLaufzeitliste()
+    {
+        var dieListeStehtSchonOffen = _offenesPopover == Kopfzeilenpopover.Laufzeitliste;
+        if (dieListeStehtSchonOffen)
+        {
+            SchliessePopover();
+            return;
+        }
+
+        await LadeLaufende();
+        var esLaeuftNichtsMehr = _laufende.Count == 0;
+        if (esLaeuftNichtsMehr)
+        {
+            SchliessePopover();
+            return;
+        }
+
+        _offenesPopover = Kopfzeilenpopover.Laufzeitliste;
+    }
+
+    // Die Zeilenhandlung beendet **genau diesen** Eintrag — auch den eines fremden Kontributors.
+    // Danach wird die Liste **frisch geholt** statt in der Hand nachgezogen: sie geht über alle
+    // Boards und kann sich unterdessen anderswo geändert haben.
+    private async Task StoppeZeile(LaufendeZeitmessung messung)
+    {
+        await WebApiAufruf.MitAusfallmeldung(() => BeendeZeitmessung(messung));
+        await LadeLaufende();
+        var esLaeuftNichtsMehr = _laufende.Count == 0;
+        if (esLaeuftNichtsMehr)
+        {
+            SchliessePopover();
+        }
+    }
+
+    private async Task BeendeZeitmessung(LaufendeZeitmessung messung)
+    {
+        await ZeitenKlient.BeendeZeitmessung(messung.Zeiteintrag.Karte, messung.Zeiteintrag.ZeiteintragId);
     }
 
     private void SchliessePopover()
     {
-        _popoverIstOffen = false;
+        _offenesPopover = Kopfzeilenpopover.Keines;
     }
 
     private void AufTaste(KeyboardEventArgs taste)
@@ -153,7 +280,17 @@
 
     private string Popoverstand()
     {
-        if (_popoverIstOffen)
+        if (_offenesPopover == Kopfzeilenpopover.Identitaetswahl)
+        {
+            return "true";
+        }
+
+        return "false";
+    }
+
+    private string Laufzeitstand()
+    {
+        if (_offenesPopover == Kopfzeilenpopover.Laufzeitliste)
         {
             return "true";
         }
