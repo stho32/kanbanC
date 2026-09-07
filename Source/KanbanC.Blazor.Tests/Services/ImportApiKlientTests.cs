@@ -18,6 +18,16 @@ public class ImportApiKlientTests
          "zeilen":[{"kennung":"I0001","ebene":"Interaction","wirkung":"Angelegt","grund":null,"kartennummer":null}]}
         """;
 
+    // Die Antwort eines Schreiblaufs: der Kopf des Laufs und an jeder angelegten Zeile die Nummer
+    // und die KarteId der Karte, die eben entstanden ist.
+    private const string Schreiblaufrumpf = """
+        {"angelegt":2,"geaendert":0,"unveraendert":0,"uebersprungen":1,"verwaist":0,
+         "kartenzahlen":{"dialog":1,"interaction":2,"feature":2,"bubble":2},
+         "laufkopf":{"zeitpunkt":"2026-09-07T12:12:00+00:00","urhebernummer":7,"urhebername":"Stefan","pfad":"Dokumentation/Planung/kanbanc.md"},
+         "zeilen":[{"kennung":"I0001","ebene":"Interaction","wirkung":"Angelegt","grund":null,"kartennummer":"WBS-32","karteId":4711},
+                   {"kennung":"I0022","ebene":null,"wirkung":"Uebersprungen","grund":"Der Status verworfen zählt nicht zum Umfang.","kartennummer":null,"karteId":null}]}
+        """;
+
     // Die Antwort eines zweiten Laufs: fünf Zahlen, vier Wirkungen, Kartennummern und Gründe an
     // den Zeilen.
     private const string Zweiterlaufrumpf = """
@@ -42,6 +52,50 @@ public class ImportApiKlientTests
             Assert.That(ergebnis.Wert.Angelegt, Is.EqualTo(41));
             Assert.That(ergebnis.Wert.Kartenzahlen.Bubble, Is.EqualTo(445));
             Assert.That(ergebnis.Wert.Zeilen[0].Wirkung, Is.EqualTo(Importwirkung.Angelegt));
+        });
+    }
+
+    // **Der Bericht der 201-Antwort ist die ganze Auskunft**: Kopf, Nummer und KarteId kommen an,
+    // ohne dass ein zweiter Aufruf nötig wäre.
+    [Test]
+    public async Task Wenn_der_Schreiblauf_antwortet_dann_kommen_Laufkopf_Nummer_und_KarteId_an()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.Created, Schreiblaufrumpf, JsonInhaltstyp);
+        var klient = new ImportApiKlient(fabrik);
+
+        var ergebnis = await klient.Importiere(4, Auftrag(trocken: false), Datei());
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.False);
+        var angelegte = ergebnis.Wert.Zeilen[0];
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Wert.Laufkopf, Is.Not.Null);
+            Assert.That(ergebnis.Wert.Laufkopf!.Urhebername, Is.EqualTo("Stefan"));
+            Assert.That(ergebnis.Wert.Laufkopf.Urhebernummer, Is.EqualTo(7));
+            Assert.That(ergebnis.Wert.Laufkopf.Pfad, Is.EqualTo("Dokumentation/Planung/kanbanc.md"));
+            Assert.That(ergebnis.Wert.Laufkopf.Zeitpunkt, Is.EqualTo(new DateTimeOffset(2026, 9, 7, 12, 12, 0, TimeSpan.Zero)));
+            Assert.That(angelegte.Kartennummer, Is.EqualTo("WBS-32"));
+            Assert.That(angelegte.KarteId, Is.EqualTo(4711));
+            Assert.That(ergebnis.Wert.Zeilen[1].KarteId, Is.Null, "Aus einer übersprungenen Zeile wurde nie eine Karte.");
+        });
+    }
+
+    // **Ein Bericht ohne Laufkopf bricht den Klienten nicht** — die Vorschau eines älteren Standes
+    // trägt keinen, und eine Ausnahme an dieser Stelle wäre über den Browser nicht zu sehen.
+    [Test]
+    public async Task Wenn_die_Antwort_keinen_Laufkopf_traegt_dann_bricht_der_Klient_nicht()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, Bilanzrumpf, JsonInhaltstyp);
+        var klient = new ImportApiKlient(fabrik);
+
+        var ergebnis = await klient.Importiere(4, Auftrag(trocken: true), Datei());
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Wert.Laufkopf, Is.Null);
+            Assert.That(ergebnis.Wert.Zeilen[0].KarteId, Is.Null);
+            Assert.That(ergebnis.Wert.Angelegt, Is.EqualTo(41));
         });
     }
 

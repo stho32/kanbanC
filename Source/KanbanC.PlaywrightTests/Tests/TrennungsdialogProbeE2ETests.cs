@@ -79,8 +79,11 @@ public class TrennungsdialogProbeE2ETests : PageTest
         var liste = new BoardsSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
         await liste.Oeffne();
         var trennungsdialog = Page.Locator("#components-reconnect-modal");
-        await Context.SetOfflineAsync(true);
+        // Erst schließen, dann offline: `close()` ist ein Handshake und braucht das Netz. Auf einem
+        // schon offline geschalteten Kontext bleibt die Verbindung in CLOSING stehen und meldet nie
+        // ein `close` — Blazor erführe vom Abriss nichts.
         await Page.EvaluateAsync(ReisseVerbindungen);
+        await Context.SetOfflineAsync(true);
         await Expect(trennungsdialog).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = SchrankeNachTrennung });
 
         await Context.SetOfflineAsync(false);

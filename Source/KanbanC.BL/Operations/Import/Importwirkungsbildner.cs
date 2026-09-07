@@ -22,7 +22,7 @@ public static class Importwirkungsbildner
         var wirkungen = new List<Kartenwirkung>();
         foreach (var entwurf in vergleich.ZuErstellen)
         {
-            wirkungen.Add(new Kartenwirkung(entwurf.Knoten.Id, Importwirkung.Angelegt, Kartennummer: null, Dublettenhinweis.Fuer(entwurf, kartenOhneKupplung)));
+            wirkungen.Add(new Kartenwirkung(entwurf.Knoten.Id, Importwirkung.Angelegt, Kartennummer: null, KarteId: null, Dublettenhinweis.Fuer(entwurf, kartenOhneKupplung)));
         }
 
         var aktualisierungen = new List<Kartenaktualisierungsauftrag>();
@@ -30,12 +30,12 @@ public static class Importwirkungsbildner
         {
             var auftrag = Auftrag(soll, ist, dateietiketten);
             aktualisierungen.Add(auftrag);
-            wirkungen.Add(new Kartenwirkung(soll.Knoten.Id, Importwirkung.Geaendert, ist.Kartennummer, Grund(baum, soll, ist, auftrag, spalten)));
+            wirkungen.Add(new Kartenwirkung(soll.Knoten.Id, Importwirkung.Geaendert, ist.Kartennummer, ist.KarteId, Grund(baum, soll, ist, auftrag, spalten)));
         }
 
         foreach (var (soll, ist) in vergleich.Unveraendert)
         {
-            wirkungen.Add(new Kartenwirkung(soll.Knoten.Id, Importwirkung.Unveraendert, ist.Kartennummer, Statusgrund(soll, ist, spalten)));
+            wirkungen.Add(new Kartenwirkung(soll.Knoten.Id, Importwirkung.Unveraendert, ist.Kartennummer, ist.KarteId, Statusgrund(soll, ist, spalten)));
         }
 
         return new Importwirkungsbildung(new Kartenwirkungen(wirkungen), Verwaistenzeilen(vergleich.Verwaist, pfad), aktualisierungen);
@@ -105,7 +105,8 @@ public static class Importwirkungsbildner
     }
 
     // Verwaiste Karten stehen **hinter** den Dateizeilen und tragen deshalb keine Zeilennummer:
-    // sie stehen nicht mehr in der Datei.
+    // sie stehen nicht mehr in der Datei. Ihre KarteId reist trotzdem mit — die Kompensationsaktion
+    // lautet „archivieren“, und wer archivieren soll, muss zu ihr hinkommen.
     private static IReadOnlyList<Importzeile> Verwaistenzeilen(IReadOnlyList<Karteniststand> verwaiste, string pfad)
     {
         var zeilen = new List<Importzeile>();
@@ -113,7 +114,7 @@ public static class Importwirkungsbildner
         {
             var knotenId = Herkunftsverweis.KnotenIdAus(Karteniststaende.Kupplung(stand, pfad)!)!;
             var ebene = Knotenkennung.EbeneAus(knotenId);
-            zeilen.Add(new Importzeile(knotenId, ebene?.ToString(), Importwirkung.Verwaist, Verwaistengrund.Fuer(stand), stand.Kartennummer));
+            zeilen.Add(new Importzeile(knotenId, ebene?.ToString(), Importwirkung.Verwaist, Verwaistengrund.Fuer(stand), stand.Kartennummer, stand.KarteId));
         }
 
         return zeilen;

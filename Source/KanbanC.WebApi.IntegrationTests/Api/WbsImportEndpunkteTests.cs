@@ -127,6 +127,122 @@ public class WbsImportEndpunkteTests
         });
     }
 
+    // **Das Fertig-Kriterium von F0058 als Testfall:** die 201-Antwort ist der Bericht, und jede
+    // angelegte Zeile nennt eine Karte, die es wirklich gibt — nachgewiesen durch den Abruf unter
+    // genau dieser KarteId.
+    [Test]
+    public async Task Wenn_ohne_trocken_geschrieben_wird_dann_zeigt_jede_angelegte_Zeile_auf_eine_wirklich_vorhandene_Karte()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await Aufbau(webApi);
+
+        using var antwort = await webApi.Klient.PostAsync(Importroute(aufbau.Board.BoardId), Rumpf(aufbau, trocken: "false"));
+
+        Assert.That(antwort.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+        var bericht = await AlsBericht(antwort);
+        var angelegte = bericht.Zeilen.Where(zeile => zeile.Wirkung == Importwirkung.Angelegt).ToList();
+        Assert.That(angelegte, Has.Count.EqualTo(2));
+        foreach (var zeile in angelegte)
+        {
+            Assert.That(zeile.KarteId, Is.Not.Null, $"Die Zeile {zeile.Kennung} nennt keine KarteId.");
+            var detail = await webApi.Klient.GetFromJsonAsync<KanbanC.Contracts.Karten.Kartendetail>($"/api/karten/{zeile.KarteId!.Value}");
+            Assert.That(detail, Is.Not.Null, $"Die KarteId {zeile.KarteId} findet keine Karte.");
+            Assert.That(detail!.Karte.Kartennummer, Is.EqualTo(zeile.Kartennummer));
+            Assert.That(detail.Karte.Titel, Does.Contain(zeile.Kennung));
+        }
+    }
+
+    // **Die Ankuendigung nennt keine Nummer**: die Karte gibt es noch nicht, und der Unterschied
+    // zwischen „so sähe es aus" und „so ist es jetzt" ist Absicht, keine Luecke.
+    [Test]
+    public async Task Wenn_trocken_gesetzt_ist_dann_bleiben_die_angelegten_Zeilen_ohne_Nummer_und_ohne_KarteId()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await Aufbau(webApi);
+
+        using var antwort = await webApi.Klient.PostAsync(Importroute(aufbau.Board.BoardId), Rumpf(aufbau, trocken: "true"));
+
+        var bericht = await AlsBericht(antwort);
+        var angelegte = bericht.Zeilen.Where(zeile => zeile.Wirkung == Importwirkung.Angelegt).ToList();
+        Assert.Multiple(() =>
+        {
+            Assert.That(angelegte.Select(zeile => zeile.Kartennummer), Is.All.Null);
+            Assert.That(angelegte.Select(zeile => zeile.KarteId), Is.All.Null);
+        });
+        Assert.That(await Kartenzahl(webApi, aufbau.Board.BoardId), Is.Zero, "Ein trockener Lauf hat geschrieben.");
+    }
+
+    // Der Kopf steht **im Bericht**: sonst haette ihn weder der Agent noch der kopierte Text. Der
+    // Pfad ist der der Anfrage, nicht der Dateiname allein.
+    [Test]
+    public async Task Wenn_der_Bericht_kommt_dann_nennt_sein_Laufkopf_Zeitpunkt_Urheber_und_den_Pfad_der_Anfrage()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await Aufbau(webApi);
+        var vorDemLauf = DateTimeOffset.UtcNow.AddSeconds(-1);
+
+        using var antwort = await webApi.Klient.PostAsync(Importroute(aufbau.Board.BoardId), Rumpf(aufbau, trocken: "false"));
+
+        var bericht = await AlsBericht(antwort);
+        Assert.That(bericht.Laufkopf, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(bericht.Laufkopf!.Urhebernummer, Is.EqualTo(aufbau.Kontributor.KontributorId));
+            Assert.That(bericht.Laufkopf.Urhebername, Is.EqualTo("Stefan"));
+            Assert.That(bericht.Laufkopf.Pfad, Is.EqualTo("Dokumentation/Planung/probe.md"));
+            Assert.That(bericht.Laufkopf.Zeitpunkt, Is.GreaterThanOrEqualTo(vorDemLauf));
+            Assert.That(bericht.Laufkopf.Zeitpunkt, Is.LessThanOrEqualTo(DateTimeOffset.UtcNow.AddSeconds(1)));
+        });
+    }
+
+    // Fehlt der Pfad an der Anfrage, nennt der Kopf den Dateinamen — dieselbe Regel wie beim
+    // Dateiverweis der Karten.
+    [Test]
+    public async Task Wenn_der_Pfad_fehlt_dann_nennt_der_Laufkopf_den_Dateinamen()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await Aufbau(webApi);
+
+        using var antwort = await webApi.Klient.PostAsync(Importroute(aufbau.Board.BoardId), Rumpf(aufbau, trocken: "false", mitPfad: false));
+
+        var bericht = await AlsBericht(antwort);
+        Assert.That(bericht.Laufkopf!.Pfad, Is.EqualTo("probe.md"));
+    }
+
+    // **Übersprungen und verwaist bleiben im Ergebnis stehen** — die übersprungene mit Kennung
+    // und Grund, die verwaiste zusätzlich mit Nummer und KarteId, weil archiviert werden soll.
+    [Test]
+    public async Task Wenn_eine_Zeile_uebersprungen_und_eine_Karte_verwaist_ist_dann_stehen_beide_im_Bericht()
+    {
+        using var datenbank = new TemporaereDatenbank();
+        using var webApi = new TestWebApi(datenbank.Dateipfad);
+        var aufbau = await Aufbau(webApi);
+        using var ersterLauf = await webApi.Klient.PostAsync(Importroute(aufbau.Board.BoardId), Rumpf(aufbau, trocken: "false"));
+        ersterLauf.EnsureSuccessStatusCode();
+
+        using var antwort = await webApi.Klient.PostAsync(Importroute(aufbau.Board.BoardId), Rumpf(aufbau, trocken: "false", dateitext: ProbedateiOhneZweiteInteractionMitVerworfener()));
+
+        var bericht = await AlsBericht(antwort);
+        var uebersprungene = bericht.Zeilen.Single(zeile => zeile.Kennung == "I0003");
+        var verwaiste = bericht.Zeilen.Single(zeile => zeile.Wirkung == Importwirkung.Verwaist);
+        Assert.Multiple(() =>
+        {
+            Assert.That(bericht.Uebersprungen, Is.EqualTo(1));
+            Assert.That(uebersprungene.Wirkung, Is.EqualTo(Importwirkung.Uebersprungen));
+            Assert.That(uebersprungene.Grund, Does.Contain("verworfen"));
+            Assert.That(uebersprungene.Kartennummer, Is.Null);
+            Assert.That(uebersprungene.KarteId, Is.Null);
+            Assert.That(bericht.Verwaist, Is.EqualTo(1));
+            Assert.That(verwaiste.Kennung, Is.EqualTo("I0002"));
+            Assert.That(verwaiste.Kartennummer, Is.EqualTo("WBS-02"));
+            Assert.That(verwaiste.KarteId, Is.Not.Null);
+        });
+    }
+
     [Test]
     public async Task Wenn_geschrieben_wurde_dann_traegt_die_Karte_Etikett_Teilaufgaben_mit_Haken_und_ihren_Dateiverweis()
     {
@@ -371,6 +487,30 @@ public class WbsImportEndpunkteTests
             "| F0001 | Feature | I0001 | Board anlegen und abrufen | gruen | AK Board anlegen | | | | | R00001 | |",
             "| B0001 | Bubble | F0001 | Standardspalten erzeugen | rot | Test gruen | — → Vorlage → 3 Spalten | 2 | | | | Operation |",
             "| I0002 | Interaction | D0001 | Boards auflisten | rot | Die Liste zeigt alle Boards | | | | | R00002 | |");
+    }
+
+    // Dieselbe Datei ohne I0002 — die Karte dazu wird damit verwaist — und mit einem Knoten im
+    // Status verworfen, der übersprungen wird.
+    private static string ProbedateiOhneZweiteInteractionMitVerworfener()
+    {
+        return string.Join(
+            '\n',
+            "---",
+            "application: Probe",
+            "sprache: de",
+            "zuletzt: 2026-09-07",
+            "---",
+            string.Empty,
+            "## Knoten",
+            string.Empty,
+            "| ID | Ebene | Eltern | Name | Status | Fertig-Kriterium | Eingabe → Ausgabe | Aufwand | Ausbaustufe | Braucht | Requirement | Notiz |",
+            "|---|---|---|---|---|---|---|---|---|---|---|---|",
+            "| A0001 | Application | — | Probe | gelb | alle Dialogs gruen | | | | | | |",
+            "| D0001 | Dialog | A0001 | Boards führen | gelb | alle Interactions gruen | | | | | | |",
+            "| I0001 | Interaction | D0001 | Board anlegen | gruen | Ein neues Board entsteht | | | | | R00001 | Aus Vision |",
+            "| F0001 | Feature | I0001 | Board anlegen und abrufen | gruen | AK Board anlegen | | | | | R00001 | |",
+            "| B0001 | Bubble | F0001 | Standardspalten erzeugen | rot | Test gruen | — → Vorlage → 3 Spalten | 2 | | | | Operation |",
+            "| I0003 | Interaction | D0001 | Boards verwerfen | verworfen | Zaehlt nicht zum Umfang | | | | | | |");
     }
 
     private static string GrosseProbedatei(int interactions)

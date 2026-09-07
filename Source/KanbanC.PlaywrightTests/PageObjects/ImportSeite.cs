@@ -73,6 +73,26 @@ public sealed class ImportSeite
 
     public ILocator Ergebniszeile => _seite.Locator("#import-ergebnis");
 
+    // Die fünf Zahlen tragen in Schritt 2 und Schritt 3 dieselben Bezeichner: es steht immer nur
+    // ein Schritt im Schirm, und zwei Namen für dieselbe Zahl wären zwei Namen.
+    public ILocator Laufkopf => _seite.Locator("#import-laufkopf");
+
+    public ILocator Berichtzeilen => _seite.Locator("#import-berichtzeilen .importbaumzeile");
+
+    public ILocator Berichtzeile(string kennung)
+    {
+        return Berichtzeilen.Filter(new LocatorFilterOptions { Has = _seite.Locator(".importkennung", new PageLocatorOptions { HasTextString = kennung }) });
+    }
+
+    public ILocator KartenwegDerZeile(ILocator zeile)
+    {
+        return zeile.Locator(".importkartenweg");
+    }
+
+    public ILocator Kopierknopf => _seite.Locator("#import-kopieren");
+
+    public ILocator Kopiermeldung => _seite.Locator("#import-kopiermeldung");
+
     public ILocator ZumBoard => _seite.Locator("#import-zum-board");
 
     public ILocator Zurueckweisung => _seite.Locator("#import-zurueckweisung");

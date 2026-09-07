@@ -19,8 +19,10 @@ public interface IWbsImportRepository
     // Bricht ein Schritt ab, steht danach weder eine neue noch eine halb nachgezogene Karte.
     // **Die Kartenklassenzuordnung einer wiedererkannten Karte wird nicht angefasst** — der
     // Zaehlerstand wächst nur je neuer Karte.
-    // Zurück kommt die Zahl der angelegten Karten.
-    int Schreibe(
+    // Zurück kommt je angelegter Karte ihr Dateiverweis, ihre KarteId und ihre Kartennummer —
+    // alles drei liegt beim Anlegen ohnehin in der Hand, und ohne sie könnte der Bericht die neuen
+    // Karten nicht nennen. Eine Aktualisierung hinterlässt keinen Eintrag: sie legt nichts an.
+    Kartenanlageergebnisse Schreibe(
         IReadOnlyList<Kartenschreibauftrag> anlagen,
         IReadOnlyList<Kartenaktualisierungsauftrag> aktualisierungen,
         long kartenklasseId,

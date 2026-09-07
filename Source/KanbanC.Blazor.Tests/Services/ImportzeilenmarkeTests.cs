@@ -51,6 +51,6 @@ public class ImportzeilenmarkeTests
 
     private static Importzeile Zeile(Importwirkung wirkung, string? grund)
     {
-        return new Importzeile("I0031", "Interaction", wirkung, grund, Kartennummer: null);
+        return new Importzeile("I0031", "Interaction", wirkung, grund, Kartennummer: null, KarteId: null);
     }
 }

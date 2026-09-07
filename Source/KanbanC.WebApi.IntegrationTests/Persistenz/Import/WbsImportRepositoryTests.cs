@@ -53,18 +53,88 @@ public class WbsImportRepositoryTests
         var aufbau = Aufbau(datenbank);
         var repository = new WbsImportRepository(datenbank.Verbindungsfabrik);
 
-        var angelegt = repository.Schreibe(Auftraege(aufbau), [], aufbau.KartenklasseId, aufbau.KontributorId);
+        var anlagen = repository.Schreibe(Auftraege(aufbau), [], aufbau.KartenklasseId, aufbau.KontributorId);
 
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
         Assert.Multiple(() =>
         {
-            Assert.That(angelegt, Is.EqualTo(2));
+            Assert.That(anlagen.Anlagenzahl, Is.EqualTo(2));
             Assert.That(Zahl(verbindung, "Karte"), Is.EqualTo(2));
             Assert.That(Zahl(verbindung, "Kartenklassenzuordnung"), Is.EqualTo(2));
             Assert.That(Zahl(verbindung, "Etikett"), Is.EqualTo(2));
             Assert.That(Zahl(verbindung, "Teilaufgabe"), Is.EqualTo(3));
             Assert.That(Zahl(verbindung, "Dateiverweis"), Is.EqualTo(2));
             Assert.That(Zahl(verbindung, "Karteneigenschaft"), Is.EqualTo(1));
+        });
+    }
+
+    // **Der Schreiblauf gibt zurück, was entstanden ist** — je Anlage Dateiverweis, KarteId und
+    // Nummer, und **nur** je Anlage: das Rechenbeispiel des Kriteriums lautet 4 Anlagen und 6
+    // Aktualisierungen ergeben 4 Einträge, nicht 10 und nicht die Zahl 4.
+    [Test]
+    public void Wenn_ein_Lauf_vier_anlegt_und_sechs_aktualisiert_dann_kommen_vier_Ergebnisse_zurueck()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new WbsImportRepository(datenbank.Verbindungsfabrik);
+        repository.Schreibe(Anlagen(aufbau, ersteNummer: 1, anzahl: 6), [], aufbau.KartenklasseId, aufbau.KontributorId);
+        var iststand = repository.LiesIststand(aufbau.BoardId, aufbau.KartenklasseId);
+        var aktualisierungen = new List<Kartenaktualisierungsauftrag>();
+        foreach (var stand in iststand)
+        {
+            aktualisierungen.Add(Aktualisierung(stand));
+        }
+
+        var anlagen = repository.Schreibe(Anlagen(aufbau, ersteNummer: 7, anzahl: 4), aktualisierungen, aufbau.KartenklasseId, aufbau.KontributorId);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(aktualisierungen, Has.Count.EqualTo(6), "Ohne sechs Aktualisierungen prüft der Test das Rechenbeispiel nicht.");
+            Assert.That(anlagen.Anlagenzahl, Is.EqualTo(4), "Die Aktualisierungen dürfen kein Ergebnis erzeugen.");
+            Assert.That(anlagen[0].Dateiverweis, Is.EqualTo("Dokumentation/Planung/kanbanc.md#I0007"));
+            Assert.That(anlagen.Fuer("Dokumentation/Planung/kanbanc.md#I0010"), Is.Not.Null);
+            Assert.That(anlagen.Fuer("Dokumentation/Planung/kanbanc.md#I0001"), Is.Null, "Die wiedererkannte Karte entstand in diesem Lauf nicht.");
+        });
+    }
+
+    private static IReadOnlyList<Kartenschreibauftrag> Anlagen(Testaufbau aufbau, int ersteNummer, int anzahl)
+    {
+        var auftraege = new List<Kartenschreibauftrag>();
+        for (var nummer = ersteNummer; nummer < ersteNummer + anzahl; nummer++)
+        {
+            auftraege.Add(Auftrag($"I{nummer:D4}", Wbsstatus.Rot, aufbau.ErsteSpalteId, inDerAbschlussspalte: false));
+        }
+
+        return auftraege;
+    }
+
+    // **Gegen den Bestand geprüft, nicht gegen die eigene Rechnung**: jede zurückgegebene KarteId
+    // findet eine Karte, deren Kartenklassenzuordnung genau die zurückgegebene Nummer trägt.
+    [Test]
+    public void Wenn_ein_Lauf_anlegt_dann_findet_jede_zurueckgegebene_KarteId_eine_Karte_mit_genau_dieser_Nummer()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new WbsImportRepository(datenbank.Verbindungsfabrik);
+
+        var anlagen = repository.Schreibe(Auftraege(aufbau), [], aufbau.KartenklasseId, aufbau.KontributorId);
+
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        Assert.Multiple(() =>
+        {
+            foreach (var anlage in anlagen)
+            {
+                var stand = verbindung.QuerySingleOrDefault<long?>(@"
+                    SELECT z.Zaehlerstand
+                      FROM Kartenklassenzuordnung z
+                      JOIN Karte k ON k.KarteId = z.Karte
+                     WHERE z.Karte = @Karte", new { Karte = anlage.KarteId });
+                Assert.That(stand, Is.Not.Null, $"Die KarteId {anlage.KarteId} findet keine Karte.");
+                Assert.That(Kartennummer.Aus("WBS-", (int)stand!.Value), Is.EqualTo(anlage.Kartennummer));
+            }
+
+            Assert.That(anlagen[0].Kartennummer, Is.EqualTo("WBS-01"));
+            Assert.That(anlagen[1].Kartennummer, Is.EqualTo("WBS-02"));
         });
     }
 

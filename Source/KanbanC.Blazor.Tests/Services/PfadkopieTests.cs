@@ -76,6 +76,52 @@ public class PfadkopieTests
         });
     }
 
+    // **Der Rückfall ist der Normalfall und keine Zugabe**: fehlt `navigator.clipboard`, wird der
+    // Text in seiner Zeile markiert — eine Ausnahme wäre an dieser Stelle eine Ausnahmeseite.
+    [Test]
+    public async Task Wenn_die_Zwischenablage_fehlt_dann_wird_der_Text_markiert_statt_geworfen()
+    {
+        var browser = new TestBrowser("navigator.clipboard.writeText");
+        var kopie = new Pfadkopie(browser);
+
+        var ergebnis = await kopie.Kopiere("31 Karten angelegt", "import-bericht");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis, Is.EqualTo(Kopierergebnis.AlsTextMarkiert));
+            Assert.That(browser.AufgerufeneBefehle, Does.Contain("selectAllChildren"));
+        });
+    }
+
+    // Fällt auch der Rückfall aus, bleibt der Text sichtbar stehen und lässt sich von Hand
+    // markieren — die Seite bleibt in jeder anderen Hinsicht bedienbar.
+    [Test]
+    public async Task Wenn_auch_der_Rueckfall_ausfaellt_dann_kommt_das_dritte_Ergebnis_statt_einer_Ausnahme()
+    {
+        var browser = new TestBrowser("navigator.clipboard.writeText", "document.getElementById");
+        var kopie = new Pfadkopie(browser);
+
+        var ergebnis = await kopie.Kopiere("31 Karten angelegt", "import-bericht");
+
+        Assert.That(ergebnis, Is.EqualTo(Kopierergebnis.Gescheitert));
+    }
+
+    // Was in die Zwischenablage geht, ist der übergebene Text — nicht der Elementbezeichner.
+    [Test]
+    public async Task Wenn_die_Zwischenablage_traegt_dann_bekommt_sie_den_uebergebenen_Text()
+    {
+        var browser = new TestBrowser();
+        var kopie = new Pfadkopie(browser);
+
+        var ergebnis = await kopie.Kopiere("31 Karten angelegt", "import-bericht");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis, Is.EqualTo(Kopierergebnis.InDerZwischenablage));
+            Assert.That(browser.ZuletztUebergebeneWerte, Is.EqualTo(new object?[] { "31 Karten angelegt" }));
+        });
+    }
+
     // Drei Ausgänge, und der mittlere ist der, für den der Typ überhaupt da ist: „nicht kopiert"
     // ist im unsicheren Kontext kein Fehler, sondern die zweitbeste Zusage.
     [Test]

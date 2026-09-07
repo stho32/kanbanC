@@ -1,0 +1,44 @@
+@using KanbanC.Blazor.Services
+@using KanbanC.Contracts.Import
+
+@* Dieselbe Liste in Schritt 2 und Schritt 3: derselbe Bericht, dieselben Marken, derselbe Grund.
+   Schritt 3 fügt nichts hinzu — er hat nur Zeilen, an denen Nummer und KarteId stehen. *@
+<ul class="importbaumliste">
+    @foreach (var zeile in Zeilen)
+    {
+        <li class="importbaumzeile importbaumzeile-@Wirkungsklasse(zeile)">
+            <span class="importmarke">@Importzeilenmarke.Fuer(zeile)</span>
+            <span class="importkennung">@zeile.Kennung</span>
+            <span class="importnummer">
+                @if (zeile.KarteId is not null)
+                {
+                    <a class="importkartenweg" href="@Kartenadresse(zeile)">@zeile.Kartennummer</a>
+                }
+                else
+                {
+                    @zeile.Kartennummer
+                }
+            </span>
+            <span class="importwirkung">@Importwirkungswort.Fuer(zeile)</span>
+        </li>
+    }
+</ul>
+
+@code {
+    [Parameter]
+    [EditorRequired]
+    public IReadOnlyList<Importzeile> Zeilen { get; set; } = [];
+
+    // **Der Weg hängt an der KarteId, nicht an der Nummer**: die Kartenseite ist
+    // /karten/{KarteId:long}, und eine Nummer wäre ein zweiter Suchweg — bei zwei Klassen mit
+    // gleichem Präfix sogar ein zweideutiger.
+    private static string Kartenadresse(Importzeile zeile)
+    {
+        return $"/karten/{zeile.KarteId!.Value}";
+    }
+
+    private static string Wirkungsklasse(Importzeile zeile)
+    {
+        return zeile.Wirkung.ToString().ToLowerInvariant();
+    }
+}

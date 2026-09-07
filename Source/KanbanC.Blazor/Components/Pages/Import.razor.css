@@ -188,60 +188,6 @@
     min-width: 0;
 }
 
-.importbaumliste {
-    margin: 0;
-    padding: var(--space-2);
-    max-height: 420px;
-    overflow-y: auto;
-    list-style: none;
-    background: var(--color-neutral-100);
-    border-radius: var(--radius-xs);
-}
-
-.importbaumzeile {
-    display: flex;
-    gap: var(--space-2);
-    font-size: 12px;
-    line-height: 1.6;
-}
-
-.importmarke {
-    font-family: var(--font-mono);
-    font-weight: 700;
-    min-width: 10px;
-}
-
-.importkennung {
-    font-family: var(--font-mono);
-    min-width: 60px;
-}
-
-.importnummer {
-    font-family: var(--font-mono);
-    min-width: 60px;
-    color: color-mix(in srgb, var(--color-text) 55%, transparent);
-}
-
-.importwirkung {
-    color: color-mix(in srgb, var(--color-text) 60%, transparent);
-}
-
-.importbaumzeile-angelegt .importwirkung {
-    color: var(--color-accent-700);
-}
-
-.importbaumzeile-geaendert .importwirkung {
-    color: var(--color-accent-700);
-}
-
-.importbaumzeile-verwaist .importwirkung {
-    color: var(--color-accent-600);
-}
-
-.importbaumzeile-uebersprungen .importwirkung {
-    color: var(--color-accent-600);
-}
-
 .importbilanz {
     display: flex;
     gap: var(--space-2);
@@ -264,4 +210,34 @@
 #import-zum-board {
     align-self: flex-start;
     text-decoration: none;
+}
+
+.importbericht {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
+.importlaufkopf {
+    margin: 0;
+    font-size: 12px;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.importberichtzeilen {
+    min-width: 0;
+}
+
+.importberichtwege {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    margin-top: var(--space-3);
+}
+
+.importkopiermeldung {
+    font-size: 12px;
+    color: color-mix(in srgb, var(--color-text) 60%, transparent);
 }

@@ -166,6 +166,6 @@ public static class Kartenentwurfsbildner
     // schon eine Karte auf dem Board hat, entscheidet erst der Soll-Ist-Vergleich.
     private static Importzeile Zeile(Wbsknoten knoten, Importwirkung wirkung, string? grund)
     {
-        return new Importzeile(knoten.Id, knoten.Ebene.ToString(), wirkung, grund, Kartennummer: null);
+        return new Importzeile(knoten.Id, knoten.Ebene.ToString(), wirkung, grund, Kartennummer: null, KarteId: null);
     }
 }

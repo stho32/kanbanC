@@ -172,6 +172,68 @@ public class WbsImportE2ETests : PageTest
         await Expect(kartendetail.AbgehakteTeilaufgaben).ToHaveCountAsync(1);
     }
 
+    // **Der Lauf von I0032:** eine Datei mit einer verworfenen Zeile einfahren und in Schritt 3
+    // Kopf, fünf Zahlen und die Zeilen lesen — die übersprungene mit ihrem Grund. Dem Verweis
+    // einer angelegten Zeile zu folgen ist der Beweis, dass ihre Nummer eine **wirkliche** Karte
+    // meint und kein gerechnetes Etikett.
+    [Test]
+    [Category("US-1")]
+    public async Task Wenn_eine_Datei_mit_einer_verworfenen_Zeile_eingefahren_wird_dann_zeigt_Schritt_3_den_ganzen_Bericht_und_fuehrt_auf_die_Karte()
+    {
+        await Context.GrantPermissionsAsync(["clipboard-read", "clipboard-write"]);
+        var aufbau = await BoardMitKlasseUndIdentitaet();
+        var seite = new ImportSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await seite.Oeffne(aufbau.BoardId);
+
+        await seite.LegeDateiAb("kanbanc.md", KleineWbsMitVerworfener());
+
+        await Expect(seite.SchrittVorschau).ToBeVisibleAsync();
+        await Expect(seite.Uebersprungen).ToHaveTextAsync("1 übersprungen");
+        await Expect(seite.Baumzeile("I0001")).Not.ToContainTextAsync("WBS-");
+        await seite.Schreibknopf.ClickAsync();
+
+        // Schritt 3: Kopf, fünf Zahlen und eine Zeile je Knoten.
+        await Expect(seite.Ergebniszeile).ToContainTextAsync("2 Karten angelegt");
+        await Expect(seite.Laufkopf).ToContainTextAsync("Stefan");
+        await Expect(seite.Laufkopf).ToContainTextAsync("kanbanc.md");
+        await Expect(seite.Angelegt).ToHaveTextAsync("2 angelegt");
+        await Expect(seite.Geaendert).ToHaveTextAsync("0 geändert");
+        await Expect(seite.Unveraendert).ToHaveTextAsync("0 unverändert");
+        await Expect(seite.Uebersprungen).ToHaveTextAsync("1 übersprungen");
+        await Expect(seite.Verwaist).ToHaveTextAsync("0 nicht mehr in der Datei");
+        await Expect(seite.Berichtzeilen).ToHaveCountAsync(7);
+
+        // **Die übersprungene Zeile ist hier zum ersten Mal im Ergebnis sichtbar** — mit Grund.
+        var uebersprungene = seite.Berichtzeile("I0003");
+        await Expect(uebersprungene).ToContainTextAsync("übersprungen");
+        await Expect(uebersprungene).ToContainTextAsync("verworfen");
+        await Expect(seite.KartenwegDerZeile(uebersprungene)).ToHaveCountAsync(0);
+
+        // **Der Bericht ist flüchtig und bekommt dafür einen Ausgang**: was hier in die
+        // Zwischenablage geht, ist der Bericht selbst — Kopf, fünf Zahlen und die Zeilen.
+        await Expect(seite.Kopierknopf).ToBeVisibleAsync();
+        await seite.Kopierknopf.ClickAsync();
+        await Expect(seite.Kopiermeldung).ToHaveTextAsync("kopiert");
+        var mitgenommen = await Page.EvaluateAsync<string>("() => navigator.clipboard.readText()");
+        Assert.Multiple(() =>
+        {
+            Assert.That(mitgenommen, Does.Contain("Stefan"), "Ohne den Kopf des Laufs sagt der mitgenommene Bericht nicht, welcher Lauf er war.");
+            Assert.That(mitgenommen, Does.Contain("kanbanc.md"));
+            Assert.That(mitgenommen, Does.Contain("1 übersprungen"));
+            Assert.That(mitgenommen, Does.Contain("WBS-01"));
+            Assert.That(mitgenommen, Does.Contain("I0003"));
+        });
+
+        // Der Weg an der angelegten Zeile führt auf ihre Karte.
+        var angelegte = seite.Berichtzeile("I0001");
+        await Expect(angelegte).ToContainTextAsync("WBS-01");
+        await seite.KartenwegDerZeile(angelegte).ClickAsync();
+
+        var kartendetail = new KartendetailSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
+        await Expect(kartendetail.Ueberschrift).ToHaveTextAsync("[I0001] Board anlegen");
+        await Expect(kartendetail.Kartennummer).ToHaveTextAsync("WBS-01");
+    }
+
     private static async Task<long> KarteMitTitel(WebApiKlient webApi, long boardId, string titel)
     {
         var board = await webApi.LadeBoard(boardId);
@@ -274,6 +336,16 @@ public class WbsImportE2ETests : PageTest
             "| F0001 | Feature | I0001 | Board anlegen und abrufen | gruen | AK Board anlegen | | | | | R00001 | |",
             "| B0001 | Bubble | F0001 | Standardspalten erzeugen | rot | Test gruen | | 2 | | | | Operation |",
             "| I0002 | Interaction | D0001 | Boards auflisten | rot | Die Liste zeigt alle Boards | | | | | R00002 | |");
+    }
+
+    // Dieselbe kleine WBS, um eine Zeile im Status verworfen ergänzt — damit „übersprungen" im
+    // Bericht nicht nur als Null bewiesen wird.
+    private static string KleineWbsMitVerworfener()
+    {
+        return string.Join(
+            '\n',
+            KleineWbs(),
+            "| I0003 | Interaction | D0001 | Boards verwerfen | verworfen | Zaehlt nicht zum Umfang | | | | | | |");
     }
 
     private async Task<Importaufbau> BoardMitKlasseUndIdentitaet()

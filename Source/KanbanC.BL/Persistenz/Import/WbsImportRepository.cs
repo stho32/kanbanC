@@ -274,7 +274,7 @@ public sealed class WbsImportRepository : IWbsImportRepository
     // **Anlage und Aktualisierung in derselben Transaktion**, in zwei Abschnitten hintereinander:
     // erst entstehen die neuen Karten mit ihren Nummern, dann werden die wiedererkannten
     // nachgezogen. Bricht irgendetwas ab, steht danach nichts vom ganzen Lauf.
-    public int Schreibe(
+    public Kartenanlageergebnisse Schreibe(
         IReadOnlyList<Kartenschreibauftrag> anlagen,
         IReadOnlyList<Kartenaktualisierungsauftrag> aktualisierungen,
         long kartenklasseId,
@@ -285,17 +285,20 @@ public sealed class WbsImportRepository : IWbsImportRepository
 
         var heute = Heute();
         var jetzt = Jetzt();
+        var praefix = LiesKartenklassenpraefix(verbindung, transaktion, kartenklasseId);
+        var anlageergebnisse = new List<Kartenanlageergebnis>();
         var naechstePositionen = new Dictionary<long, int>(); // stil-check: C11 laufende Position je SpalteId, kein Domaenenbestand
         foreach (var auftrag in anlagen)
         {
             var position = NaechstePosition(verbindung, transaktion, auftrag.Spalte, naechstePositionen);
             var karteId = FuegeKarteEin(verbindung, transaktion, auftrag.Spalte, auftrag.Entwurf.Titel, position);
             SchreibeEigenschaften(verbindung, transaktion, karteId, auftrag.Entwurf.Beschreibung);
-            OrdneKartenklasseZu(verbindung, transaktion, karteId, kartenklasseId);
+            var vergebenerStand = OrdneKartenklasseZu(verbindung, transaktion, karteId, kartenklasseId);
             SchreibeEtiketten(verbindung, transaktion, karteId, auftrag.Entwurf.Etiketten);
             SchreibeTeilaufgaben(verbindung, transaktion, karteId, auftrag.Entwurf.Teilaufgaben);
             FuegeDateiverweisEin(verbindung, transaktion, karteId, auftrag.Entwurf.Dateiverweis, kontributorId, jetzt);
             SchreibeErledigung(verbindung, transaktion, karteId, auftrag.InDerAbschlussspalte, heute);
+            anlageergebnisse.Add(new Kartenanlageergebnis(auftrag.Entwurf.Dateiverweis, karteId, Kartennummer.Aus(praefix, vergebenerStand)));
         }
 
         foreach (var auftrag in aktualisierungen)
@@ -304,7 +307,17 @@ public sealed class WbsImportRepository : IWbsImportRepository
         }
 
         transaktion.Commit();
-        return anlagen.Count;
+        return new Kartenanlageergebnisse(anlageergebnisse);
+    }
+
+    // **Einmal je Lauf und nicht je Karte:** das Präfix ist an der Klasse und ändert sich während
+    // des Laufs nicht — vierzig Karten kosten dieselbe eine Abfrage wie eine.
+    private static string LiesKartenklassenpraefix(IDbConnection verbindung, IDbTransaction transaktion, long kartenklasseId)
+    {
+        return verbindung.QuerySingle<string>(@"
+            SELECT Praefix
+              FROM Kartenklasse
+             WHERE KartenklasseId = @KartenklasseId", new { KartenklasseId = kartenklasseId }, transaktion);
     }
 
     // **Nur Abschrift der Datei**: Titel, Beschreibung, Etiketten und Teilaufgaben. Spalte,
@@ -445,10 +458,13 @@ public sealed class WbsImportRepository : IWbsImportRepository
     // **Derselbe Weg zur nächsten Nummer** wie beim Zuordnen einer einzelnen Karte: die Regel
     // steht im Kartenklassenzuordnungsschreiber, hier läuft sie nur je Karte in **einer**
     // Transaktion über den ganzen Lauf.
-    private static void OrdneKartenklasseZu(IDbConnection verbindung, IDbTransaction transaktion, long karteId, long kartenklasseId)
+    // Zurück kommt der vergebene Zaehlerstand: er ist die eine Hälfte der Kartennummer und liegt
+    // hier ohnehin in der Hand — ihn später nachzulesen wäre eine Abfrage für einen bekannten Wert.
+    private static int OrdneKartenklasseZu(IDbConnection verbindung, IDbTransaction transaktion, long karteId, long kartenklasseId)
     {
         var vergebenerStand = Kartenklassenzuordnungsschreiber.VergibNaechstenZaehlerstand(verbindung, transaktion, kartenklasseId);
         Kartenklassenzuordnungsschreiber.FuegeZuordnungEin(verbindung, transaktion, karteId, kartenklasseId, vergebenerStand);
+        return vergebenerStand;
     }
 
     private static void SchreibeEtiketten(IDbConnection verbindung, IDbTransaction transaktion, long karteId, IReadOnlyList<string> etiketten)

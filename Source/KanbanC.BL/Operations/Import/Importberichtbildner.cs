@@ -24,7 +24,7 @@ public static class Importberichtbildner
 
         foreach (var zeile in uebersprungene)
         {
-            alle.Add(new Importberichtzeile(zeile.Zeilennummer, new Importzeile(zeile.Kennung, null, Importwirkung.Uebersprungen, zeile.Grund, Kartennummer: null)));
+            alle.Add(new Importberichtzeile(zeile.Zeilennummer, new Importzeile(zeile.Kennung, null, Importwirkung.Uebersprungen, zeile.Grund, Kartennummer: null, KarteId: null)));
         }
 
         alle.Sort((links, rechts) => links.Zeilennummer.CompareTo(rechts.Zeilennummer));
@@ -37,7 +37,8 @@ public static class Importberichtbildner
             Zahl(zeilen, Importwirkung.Uebersprungen),
             Zahl(zeilen, Importwirkung.Verwaist),
             kartenzahlen,
-            zeilen);
+            zeilen,
+            Laufkopf: null);
     }
 
     // Der Entwurfsbildner kennt nur die Datei und trägt an jeder Kartenzeile „angelegt“ ein. Erst
@@ -51,7 +52,7 @@ public static class Importberichtbildner
             return zeile;
         }
 
-        return zeile with { Wirkung = wirkung!.Wirkung, Grund = wirkung.Grund, Kartennummer = wirkung.Kartennummer };
+        return zeile with { Wirkung = wirkung!.Wirkung, Grund = wirkung.Grund, Kartennummer = wirkung.Kartennummer, KarteId = wirkung.KarteId };
     }
 
     private static int Zahl(IReadOnlyList<Importzeile> zeilen, Importwirkung wirkung)

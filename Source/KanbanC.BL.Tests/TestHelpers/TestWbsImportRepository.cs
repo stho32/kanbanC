@@ -6,6 +6,10 @@ namespace KanbanC.BL.Tests.TestHelpers;
 
 public sealed class TestWbsImportRepository : IWbsImportRepository
 {
+    private const long ErsteKarteId = 4711;
+    private const int ErsterZaehlerstand = 1;
+    private const string Praefix = "WBS-";
+
     public Importziel? Ziel { get; set; } = new(
         4,
         "KanbanC — Umsetzung",
@@ -39,7 +43,11 @@ public sealed class TestWbsImportRepository : IWbsImportRepository
         return Iststand;
     }
 
-    public int Schreibe(
+    // Der Schreiblauf gibt zurück, was entstanden ist — hier gerechnet statt geschrieben: je
+    // Anlage ihr Dateiverweis, eine KarteId aus der laufenden Nummer und die Kartennummer aus dem
+    // Präfix der Klasse. Damit prüft der Dienst den Nachzug gegen dieselbe Form, die das echte
+    // Repository liefert.
+    public Kartenanlageergebnisse Schreibe(
         IReadOnlyList<Kartenschreibauftrag> anlagen,
         IReadOnlyList<Kartenaktualisierungsauftrag> aktualisierungen,
         long kartenklasseId,
@@ -50,6 +58,13 @@ public sealed class TestWbsImportRepository : IWbsImportRepository
         GeschriebeneAktualisierungen = aktualisierungen;
         GeschriebeneKartenklasse = kartenklasseId;
         GeschriebenerKontributor = kontributorId;
-        return anlagen.Count;
+        var ergebnisse = new List<Kartenanlageergebnis>();
+        for (var stelle = 0; stelle < anlagen.Count; stelle++)
+        {
+            var vergebenerStand = ErsterZaehlerstand + stelle;
+            ergebnisse.Add(new Kartenanlageergebnis(anlagen[stelle].Entwurf.Dateiverweis, ErsteKarteId + stelle, Kartennummer.Aus(Praefix, vergebenerStand)));
+        }
+
+        return new Kartenanlageergebnisse(ergebnisse);
     }
 }

@@ -453,6 +453,87 @@ public class WbsImportServiceTests
         Assert.That(ergebnis.Befunde[0].Code, Is.EqualTo("import-verweis-doppelt"));
     }
 
+    // **Der Nachzug ist die eine Stelle, an der Vorschau und Bericht auseinandergehen dürfen**:
+    // nach dem Schreiben tragen die angelegten Zeilen Nummer und KarteId der eben entstandenen
+    // Karten — vorher gab es sie nicht.
+    [Test]
+    public void Wenn_geschrieben_wurde_dann_tragen_die_angelegten_Zeilen_Kartennummer_und_KarteId()
+    {
+        var aufbau = Aufbau();
+
+        var ergebnis = aufbau.Dienst.Importiere(BoardId, Anfrage(trocken: false), Datei());
+
+        var erste = ergebnis.Wert.Zeilen.Single(zeile => zeile.Kennung == "I0001");
+        var zweite = ergebnis.Wert.Zeilen.Single(zeile => zeile.Kennung == "I0002");
+        Assert.Multiple(() =>
+        {
+            Assert.That(erste.Kartennummer, Is.EqualTo("WBS-01"));
+            Assert.That(erste.KarteId, Is.EqualTo(4711));
+            Assert.That(zweite.Kartennummer, Is.EqualTo("WBS-02"));
+            Assert.That(zweite.KarteId, Is.EqualTo(4712));
+            Assert.That(ergebnis.Wert.Angelegt, Is.EqualTo(2), "Der Nachzug aendert die Bilanzzahlen nicht.");
+        });
+    }
+
+    // **Die Ankündigung nennt keine Nummer**: in der Vorschau gibt es die Karte noch nicht, und
+    // genau das ist der Unterschied zwischen „so sähe es aus" und „so ist es jetzt".
+    [Test]
+    public void Wenn_trocken_gelaufen_wird_dann_bleiben_die_angelegten_Zeilen_ohne_Nummer_und_ohne_KarteId()
+    {
+        var aufbau = Aufbau();
+
+        var ergebnis = aufbau.Dienst.Importiere(BoardId, Anfrage(trocken: true), Datei());
+
+        var erste = ergebnis.Wert.Zeilen.Single(zeile => zeile.Kennung == "I0001");
+        Assert.Multiple(() =>
+        {
+            Assert.That(erste.Kartennummer, Is.Null);
+            Assert.That(erste.KarteId, Is.Null);
+        });
+    }
+
+    // Eine wiedererkannte Zeile nennt ihre Karte schon in der Vorschau — diese Karte gibt es
+    // bereits.
+    [Test]
+    public void Wenn_eine_Karte_wiedererkannt_wird_dann_traegt_ihre_Zeile_KarteId_neben_der_Nummer()
+    {
+        var aufbau = Aufbau();
+        aufbau.ImportRepository.Iststand = EingefahrenesBoard();
+
+        var ergebnis = aufbau.Dienst.Importiere(BoardId, Anfrage(trocken: true), Datei());
+
+        var zeile = ergebnis.Wert.Zeilen.Single(eintrag => eintrag.Kennung == "I0001");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zeile.Kartennummer, Is.EqualTo("WBS-01"));
+            Assert.That(zeile.KarteId, Is.EqualTo(11));
+        });
+    }
+
+    // **Auch die verwaiste Zeile führt auf ihre Karte** — die Kompensationsaktion lautet
+    // „archivieren", und wer archivieren soll, muss hinkommen.
+    [Test]
+    public void Wenn_eine_Karte_nicht_mehr_in_der_Datei_steht_dann_traegt_ihre_Zeile_KarteId_neben_der_Nummer()
+    {
+        var aufbau = Aufbau();
+        aufbau.ImportRepository.Iststand = new Karteniststaende(
+        [
+            Karte(11, "WBS-01", "[I0001] Board anlegen", "I0001"),
+            Karte(12, "WBS-02", "[I0002] Boards auflisten", "I0002"),
+            Karte(19, "WBS-47", "[I0019] Verschwunden", "I0019"),
+        ]);
+
+        var ergebnis = aufbau.Dienst.Importiere(BoardId, Anfrage(trocken: true), Datei());
+
+        var zeile = ergebnis.Wert.Zeilen.Single(eintrag => eintrag.Kennung == "I0019");
+        Assert.Multiple(() =>
+        {
+            Assert.That(zeile.Wirkung, Is.EqualTo(Importwirkung.Verwaist));
+            Assert.That(zeile.Kartennummer, Is.EqualTo("WBS-47"));
+            Assert.That(zeile.KarteId, Is.EqualTo(19));
+        });
+    }
+
     private static Karteniststaende EingefahrenesBoard()
     {
         return new Karteniststaende([Karte(11, "WBS-01", "[I0001] Board anlegen", "I0001"), Karte(12, "WBS-02", "[I0002] Boards auflisten", "I0002")]);

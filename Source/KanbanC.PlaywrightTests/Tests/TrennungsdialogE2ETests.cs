@@ -99,10 +99,13 @@ public class TrennungsdialogE2ETests : PageTest
         var trennungsdialog = Page.Locator("#components-reconnect-modal");
         await Assertions.Expect(trennungsdialog).ToBeHiddenAsync();
 
-        // Beides zusammen: das Schließen reißt die offene Verbindung, das Offline verhindert, dass
-        // sie sich sofort wieder aufnimmt und der Dialog vor der ersten Erwartung verschwindet.
-        await Context.SetOfflineAsync(true);
+        // Beides zusammen, und in dieser Reihenfolge: das Schließen reißt die offene Verbindung,
+        // das Offline danach verhindert, dass sie sich sofort wieder aufnimmt und der Dialog vor
+        // der ersten Erwartung verschwindet. `close()` ist ein Handshake und braucht dafür das
+        // Netz — auf einem schon offline geschalteten Kontext bleibt die Verbindung in CLOSING
+        // stehen, der Browser meldet nie ein `close`, und Blazor erfährt vom Abriss nichts.
         await Page.EvaluateAsync(ReisseVerbindungen);
+        await Context.SetOfflineAsync(true);
         return trennungsdialog;
     }
 }

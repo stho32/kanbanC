@@ -108,6 +108,8 @@ public sealed class WbsImportService
     // Danach kommt der Iststand dazu, und **Vorschau und Schreiben rechnen dasselbe**: eine
     // Vorschau, die die Wiedererkennung überspränge, verspräche etwas, das der dritte Schritt nicht
     // hält.
+    // Nach dem Schreiben kommt genau eine Ergänzung dazu: die Nummern und KarteIds der eben
+    // entstandenen Karten. Sie waren beim Rechnen nicht bekannt, weil es die Karten noch nicht gab.
     private Ergebnis<Importbericht> Bilanziere(Importziel ziel, Importanfrage anfrage, Wbsbestand bestand)
     {
         var gefiltert = Umfangsfilter.Filtere(bestand.Baum);
@@ -139,8 +141,8 @@ public sealed class WbsImportService
         }
 
         var anlagen = Schreibauftraege(ziel, vergleich.ZuErstellen);
-        _importRepository.Schreibe(anlagen, wirkungsbildung.Aktualisierungen, anfrage.Kartenklasse, anfrage.Kontributor!.Value);
-        return Ergebnis<Importbericht>.Erfolg(bericht);
+        var anlageergebnisse = _importRepository.Schreibe(anlagen, wirkungsbildung.Aktualisierungen, anfrage.Kartenklasse, anfrage.Kontributor!.Value);
+        return Ergebnis<Importbericht>.Erfolg(Berichtsnachzug.Zieh(bericht, anlageergebnisse, anfrage.Pfad, anfrage.Dateiname));
     }
 
     // **Der Schlüssel ist der Herkunftsverweis, nicht der Titel**, und er ist auf beiden Seiten

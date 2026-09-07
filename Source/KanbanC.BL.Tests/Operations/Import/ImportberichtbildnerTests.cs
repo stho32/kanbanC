@@ -45,6 +45,33 @@ public class ImportberichtbildnerTests
         });
     }
 
+    // Der Weg zur Karte haengt an der KarteId und nicht an der Nummer: sie reist neben ihr, an
+    // wiedererkannten und an verwaisten Zeilen, und bleibt leer, wo es die Karte noch nicht gibt.
+    [Test]
+    public void Wenn_eine_Karte_wiedererkannt_wurde_dann_traegt_ihre_Zeile_die_KarteId_neben_der_Nummer()
+    {
+        var bericht = Importberichtbildner.Bilde(Bildung(), [Uebersprungene(5)], Kartenzahlen(), Wirkungen(), [Verwaistenzeile("I0019", "WBS-47")]);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(bericht.Zeilen.Single(zeile => zeile.Kennung == "I0001").KarteId, Is.Null, "Eine anzulegende Karte gibt es vor dem Schreiben nicht.");
+            Assert.That(bericht.Zeilen.Single(zeile => zeile.Kennung == "I0002").KarteId, Is.EqualTo(4711));
+            Assert.That(bericht.Zeilen.Single(zeile => zeile.Kennung == "I0003").KarteId, Is.EqualTo(4712));
+            Assert.That(bericht.Zeilen.Single(zeile => zeile.Kennung == "I0019").KarteId, Is.EqualTo(4713));
+            Assert.That(bericht.Zeilen.Single(zeile => zeile.Kennung == "Zeile 5").KarteId, Is.Null, "Aus einer uebersprungenen Zeile wurde nie eine Karte.");
+        });
+    }
+
+    // Der Kopf des Laufs entsteht erst dort, wo Urheber und Uhr stehen — der Bildner rechnet die
+    // Bilanz und kennt weder das eine noch das andere.
+    [Test]
+    public void Wenn_der_Bericht_gebildet_wird_dann_traegt_er_noch_keinen_Laufkopf()
+    {
+        var bericht = Importberichtbildner.Bilde(Bildung(), [], Kartenzahlen(), Wirkungen(), []);
+
+        Assert.That(bericht.Laufkopf, Is.Null);
+    }
+
     [Test]
     public void Wenn_der_Vergleich_an_einer_Zeile_etwas_zu_sagen_hat_dann_steht_es_als_Grund_daran()
     {
@@ -78,16 +105,16 @@ public class ImportberichtbildnerTests
 
     private static Importberichtzeile Zeile(int zeilennummer, string kennung, Importwirkung wirkung)
     {
-        return new Importberichtzeile(zeilennummer, new Importzeile(kennung, "Interaction", wirkung, null, null));
+        return new Importberichtzeile(zeilennummer, new Importzeile(kennung, "Interaction", wirkung, null, null, null));
     }
 
     private static Kartenwirkungen Wirkungen()
     {
         return new Kartenwirkungen(
         [
-            new Kartenwirkung("I0001", Importwirkung.Angelegt, null, null),
-            new Kartenwirkung("I0002", Importwirkung.Geaendert, "WBS-02", "1 Abhakung zurückgenommen"),
-            new Kartenwirkung("I0003", Importwirkung.Unveraendert, "WBS-03", null),
+            new Kartenwirkung("I0001", Importwirkung.Angelegt, null, null, null),
+            new Kartenwirkung("I0002", Importwirkung.Geaendert, "WBS-02", 4711, "1 Abhakung zurückgenommen"),
+            new Kartenwirkung("I0003", Importwirkung.Unveraendert, "WBS-03", 4712, null),
         ]);
     }
 
@@ -98,7 +125,7 @@ public class ImportberichtbildnerTests
 
     private static Importzeile Verwaistenzeile(string kennung, string kartennummer)
     {
-        return new Importzeile(kennung, "Interaction", Importwirkung.Verwaist, "steht nicht mehr in der Datei", kartennummer);
+        return new Importzeile(kennung, "Interaction", Importwirkung.Verwaist, "steht nicht mehr in der Datei", kartennummer, 4713);
     }
 
     private static Kartenzahlen Kartenzahlen()
