@@ -23,6 +23,63 @@ public class AuswertungsflaecheTests
         ErwarteOhneLiterale(Tabellenstilvorlage());
     }
 
+    [Test]
+    public void Wenn_die_Stilvorlage_der_Burndownflaeche_gelesen_wird_dann_traegt_sie_kein_Farb_Abstands_oder_Radius_Literal()
+    {
+        ErwarteOhneLiterale(Burndownflaechenstilvorlage());
+    }
+
+    [Test]
+    public void Wenn_die_Stilvorlage_der_Kurve_gelesen_wird_dann_traegt_sie_kein_Farb_Abstands_oder_Radius_Literal()
+    {
+        ErwarteOhneLiterale(Kurvenstilvorlage());
+    }
+
+    // **Die Kurve trägt ihre Gestaltung nicht im Markup.** Ein `fill`- oder `stroke`-Wert im SVG
+    // wäre genau die Stelle, an der eine Farbe am Token-Sheet vorbei in die Anwendung käme.
+    [Test]
+    public void Wenn_die_Kurve_gelesen_wird_dann_traegt_ihr_Markup_weder_Farbe_noch_Strich_noch_Radius()
+    {
+        var kurve = OhneKommentare(File.ReadAllText(Quelltextbaum.BlazorDatei("Components", "Auswertungen", "Burndownkurve.razor"))); // stil-check: C03 die Ablage ist der Prüfgegenstand
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Regex.Matches(kurve, @"#[0-9a-fA-F]{3,8}\b"), Is.Empty, "Farben gehören ins Token-Sheet.");
+            Assert.That(kurve, Does.Not.Contain("fill="));
+            Assert.That(kurve, Does.Not.Contain("stroke="));
+            Assert.That(kurve, Does.Not.Contain("style="));
+            Assert.That(kurve, Does.Not.Contain(" r="));
+        });
+    }
+
+    // Die Farben der Kurve kommen aus dem Token-Sheet, nicht aus einem eigenen Vorrat.
+    [Test]
+    public void Wenn_die_Stilvorlage_der_Kurve_gelesen_wird_dann_holt_sie_ihre_Farben_aus_dem_Token_Sheet()
+    {
+        var regeln = Kurvenstilvorlage();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(regeln, Does.Contain("var(--color-accent)"));
+            Assert.That(regeln, Does.Contain("var(--color-divider)"));
+        });
+    }
+
+    // Kein Diagrammpaket: die Oberfläche hat keine Fremdabhängigkeit, und mit dem Burndown kommt
+    // keine dazu.
+    [Test]
+    public void Wenn_die_Projektdatei_der_Oberflaeche_gelesen_wird_dann_traegt_sie_kein_Diagrammpaket()
+    {
+        var projektdatei = File.ReadAllText(Quelltextbaum.BlazorDatei("KanbanC.Blazor.csproj")); // stil-check: C03 die Ablage ist der Prüfgegenstand
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(projektdatei, Does.Not.Contain("Chart").IgnoreCase);
+            Assert.That(projektdatei, Does.Not.Contain("Plotly").IgnoreCase);
+            Assert.That(projektdatei, Does.Not.Contain("Apex").IgnoreCase);
+        });
+    }
+
     // Kein CSS-Framework: was mit R00005 herausgegangen ist, kommt mit einem neuen Schirm nicht
     // zurück.
     [Test]
@@ -79,6 +136,16 @@ public class AuswertungsflaecheTests
     private static string Tabellenstilvorlage()
     {
         return File.ReadAllText(Quelltextbaum.BlazorDatei("Components", "Auswertungen", "SollIstTabelle.razor.css"));
+    }
+
+    private static string Burndownflaechenstilvorlage()
+    {
+        return File.ReadAllText(Quelltextbaum.BlazorDatei("Components", "Auswertungen", "Burndownflaeche.razor.css"));
+    }
+
+    private static string Kurvenstilvorlage()
+    {
+        return File.ReadAllText(Quelltextbaum.BlazorDatei("Components", "Auswertungen", "Burndownkurve.razor.css"));
     }
 
     // Razor-Kommentare und C#-Zeilenkommentare heraus: der Prüfgegenstand ist, was der Schirm

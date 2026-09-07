@@ -42,6 +42,21 @@ public class AuswertungenApiKlientTests
         }
         """;
 
+    private const string EinBurndown = """
+        {
+          "tage": [
+            {
+              "tag": "2026-09-05",
+              "erledigteKarten": [ { "karteId": 11, "kartennummer": "WBS-01", "titel": "[I0001] Board anlegen" } ],
+              "offeneKarten": 2
+            },
+            { "tag": "2026-09-06", "erledigteKarten": [], "offeneKarten": 2 },
+            { "tag": "2026-09-07", "erledigteKarten": [], "offeneKarten": 2 }
+          ],
+          "kopfzahlen": { "offen": 2, "erledigt": 3, "imBestand": 5, "ohneErledigungsdatum": 1 }
+        }
+        """;
+
     [Test]
     public async Task Wenn_die_WebApi_die_Auswertung_liefert_dann_traegt_das_Ergebnis_Zeilen_und_Summe()
     {
@@ -135,5 +150,94 @@ public class AuswertungenApiKlientTests
         var klient = new AuswertungenApiKlient(fabrik);
 
         Assert.That(async () => await klient.LadeSollIst(4, 2), Throws.InstanceOf<HttpRequestException>());
+    }
+
+    [Test]
+    public async Task Wenn_die_WebApi_den_Burndown_liefert_dann_traegt_das_Ergebnis_Tage_und_Kopfzahlen()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, EinBurndown, JsonInhaltstyp);
+        var klient = new AuswertungenApiKlient(fabrik);
+
+        var ergebnis = await klient.LadeBurndown(4, 2, seit: null);
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Wert.Tage, Has.Count.EqualTo(3));
+            Assert.That(ergebnis.Wert.Tage[0].Tag, Is.EqualTo(new DateOnly(2026, 9, 5)));
+            Assert.That(ergebnis.Wert.Tage[0].ErledigteKarten.Single().Kartennummer, Is.EqualTo("WBS-01"));
+            Assert.That(ergebnis.Wert.Tage[0].OffeneKarten, Is.EqualTo(2));
+            Assert.That(ergebnis.Wert.Tage[1].ErledigteKarten, Is.Empty);
+            Assert.That(ergebnis.Wert.Kopfzahlen, Is.EqualTo(new Burndownkopfzahlen(2, 3, 5, 1)));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_der_Burndown_ohne_Zeitraum_abgerufen_wird_dann_traegt_die_Adresse_keinen_Abfrageparameter()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, EinBurndown, JsonInhaltstyp);
+        var klient = new AuswertungenApiKlient(fabrik);
+
+        await klient.LadeBurndown(4, 2, seit: null);
+
+        Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("GET http://webapi.test/api/boards/4/kartenklassen/2/burndown"));
+    }
+
+    [Test]
+    public async Task Wenn_ein_Zeitraum_gewaehlt_ist_dann_steht_er_als_seit_in_der_Adresse()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, EinBurndown, JsonInhaltstyp);
+        var klient = new AuswertungenApiKlient(fabrik);
+
+        await klient.LadeBurndown(4, 2, new DateOnly(2026, 9, 5));
+
+        Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("GET http://webapi.test/api/boards/4/kartenklassen/2/burndown?seit=2026-09-05"));
+    }
+
+    // Der 400 dieser Route trägt **unseren** Befund: den gelesenen Wert und die erwartete Form.
+    // Über den Browser ist dieser Pfad nicht auslösbar — das Datumsfeld liefert nie „gestern“.
+    [Test]
+    public async Task Wenn_die_WebApi_den_Zeitraum_nicht_lesen_kann_dann_traegt_die_Zurueckweisung_den_gemeldeten_Befund()
+    {
+        const string Zurueckgewiesen = """
+            {"befunde":[{"code":"zeitraum-filter-unlesbar","meldung":"„gestern“ ist kein Datum; „seit“ nimmt die Form „yyyy-MM-dd“.","kompensation":"`/api/boards/4/kartenklassen/2/burndown` ohne Parameter aufrufen."}]}
+            """;
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.BadRequest, Zurueckgewiesen, JsonInhaltstyp);
+        var klient = new AuswertungenApiKlient(fabrik);
+
+        var ergebnis = await klient.LadeBurndown(4, 2, new DateOnly(2026, 9, 5));
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        var befund = ergebnis.Zurueckweisung.Befunde.Single();
+        Assert.Multiple(() =>
+        {
+            Assert.That(befund.Code, Is.EqualTo("zeitraum-filter-unlesbar"));
+            Assert.That(befund.Meldung, Does.Contain("gestern"));
+            Assert.That(befund.Kompensation, Does.Contain("ohne Parameter"));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_WebApi_das_Board_des_Burndowns_nicht_kennt_dann_traegt_die_Zurueckweisung_den_gemeldeten_Befund()
+    {
+        const string Zurueckgewiesen = """
+            {"befunde":[{"code":"board-unbekannt","meldung":"Ein Board mit der Nummer 999 gibt es nicht.","kompensation":"`GET /api/boards` abrufen und den Aufruf mit einer der gelieferten BoardIds wiederholen."}]}
+            """;
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.NotFound, Zurueckgewiesen, JsonInhaltstyp);
+        var klient = new AuswertungenApiKlient(fabrik);
+
+        var ergebnis = await klient.LadeBurndown(999, 2, seit: null);
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.That(ergebnis.Zurueckweisung.Befunde.Single().Code, Is.EqualTo("board-unbekannt"));
+    }
+
+    [Test]
+    public void Wenn_die_WebApi_beim_Burndown_ausfaellt_dann_laeuft_der_Fehler_bis_zum_Aufrufer_durch()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.ServiceUnavailable, string.Empty, JsonInhaltstyp);
+        var klient = new AuswertungenApiKlient(fabrik);
+
+        Assert.That(async () => await klient.LadeBurndown(4, 2, seit: null), Throws.InstanceOf<HttpRequestException>());
     }
 }

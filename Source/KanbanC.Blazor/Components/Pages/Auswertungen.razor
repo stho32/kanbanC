@@ -22,9 +22,14 @@
        Die Liste wächst mit — eine sechste Auswertung ist ein Eintrag mehr, kein Umbau. *@
     <nav class="auswertungsliste" id="auswertungsliste" aria-label="Auswertung">
         <p class="auswertungsliste-titel">Auswertung</p>
-        <span class="auswertungspunkt auswertungspunkt-aktiv" id="auswertung-soll-ist" aria-current="true">
-            Soll-Ist gegen die WBS
-        </span>
+        @foreach (var waehlbare in Gebaut)
+        {
+            <button type="button"
+                    class="auswertungspunkt @AktivklasseFuer(waehlbare.Wahl)"
+                    id="@($"auswertung-{waehlbare.Kennung}")"
+                    aria-current="@Aktivmarke(waehlbare.Wahl)"
+                    @onclick="() => WaehleAuswertung(waehlbare.Wahl)">@waehlbare.Beschriftung</button>
+        }
         @foreach (var kuenftige in NochNichtGebaut)
         {
             <span class="auswertungspunkt auswertungspunkt-gesperrt"
@@ -36,9 +41,11 @@
 
     <section class="auswertungsblatt">
         <div class="seitenkopf">
-            <h2 class="auswertungstitel">Soll-Ist gegen die WBS-Zählung</h2>
+            <h2 class="auswertungstitel" id="auswertungstitel">@Titel()</h2>
         </div>
 
+        @* Board und Kartenklasse sind für beide Auswertungen derselbe Bestand: ein Wechsel der
+           Auswertung wirft die Wahl nicht weg. *@
         <div class="bestandswahl" id="bestandswahl">
             <div class="field">
                 <label for="auswertung-board">Board</label>
@@ -60,6 +67,15 @@
                     }
                 </select>
             </div>
+            @if (_gewaehlteAuswertung == Auswertungswahl.Burndown)
+            {
+                @* Nur ein Beginn: das Ende ist immer heute, und ein zweites Feld dafür wäre eine
+                   Bedienfrage ohne Nutzen. *@
+                <div class="field">
+                    <label for="auswertung-seit">Beginn</label>
+                    <input id="auswertung-seit" class="input" type="date" value="@Beginnwert()" @onchange="WaehleZeitraum" />
+                </div>
+            }
         </div>
 
         @if (_ausfallmeldung is not null)
@@ -70,7 +86,7 @@
         @if (_zurueckweisung is not null)
         {
             <div class="meldung meldung-abweisung" role="alert" id="auswertung-zurueckweisung">
-                <p>Der Vergleich wurde nicht gerechnet:</p>
+                <p>Die Auswertung wurde nicht gerechnet:</p>
                 <ul>
                     @foreach (var befund in _zurueckweisung.Befunde)
                     {
@@ -93,22 +109,23 @@
                 oder wähle oben ein Board, das eine hat.
             </p>
         }
-        else if (_auswertung is not null)
+        else if (BestandIstLeer)
         {
-            @if (_auswertung.Zeilen.Count == 0)
-            {
-                <p class="auswertungshinweis" id="auswertung-leer">
-                    Dieser Kartenbestand führt keine Karte. Fahre eine WBS-Datei ein oder ordne Karten dieser Klasse zu.
-                </p>
-            }
-            else
-            {
-                <SollIstTabelle Auswertung="_auswertung" />
-            }
+            <p class="auswertungshinweis" id="auswertung-leer">
+                Dieser Kartenbestand führt keine Karte. Fahre eine WBS-Datei ein oder ordne Karten dieser Klasse zu.
+            </p>
+        }
+        else if (_sollIst is not null)
+        {
+            <SollIstTabelle Auswertung="_sollIst" />
+        }
+        else if (_burndown is not null)
+        {
+            <Burndownflaeche Auswertung="_burndown" />
         }
 
         @* Derselbe Weg für einen Agenten — die einzige Stelle, an der die API im Schirm sichtbar
-           wird. *@
+           wird; er folgt der gewählten Auswertung. *@
         <div class="auswertungsaufruf" id="auswertung-aufruf">
             <span class="auswertungsaufruf-titel">Derselbe Weg für einen Agenten</span>
             <pre class="auswertungsaufruf-text">@Aufruf()</pre>
@@ -117,11 +134,18 @@
 </div>
 
 @code {
-    // Die vier übrigen Auswertungen des Dialogs stehen gesperrt daneben: sie sind bestellt und
+    private const string Isodatumsformat = "yyyy-MM-dd";
+
+    private static readonly Gebauteauswertung[] Gebaut =
+    [
+        new(Auswertungswahl.SollIst, "soll-ist", "Soll-Ist gegen die WBS"),
+        new(Auswertungswahl.Burndown, "burndown", "Burndown"),
+    ];
+
+    // Die drei übrigen Auswertungen des Dialogs stehen gesperrt daneben: sie sind bestellt und
     // noch nicht gebaut, und eine Fläche, die sie verschweigt, sähe vollständig aus.
     private static readonly Kuenftigeauswertung[] NochNichtGebaut =
     [
-        new("burndown", "Burndown"),
         new("puffer", "Puffer-Verbrauch"),
         new("zeitexport", "Zeiten exportieren"),
         new("rohdaten", "Rohdaten über die API"),
@@ -129,15 +153,20 @@
 
     private IReadOnlyList<BoardUebersicht> _boards = [];
     private IReadOnlyList<Kartenklasse> _kartenklassen = [];
+    private Auswertungswahl _gewaehlteAuswertung = Auswertungswahl.SollIst;
     private long? _gewaehltesBoard;
     private long? _gewaehlteKartenklasse;
-    private SollIstAuswertung? _auswertung;
+    private DateOnly? _seit;
+    private SollIstAuswertung? _sollIst;
+    private Burndownauswertung? _burndown;
     private Zurueckweisung? _zurueckweisung;
     private string? _ausfallmeldung;
     private bool _boardFuehrtKeineKartenklasse;
 
     // Ohne beide Hälften gibt es keinen Kartenbestand — und ohne Bestand nichts zu rechnen.
     private bool BestandIstUngewaehlt => _gewaehltesBoard is null || (_gewaehlteKartenklasse is null && !_boardFuehrtKeineKartenklasse);
+
+    private bool BestandIstLeer => (_sollIst is not null && _sollIst.Zeilen.Count == 0) || (_burndown is not null && _burndown.Kopfzahlen.ImBestand == 0);
 
     protected override async Task OnInitializedAsync()
     {
@@ -149,13 +178,26 @@
         _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(async () => _boards = await BoardKlient.LadeAlleBoards(new Archivierung(false)));
     }
 
+    // Der Bestand bleibt stehen, nur die Auswertung wechselt — und der Zeitraum gilt jeweils neu.
+    private async Task WaehleAuswertung(Auswertungswahl wahl)
+    {
+        _gewaehlteAuswertung = wahl;
+        _seit = null;
+        VergissAuswertung();
+        var derBestandStehtSchon = _gewaehltesBoard is not null && _gewaehlteKartenklasse is not null;
+        if (derBestandStehtSchon)
+        {
+            await LadeAuswertung();
+        }
+    }
+
     private async Task WaehleBoard(ChangeEventArgs ereignis)
     {
         _gewaehltesBoard = Nummer(ereignis.Value);
         _gewaehlteKartenklasse = null;
         _kartenklassen = [];
-        _auswertung = null;
-        _zurueckweisung = null;
+        _seit = null;
+        VergissAuswertung();
         _boardFuehrtKeineKartenklasse = false;
         if (_gewaehltesBoard is null)
         {
@@ -192,8 +234,8 @@
     private async Task WaehleKartenklasse(ChangeEventArgs ereignis)
     {
         _gewaehlteKartenklasse = Nummer(ereignis.Value);
-        _auswertung = null;
-        _zurueckweisung = null;
+        _seit = null;
+        VergissAuswertung();
         if (_gewaehlteKartenklasse is null)
         {
             return;
@@ -202,7 +244,28 @@
         await LadeAuswertung();
     }
 
+    private async Task WaehleZeitraum(ChangeEventArgs ereignis)
+    {
+        _seit = Tag(ereignis.Value);
+        var derBestandStehtSchon = _gewaehltesBoard is not null && _gewaehlteKartenklasse is not null;
+        if (derBestandStehtSchon)
+        {
+            await LadeAuswertung();
+        }
+    }
+
     private async Task LadeAuswertung()
+    {
+        if (_gewaehlteAuswertung == Auswertungswahl.Burndown)
+        {
+            await LadeBurndown();
+            return;
+        }
+
+        await LadeSollIst();
+    }
+
+    private async Task LadeSollIst()
     {
         _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(async () =>
         {
@@ -210,19 +273,107 @@
             if (ergebnis.WurdeZurueckgewiesen)
             {
                 _zurueckweisung = ergebnis.Zurueckweisung;
-                _auswertung = null;
+                _sollIst = null;
                 return;
             }
 
-            _auswertung = ergebnis.Wert;
+            _sollIst = ergebnis.Wert;
         });
+    }
+
+    private async Task LadeBurndown()
+    {
+        _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(async () =>
+        {
+            var ergebnis = await AuswertungenKlient.LadeBurndown(_gewaehltesBoard!.Value, _gewaehlteKartenklasse!.Value, _seit);
+            if (ergebnis.WurdeZurueckgewiesen)
+            {
+                _zurueckweisung = ergebnis.Zurueckweisung;
+                _burndown = null;
+                return;
+            }
+
+            _burndown = ergebnis.Wert;
+        });
+    }
+
+    private void VergissAuswertung()
+    {
+        _sollIst = null;
+        _burndown = null;
+        _zurueckweisung = null;
+    }
+
+    private string Titel()
+    {
+        if (_gewaehlteAuswertung == Auswertungswahl.Burndown)
+        {
+            return "Burndown über Kalendertage";
+        }
+
+        return "Soll-Ist gegen die WBS-Zählung";
+    }
+
+    // Ohne eigene Wahl zeigt das Feld den ersten Tag der gelieferten Achse — den frühesten
+    // Erledigungstag des Bestands.
+    private string Beginnwert()
+    {
+        if (_seit is not null)
+        {
+            return _seit.Value.ToString(Isodatumsformat, CultureInfo.InvariantCulture);
+        }
+
+        if (_burndown is not null && _burndown.Tage.Count > 0)
+        {
+            return _burndown.Tage[0].Tag.ToString(Isodatumsformat, CultureInfo.InvariantCulture);
+        }
+
+        return string.Empty;
     }
 
     private string Aufruf()
     {
         var boardId = Platzhalter(_gewaehltesBoard, "{boardId}");
         var kartenklasseId = Platzhalter(_gewaehlteKartenklasse, "{kartenklasseId}");
+        if (_gewaehlteAuswertung == Auswertungswahl.Burndown)
+        {
+            return $"GET /api/boards/{boardId}/kartenklassen/{kartenklasseId}/burndown{Zeitraumabfrage()}";
+        }
+
         return $"GET /api/boards/{boardId}/kartenklassen/{kartenklasseId}/soll-ist";
+    }
+
+    private string Zeitraumabfrage()
+    {
+        var beginn = Beginnwert();
+        if (string.IsNullOrEmpty(beginn))
+        {
+            return string.Empty;
+        }
+
+        return $"?seit={beginn}";
+    }
+
+    private string AktivklasseFuer(Auswertungswahl wahl)
+    {
+        if (_gewaehlteAuswertung == wahl)
+        {
+            return "auswertungspunkt-aktiv";
+        }
+
+        return "";
+    }
+
+    // Ein leerer Wert gilt in ARIA als „nicht aktuell" — die Marke steht deshalb als Text da oder
+    // gar nicht.
+    private string? Aktivmarke(Auswertungswahl wahl)
+    {
+        if (_gewaehlteAuswertung == wahl)
+        {
+            return "true";
+        }
+
+        return null; // stil-check: C25 kein Wert heisst „dieser Punkt ist nicht der aktuelle"
     }
 
     private static string Platzhalter(long? nummer, string platzhalter)
@@ -245,6 +396,25 @@
 
         return long.Parse(text, CultureInfo.InvariantCulture);
     }
+
+    private static DateOnly? Tag(object? wert)
+    {
+        var text = wert?.ToString();
+        if (string.IsNullOrEmpty(text))
+        {
+            return null;
+        }
+
+        return DateOnly.ParseExact(text, Isodatumsformat, CultureInfo.InvariantCulture);
+    }
+
+    private enum Auswertungswahl
+    {
+        SollIst,
+        Burndown,
+    }
+
+    private sealed record Gebauteauswertung(Auswertungswahl Wahl, string Kennung, string Beschriftung);
 
     private sealed record Kuenftigeauswertung(string Kennung, string Beschriftung);
 }

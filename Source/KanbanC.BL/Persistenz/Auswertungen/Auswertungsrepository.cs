@@ -21,6 +21,7 @@ namespace KanbanC.BL.Persistenz.Auswertungen;
 public sealed class Auswertungsrepository : IAuswertungsrepository
 {
     private const string IsoZeitpunktformat = "O";
+    private const string IsoDatumsformat = "yyyy-MM-dd";
     private readonly IDatenbankVerbindungsfabrik _verbindungsfabrik;
 
     public Auswertungsrepository(IDatenbankVerbindungsfabrik verbindungsfabrik)
@@ -127,4 +128,62 @@ public sealed class Auswertungsrepository : IAuswertungsrepository
         double? SollzeitBisStunden);
 
     private sealed record Zeitspannenzeile(long Karte, string Beginn, string? Ende);
+
+    // Derselbe Schnitt wie oben, ein Lesevorgang je Bestand — nur dass hier das Erledigungsdatum
+    // und die Abschlussmarke der Bahn mitkommen statt Zeiten und Soll.
+    public Erledigungsstandkarten LiesErledigungsstaende(long boardId, long kartenklasseId)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+
+        var zeilen = verbindung.Query<Erledigungszeile>(@"
+            SELECT k.KarteId, k.Titel,
+                   n.Praefix AS Kartenklassenpraefix, z.Zaehlerstand AS VergebenerZaehlerstand,
+                   e.ErledigtAm,
+                   a.Karte AS ArchivierteKarte,
+                   s.IstAbschlussspalte
+              FROM Karte k
+              JOIN Spalte s ON s.SpalteId = k.Spalte
+              JOIN Kartenklassenzuordnung z ON z.Karte = k.KarteId
+              JOIN Kartenklasse n ON n.KartenklasseId = z.Kartenklasse
+              LEFT JOIN Karteerledigung e ON e.Karte = k.KarteId
+              LEFT JOIN Kartenarchivierung a ON a.Karte = k.KarteId
+             WHERE s.Board = @BoardId
+               AND z.Kartenklasse = @KartenklasseId
+             ORDER BY z.Zaehlerstand", new { BoardId = boardId, KartenklasseId = kartenklasseId });
+
+        var karten = new List<Erledigungsstandkarte>();
+        foreach (var zeile in zeilen)
+        {
+            karten.Add(new Erledigungsstandkarte(
+                zeile.KarteId,
+                Kartennummer.Aus(zeile.Kartenklassenpraefix, (int)zeile.VergebenerZaehlerstand),
+                zeile.Titel,
+                AlsTag(zeile.ErledigtAm),
+                zeile.ArchivierteKarte is not null,
+                zeile.IstAbschlussspalte != 0));
+        }
+
+        return new Erledigungsstandkarten(karten);
+    }
+
+    // Das Datum steht als ISO-Text in der Spalte und wird in C# gelesen — wie in
+    // KartenRepository.LiesErledigung, das es ebenso schreibt.
+    private static DateOnly? AlsTag(string? isoText)
+    {
+        if (isoText is null)
+        {
+            return null;
+        }
+
+        return DateOnly.ParseExact(isoText, IsoDatumsformat, CultureInfo.InvariantCulture);
+    }
+
+    private sealed record Erledigungszeile(
+        long KarteId,
+        string Titel,
+        string Kartenklassenpraefix,
+        long VergebenerZaehlerstand,
+        string? ErledigtAm,
+        long? ArchivierteKarte,
+        long IstAbschlussspalte);
 }

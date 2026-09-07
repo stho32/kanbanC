@@ -1,0 +1,121 @@
+@using System.Globalization
+@using KanbanC.Blazor.Services
+@using KanbanC.Contracts.Auswertungen
+
+@* Die Kurve offener Karten über Kalendertage — SVG von Hand, kein Diagrammpaket. Geprüft wird am
+   `points`-Attribut der Polylinie, nicht an einem Bild. Farben und Maße kommen aus
+   gestaltung.css; hier stehen nur Geometriekonstanten. *@
+<svg class="burndownkurve" id="burndown-kurve"
+     viewBox="@Sichtfeld()"
+     role="img"
+     aria-label="Offene Karten je Kalendertag">
+    <g transform="@Zeichenversatz()">
+        @foreach (var marke in Wertmarken())
+        {
+            @* Der `<g>`-Rahmen ist keine Zier: in einem Razor-Codeblock ist `<text>` das
+               Auszeichnungswort der Sprache und erst innerhalb eines Elements wieder ein
+               SVG-Element. *@
+            <g class="burndown-wertlinie">
+                <line class="burndown-gitterlinie" x1="0" y1="@Zahl(marke.Y)" x2="@Breite" y2="@Zahl(marke.Y)" />
+                <text class="burndown-wertmarke" x="@(-WertmarkenAbstand)" y="@Zahl(marke.Y)">@marke.Wert</text>
+            </g>
+        }
+
+        <polyline class="burndown-linie" id="burndown-linie" points="@_bild.Punkteattribut" />
+
+        @foreach (var punkt in _bild.Punkte)
+        {
+            <circle class="burndown-punkt" cx="@Zahl(punkt.X)" cy="@Zahl(punkt.Y)" />
+        }
+
+        <text class="burndown-letzterwert" id="burndown-letzterwert"
+              x="@Zahl(_bild.Punkte[^1].X - LetzterwertAbstand)"
+              y="@Zahl(_bild.Punkte[^1].Y - LetzterwertAbstand)">@Tage[^1].OffeneKarten</text>
+
+        @foreach (var beschriftung in Tagesbeschriftungen())
+        {
+            <g class="burndown-tagbeschriftung">
+                <text class="burndown-tagmarke" x="@Zahl(beschriftung.X)" y="@(Hoehe + TagmarkenAbstand)">@beschriftung.Text</text>
+            </g>
+        }
+    </g>
+</svg>
+
+@code {
+    // Die Zeichenfläche in Nutzereinheiten des viewBox — Geometrie, keine Gestaltung. Links und
+    // unten bleibt Platz für die Beschriftungen der beiden Achsen.
+    private const int Breite = 600;
+    private const int Hoehe = 160;
+    private const int RandLinks = 34;
+    private const int RandOben = 12;
+    private const int RandUnten = 26;
+    private const int WertmarkenAbstand = 8;
+    private const int TagmarkenAbstand = 18;
+    private const int LetzterwertAbstand = 8;
+    private const string EineNachkommastelle = "0.#";
+    private const string Tagesform = "dd.MM.";
+
+    private Kurvenbild _bild = Kurvenpunkte.Aus([0], Breite, Hoehe);
+
+    [Parameter]
+    [EditorRequired]
+    public required IReadOnlyList<Burndowntag> Tage { get; set; }
+
+    // Einmal gerechnet je Tagesreihe: Gitter, Linie, Punkte und Beschriftungen lesen dasselbe Bild.
+    protected override void OnParametersSet()
+    {
+        _bild = Kurvenpunkte.Aus(OffeneKarten(), Breite, Hoehe);
+    }
+
+    private IReadOnlyList<int> OffeneKarten()
+    {
+        var werte = new List<int>();
+        foreach (var tag in Tage)
+        {
+            werte.Add(tag.OffeneKarten);
+        }
+
+        return werte;
+    }
+
+    private IReadOnlyList<Wertmarke> Wertmarken()
+    {
+        return Kurvenpunkte.Wertmarken(_bild.Hoechstwert, Hoehe);
+    }
+
+    // Der erste und der letzte Tag stehen immer da; dazwischen wird ausgedünnt, damit die Achse
+    // auch über ein Jahr lesbar bleibt.
+    private IReadOnlyList<Tagesbeschriftung> Tagesbeschriftungen()
+    {
+        var schritt = Kurvenpunkte.Beschriftungsschritt(Tage.Count);
+        var punkte = _bild.Punkte;
+        var beschriftungen = new List<Tagesbeschriftung>();
+        for (var tag = 0; tag < Tage.Count; tag++)
+        {
+            var dieserTagWirdBeschriftet = tag % schritt == 0 || tag == Tage.Count - 1;
+            if (dieserTagWirdBeschriftet)
+            {
+                beschriftungen.Add(new Tagesbeschriftung(punkte[tag].X, Tage[tag].Tag.ToString(Tagesform, CultureInfo.InvariantCulture)));
+            }
+        }
+
+        return beschriftungen;
+    }
+
+    private static string Sichtfeld()
+    {
+        return $"0 0 {Breite + RandLinks} {Hoehe + RandOben + RandUnten}";
+    }
+
+    private static string Zeichenversatz()
+    {
+        return $"translate({RandLinks},{RandOben})";
+    }
+
+    private static string Zahl(double wert)
+    {
+        return wert.ToString(EineNachkommastelle, CultureInfo.InvariantCulture);
+    }
+
+    private sealed record Tagesbeschriftung(double X, string Text);
+}

@@ -25,13 +25,32 @@
     color: var(--color-accent);
 }
 
+/* Die wählbaren Punkte sind Schaltflächen und die gesperrten Beschriftungen — sie müssen
+   trotzdem dieselbe Zeile sein. Deshalb legt die Regel das Chrome des Browsers ab, wie es der
+   Kartenmenüpunkt seit I0013 tut. */
 .auswertungspunkt {
+    display: block;
+    width: 100%;
     padding: var(--space-1) var(--space-2);
+    border: 0;
     border-radius: var(--radius-sm);
+    font-family: inherit;
     font-size: 14px;
+    text-align: left;
+    color: inherit;
+    background: transparent;
 }
 
-.auswertungspunkt-aktiv {
+button.auswertungspunkt {
+    cursor: pointer;
+}
+
+button.auswertungspunkt:hover {
+    background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+}
+
+.auswertungspunkt-aktiv,
+button.auswertungspunkt-aktiv:hover {
     background: var(--color-accent-100);
     color: var(--color-accent-800);
     border-left: 2px solid var(--color-accent);

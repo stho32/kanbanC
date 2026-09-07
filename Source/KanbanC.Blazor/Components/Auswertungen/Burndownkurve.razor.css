@@ -1,0 +1,46 @@
+/* Die Kurve bekommt den Platz, das Gitter tritt zurück. Farben und Radien kommen aus
+   gestaltung.css; Strichstärken und Schriftgrößen stehen als Wert, weil das Token-Sheet für sie
+   keine Variable führt. */
+.burndownkurve {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+}
+
+.burndown-gitterlinie {
+    stroke: var(--color-divider);
+    stroke-width: 1;
+}
+
+.burndown-linie {
+    fill: none;
+    stroke: var(--color-accent);
+    stroke-width: 2;
+    stroke-linejoin: round;
+}
+
+.burndown-punkt {
+    r: var(--radius-xs);
+    fill: var(--color-accent);
+}
+
+.burndown-wertmarke {
+    fill: var(--color-neutral-600);
+    font-size: 11px;
+    text-anchor: end;
+    dominant-baseline: middle;
+}
+
+.burndown-tagmarke {
+    fill: var(--color-neutral-600);
+    font-size: 11px;
+    text-anchor: middle;
+}
+
+/* Der Wert am rechten Rand steht lesbar daneben — die Zahl, auf die es ankommt. */
+.burndown-letzterwert {
+    fill: var(--color-accent-800);
+    font-size: 13px;
+    font-weight: 600;
+    text-anchor: end;
+}

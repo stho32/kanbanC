@@ -1,0 +1,107 @@
+@using System.Globalization
+@using KanbanC.Contracts.Auswertungen
+
+@* Kopfzahlen, Kurve, Tagestabelle und Fußzeile — alle vier lesen **dieselbe** Reihe; keine von
+   ihnen rechnet nach. *@
+<div class="burndownflaeche" id="burndown-flaeche">
+    <div class="burndown-kopfzahlen" id="burndown-kopfzahlen">
+        <span class="burndown-kopfzahl"><strong>@Auswertung.Kopfzahlen.Offen</strong> offen</span>
+        <span class="burndown-kopfzahl"><strong>@Auswertung.Kopfzahlen.Erledigt</strong> erledigt</span>
+        <span class="burndown-kopfzahl"><strong>@Auswertung.Kopfzahlen.ImBestand</strong> im Bestand</span>
+    </div>
+
+    @if (DieKurveWaereEinEinzelnerPunkt)
+    {
+        <p class="burndownhinweis" id="burndown-ohne-erledigung">
+            In diesem Bestand trägt keine Karte ein Erledigungsdatum; eine Kurve aus einem Punkt sagt nichts.
+            Zieh eine Karte in die Abschlussspalte oder wähle einen früheren Beginn.
+        </p>
+    }
+    else
+    {
+        <Burndownkurve Tage="Auswertung.Tage" />
+    }
+
+    <table class="table burndowntabelle" id="burndown-tabelle">
+        <thead>
+            <tr>
+                <th class="spalte-tag">Tag</th>
+                <th class="spalte-zahl">erledigt</th>
+                <th class="spalte-zahl">offen</th>
+                <th class="spalte-karten">Karten</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var tag in TageMitAbschluss())
+            {
+                <tr class="burndownzeile" id="@($"burndown-zeile-{Tageskennung(tag)}")">
+                    <td class="spalte-tag">@tag.Tag.ToString(Tagesform, CultureInfo.InvariantCulture)</td>
+                    <td class="spalte-zahl">@tag.ErledigteKarten.Count</td>
+                    <td class="spalte-zahl">@tag.OffeneKarten</td>
+                    <td class="spalte-karten">
+                        @foreach (var karte in tag.ErledigteKarten)
+                        {
+                            <span class="burndown-kartennummer">@karte.Kartennummer</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (KeinTagTraegtEinenAbschluss)
+    {
+        <p class="burndownhinweis" id="burndown-ohne-abschluss">
+            Im gewählten Zeitraum wurde keine Karte erledigt. Die Kurve zeigt die Tage trotzdem — eine flache Strecke ist eine Aussage.
+        </p>
+    }
+
+    @* Gezeigt statt versteckt: diese Karten verlassen die Kurve nie, und eine flache Strecke
+       darf nicht für Stillstand gehalten werden. *@
+    @if (Auswertung.Kopfzahlen.OhneErledigungsdatum > 0)
+    {
+        <p class="burndown-fusszeile" id="burndown-ohne-datum">
+            @Auswertung.Kopfzahlen.OhneErledigungsdatum von @Auswertung.Kopfzahlen.ImBestand Karten stehen ohne Erledigungsdatum
+            in einer Abschlussspalte oder im Archiv; sie bleiben in der Kurve offen.
+        </p>
+    }
+</div>
+
+@code {
+    private const string Tagesform = "dd.MM.yyyy";
+    private const string Tageskennungsform = "yyyy-MM-dd";
+
+    [Parameter]
+    [EditorRequired]
+    public required Burndownauswertung Auswertung { get; set; }
+
+    // Eine Kurve aus einem einzigen Punkt sagt nichts. Genau diese Lage — nichts erledigt, und
+    // die Achse deshalb nur der Tag heute — bekommt die Kompensationsaktion statt eines Bildes;
+    // beide genannten Wege führen aus ihr heraus.
+    private bool DieKurveWaereEinEinzelnerPunkt => Auswertung.Tage.Count == 1 && Auswertung.Kopfzahlen.Erledigt == 0 && Auswertung.Kopfzahlen.ImBestand > 0;
+
+    // Nur neben einer gezeichneten Kurve: steht schon die Kompensationsaktion da, sagte ein
+    // zweiter Satz über dieselbe Lage nichts Neues.
+    private bool KeinTagTraegtEinenAbschluss => TageMitAbschluss().Count == 0 && !DieKurveWaereEinEinzelnerPunkt;
+
+    // Die Tabelle zeigt nur Tage mit mindestens einem Abschluss, die Kurve alle — beide aus
+    // derselben Reihe.
+    private IReadOnlyList<Burndowntag> TageMitAbschluss()
+    {
+        var tage = new List<Burndowntag>();
+        foreach (var tag in Auswertung.Tage)
+        {
+            if (tag.ErledigteKarten.Count > 0)
+            {
+                tage.Add(tag);
+            }
+        }
+
+        return tage;
+    }
+
+    private static string Tageskennung(Burndowntag tag)
+    {
+        return tag.Tag.ToString(Tageskennungsform, CultureInfo.InvariantCulture);
+    }
+}

@@ -9,10 +9,8 @@ using KanbanC.Contracts.Fehler;
 
 namespace KanbanC.BL.Integrations.Auswertungen;
 
-// Der Soll-Ist-Vergleich eines Kartenbestands — **gerechnet**, nicht als Haufen Zeilen zum
+// Die Auswertungen eines Kartenbestands — **gerechnet**, nicht als Haufen Zeilen zum
 // Selberaddieren: ein Agent bekommt hier dieselbe Auskunft wie ein Mensch am Schirm.
-// Erst das Board, dann die Kartenklasse, dann der Bestand: die Karten einer fremden Kartenklasse
-// werden gar nicht erst gelesen.
 public sealed class AuswertungsService
 {
     private readonly IAuswertungsrepository _auswertungsrepository;
@@ -26,21 +24,60 @@ public sealed class AuswertungsService
 
     public Ergebnis<SollIstAuswertung> SollIst(long boardId, long kartenklasseId)
     {
+        var befundZumBestand = PruefeBestand(boardId, kartenklasseId);
+        if (befundZumBestand is not null)
+        {
+            return Zurueckgewiesen<SollIstAuswertung>(befundZumBestand);
+        }
+
+        var bestand = _auswertungsrepository.LiesSollIst(boardId, kartenklasseId);
+        return Ergebnis<SollIstAuswertung>.Erfolg(new SollIstAuswertung(Zeilen(bestand), Summe(bestand)));
+    }
+
+    // Der Restumfang desselben Bestands über die Zeit — dieselbe Vorprüfung, dieselben drei
+    // Befunde. „Heute“ liest die Integration und gibt es den puren Operationen als Eingang; die
+    // Uhr ist dieselbe, aus der KartenRepository das ErledigtAm schreibt.
+    // Ein Bestand ohne Karten ist kein Fehler: die Reihe über den einen Tag heute ist die Antwort.
+    public Ergebnis<Burndownauswertung> Burndown(long boardId, long kartenklasseId, DateOnly? seit)
+    {
+        var befundZumBestand = PruefeBestand(boardId, kartenklasseId);
+        if (befundZumBestand is not null)
+        {
+            return Zurueckgewiesen<Burndownauswertung>(befundZumBestand);
+        }
+
+        var bestand = _auswertungsrepository.LiesErledigungsstaende(boardId, kartenklasseId);
+        var achse = Burndownzeitraum.Bestimme(bestand, seit, Heute());
+        var reihe = Burndownrechner.Rechne(bestand, achse);
+        return Ergebnis<Burndownauswertung>.Erfolg(new Burndownauswertung(reihe, Burndownrechner.Kopfzahlen(bestand, reihe)));
+    }
+
+    // Erst das Board, dann die Kartenklasse: die Karten einer fremden Kartenklasse werden gar
+    // nicht erst gelesen. Kein Befund heißt, der Bestand steht.
+    private Fehlerbefund? PruefeBestand(long boardId, long kartenklasseId)
+    {
         var kartenklassenDesBoards = _kartenklassenRepository.LadeAlle(boardId);
         var dasBoardGibtEsNicht = kartenklassenDesBoards is null;
         if (dasBoardGibtEsNicht)
         {
-            return Zurueckgewiesen(Nichtgefunden.Board(boardId));
+            return Nichtgefunden.Board(boardId);
         }
 
         var dieKartenklasseGehoertNichtZuDiesemBoard = !kartenklassenDesBoards!.Any(kartenklasse => kartenklasse.KartenklasseId == kartenklasseId);
         if (dieKartenklasseGehoertNichtZuDiesemBoard)
         {
-            return Zurueckgewiesen(BefundZurFehlendenKartenklasse(boardId, kartenklasseId));
+            return BefundZurFehlendenKartenklasse(boardId, kartenklasseId);
         }
 
-        var bestand = _auswertungsrepository.LiesSollIst(boardId, kartenklasseId);
-        return Ergebnis<SollIstAuswertung>.Erfolg(new SollIstAuswertung(Zeilen(bestand), Summe(bestand)));
+        return null; // stil-check: C25 kein Befund heisst „der Bestand steht"
+    }
+
+    // Die Uhr der WebApi, nicht UTC — dieselbe Stelle wie bei KartenRepository.Heute(): „heute"
+    // ist der Tag, den der Mensch vor dem Bildschirm meint. Eine andere Uhr für das Lesen als für
+    // das Schreiben erzeugte Tage, an denen eine Karte erledigt und zugleich offen wäre.
+    private static DateOnly Heute()
+    {
+        return DateOnly.FromDateTime(DateTime.Today); // stil-check: C03 dieselbe Uhr wie KartenRepository.Heute(), bewusst ohne Abstraktion
     }
 
     private static IReadOnlyList<SollIstZeile> Zeilen(SollIstKarten bestand)
@@ -88,8 +125,8 @@ public sealed class AuswertungsService
         return Nichtgefunden.FremdeKartenklasse(boardId, kartenklasseId, boardDerKartenklasse!.Value);
     }
 
-    private static Ergebnis<SollIstAuswertung> Zurueckgewiesen(Fehlerbefund befund)
+    private static Ergebnis<T> Zurueckgewiesen<T>(Fehlerbefund befund)
     {
-        return Ergebnis<SollIstAuswertung>.Zurueckgewiesen(new Pruefbefunde([befund]));
+        return Ergebnis<T>.Zurueckgewiesen(new Pruefbefunde([befund]));
     }
 }
