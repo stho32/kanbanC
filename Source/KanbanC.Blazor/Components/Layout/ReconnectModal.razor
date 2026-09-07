@@ -1,5 +1,7 @@
 ﻿<script type="module" src="@Assets["Components/Layout/ReconnectModal.razor.js"]"></script>
 
+@* Die Element-Ids und die components-*-visible-Klassen bleiben unangetastet: das Blazor-Laufzeitteil
+   findet den Dialog über sie, und ein deutscher Bezeichner bräche ihn. Deutsch sind die Texte. *@
 <dialog id="components-reconnect-modal" data-nosnippet>
     <div class="components-reconnect-container">
         <div class="components-rejoining-animation" aria-hidden="true">
@@ -7,25 +9,29 @@
             <div></div>
         </div>
         <p class="components-reconnect-first-attempt-visible">
-            Rejoining the server...
+            Die Verbindung wird wiederhergestellt …
         </p>
         <p class="components-reconnect-repeated-attempt-visible">
-            Rejoin failed... trying again in <span id="components-seconds-to-next-attempt"></span> seconds.
+            Erneut verbinden ist gescheitert … nächster Versuch in <span id="components-seconds-to-next-attempt"></span> Sekunden.
         </p>
         <p class="components-reconnect-failed-visible">
-            Failed to rejoin.<br />Please retry or reload the page.
+            Die Verbindung ist abgerissen.<br />Bitte erneut verbinden oder die Seite neu laden.
         </p>
+        @* Der Server ist in diesem Fall weg und kann die Zeile nicht rendern — sie entsteht im
+           Browser (ReconnectModal.razor.js) und steht, solange der Dialog steht: wie alt der
+           Schirm ist, will man ab dem ersten Moment wissen, nicht erst nach dem letzten Versuch. *@
+        <p id="verbindungsalter"></p>
         <button id="components-reconnect-button" class="components-reconnect-failed-visible">
-            Retry
+            Erneut verbinden
         </button>
         <p class="components-pause-visible">
-            The session has been paused by the server.
+            Die Sitzung wurde vom Server angehalten.
         </p>
         <button id="components-resume-button" class="components-pause-visible">
-            Resume
+            Fortsetzen
         </button>
         <p class="components-resume-failed-visible">
-            Failed to resume the session.<br />Please reload the page.
+            Die Sitzung ließ sich nicht fortsetzen.<br />Bitte die Seite neu laden.
         </p>
     </div>
 </dialog>

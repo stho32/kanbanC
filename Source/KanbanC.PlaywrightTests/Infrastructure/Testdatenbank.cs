@@ -47,6 +47,21 @@ public sealed class Testdatenbank
             new { Karte = karteId, ErledigtAm = erledigtAm.ToString("yyyy-MM-dd") });
     }
 
+    // Eine Bewegung, während die WebApi angehalten ist: über den Dienst geht sie dann nicht, und
+    // genau das ist die Lage, die ein Aufschließen braucht — die Welt hat sich verändert, während
+    // die Sicht nicht zusehen konnte. Geschrieben werden dieselben zwei Spalten, die auch das
+    // Repository beim Verschieben schreibt.
+    public void VerschiebeKarte(long karteId, long spalteId, int position)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            UPDATE Karte
+               SET Spalte = @Spalte,
+                   Position = @Position
+             WHERE KarteId = @KarteId",
+            new { KarteId = karteId, Spalte = spalteId, Position = position });
+    }
+
     // Derselbe Weg am Dienst vorbei wie bei der Erledigung, und aus demselben Grund: die
     // Anwendung setzt den Zeitpunkt selbst, und über die Uhr des Testlaufs ließe sich kein
     // gestriger herstellen. Geschrieben wird dasselbe Format, das das Repository schreibt —

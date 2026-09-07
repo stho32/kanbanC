@@ -8,8 +8,11 @@ retryButton.addEventListener("click", retry);
 const resumeButton = document.getElementById("components-resume-button");
 resumeButton.addEventListener("click", resume);
 
+const verbindungsalter = document.getElementById("verbindungsalter");
+
 function handleReconnectStateChanged(event) {
     if (event.detail.state === "show") {
+        nenneStandDesSchirms(new Date());
         reconnectModal.showModal();
     } else if (event.detail.state === "hide") {
         reconnectModal.close();
@@ -60,4 +63,18 @@ async function retryWhenDocumentBecomesVisible() {
     if (document.visibilityState === "visible") {
         await retry();
     }
+}
+
+// Der Server ist in diesem Fall weg und kann nichts mehr zeichnen: die Zeile entsteht deshalb im
+// Browser, in dem Moment, in dem die Trennung beginnt. Der Zeitpunkt ist der des Abrisses und
+// waechst nicht mit — eine ohne Verbindung weiterlaufende Zahl waere die eine, die sicher falsch
+// ist.
+function nenneStandDesSchirms(abrisszeitpunkt) {
+    verbindungsalter.textContent = `Was du siehst, ist der Stand von ${alsTageszeit(abrisszeitpunkt)}.`;
+}
+
+function alsTageszeit(zeitpunkt) {
+    const stunden = String(zeitpunkt.getHours()).padStart(2, "0");
+    const minuten = String(zeitpunkt.getMinutes()).padStart(2, "0");
+    return `${stunden}:${minuten}`;
 }

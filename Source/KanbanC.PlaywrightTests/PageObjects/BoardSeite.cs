@@ -85,6 +85,19 @@ public sealed class BoardSeite
     // Die zurückgehaltene fremde Bewegung steht über den Bahnen, nicht an einer Karte.
     public ILocator WartendeAenderung => _seite.Locator("#wartende-aenderung");
 
+    // Das Band nach der Rückkehr der Leitung: es steht über den Bahnen, nicht in der Kopfzeile.
+    public ILocator Aufschliessband => _seite.Locator("#aufschliessband");
+
+    public ILocator AufschliessbandAuskunft => _seite.Locator("#aufschliessband-auskunft");
+
+    public ILocator AufschliessbandSchliessen => _seite.Locator("#aufschliessband-schliessen");
+
+    // Die Marke der Kopfzeile gehört dem Abbruch zwischen Oberfläche und WebApi; sie steht nur,
+    // solange die Leitung weg ist.
+    public ILocator Verbindungsmarke => _seite.Locator("#verbindungsmarke");
+
+    public ILocator GetrennterSchirm => _seite.Locator(".seite.schirm-getrennt");
+
     public ILocator LeerhinweiseDerBahnen => _seite.Locator("#spaltenbahnen .spaltenbahn-leer");
 
     public ILocator Datumsgruppen => _seite.Locator("#spaltenbahnen .spaltenbahn-datumsgruppe");

@@ -1,6 +1,8 @@
 @inherits LayoutComponentBase
+@implements IDisposable
+@inject Ereignisverteiler Ereignisverteiler
 
-<div class="seite">
+<div class="@Rumpfklassen">
     <Kopfzeile />
 
     <main class="inhalt">
@@ -13,3 +15,41 @@
     <a href="." class="reload">Neu laden</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code {
+    // Die Zurücknahme gilt dem **ganzen Schirm** und nicht einzelnen Kästen: die Aussage lautet
+    // „dieses Bild altert", und die gilt allem, was daraufsteht.
+    private bool _dieLeitungIstWeg;
+
+    private string Rumpfklassen
+    {
+        get
+        {
+            if (_dieLeitungIstWeg)
+            {
+                return "seite schirm-getrennt";
+            }
+
+            return "seite";
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        Ereignisverteiler.Verbindungsstandgewechselt += AufVerbindungsstand;
+        _dieLeitungIstWeg = Ereignisverteiler.Verbindungsstand.IstGetrennt;
+    }
+
+    // Der Stand kommt aus dem Hintergrunddienst und damit von einem fremden Faden: das
+    // Neuzeichnen läuft über InvokeAsync im Kreislauf dieser Sitzung.
+    private void AufVerbindungsstand(Verbindungsstand stand)
+    {
+        _dieLeitungIstWeg = stand.IstGetrennt;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Ereignisverteiler.Verbindungsstandgewechselt -= AufVerbindungsstand;
+    }
+}

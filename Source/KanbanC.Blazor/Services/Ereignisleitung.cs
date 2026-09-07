@@ -11,8 +11,11 @@ namespace KanbanC.Blazor.Services;
 // am Ende des Stroms zurück, und die Vorgabegrenze von hundert Sekunden risse eine Leitung ab, die
 // gerade nur still ist (beides belegt in EreignisstromProbeTests).
 // Nach einem Abriss nimmt sich die Leitung von selbst wieder auf — ohne sie wäre die Zusage schon
-// nach dem ersten Neustart der WebApi falsch. **Nachgeholt wird dabei nichts:** was während der
-// Trennung geschah, bleibt ungemeldet; das Aufschließen ist ein eigener Slice.
+// nach dem ersten Neustart der WebApi falsch. Abriss und Rückkehr meldet sie an den Verteiler,
+// damit die offenen Sichten wissen, dass sie altern, und nach der Rückkehr aufschließen.
+// **Als „verbunden" gelten die Antwortkopfzeilen und nicht das erste gelesene Element:** ein
+// stiller Strom ist der Normalfall — solange sich keine Karte bewegt, käme nie ein Element, und
+// eine Sicht bliebe auf einer stehenden Leitung dauerhaft „nicht live".
 public sealed class Ereignisleitung : BackgroundService
 {
     public static readonly TimeSpan Vorgabepause = TimeSpan.FromSeconds(2);
@@ -23,13 +26,15 @@ public sealed class Ereignisleitung : BackgroundService
     private readonly IHttpClientFactory _klientFabrik;
     private readonly Ereignisverteiler _verteiler;
     private readonly TimeSpan _pauseNachAbriss;
+    private readonly Func<DateTimeOffset> _uhr;
     private readonly ILogger<Ereignisleitung> _protokoll;
 
-    public Ereignisleitung(IHttpClientFactory klientFabrik, Ereignisverteiler verteiler, TimeSpan pauseNachAbriss, ILogger<Ereignisleitung> protokoll)
+    public Ereignisleitung(IHttpClientFactory klientFabrik, Ereignisverteiler verteiler, TimeSpan pauseNachAbriss, Func<DateTimeOffset> uhr, ILogger<Ereignisleitung> protokoll)
     {
         _klientFabrik = klientFabrik;
         _verteiler = verteiler;
         _pauseNachAbriss = pauseNachAbriss;
+        _uhr = uhr;
         _protokoll = protokoll;
     }
 
@@ -38,6 +43,10 @@ public sealed class Ereignisleitung : BackgroundService
         while (!abbruch.IsCancellationRequested)
         {
             await VersucheZuLauschen(abbruch);
+            // **Jeder beendete Lauschversuch heißt „die Leitung ist weg"** — nicht nur ein
+            // geworfener Abriss: ein Strom, den die Gegenseite ordentlich schließt, endet ohne
+            // Ausnahme, und für die Sicht ist das derselbe Verlust.
+            _verteiler.MeldeGetrennt(_uhr());
             await LegePauseEin(abbruch);
         }
     }
@@ -64,6 +73,7 @@ public sealed class Ereignisleitung : BackgroundService
         klient.Timeout = Timeout.InfiniteTimeSpan;
         using var antwort = await klient.GetAsync(Ereignisroute, HttpCompletionOption.ResponseHeadersRead, abbruch);
         antwort.EnsureSuccessStatusCode();
+        _verteiler.MeldeVerbunden();
         await using var strom = await antwort.Content.ReadAsStreamAsync(abbruch);
         await foreach (var element in SseParser.Create(strom).EnumerateAsync(abbruch))
         {

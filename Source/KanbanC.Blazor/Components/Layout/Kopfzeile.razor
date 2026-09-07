@@ -6,6 +6,7 @@
 @inject ZeitenApiKlient ZeitenKlient
 @inject Identitaetsspeicher Identitaetsspeicher
 @inject Laufzeitmelder Laufzeitmelder
+@inject Ereignisverteiler Ereignisverteiler
 
 <div class="kopfzeilenband" @onkeydown="AufTaste">
     <header class="kopfzeile" id="kopfzeile">
@@ -42,6 +43,13 @@
         @* Zone 3 — Werkzeuge und Identität, rechtsbündig. *@
         <div class="kopfzeile-werkzeuge">
             <SectionOutlet SectionName="kopfzeile-bedienung" />
+            @* Steht die Leitung, steht hier nichts — dieselbe Regel wie beim Laufzeitzähler
+               daneben: Abwesenheit heißt „es steht". Bricht sie ab, ist genau das die Nachricht,
+               und die Marke nennt den Zeitpunkt, seit dem der Schirm altert. *@
+            @if (_verbindungsmarke is not null)
+            {
+                <span class="kopfzeile-verbindung" id="verbindungsmarke" role="status"><svg class="verbindung-zeichen" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8.5A16 16 0 0 1 22 8.5"></path><path d="M6.5 12.5a10 10 0 0 1 11 0"></path><circle cx="12" cy="18" r="1"></circle><path d="m3 3 18 18"></path></svg>@_verbindungsmarke</span>
+            }
             @* Läuft nichts, steht hier nichts — kein Nullwert und keine graue Attrappe. Der
                knappste Platz der Anwendung gehört dem, was gerade gilt. *@
             @if (_laufzaehler is not null)
@@ -115,12 +123,17 @@
 
     private Laufzaehler? _laufzaehler;
 
+    // Was in der Kopfzeile über die Ereignisleitung steht; null heißt „die Leitung steht".
+    private string? _verbindungsmarke;
+
     protected override async Task OnInitializedAsync()
     {
         UebernimmAdresse();
         Navigation.LocationChanged += AufAdresswechsel;
         Identitaetsspeicher.Gewechselt += AufIdentitaetswechsel;
         Laufzeitmelder.Gemeldet += AufLaufzeitmeldung;
+        Ereignisverteiler.Verbindungsstandgewechselt += AufVerbindungsstand;
+        _verbindungsmarke = Verbindungsmarke.Fuer(Ereignisverteiler.Verbindungsstand);
         // App.razor rendert mit prerender: false — der Kreislauf steht hier schon, ein
         // Interop-Aufruf trägt (belegt in SessionStorageProbeE2ETests).
         _gewaehlteKontributorId = await Identitaetsspeicher.Lies();
@@ -157,6 +170,15 @@
         Navigation.LocationChanged -= AufAdresswechsel;
         Identitaetsspeicher.Gewechselt -= AufIdentitaetswechsel;
         Laufzeitmelder.Gemeldet -= AufLaufzeitmeldung;
+        Ereignisverteiler.Verbindungsstandgewechselt -= AufVerbindungsstand;
+    }
+
+    // Der Stand kommt aus dem Hintergrunddienst und damit von einem fremden Faden: das
+    // Neuzeichnen läuft über InvokeAsync im Kreislauf dieser Sitzung.
+    private void AufVerbindungsstand(Verbindungsstand stand)
+    {
+        _verbindungsmarke = Verbindungsmarke.Fuer(stand);
+        _ = InvokeAsync(StateHasChanged);
     }
 
     // Ein eigener Start oder Stopp auf der Kartenseite meldet sich, damit die Kopfzeile nicht

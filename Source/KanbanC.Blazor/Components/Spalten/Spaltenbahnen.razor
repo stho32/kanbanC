@@ -202,12 +202,14 @@
     [Parameter]
     public long? GewaehlteKontributorId { get; set; }
 
-    // Was an einer eben fremd bewegten Karte steht, gerechnet vom Board: die Bahn reicht es nur an
-    // die Karte weiter, der es gehoert.
+    // Was an einer fremd bewegten Karte steht, gerechnet vom Board: die Bahn reicht es nur an die
+    // Karte weiter, der es gehoert. Eine Einflugmarke und eine Nachholmarke teilen sich dieselbe
+    // Fusszeile — welche eine Karte traegt, entscheidet das Board.
     [Parameter]
-    public IReadOnlyDictionary<long, string> Einflugmarken { get; set; } = new Dictionary<long, string>();
+    public IReadOnlyDictionary<long, string> Kartenmarken { get; set; } = new Dictionary<long, string>();
 
-    // Wie viele fremde Bewegungen gerade darauf warten, dass der laufende Zug endet.
+    // Wie viele Aenderungen gerade darauf warten, dass der laufende Zug endet — fremde Bewegungen
+    // und ein zurueckgehaltenes Aufschliessen.
     [Parameter]
     public int WartendeAenderungen { get; set; }
 
@@ -221,7 +223,7 @@
 
     private string? MarkeDerKarte(long karteId)
     {
-        var dieKarteTraegtEineMarke = Einflugmarken.TryGetValue(karteId, out var beschriftung);
+        var dieKarteTraegtEineMarke = Kartenmarken.TryGetValue(karteId, out var beschriftung);
         if (dieKarteTraegtEineMarke)
         {
             return beschriftung;

@@ -15,6 +15,10 @@ namespace KanbanC.Blazor.Tests.Services;
 public class EreignisleitungTests
 {
     private static readonly TimeSpan Zeitschranke = TimeSpan.FromSeconds(5);
+
+    // Die hereingereichte Uhr steht still: nur so ist prüfbar, dass die Marke den Zeitpunkt des
+    // Abrisses nennt und nicht den des Ablesens.
+    private static readonly DateTimeOffset Abrisszeitpunkt = new(2026, 9, 7, 9, 12, 0, TimeSpan.Zero);
     private static readonly JsonSerializerOptions Jsonform = new(JsonSerializerDefaults.Web);
 
     [Test]
@@ -24,7 +28,7 @@ public class EreignisleitungTests
         var verteiler = new Ereignisverteiler();
         var angekommene = new Ereignisfang(verteiler);
         using var abbruch = new CancellationTokenSource(Zeitschranke);
-        using var leitung = new Ereignisleitung(strom, verteiler, TimeSpan.Zero, NullLogger<Ereignisleitung>.Instance);
+        using var leitung = new Ereignisleitung(strom, verteiler, TimeSpan.Zero, () => Abrisszeitpunkt, NullLogger<Ereignisleitung>.Instance);
         await leitung.StartAsync(abbruch.Token);
         var verbindung = await strom.NaechsteVerbindung(abbruch.Token);
 
@@ -49,7 +53,7 @@ public class EreignisleitungTests
         var verteiler = new Ereignisverteiler();
         var angekommene = new Ereignisfang(verteiler);
         using var abbruch = new CancellationTokenSource(Zeitschranke);
-        using var leitung = new Ereignisleitung(strom, verteiler, TimeSpan.Zero, NullLogger<Ereignisleitung>.Instance);
+        using var leitung = new Ereignisleitung(strom, verteiler, TimeSpan.Zero, () => Abrisszeitpunkt, NullLogger<Ereignisleitung>.Instance);
         await leitung.StartAsync(abbruch.Token);
         var erste = await strom.NaechsteVerbindung(abbruch.Token);
 
@@ -74,7 +78,7 @@ public class EreignisleitungTests
         using var strom = TestEreignisstrom.DerNichtErreichbarIst();
         var verteiler = new Ereignisverteiler();
         using var abbruch = new CancellationTokenSource(Zeitschranke);
-        using var leitung = new Ereignisleitung(strom, verteiler, TimeSpan.Zero, NullLogger<Ereignisleitung>.Instance);
+        using var leitung = new Ereignisleitung(strom, verteiler, TimeSpan.Zero, () => Abrisszeitpunkt, NullLogger<Ereignisleitung>.Instance);
 
         await leitung.StartAsync(abbruch.Token);
 
@@ -92,7 +96,7 @@ public class EreignisleitungTests
         var verteiler = new Ereignisverteiler();
         var angekommene = new Ereignisfang(verteiler);
         using var abbruch = new CancellationTokenSource(Zeitschranke);
-        using var leitung = new Ereignisleitung(strom, verteiler, TimeSpan.Zero, NullLogger<Ereignisleitung>.Instance);
+        using var leitung = new Ereignisleitung(strom, verteiler, TimeSpan.Zero, () => Abrisszeitpunkt, NullLogger<Ereignisleitung>.Instance);
 
         await leitung.StartAsync(abbruch.Token);
         await strom.NaechsteVerbindung(abbruch.Token);
@@ -115,7 +119,7 @@ public class EreignisleitungTests
         var ersteSicht = new Ereignisfang(verteiler);
         var zweiteSicht = new Ereignisfang(verteiler);
         using var abbruch = new CancellationTokenSource(Zeitschranke);
-        using var leitung = new Ereignisleitung(strom, verteiler, TimeSpan.Zero, NullLogger<Ereignisleitung>.Instance);
+        using var leitung = new Ereignisleitung(strom, verteiler, TimeSpan.Zero, () => Abrisszeitpunkt, NullLogger<Ereignisleitung>.Instance);
         await leitung.StartAsync(abbruch.Token);
         var verbindung = await strom.NaechsteVerbindung(abbruch.Token);
 
@@ -138,12 +142,95 @@ public class EreignisleitungTests
         using var strom = TestEreignisstrom.DerAntwortet();
         var verteiler = new Ereignisverteiler();
         using var abbruch = new CancellationTokenSource(Zeitschranke);
-        using var leitung = new Ereignisleitung(strom, verteiler, TimeSpan.Zero, NullLogger<Ereignisleitung>.Instance);
+        using var leitung = new Ereignisleitung(strom, verteiler, TimeSpan.Zero, () => Abrisszeitpunkt, NullLogger<Ereignisleitung>.Instance);
 
         await leitung.StartAsync(abbruch.Token);
         await strom.NaechsteVerbindung(abbruch.Token);
 
         Assert.That(strom.LetzteAdresse, Is.EqualTo("http://webapi.test/api/ereignisse"));
+        await leitung.StopAsync(CancellationToken.None);
+    }
+
+    // Ab hier: der Verbindungsstand. Ein Abriss ist die eine Stelle, an der er ueberhaupt bekannt
+    // ist — ueber den Browser ist keiner dieser Wege ausloesbar.
+    [Test]
+    public async Task Wenn_der_Strom_abreisst_dann_meldet_die_Leitung_den_Abriss_mit_seinem_Zeitpunkt()
+    {
+        using var strom = TestEreignisstrom.DerAntwortet();
+        var verteiler = new Ereignisverteiler();
+        var staende = new Standfang(verteiler);
+        using var abbruch = new CancellationTokenSource(Zeitschranke);
+        using var leitung = new Ereignisleitung(strom, verteiler, TimeSpan.Zero, () => Abrisszeitpunkt, NullLogger<Ereignisleitung>.Instance);
+        await leitung.StartAsync(abbruch.Token);
+        var erste = await strom.NaechsteVerbindung(abbruch.Token);
+
+        await erste.Reisse();
+
+        var abriss = await staende.WarteAufAbriss(abbruch.Token);
+        Assert.That(abriss.GetrenntSeit, Is.EqualTo(Abrisszeitpunkt));
+        await leitung.StopAsync(CancellationToken.None);
+    }
+
+    // **Die erste Verbindung nach dem Start meldet keine Rueckkehr, die zweite schon.** Sonst
+    // schloesse jede frisch geoeffnete Sicht gegen ein Bild auf, das sie nie hatte.
+    [Test]
+    public async Task Wenn_die_erste_Verbindung_steht_dann_meldet_die_Leitung_keine_Rueckkehr()
+    {
+        using var strom = TestEreignisstrom.DerAntwortet();
+        var verteiler = new Ereignisverteiler();
+        var staende = new Standfang(verteiler);
+        using var abbruch = new CancellationTokenSource(Zeitschranke);
+        using var leitung = new Ereignisleitung(strom, verteiler, TimeSpan.Zero, () => Abrisszeitpunkt, NullLogger<Ereignisleitung>.Instance);
+
+        await leitung.StartAsync(abbruch.Token);
+        await strom.NaechsteVerbindung(abbruch.Token);
+
+        Assert.That(staende.Gemeldete, Is.Empty, "Die erste Verbindung wurde als Rueckkehr gemeldet.");
+        await leitung.StopAsync(CancellationToken.None);
+    }
+
+    [Test]
+    public async Task Wenn_die_Leitung_sich_nach_einem_Abriss_wieder_aufnimmt_dann_meldet_sie_die_Rueckkehr()
+    {
+        using var strom = TestEreignisstrom.DerAntwortet();
+        var verteiler = new Ereignisverteiler();
+        var staende = new Standfang(verteiler);
+        using var abbruch = new CancellationTokenSource(Zeitschranke);
+        using var leitung = new Ereignisleitung(strom, verteiler, TimeSpan.Zero, () => Abrisszeitpunkt, NullLogger<Ereignisleitung>.Instance);
+        await leitung.StartAsync(abbruch.Token);
+        var erste = await strom.NaechsteVerbindung(abbruch.Token);
+
+        await erste.Reisse();
+        await strom.NaechsteVerbindung(abbruch.Token);
+
+        var rueckkehr = await staende.WarteAufRueckkehr(abbruch.Token);
+        Assert.Multiple(() =>
+        {
+            Assert.That(rueckkehr.IstGetrennt, Is.False);
+            Assert.That(staende.Gemeldete.Any(stand => stand.GetrenntSeit == Abrisszeitpunkt), Is.True, "Der Abriss wurde nie gemeldet.");
+        });
+        await leitung.StopAsync(CancellationToken.None);
+    }
+
+    // Fault Injection: die WebApi ist aus. Dann altert die Sicht, und das steht ab dem ersten
+    // gescheiterten Versuch fest.
+    [Test]
+    public async Task Wenn_die_WebApi_nicht_erreichbar_ist_dann_gilt_die_Sicht_als_getrennt()
+    {
+        using var strom = TestEreignisstrom.DerNichtErreichbarIst();
+        var verteiler = new Ereignisverteiler();
+        var staende = new Standfang(verteiler);
+        using var abbruch = new CancellationTokenSource(Zeitschranke);
+        using var leitung = new Ereignisleitung(strom, verteiler, TimeSpan.Zero, () => Abrisszeitpunkt, NullLogger<Ereignisleitung>.Instance);
+
+        await leitung.StartAsync(abbruch.Token);
+        var abriss = await staende.WarteAufAbriss(abbruch.Token);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(abriss.GetrenntSeit, Is.EqualTo(Abrisszeitpunkt));
+            Assert.That(verteiler.Verbindungsstand.IstGetrennt, Is.True);
+        });
         await leitung.StopAsync(CancellationToken.None);
     }
 
@@ -160,6 +247,63 @@ public class EreignisleitungTests
     private static string AlsRumpf(Kartenereignis ereignis)
     {
         return JsonSerializer.Serialize(ereignis, Jsonform);
+    }
+
+    // Die gemeldeten Verbindungsstände, gesammelt statt gezählt: gewartet wird auf einen Stand mit
+    // Zeitschranke, nie auf eine feste Pause.
+    private sealed class Standfang
+    {
+        private readonly List<Verbindungsstand> _gemeldete = [];
+
+        public Standfang(Ereignisverteiler verteiler)
+        {
+            verteiler.Verbindungsstandgewechselt += Nimm;
+        }
+
+        public IReadOnlyList<Verbindungsstand> Gemeldete
+        {
+            get
+            {
+                lock (_gemeldete)
+                {
+                    return _gemeldete.ToList();
+                }
+            }
+        }
+
+        public async Task<Verbindungsstand> WarteAufAbriss(CancellationToken abbruch)
+        {
+            return await WarteAuf(stand => stand.IstGetrennt, abbruch);
+        }
+
+        public async Task<Verbindungsstand> WarteAufRueckkehr(CancellationToken abbruch)
+        {
+            return await WarteAuf(stand => !stand.IstGetrennt, abbruch);
+        }
+
+        private async Task<Verbindungsstand> WarteAuf(Func<Verbindungsstand, bool> passt, CancellationToken abbruch)
+        {
+            while (!abbruch.IsCancellationRequested)
+            {
+                var gesuchter = Gemeldete.LastOrDefault(passt);
+                if (gesuchter is not null)
+                {
+                    return gesuchter;
+                }
+
+                await Task.Delay(5, CancellationToken.None);
+            }
+
+            throw new TimeoutException("Der erwartete Verbindungsstand wurde nicht gemeldet.");
+        }
+
+        private void Nimm(Verbindungsstand stand)
+        {
+            lock (_gemeldete)
+            {
+                _gemeldete.Add(stand);
+            }
+        }
     }
 
     // Was beim Hörer ankommt, gesammelt statt gezählt: der Test wartet auf das nächste Ereignis

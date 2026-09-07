@@ -116,6 +116,14 @@ h1, h2, h3, h4 { font-family: var(--font-heading); font-weight: var(--font-headi
 
 .washed{filter:saturate(0.6) contrast(0.85) brightness(1.1) opacity(0.94)}
 
+/* Die Zuruecknahme eines Schirms, dessen Ereignisleitung weg ist: ruhiger, nicht unlesbar. Sie
+   laeuft ueber Saettigung, Kontrast und Helligkeit und nicht ueber die Deckkraft — Deckkraft naehme
+   auch dem Text die Lesbarkeit, die der Entwurf ausdruecklich erhalten will. Naechster Vorgaenger
+   ist .washed daneben, das dieselben drei Achsen nutzt. */
+:root {
+  --filter-zurueckgenommen: saturate(0.55) contrast(0.9) brightness(1.06);
+}
+
 /* ══════════════════════════════════════════════════════════════════════════
    Components — built with the tokens above. Plain CSS
    on plain HTML: no JavaScript, no build step. Each class is documented in

@@ -18,6 +18,11 @@ public sealed class Testumgebung
     // Der Lauf startet die WebApi zwischen zwei Tests neu; die Ereignisleitung nimmt sich danach
     // wieder auf, und der nächste Test soll nicht auf sie warten müssen.
     private const string WiederaufnahmepauseInSekunden = "0.2";
+
+    // Gesenkt wie die Markenstandzeit, und aus demselben Grund: kein E2E-Lauf soll fünfundzwanzig
+    // Karten bewegen müssen, nur um zu sehen, dass die Sicht ab einer Menge nur noch zählt. Im
+    // Betrieb steht die Größenordnung von etwa zehn.
+    public const int AufschliessschwelleInAenderungen = 1;
     private static Testumgebung? _aktuelle;
     private readonly string _webApiProjekt;
     private readonly string _blazorProjekt;
@@ -81,6 +86,7 @@ public sealed class Testumgebung
             ["WebApi__BasisAdresse"] = WebApiAdresse + "/",
             ["Oberflaeche__MarkenstandzeitInSekunden"] = MarkenstandzeitInSekunden.ToString(System.Globalization.CultureInfo.InvariantCulture),
             ["Oberflaeche__WiederaufnahmepauseInSekunden"] = WiederaufnahmepauseInSekunden,
+            ["Oberflaeche__AufschliessschwelleInAenderungen"] = AufschliessschwelleInAenderungen.ToString(System.Globalization.CultureInfo.InvariantCulture),
         };
         _blazor = await Dienstprozess.Starte(_blazorProjekt, Assembly(_blazorProjekt), BlazorAdresse, umgebung, StartseitenPfad);
         _aktuelle = this;

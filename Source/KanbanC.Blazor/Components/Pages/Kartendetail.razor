@@ -73,7 +73,7 @@ else
     @* Steht ein Feld offen, wird nichts ausgetauscht: die Meldung wartet sichtbar, und der
        ungesendete Text bleibt stehen. Ein **Angebot** gibt es nicht — eine Bewegung fasst kein
        Feld an. *@
-    @if (_zurueckgehaltenesEreignis is not null)
+    @if (EtwasWartet)
     {
         <p class="wartende-aenderung" id="karte-wartende-aenderung" role="status">1 Änderung wartet</p>
     }
@@ -788,6 +788,12 @@ else
     // Die fremde Bewegung, die auf ein offenes Feld wartet. Hoechstens eine: mehrere Bewegungen
     // derselben Karte enden ohnehin in einem einzigen Neuabruf, und die Marke nennt die letzte.
     private Kartenereignis? _zurueckgehaltenesEreignis;
+
+    // Seit wann diese Sicht altert; null heisst „diese Sicht hat keinen Abriss gesehen". Das
+    // Aufschliessen nach der Rueckkehr ist ein **zweiter Anlass fuer dieselbe Warteregel** wie die
+    // fremde Bewegung, kein zweiter Mechanismus.
+    private DateTimeOffset? _abrissZeitpunkt;
+    private bool _einAufschliessenWartet;
     private Zurueckweisung? _zurueckweisung;
     private string _etikettentext = string.Empty;
     private string? _ausfallmeldung;
@@ -805,7 +811,13 @@ else
     protected override void OnInitialized()
     {
         Ereignisverteiler.Gemeldet += NimmEreignisAn;
+        Ereignisverteiler.Verbindungsstandgewechselt += NimmVerbindungsstandAn;
+        _abrissZeitpunkt = Ereignisverteiler.Verbindungsstand.GetrenntSeit;
     }
+
+    // Eine fremde Bewegung und ein zurueckgehaltenes Aufschliessen teilen sich denselben Platz:
+    // beide sagen dasselbe — es wartet etwas, bis das Feld geschlossen ist.
+    private bool EtwasWartet => _zurueckgehaltenesEreignis is not null || _einAufschliessenWartet;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -2044,6 +2056,7 @@ else
     {
         _offenesFeld = null;
         await SpieleZurueckgehaltenesEin();
+        await SchliesseZurueckgehaltenesAuf();
         _zurueckweisung = null;
         var anfrage = new KarteAendernAnfrage(
             gewuenscht.Karte.Titel,
@@ -2185,9 +2198,71 @@ else
         _markenfrist = null;
     }
 
+    // Ab hier: das Aufschliessen. Der Stand kommt aus dem Hintergrunddienst und muss wie jede
+    // Meldung ueber InvokeAsync in den Renderfaden zurueck.
+    private void NimmVerbindungsstandAn(Verbindungsstand stand)
+    {
+        _ = InvokeAsync(() => NimmVerbindungsstandAufDemRenderfadenAn(stand));
+    }
+
+    // Steht ein Feld offen, wird nichts ausgetauscht: der ungesendete Text bleibt stehen, und die
+    // Meldung wartet sichtbar — ein Aufschliessen, das ein offenes Feld ueberschreibt, waere die
+    // teuerste Art, recht zu haben.
+    private async Task NimmVerbindungsstandAufDemRenderfadenAn(Verbindungsstand stand)
+    {
+        if (stand.IstGetrennt)
+        {
+            _abrissZeitpunkt = stand.GetrenntSeit;
+            return;
+        }
+
+        var dieSichtHatKeinenAbrissGesehen = _abrissZeitpunkt is null;
+        if (dieSichtHatKeinenAbrissGesehen)
+        {
+            return;
+        }
+
+        _abrissZeitpunkt = null;
+        var einFeldStehtOffen = _offenesFeld is not null;
+        if (einFeldStehtOffen)
+        {
+            _einAufschliessenWartet = true;
+            StateHasChanged();
+            return;
+        }
+
+        await SchliesseAufMitAusfallmeldung();
+    }
+
+    private async Task SchliesseZurueckgehaltenesAuf()
+    {
+        if (!_einAufschliessenWartet)
+        {
+            return;
+        }
+
+        _einAufschliessenWartet = false;
+        await SchliesseAufMitAusfallmeldung();
+    }
+
+    private async Task SchliesseAufMitAusfallmeldung()
+    {
+        _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(SchliesseAuf);
+        StateHasChanged();
+    }
+
+    // **Kein Band und keine Zahl:** die Kartenseite zeigt eine Karte, nicht einen Bestand. Die
+    // Kopfzeile nennt danach die aktuelle Spalte, und mehr gibt es hier nicht zu vergleichen.
+    private async Task SchliesseAuf()
+    {
+        await LadeKartendetail();
+        await LadeUrheber();
+    }
+
     public void Dispose()
     {
         Ereignisverteiler.Gemeldet -= NimmEreignisAn;
+        Ereignisverteiler.Verbindungsstandgewechselt -= NimmVerbindungsstandAn;
         BeendeMarkenfrist();
     }
 }

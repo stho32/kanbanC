@@ -65,8 +65,12 @@ builder.Services.AddHostedService(dienste => new Ereignisleitung(
     dienste.GetRequiredService<IHttpClientFactory>(),
     dienste.GetRequiredService<Ereignisverteiler>(),
     wiederaufnahmepause,
+    () => DateTimeOffset.UtcNow,
     dienste.GetRequiredService<ILogger<Ereignisleitung>>()));
 builder.Services.AddSingleton(Markenstandzeit.Aus(builder.Configuration["Oberflaeche:MarkenstandzeitInSekunden"]));
+// Ab wie vielen nachgeholten Änderungen das Band nur noch zählt — dieselbe Sorte Stelle wie die
+// Markenstandzeit, damit ein Testlauf die Schwelle senken kann.
+builder.Services.AddSingleton(Aufschliessschwelle.Aus(builder.Configuration["Oberflaeche:AufschliessschwelleInAenderungen"]));
 
 var app = builder.Build();
 

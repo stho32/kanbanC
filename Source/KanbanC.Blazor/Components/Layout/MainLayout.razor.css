@@ -39,3 +39,10 @@
         right: var(--space-3);
         top: var(--space-2);
     }
+
+/* Der getrennte Schirm wird ruhiger, nicht unlesbar: die Zurücknahme läuft über Sättigung,
+   Kontrast und Helligkeit statt über die Deckkraft — wer liest, was dasteht, soll weiterlesen
+   dürfen. Der Wert steht im Token-Sheet neben .washed, seinem nächsten Vorgänger. */
+.schirm-getrennt {
+    filter: var(--filter-zurueckgenommen);
+}

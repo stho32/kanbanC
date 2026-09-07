@@ -14,6 +14,7 @@
 @inject Identitaetsspeicher Identitaetsspeicher
 @inject Ereignisverteiler Ereignisverteiler
 @inject Markenstandzeit Markenstandzeit
+@inject Aufschliessschwelle Aufschliessschwelle
 
 <PageTitle>Board @BoardId</PageTitle>
 
@@ -88,6 +89,15 @@ else
                 </ul>
             </div>
         }
+        @* Das Band steht **ueber den Bahnen** und nicht in der Kopfzeile: die Kopfzeile steht auf
+           jeder Seite, das Band gehoert dem Board. *@
+        @if (_aufschliessband is not null)
+        {
+            <div class="aufschliessband" id="aufschliessband" role="status">
+                <span class="aufschliessband-auskunft" id="aufschliessband-auskunft">@_aufschliessband.Beschriftung</span>
+                <button type="button" class="btn btn-neben aufschliessband-schliessen" id="aufschliessband-schliessen" @onclick="SchliesseAufschliessband">schließen</button>
+            </div>
+        }
         @if (_layoutModusIstAktiv)
         {
             <Spaltenpflege BoardId="BoardId" Spalten="_board.Spalten" SpaltenHabenSichGeaendert="LadeBoard" />
@@ -100,8 +110,8 @@ else
                            ZeigtKartenzahl="_board.ZeigtKartenzahl"
                            LaufendeZeiteintraege="_board.LaufendeZeiteintraege"
                            GewaehlteKontributorId="_gewaehlteKontributorId"
-                           Einflugmarken="_einflugmarken"
-                           WartendeAenderungen="_zurueckgehalteneEreignisse.Count"
+                           Kartenmarken="Kartenmarken()"
+                           WartendeAenderungen="WartendeAenderungen()"
                            ZugWurdeBegonnen="BeginneZug"
                            ZugWurdeBeendet="BeendeZug"
                            KarteWurdeAngelegt="LadeBoard"
@@ -151,9 +161,24 @@ else
     private readonly Dictionary<long, CancellationTokenSource> _zugfristen = [];
 
     // Hält jemand eine Karte in der Hand, ordnet sich unter der Maus nichts um: die fremde
-    // Bewegung wartet sichtbar, bis losgelassen ist.
+    // Bewegung wartet sichtbar, bis losgelassen ist. Das Aufschließen nach einer Trennung ist ein
+    // **zweiter Anlass für dieselbe Regel** und kein zweiter Mechanismus.
     private bool _einZugLaeuft;
     private readonly List<Kartenereignis> _zurueckgehalteneEreignisse = [];
+    private bool _einAufschliessenWartet;
+
+    // Seit wann diese Sicht altert. null heißt „diese Sicht hat keinen Abriss gesehen" — und ohne
+    // Abriss gibt es nichts aufzuschließen.
+    private DateTimeOffset? _abrissZeitpunkt;
+
+    // Das Bild, gegen das aufgeschlossen wird. Es wird beim Eintreffen der Rückkehr festgehalten,
+    // auch wenn das Aufschließen noch auf ein Loslassen wartet: danach ist es weg.
+    private KanbanC.Contracts.Boards.Board? _bildVorDemAufschliessen;
+
+    // Was über den Bahnen steht, seit die Leitung zurück ist, und welche Karten dazu markiert
+    // sind. Beide gehen zusammen: sie sind eine Aussage.
+    private Aufschliessband? _aufschliessband;
+    private readonly HashSet<long> _nachholmarken = [];
 
     [Parameter]
     public long BoardId { get; set; }
@@ -161,6 +186,40 @@ else
     protected override void OnInitialized()
     {
         Ereignisverteiler.Gemeldet += NimmEreignisAn;
+        Ereignisverteiler.Verbindungsstandgewechselt += NimmVerbindungsstandAn;
+        _abrissZeitpunkt = Ereignisverteiler.Verbindungsstand.GetrenntSeit;
+    }
+
+    // Trägt eine Karte beides, gewinnt die Einflugmarke: sie ist die genauere Aussage — sie kennt
+    // Urheber und Zeitpunkt, die ein Vergleich nicht kennt —, und beide teilen sich dieselbe eine
+    // Fußzeile. Läuft ihre Frist ab, steht die Nachholmarke wieder da; die geht erst mit dem Band.
+    private IReadOnlyDictionary<long, string> Kartenmarken()
+    {
+        var marken = new Dictionary<long, string>(); // stil-check: C11 Anzeigewert je KarteId, kein Domaenenbestand
+        foreach (var karteId in _nachholmarken)
+        {
+            marken[karteId] = Nachholmarke.Wortlaut;
+        }
+
+        foreach (var einflugmarke in _einflugmarken)
+        {
+            marken[einflugmarke.Key] = einflugmarke.Value;
+        }
+
+        return marken;
+    }
+
+    // Ein zurückgehaltenes Aufschließen zählt als **eine** wartende Änderung: wie viele es
+    // wirklich sind, weiß erst der Vergleich nach dem Neuabruf, und eine geratene Zahl wäre eine
+    // Zusage, die die Sicht nicht halten kann.
+    private int WartendeAenderungen()
+    {
+        if (_einAufschliessenWartet)
+        {
+            return _zurueckgehalteneEreignisse.Count + 1;
+        }
+
+        return _zurueckgehalteneEreignisse.Count;
     }
 
     protected override async Task OnParametersSetAsync()
@@ -252,8 +311,13 @@ else
     private async Task LadeBoard()
     {
         _gewaehlteKontributorId = await Identitaetsspeicher.Lies();
-        _board = await ApiKlient.LadeBoard(BoardId);
-        _kartenzahlIstEingeschaltet = _board is not null && _board.ZeigtKartenzahl;
+        UebernimmBoard(await ApiKlient.LadeBoard(BoardId));
+    }
+
+    private void UebernimmBoard(KanbanC.Contracts.Boards.Board? board)
+    {
+        _board = board;
+        _kartenzahlIstEingeschaltet = board is not null && board.ZeigtKartenzahl;
     }
 
     // Ab hier: der Rückweg. Die Meldung kommt aus dem Hintergrunddienst und muss über InvokeAsync
@@ -326,9 +390,129 @@ else
         _einZugLaeuft = true;
     }
 
+    // Ab hier: das Aufschließen. Der Stand kommt aus dem Hintergrunddienst und muss wie jede
+    // Meldung über InvokeAsync in den Renderfaden zurück.
+    private void NimmVerbindungsstandAn(Verbindungsstand stand)
+    {
+        _ = InvokeAsync(() => NimmVerbindungsstandAufDemRenderfadenAn(stand));
+    }
+
+    // Während der Trennung tut das Board **nichts**: es bleibt sichtbar und bedienbar, und ein
+    // scheiternder Schreibaufruf meldet sich wie bisher. Es merkt sich nur, dass es altert.
+    private async Task NimmVerbindungsstandAufDemRenderfadenAn(Verbindungsstand stand)
+    {
+        if (stand.IstGetrennt)
+        {
+            _abrissZeitpunkt = stand.GetrenntSeit;
+            return;
+        }
+
+        var dieSichtHatKeinenAbrissGesehen = _abrissZeitpunkt is null;
+        if (dieSichtHatKeinenAbrissGesehen)
+        {
+            return;
+        }
+
+        _bildVorDemAufschliessen = _board;
+        if (_einZugLaeuft)
+        {
+            _einAufschliessenWartet = true;
+            StateHasChanged();
+            return;
+        }
+
+        await SchliesseAufMitAusfallmeldung();
+    }
+
+    private async Task SchliesseZurueckgehaltenesAuf()
+    {
+        if (!_einAufschliessenWartet)
+        {
+            return;
+        }
+
+        _einAufschliessenWartet = false;
+        await SchliesseAufMitAusfallmeldung();
+    }
+
+    // Der Neuabruf läuft über HTTP wie jeder andere: fällt die WebApi zwischen Rückkehr und Abruf
+    // wieder aus, landet der Ausfall an derselben Stelle wie der einer eigenen Handlung.
+    private async Task SchliesseAufMitAusfallmeldung()
+    {
+        _zugFehlermeldung = await WebApiAufruf.MitAusfallmeldung(SchliesseAuf);
+        StateHasChanged();
+    }
+
+    // **Frisch holen, nicht nachspielen:** geholt wird über den bestehenden Ladeweg, und die Zahl
+    // im Band kommt aus dem Vergleich des frisch geholten Bildes mit dem alten. Ein Nachspielen
+    // bräuchte ein Ereignisjournal, das es bewusst nicht gibt.
+    private async Task SchliesseAuf()
+    {
+        var altesBild = _bildVorDemAufschliessen;
+        var abrissZeitpunkt = _abrissZeitpunkt;
+        await LadeBoard();
+
+        // Verworfen wird die Vergleichsbasis erst, wenn der Abruf sie eingelöst hat: scheitert er,
+        // wäre sie sonst weg und die Lücke damit für immer unerzählbar — der Mensch sähe die
+        // Ausfallmeldung und erführe über die verpassten Änderungen nie etwas.
+        _bildVorDemAufschliessen = null;
+        _abrissZeitpunkt = null;
+
+        // **Ein Aufschließen tauscht kein Bild gegen nichts:** findet der Neuabruf das Board nicht
+        // mehr, bleibt stehen, was der Mensch gerade liest. Diesen Abruf hat er nicht ausgelöst,
+        // und ein leergeräumter Schirm wäre die teuerste Antwort auf eine Frage, die niemand
+        // gestellt hat; der nächste eigene Anlass sagt ihm die Wahrheit.
+        var derNeuabrufFandDasBoardNichtMehr = _board is null && altesBild is not null;
+        if (derNeuabrufFandDasBoardNichtMehr)
+        {
+            UebernimmBoard(altesBild);
+            return;
+        }
+
+        // Ein Board, das nie geladen war, hat kein altes Bild: dann bleibt es beim frischen Stand
+        // ohne Band — eine Zahl gegen nichts wäre keine Auskunft.
+        var esGibtNichtsZuVergleichen = altesBild is null || _board is null || abrissZeitpunkt is null;
+        if (esGibtNichtsZuVergleichen)
+        {
+            return;
+        }
+
+        var unterschied = Standvergleich.Geaenderte(altesBild!, _board!);
+        _aufschliessband = Aufschliessband.Fuer(unterschied.Anzahl, abrissZeitpunkt!.Value, Aufschliessschwelle);
+        UebernimmNachholmarken(unterschied);
+    }
+
+    private void UebernimmNachholmarken(Standunterschied unterschied)
+    {
+        _nachholmarken.Clear();
+        var esBleibtBeiDerZahlImBand = _aufschliessband is null || !_aufschliessband.ZeigtMarken;
+        if (esBleibtBeiDerZahlImBand)
+        {
+            return;
+        }
+
+        foreach (var karteId in unterschied)
+        {
+            _nachholmarken.Add(karteId);
+        }
+    }
+
+    // Band und Marken sind eine Aussage und gehen deshalb zusammen weg.
+    private void SchliesseAufschliessband()
+    {
+        _aufschliessband = null;
+        _nachholmarken.Clear();
+    }
+
     private async Task BeendeZug()
     {
         _einZugLaeuft = false;
+        await SpieleZurueckgehalteneEin();
+        await SchliesseZurueckgehaltenesAuf();
+    }
+
+    private async Task SpieleZurueckgehalteneEin()
+    {
         if (_zurueckgehalteneEreignisse.Count == 0)
         {
             return;
@@ -394,6 +578,7 @@ else
     public void Dispose()
     {
         Ereignisverteiler.Gemeldet -= NimmEreignisAn;
+        Ereignisverteiler.Verbindungsstandgewechselt -= NimmVerbindungsstandAn;
         BeendeAlleFristen(_markenfristen);
         BeendeAlleFristen(_zugfristen);
     }
