@@ -1,3 +1,26 @@
+/* Die zurueckgehaltene fremde Bewegung: eine ruhige Zeile ueber den Bahnen mit einem Punkt im
+   Akzentton — sie sagt, dass etwas wartet, und ordnet unter der Maus nichts um. */
+.wartende-aenderung {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0 0 var(--space-2);
+    padding: var(--space-1) var(--space-3);
+    font-size: 11px;
+    color: var(--color-accent-700);
+    background: var(--color-accent-100);
+    border-radius: var(--radius-lg);
+    align-self: flex-start;
+}
+
+.wartende-aenderung::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: var(--radius-lg);
+    background: var(--color-accent);
+}
+
 .spaltenbahnen {
     display: flex;
     flex: 1;

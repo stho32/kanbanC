@@ -1,5 +1,6 @@
 using KanbanC.Blazor.Components;
 using KanbanC.Blazor.Services;
+using KanbanC.Contracts.Ereignisse;
 using KanbanC.Contracts.Karten;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,9 +36,13 @@ if (!string.IsNullOrWhiteSpace(gesetzteOeffentlicheAdresse))
 
 builder.Services.AddSingleton(new Anhangbasisadresse(oeffentlicheBasisAdresse));
 
+// Der Weg reist im Kopf und wird an **genau einer Stelle** gesetzt: hier. Damit trägt ihn jeder
+// Aufruf der Oberfläche, ohne dass ein einziger Aufrufer davon weiß — eine vergessene Aufrufstelle
+// ließe die Einflugmarke lügen.
 builder.Services.AddHttpClient("KanbanC", client =>
 {
     client.BaseAddress = new Uri(webApiBasisAdresse);
+    client.DefaultRequestHeaders.Add(Wegkopf.Name, Wegkopf.Oberflaechenwert);
 });
 builder.Services.AddScoped<BoardApiKlient>();
 builder.Services.AddScoped<SpaltenApiKlient>();
@@ -48,6 +53,20 @@ builder.Services.AddScoped<ZeitenApiKlient>();
 builder.Services.AddScoped<Identitaetsspeicher>();
 builder.Services.AddScoped<Laufzeitmelder>();
 builder.Services.AddScoped<Pfadkopie>();
+
+// Der Rückweg von der WebApi: **eine** Leitung je Prozess, ein Verteiler je Prozess. Die Leitung
+// ist ein HostedService und kein Kreislaufdienst — zehn offene Browser erzeugen eine Leitung,
+// nicht zehn —, und der Verteiler trägt ihre Meldungen an jede offene Sicht.
+builder.Services.AddSingleton<Ereignisverteiler>();
+// Die Pause zwischen zwei Versuchen steht wie die Standzeit der Marke in der Konfiguration: ein
+// Testlauf startet die WebApi zwischen zwei Tests neu und darf nicht auf sie warten muessen.
+var wiederaufnahmepause = Sekundenwert.Aus(builder.Configuration["Oberflaeche:WiederaufnahmepauseInSekunden"], Ereignisleitung.Vorgabepause);
+builder.Services.AddHostedService(dienste => new Ereignisleitung(
+    dienste.GetRequiredService<IHttpClientFactory>(),
+    dienste.GetRequiredService<Ereignisverteiler>(),
+    wiederaufnahmepause,
+    dienste.GetRequiredService<ILogger<Ereignisleitung>>()));
+builder.Services.AddSingleton(Markenstandzeit.Aus(builder.Configuration["Oberflaeche:MarkenstandzeitInSekunden"]));
 
 var app = builder.Build();
 

@@ -20,6 +20,38 @@
     color: color-mix(in srgb, var(--color-text) 55%, transparent);
 }
 
+/* Dieselbe Marke wie an der Karte am Board: wer, ueber welchen Weg, wann — hier neben der
+   Spaltenangabe, weil eine Bewegung genau die aendert. */
+.karte-einflugmarke {
+    font-size: 11px;
+    line-height: 1.3;
+    white-space: nowrap;
+    color: var(--color-accent-700);
+}
+
+/* Die zurueckgehaltene fremde Bewegung: eine ruhige Zeile mit einem Punkt im Akzentton. Sie sagt,
+   dass etwas wartet — und tauscht dabei nichts aus. */
+.wartende-aenderung {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0 0 var(--space-2);
+    padding: var(--space-1) var(--space-3);
+    font-size: 11px;
+    color: var(--color-accent-700);
+    background: var(--color-accent-100);
+    border-radius: var(--radius-lg);
+    align-self: flex-start;
+}
+
+.wartende-aenderung::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: var(--radius-lg);
+    background: var(--color-accent);
+}
+
 /* Der Rückweg in Worten, neben dem Pfeil in Zone 1: die Seite liegt zwei Stufen tief, und
    der Pfeil trägt nur eine davon. */
 .brotkrumen {

@@ -54,6 +54,12 @@
        keinen Zug (KindZiehbarkeitProbeE2ETests); wird am Titel gezogen, zieht die Karte weiter
        als Ganzes — belegt in VerweisInZiehbarerKarteProbeE2ETests. *@
     <a class="karte-titel" href="/karten/@Kartendaten.KarteId">@Kartendaten.Titel</a>
+    @* Die Marke steht **in** der Karte und nicht daneben: sie gehoert der Karte, nicht der Bahn.
+       Ueber einer Trennlinie im Fuss, wie im Artboard gezeichnet. *@
+    @if (Einflugmarke is not null)
+    {
+        <p class="karte-einflugmarke" data-karte-einflugmarke="@Kartendaten.KarteId">@Einflugmarke</p>
+    }
     @if (NimmtAn)
     {
         <div class="kartenhaelfte kartenhaelfte-oben"
@@ -91,6 +97,12 @@
     // Ohne gewaehlte Identitaet gibt es kein „mich": jeder laufende Timer ist dann ein fremder.
     [Parameter]
     public long? GewaehlteKontributorId { get; set; }
+
+    // Was an einer eben fremd bewegten Karte steht — „Nina Barth · vor 3 Sek" oder „Claude-Agent ·
+    // ueber die API · gerade eben". null heisst „ruhige Karte": die eigene Handlung bekommt keine
+    // Marke, und nach etwa zehn Sekunden verschwindet jede von selbst.
+    [Parameter]
+    public string? Einflugmarke { get; set; }
 
     protected override void OnParametersSet()
     {
@@ -147,6 +159,11 @@
             if (WirdGezogen)
             {
                 return "karte karte-wird-gezogen";
+            }
+
+            if (Einflugmarke is not null)
+            {
+                return "karte karte-eingeflogen";
             }
 
             return "karte";

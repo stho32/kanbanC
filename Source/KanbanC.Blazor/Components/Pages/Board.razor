@@ -3,11 +3,17 @@
 @using KanbanC.Blazor.Components.Klassen
 @using KanbanC.Blazor.Services
 @using KanbanC.Contracts.Boards
+@using KanbanC.Contracts.Ereignisse
 @using KanbanC.Contracts.Fehler
 @using KanbanC.Contracts.Karten
+@using KanbanC.Contracts.Kontributoren
+@implements IDisposable
 @inject BoardApiKlient ApiKlient
 @inject KartenApiKlient KartenKlient
+@inject KontributorenApiKlient KontributorenKlient
 @inject Identitaetsspeicher Identitaetsspeicher
+@inject Ereignisverteiler Ereignisverteiler
+@inject Markenstandzeit Markenstandzeit
 
 <PageTitle>Board @BoardId</PageTitle>
 
@@ -94,6 +100,10 @@ else
                            ZeigtKartenzahl="_board.ZeigtKartenzahl"
                            LaufendeZeiteintraege="_board.LaufendeZeiteintraege"
                            GewaehlteKontributorId="_gewaehlteKontributorId"
+                           Einflugmarken="_einflugmarken"
+                           WartendeAenderungen="_zurueckgehalteneEreignisse.Count"
+                           ZugWurdeBegonnen="BeginneZug"
+                           ZugWurdeBeendet="BeendeZug"
                            KarteWurdeAngelegt="LadeBoard"
                            KarteWurdeAbgelegt="LegeKarteAb"
                            SpaltenWurdenGeliefert="UebernimmSpalten" />
@@ -124,8 +134,34 @@ else
     // steht — ohne Wahl ist jeder laufende Timer ein fremder.
     private long? _gewaehlteKontributorId;
 
+    // Aus ihr löst die Einflugmarke den Namen des Urhebers auf — nicht aus dem Ereignis, damit ein
+    // Umbenennen von selbst nachzieht.
+    private IReadOnlyList<Kontributor> _kontributoren = [];
+
+    // Was gerade an welcher Karte steht, und die Fristen, nach denen es von selbst wieder
+    // verschwindet. Eine Marke, die bleibt, ist keine Nachricht mehr, sondern ein Verlauf.
+    private readonly Dictionary<long, string> _einflugmarken = [];
+    private readonly Dictionary<long, CancellationTokenSource> _markenfristen = [];
+
+    // Die Karten, die dieser Kreislauf selbst bewegt hat. Der Vermerk hängt am **Kreislauf** und
+    // nicht an der Identität: sonst schwiege ein zweiter Browser derselben Person mit, und genau
+    // der soll die Änderung sehen. Er wird **vor** dem Aufruf gesetzt, weil das Ereignis vor der
+    // Antwort eintreffen kann, und verfällt mit der Standzeit einer Marke.
+    private readonly HashSet<long> _eigeneZuege = [];
+    private readonly Dictionary<long, CancellationTokenSource> _zugfristen = [];
+
+    // Hält jemand eine Karte in der Hand, ordnet sich unter der Maus nichts um: die fremde
+    // Bewegung wartet sichtbar, bis losgelassen ist.
+    private bool _einZugLaeuft;
+    private readonly List<Kartenereignis> _zurueckgehalteneEreignisse = [];
+
     [Parameter]
     public long BoardId { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Ereignisverteiler.Gemeldet += NimmEreignisAn;
+    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -163,6 +199,11 @@ else
     private async Task LegeKarteAb(Kartenablage ablage)
     {
         _zugFehlermeldung = await WebApiAufruf.MitAusfallmeldung(() => VerschiebeKarte(ablage));
+        var dieWebApiWarNichtErreichbar = _zugFehlermeldung is not null;
+        if (dieWebApiWarNichtErreichbar)
+        {
+            VergisstEigenenZug(ablage.KarteId);
+        }
     }
 
     private async Task VerschiebeKarte(Kartenablage ablage)
@@ -170,11 +211,15 @@ else
         // Zuerst räumen, dann rufen: bricht der Aufruf mit einer Ausfallmeldung ab, stünde die
         // Zurückweisung des vorigen Zugs sonst daneben und behauptete einen Grund, der nicht gilt.
         _zugZurueckweisung = null;
+        VermerkeEigenenZug(ablage.KarteId);
 
-        var lage = new Kartenlage(ablage.SpalteId, ablage.Position);
+        var lage = new Kartenlage(ablage.SpalteId, ablage.Position, _gewaehlteKontributorId);
         var ergebnis = await KartenKlient.VerschiebeKarte(BoardId, ablage.KarteId, lage);
         if (ergebnis.WurdeZurueckgewiesen)
         {
+            // Eine zurückgewiesene Bewegung meldet nichts; ohne das Löschen verschwiege der
+            // Vermerk die nächste fremde Bewegung dieser Karte.
+            VergisstEigenenZug(ablage.KarteId);
             _zugZurueckweisung = ergebnis.Zurueckweisung;
         }
 
@@ -209,5 +254,158 @@ else
         _gewaehlteKontributorId = await Identitaetsspeicher.Lies();
         _board = await ApiKlient.LadeBoard(BoardId);
         _kartenzahlIstEingeschaltet = _board is not null && _board.ZeigtKartenzahl;
+    }
+
+    // Ab hier: der Rückweg. Die Meldung kommt aus dem Hintergrunddienst und muss über InvokeAsync
+    // in den Renderfaden zurück, sonst rendert Blazor aus einem fremden Faden.
+    private void NimmEreignisAn(Kartenereignis ereignis)
+    {
+        var dasEreignisGehoertZuEinemAnderenBoard = ereignis.Board != BoardId;
+        if (dasEreignisGehoertZuEinemAnderenBoard)
+        {
+            return;
+        }
+
+        _ = InvokeAsync(() => NimmAufDemRenderfadenAn(ereignis));
+    }
+
+    private async Task NimmAufDemRenderfadenAn(Kartenereignis ereignis)
+    {
+        if (_einZugLaeuft)
+        {
+            _zurueckgehalteneEreignisse.Add(ereignis);
+            StateHasChanged();
+            return;
+        }
+
+        await SpieleEinMitAusfallmeldung([ereignis]);
+    }
+
+    // Der Neuabruf laeuft ueber HTTP wie jeder andere: faellt die WebApi zwischen Meldung und
+    // Abruf aus, gehoert der Ausfall an dieselbe Stelle wie der einer eigenen Handlung — und
+    // nicht in eine unbeobachtete Aufgabe.
+    private async Task SpieleEinMitAusfallmeldung(IReadOnlyList<Kartenereignis> ereignisse)
+    {
+        _zugFehlermeldung = await WebApiAufruf.MitAusfallmeldung(() => SpieleEin(ereignisse));
+        StateHasChanged();
+    }
+
+    // **Signal statt Nutzlast:** geholt wird über den bestehenden Ladeweg, damit die Bahn genau so
+    // entsteht wie nach einem Reload. Ein einziger Abruf trägt auch mehrere zurückgehaltene
+    // Bewegungen — die Bahnen entstehen nicht je Ereignis neu.
+    private async Task SpieleEin(IReadOnlyList<Kartenereignis> ereignisse)
+    {
+        await LadeBoard();
+
+        // Die Liste haengt am Ereignis und nicht an jedem Laden: sie kostet nur dort, wo eine Marke
+        // entstehen kann, und ist dann frisch — ein Umbenennen zieht damit von selbst nach.
+        _kontributoren = await KontributorenKlient.LadeAlle();
+        foreach (var ereignis in ereignisse)
+        {
+            SetzeEinflugmarke(ereignis);
+        }
+
+        StateHasChanged();
+    }
+
+    private void SetzeEinflugmarke(Kartenereignis ereignis)
+    {
+        var beschriftung = Einflugmarke.Fuer(ereignis, _kontributoren, _eigeneZuege, DateTimeOffset.UtcNow);
+        VergisstEigenenZug(ereignis.Karte);
+        if (beschriftung is null)
+        {
+            return;
+        }
+
+        _einflugmarken[ereignis.Karte] = beschriftung;
+        StarteFrist(_markenfristen, ereignis.Karte, () => _einflugmarken.Remove(ereignis.Karte));
+    }
+
+    private void BeginneZug()
+    {
+        _einZugLaeuft = true;
+    }
+
+    private async Task BeendeZug()
+    {
+        _einZugLaeuft = false;
+        if (_zurueckgehalteneEreignisse.Count == 0)
+        {
+            return;
+        }
+
+        var eingesammelte = _zurueckgehalteneEreignisse.ToList();
+        _zurueckgehalteneEreignisse.Clear();
+        await SpieleEinMitAusfallmeldung(eingesammelte);
+    }
+
+    private void VermerkeEigenenZug(long karteId)
+    {
+        _eigeneZuege.Add(karteId);
+        StarteFrist(_zugfristen, karteId, () => _eigeneZuege.Remove(karteId));
+    }
+
+    private void VergisstEigenenZug(long karteId)
+    {
+        _eigeneZuege.Remove(karteId);
+        BeendeFrist(_zugfristen, karteId);
+    }
+
+    // Der Zeitgeber endet mit dem Abbau des Kreislaufs, sonst hielte er eine tote Sicht am Leben.
+    private void StarteFrist(Dictionary<long, CancellationTokenSource> fristen, long karteId, Action beimAblauf)
+    {
+        BeendeFrist(fristen, karteId);
+        var frist = new CancellationTokenSource();
+        fristen[karteId] = frist;
+        _ = LasseFristAblaufen(fristen, karteId, beimAblauf, frist.Token);
+    }
+
+    private async Task LasseFristAblaufen(Dictionary<long, CancellationTokenSource> fristen, long karteId, Action beimAblauf, CancellationToken abbruch)
+    {
+        try
+        {
+            await Task.Delay(Markenstandzeit.Dauer, abbruch);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        await InvokeAsync(() =>
+        {
+            beimAblauf();
+            BeendeFrist(fristen, karteId);
+            StateHasChanged();
+        });
+    }
+
+    private static void BeendeFrist(Dictionary<long, CancellationTokenSource> fristen, long karteId)
+    {
+        var esLaeuftSchonEineFrist = fristen.Remove(karteId, out var laufende);
+        if (!esLaeuftSchonEineFrist)
+        {
+            return;
+        }
+
+        laufende!.Cancel();
+        laufende.Dispose();
+    }
+
+    public void Dispose()
+    {
+        Ereignisverteiler.Gemeldet -= NimmEreignisAn;
+        BeendeAlleFristen(_markenfristen);
+        BeendeAlleFristen(_zugfristen);
+    }
+
+    private static void BeendeAlleFristen(Dictionary<long, CancellationTokenSource> fristen)
+    {
+        foreach (var frist in fristen.Values)
+        {
+            frist.Cancel();
+            frist.Dispose();
+        }
+
+        fristen.Clear();
     }
 }

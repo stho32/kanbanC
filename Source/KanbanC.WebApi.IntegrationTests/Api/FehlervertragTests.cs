@@ -27,6 +27,7 @@ public class FehlervertragTests
         "GET /api/zustand",
         "GET /api/kontributoren",
         "GET /api/zeiten/laufend",
+        "GET /api/ereignisse",
     ];
 
     [Test]

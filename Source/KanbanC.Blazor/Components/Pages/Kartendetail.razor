@@ -2,12 +2,14 @@
 @using System.Globalization
 @using KanbanC.Blazor.Components.Karten
 @using KanbanC.Blazor.Services
+@using KanbanC.Contracts.Ereignisse
 @using KanbanC.Contracts.Fehler
 @using KanbanC.Contracts.Karten
 @using KanbanC.Contracts.Klassen
 @using KanbanC.Contracts.Kontributoren
 @using KanbanC.Contracts.Zeiten
 @using Microsoft.AspNetCore.Components.Forms
+@implements IDisposable
 @inject KartenApiKlient KartenKlient
 @inject KartenklassenApiKlient KartenklassenKlient
 @inject KontributorenApiKlient KontributorenKlient
@@ -17,6 +19,8 @@
 @inject Pfadkopie Pfadkopie
 @inject Anhangbasisadresse Anhangbasis
 @inject IJSRuntime Browser
+@inject Ereignisverteiler Ereignisverteiler
+@inject Markenstandzeit Markenstandzeit
 
 <PageTitle>Karte @KarteId</PageTitle>
 
@@ -51,6 +55,11 @@ else
         <h1 id="karte-boardname" class="karte-boardname">@_detail.Boardname</h1>
         <span class="tag tag-neutral" id="karte-plakette">Karte @KarteId</span>
         <span class="karte-spalte" id="karte-spalte">Spalte @_detail.Spaltenbezeichnung</span>
+        @* Dieselbe Marke wie an der Karte am Board — sie gehoert der Karte, nicht der Bahn. *@
+        @if (_einflugmarke is not null)
+        {
+            <span class="karte-einflugmarke" id="karte-einflugmarke">@_einflugmarke</span>
+        }
     </SectionContent>
 
     <nav class="brotkrumen" id="brotkrumen" aria-label="Brotkrumen">
@@ -60,6 +69,14 @@ else
         <span aria-hidden="true">/</span>
         <span class="brotkrume-hier">Karte @KarteId</span>
     </nav>
+
+    @* Steht ein Feld offen, wird nichts ausgetauscht: die Meldung wartet sichtbar, und der
+       ungesendete Text bleibt stehen. Ein **Angebot** gibt es nicht — eine Bewegung fasst kein
+       Feld an. *@
+    @if (_zurueckgehaltenesEreignis is not null)
+    {
+        <p class="wartende-aenderung" id="karte-wartende-aenderung" role="status">1 Änderung wartet</p>
+    }
 
     @if (_zurueckweisung is not null)
     {
@@ -762,6 +779,15 @@ else
     // Höchstens ein Feld steht offen; welches, sagt sein Name. Ein Wahrheitswert je Feld wäre
     // dieselbe Aussage mehrfach und ließe zwei offene Felder zu.
     private string? _offenesFeld;
+
+    // Was an der Karte steht, nachdem jemand anders sie bewegt hat, und die Frist, nach der es von
+    // selbst wieder verschwindet.
+    private string? _einflugmarke;
+    private CancellationTokenSource? _markenfrist;
+
+    // Die fremde Bewegung, die auf ein offenes Feld wartet. Hoechstens eine: mehrere Bewegungen
+    // derselben Karte enden ohnehin in einem einzigen Neuabruf, und die Marke nennt die letzte.
+    private Kartenereignis? _zurueckgehaltenesEreignis;
     private Zurueckweisung? _zurueckweisung;
     private string _etikettentext = string.Empty;
     private string? _ausfallmeldung;
@@ -775,6 +801,11 @@ else
 
     [Parameter]
     public long KarteId { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Ereignisverteiler.Gemeldet += NimmEreignisAn;
+    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -2012,6 +2043,7 @@ else
     private async Task Speichere(KanbanC.Contracts.Karten.Kartendetail gewuenscht)
     {
         _offenesFeld = null;
+        await SpieleZurueckgehaltenesEin();
         _zurueckweisung = null;
         var anfrage = new KarteAendernAnfrage(
             gewuenscht.Karte.Titel,
@@ -2048,5 +2080,114 @@ else
         }
 
         _detail = ergebnis.Wert;
+    }
+
+    // Ab hier: der Rueckweg. Die Meldung kommt aus dem Hintergrunddienst und muss ueber InvokeAsync
+    // in den Renderfaden zurueck, sonst rendert Blazor aus einem fremden Faden.
+    private void NimmEreignisAn(Kartenereignis ereignis)
+    {
+        var dasEreignisGehoertZuEinerAnderenKarte = ereignis.Karte != KarteId;
+        if (dasEreignisGehoertZuEinerAnderenKarte)
+        {
+            return;
+        }
+
+        _ = InvokeAsync(() => NimmAufDemRenderfadenAn(ereignis));
+    }
+
+    // Der Neuabruf ersetzt _detail, und das Beschreibungsfeld rendert seinen Inhalt daraus: ein
+    // Austausch naehme den ungesendeten Text weg. Deshalb wartet die Meldung, solange ein Feld
+    // offen steht — auch dann, wenn eine Bewegung das Feld gar nicht anfasst.
+    private async Task NimmAufDemRenderfadenAn(Kartenereignis ereignis)
+    {
+        var einFeldStehtOffen = _offenesFeld is not null;
+        if (einFeldStehtOffen)
+        {
+            _zurueckgehaltenesEreignis = ereignis;
+            StateHasChanged();
+            return;
+        }
+
+        await SpieleEinMitAusfallmeldung(ereignis);
+    }
+
+    // Der Neuabruf laeuft ueber HTTP wie jeder andere: faellt die WebApi zwischen Meldung und
+    // Abruf aus, gehoert der Ausfall an dieselbe Stelle wie der einer eigenen Handlung — und
+    // nicht in eine unbeobachtete Aufgabe.
+    private async Task SpieleEinMitAusfallmeldung(Kartenereignis ereignis)
+    {
+        _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(() => SpieleEin(ereignis));
+        StateHasChanged();
+    }
+
+    private async Task SpieleZurueckgehaltenesEin()
+    {
+        var esWarteteNichts = _zurueckgehaltenesEreignis is null;
+        if (esWarteteNichts)
+        {
+            return;
+        }
+
+        var wartendes = _zurueckgehaltenesEreignis!;
+        _zurueckgehaltenesEreignis = null;
+        await SpieleEinMitAusfallmeldung(wartendes);
+    }
+
+    // **Signal statt Nutzlast:** geholt wird ueber den bestehenden Ladeweg, damit die Seite genau
+    // den Stand zeigt, den ein Reload auch zeigte — samt neuer Spalte in der Kopfzeile.
+    private async Task SpieleEin(Kartenereignis ereignis)
+    {
+        await LadeKartendetail();
+        await LadeUrheber();
+        SetzeEinflugmarke(ereignis);
+        StateHasChanged();
+    }
+
+    // Diese Seite bewegt keine Karte; jede Bewegung ist deshalb eine fremde und traegt eine Marke.
+    private void SetzeEinflugmarke(Kartenereignis ereignis)
+    {
+        _einflugmarke = Einflugmarke.Fuer(ereignis, _kontributoren, [], DateTimeOffset.UtcNow);
+        BeendeMarkenfrist();
+        var frist = new CancellationTokenSource();
+        _markenfrist = frist;
+        _ = LasseMarkeVergehen(frist.Token);
+    }
+
+    // Der Zeitgeber endet mit dem Abbau des Kreislaufs, sonst hielte er eine tote Sicht am Leben.
+    private async Task LasseMarkeVergehen(CancellationToken abbruch)
+    {
+        try
+        {
+            await Task.Delay(Markenstandzeit.Dauer, abbruch);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        await InvokeAsync(() =>
+        {
+            _einflugmarke = null;
+            BeendeMarkenfrist();
+            StateHasChanged();
+        });
+    }
+
+    private void BeendeMarkenfrist()
+    {
+        if (_markenfrist is null)
+        {
+            return;
+        }
+
+        _markenfrist.Cancel();
+        _markenfrist.Dispose();
+        _markenfrist = null;
+    }
+
+    public void Dispose()
+    {
+        Ereignisverteiler.Gemeldet -= NimmEreignisAn;
+        BeendeMarkenfrist();
     }
 }

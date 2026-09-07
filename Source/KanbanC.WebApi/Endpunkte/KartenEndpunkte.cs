@@ -2,6 +2,7 @@ using KanbanC.BL.Integrations.Karten;
 using KanbanC.BL.Operations.Boards;
 using KanbanC.BL.Operations.Fehler;
 using KanbanC.Contracts.Boards;
+using KanbanC.Contracts.Ereignisse;
 using KanbanC.Contracts.Karten;
 using KanbanC.Contracts.Klassen;
 using Microsoft.AspNetCore.Mvc;
@@ -306,15 +307,26 @@ public static class KartenEndpunkte
         return Results.Created($"/api/boards/{boardId}/spalten/{spalteId}/karten/{karte.KarteId}", karte);
     }
 
-    private static IResult VerschiebeKarte(long boardId, long karteId, Kartenlage lage, KartenService kartenService)
+    // Die einzige Stelle, an der eine Bewegung gemeldet wird — und sie sitzt im Endpunkt und nicht
+    // im KartenService: der Weg steht nur in der Anfrage, und KanbanC.BL bleibt frei von
+    // Abonnenten. **Eine zurückgewiesene Bewegung meldet nichts**, es hat sich nichts bewegt.
+    private static IResult VerschiebeKarte(long boardId, long karteId, Kartenlage lage, KartenService kartenService, Ereignisdrehscheibe ereignisdrehscheibe, HttpContext kontext)
     {
         var ergebnis = kartenService.VerschiebeKarte(boardId, karteId, lage);
         if (ergebnis.IstErfolg)
         {
+            ereignisdrehscheibe.Melde(AlsKartenereignis(boardId, karteId, lage, kontext));
             return Results.Ok(ergebnis.Wert);
         }
 
         return Zurueckweisungen.AlsFehlerantwort(ergebnis.Befunde);
+    }
+
+    private static Kartenereignis AlsKartenereignis(long boardId, long karteId, Kartenlage lage, HttpContext kontext)
+    {
+        var weg = Wegkopf.Aus(kontext.Request.Headers[Wegkopf.Name]);
+        var jetzt = DateTimeOffset.UtcNow; // stil-check: C03 keine Uhr-Abstraktion, wie schon bei Erledigung, Stilllegung und Zeitmessung
+        return new Kartenereignis(boardId, karteId, lage.SpalteId, lage.Kontributor, weg, jetzt);
     }
 
     // Dieselbe Antwortgestalt wie die Lage: das Archivieren nimmt der Spalte eine Karte und

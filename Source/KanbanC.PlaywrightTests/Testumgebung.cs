@@ -11,6 +11,13 @@ public sealed class Testumgebung
     private const string BrowserVariable = "BROWSER";
     private const string Browser = "chromium";
     private const string StartseitenPfad = "/";
+
+    // Gekürzt für den Testlauf; im Betrieb stehen die zehn Sekunden der Größenordnung.
+    public const int MarkenstandzeitInSekunden = 2;
+
+    // Der Lauf startet die WebApi zwischen zwei Tests neu; die Ereignisleitung nimmt sich danach
+    // wieder auf, und der nächste Test soll nicht auf sie warten müssen.
+    private const string WiederaufnahmepauseInSekunden = "0.2";
     private static Testumgebung? _aktuelle;
     private readonly string _webApiProjekt;
     private readonly string _blazorProjekt;
@@ -67,7 +74,14 @@ public sealed class Testumgebung
     {
         // Die Shell-Variable BROWSER (Standardbrowser des Nutzers) würde die .runsettings von Playwright überstimmen.
         Environment.SetEnvironmentVariable(BrowserVariable, Browser);
-        var umgebung = new Dictionary<string, string> { ["WebApi__BasisAdresse"] = WebApiAdresse + "/" };
+        // Die Standzeit der Einflugmarke wird für den Lauf gekürzt: kein E2E-Test darf zehn
+        // Sekunden warten müssen, nur um zu sehen, dass eine Marke von selbst vergeht.
+        var umgebung = new Dictionary<string, string>
+        {
+            ["WebApi__BasisAdresse"] = WebApiAdresse + "/",
+            ["Oberflaeche__MarkenstandzeitInSekunden"] = MarkenstandzeitInSekunden.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            ["Oberflaeche__WiederaufnahmepauseInSekunden"] = WiederaufnahmepauseInSekunden,
+        };
         _blazor = await Dienstprozess.Starte(_blazorProjekt, Assembly(_blazorProjekt), BlazorAdresse, umgebung, StartseitenPfad);
         _aktuelle = this;
     }

@@ -6,23 +6,27 @@ canvas: https://claude.ai/code/artifact/b61e3007-056d-44e0-9cf5-7350c22f858a
 seed: .claude/wireframes/kanbanc.html
 art: mockup
 richtung: aus dem Bestand — gestaltung.css (Caprasimo/Figtree, warmes Sandklima, runde Formen)
-stand: 2026-09-06
+stand: 2026-09-07
 zurueckgeholt: 2026-09-03
 ---
 
 # Wireframes — KanbanC
 
-Der Canvas trägt sieben Artboards: `Main.dc.html`, den Screen-Flow über alle neun
-Dialogs, sowie `D0001.dc.html`, `D0002.dc.html`, `D0003.dc.html`, `D0004.dc.html`,
-`D0005.dc.html` und `D0006.dc.html`, die sechs ausdetaillierten Bildschirme. Die
+Der Canvas trägt acht Artboards: `Main.dc.html`, den Screen-Flow über alle neun
+Dialogs, sowie `D0001.dc.html` bis `D0007.dc.html`, die sieben ausdetaillierten
+Dialogs. Die
 übrigen Dialogs bleiben Kästen im Flow; ihr Detail-Artboard entsteht mit
 `/wireframe verfeinern <dialog>`, wenn der Dialog dran ist (Rolling Wave). Woraus
 ein solcher Lauf schöpft, sagt die
 [Zuordnung Schirm → Dialog](#zuordnung-schirm--dialog).
 
-Reife je Dialog wird aus dem Dateibestand gerechnet: `D0001`, `D0002`, `D0003`,
-`D0004`, `D0005` und `D0006` stehen auf `wireframe`, die drei übrigen (`D0007`,
-`D0008`, `D0009`) auf `flow`.
+Reife je Dialog wird aus dem Dateibestand gerechnet: `D0001` bis `D0007` stehen auf
+`wireframe`, die zwei übrigen (`D0008`, `D0009`) auf `flow`.
+
+**`D0007` ist der eine Dialog ohne eigenen Schirm** und trotzdem ein Artboard: sein
+Gegenstand ist ein *Verhalten an vorhandenen Schirmen*. Gezeichnet sind deshalb
+Zustände und Übergänge am Board, an der Kartenseite und in Zone 3 der Kopfzeile —
+kein neuer Bildschirm.
 
 | Datei | Was |
 | --- | --- |
@@ -33,7 +37,8 @@ Reife je Dialog wird aus dem Dateibestand gerechnet: `D0001`, `D0002`, `D0003`,
 | `D0004.dc.html` | **Karteninhalt pflegen**, Rahmen 1440×2960 (gemessen 2815,2) — die Karte als **eigene Seite** (`/karten/14`, Variante C): Hauptzustand als echtes Fenster 1440×900, dazu Verantwortlichenwahl, Etiketten und Farbe, die frisch angelegte Karte als Leerzustand, drei Ränder und der Einstieg vom Board. Alle fünf Interactions I0015–I0019 sind sichtbar; nichts davon ist gebaut, das ganze Artboard ist Zielform |
 | `D0005.dc.html` | **Karten-Klassen**, Rahmen 1440×1980 (gemessen 1877,5) — der Klassenbereich sitzt **im Layout-Modus des Boards**, unter der Zeile für die neue Spalte: Hauptzustand mit Liste und Anlegezeile (I0020), Leerzustand, drei Ränder, die Zuordnung an der Karte (I0021) und der Abruf als API-Aufruf (I0022). Alle drei Interactions sind sichtbar; nichts davon ist gebaut, das ganze Artboard ist Zielform |
 | `D0006.dc.html` | **Zeiterfassung**, Rahmen 1440×3480 (gemessen 3304,1) — die Zeiterfassung sitzt **auf der Kartenseite**, in dem Kasten, den `D0004.dc.html` dafür freihält: Hauptzustand als echtes Fenster 1440×900, der Zeitenblock in seinen übrigen Fassungen (mein Timer läuft, leer, Anatomie eines Eintrags), die Karte in der Bahn in drei Fassungen (I0023), die laufenden Timer in **Zone 3 der Kopfzeile** (I0027), Nachtragen und Ändern (I0025) und drei Ränder. Alle fünf Interactions I0023–I0027 sind sichtbar; nichts davon ist gebaut, das ganze Artboard ist Zielform |
-| `canvas.json` | Layout des Canvas: der Flow oben, D0003, D0002, D0001, D0004, D0005 und D0006 in der Reihe darunter, Start in der Canvas-Ansicht |
+| `D0007.dc.html` | **Live-Aktualisierung**, Rahmen 1440×4420 (gemessen 4200,7) — **kein eigener Schirm, sondern Zustände an vorhandenen**: die fremde Bewegung am Board als Fenster 1440×900 (I0028), die fremde Änderung an der offenen Kartenseite als zweites Fenster mit der Trennung „zieht nach“ / „wird angeboten“, die Anatomie der Einflugmarke in drei Fassungen, die Gleichstellung von Browser und API samt markierter Lücke im Rückweg, die drei Stufen des Verbindungsabbruchs (I0029) und das Aufschließen, dazu drei Ränder. Beide Interactions I0028 und I0029 sind sichtbar; nichts davon ist gebaut, das ganze Artboard ist Zielform |
+| `canvas.json` | Layout des Canvas: der Flow oben, D0003, D0002, D0001, D0004, D0005, D0006 und D0007 in der Reihe darunter, Start in der Canvas-Ansicht |
 | `kanbanc-wireframes.html`, `wireframes.js`, `styles.css`, `README.md` | **älterer Satz, unangetastet** — acht gezeichnete Schirme mit Varianten, aus denen `verfeinern` schöpft; siehe Offene Fragen |
 
 ## Richtung
@@ -191,6 +196,16 @@ gehört in eine Anforderung, nicht ins Bild.
 | 2026-09-06 | Ist der Zeitenschirm des älteren Satzes („Zeiten je Kontributor", A/B) die Vorlage? | **nein — keine der beiden Varianten wird ein Schirm** | Beide zeichnen eine Auswertung über Kontributoren hinweg: **A** die Kreuztabelle Karte × Kontributor mit Soll-Spalte, **B** den Stundenzettel je Person und Tag. Kein Fertig-Kriterium von I0023–I0027 verlangt das; der eigene Hinweistext des Schirms nennt als vierte Quelle `I0036` „Zeiten exportieren" — und der gehört **D0009**. Übernommen sind aus dem Schirm die **Bausteine**, nicht der Rahmen: der laufende Eintrag mit Beginn, Ende und Quelle, das Nachtragen als Zeile, das Banner der laufenden Timer. Die Kreuztabelle bleibt für `D0009` liegen, wo sie hingehört. |
 | 2026-09-06 | Rahmenhöhe und Platz von `D0006` auf dem Canvas | **1440×3480** bei `x` 7800, `y` 1300 | Gemessen, nicht geschätzt (Chromium, Google-Fonts-Fassung derselben Schriften): 3304,1 px. 3480 gibt 5,3 % Reserve; der Überschuss trägt die Grundfarbe `#ebddc5` der Lesehilfe und ist deshalb unsichtbar. Der Platz setzt die Dialogreihe nach rechts fort, 120 px hinter `D0005`; Positionen der übrigen Artboards bleiben unverändert. |
 | 2026-09-06 | Rahmenhöhe und Platz von `D0005` auf dem Canvas | **1440×1980** bei `x` 6240, `y` 1300 | Gemessen, nicht geschätzt (Chromium, Google-Fonts-Fassung derselben Schriften): 1877,5 px. 1980 gibt 5,5 % Reserve; der Überschuss trägt die Grundfarbe `#ebddc5` der Lesehilfe und ist deshalb unsichtbar. Der Platz setzt die Dialogreihe nach rechts fort, 120 px hinter `D0004`; Positionen der übrigen Artboards bleiben unverändert. |
+| 2026-09-07 | **D0007** — wo sitzt die Live-Aktualisierung, wenn sie keinen eigenen Schirm hat? | **an den vorhandenen Schirmen**: Board (D0003), Kartenseite (D0004), Zone 3 der Kopfzeile — gezeichnet sind Zustände und Übergänge, kein neuer Bildschirm | Der Index hält seit 2026-08-30 fest, dass D0007 „kein eigener Schirm" ist, und der ältere Satz kennt Live nur als Merkmal von „Board" und „Start B". Ein eigener Bildschirm wäre eine erfundene Interaction (Kontrakt: keine Dialogs erfinden). Das Fertig-Kriterium von I0028 sagt „zeigt **jede andere offene Sicht** die Änderung" — der Gegenstand ist ein Verhalten aller Sichten, kein Ort. |
+| 2026-09-07 | Woran sieht man, dass sich etwas bewegt hat, das man **nicht selbst** bewegt hat? | **Einflugmarke an der Sache selbst**: Akzentkante links plus eine Fußzeile „Wer · über welchen Weg · wann", die nach kurzer Zeit von selbst verschwindet | Eine Karte, die ohne Zutun springt, sieht wie ein Fehler aus — die Marke macht aus dem Sprung eine Nachricht. Sie steht **dort, wo die Änderung ist**, statt in einer Liste daneben, die man erst mit dem Board abgleichen müsste, und kostet keinen Platz, sobald nichts passiert (dieselbe Regel wie bei `Laufzaehler.Fuer`). Die eigene Handlung trägt **keine** Marke: sie hatte ihre Rückmeldung schon. |
+| 2026-09-07 | Wird eine **Aktivitätsspur** (Board A) oder ein **Laufband** (Board B) gezeichnet? | **keine von beiden** — als markierter Befund in Rand C, nicht als Zutat | Der Index lässt die Wahl ausdrücklich I0028. Geprüft wurde zuerst, ob ein Fertig-Kriterium sie verlangt: I0028 sagt „zeigt … die Änderung ohne Zutun", I0029 spricht vom Nachholen des Stands — **keins von beiden verlangt eine Liste vergangener Ereignisse**. Eine solche Liste wäre ein *Verlauf*; der steht bei D0004 schon als Frage 13 ohne Knoten. Dieselbe Haltung wie bei den Klassenzeilen (Frage 17): ohne Knoten kommt es als Befund ins Bild, nicht als Bedienelement. |
+| 2026-09-07 | Was passiert mit etwas, das ich gerade **in der Hand** habe? | **es wird nie ausgetauscht**: ein offenes Feld bekommt ein Angebot darüber („Nina hat die Beschreibung geändert · ansehen · übernehmen"), ein laufender Zug lässt die fremde Bewegung warten | Eine Änderung, die unter der Hand den Text austauscht, wäre schlimmer als gar keine Live-Aktualisierung. Das Angebot nennt Sachverhalt und Kompensationsaktion — dieselbe Haltung wie die Fehlerantworten der API. Beim Ziehen kennt der Bestand den Gedanken schon: die Ablegefläche ändert ihr Aussehen, „solange ein Zug läuft" (`Spaltenbahnen.razor`, `ablegeflaeche-laeuft`). |
+| 2026-09-07 | Steht die Marke **„● live"** dauerhaft in der Kopfzeile, wie der ältere Satz sie zeichnet? | **nein** — sie erscheint erst, wenn die Verbindung weg ist, und nennt dann den Stand („nicht live · Stand von 09:12") | `wireframes.js` führt `liveMarke` in „Start B" und „Board A/B" dauerhaft. Übernommen wird sie nicht: I0027 hat für genau diese Stelle entschieden, dass ein Element, das nichts zu sagen hat, den Platz zurückgibt (`Laufzaehler.Fuer` liefert `null`, kein „0 laufen"). **Abwesenheit heißt: es steht.** Die Gegenrede — Abwesenheit könnte mehrdeutig sein — trägt nicht, weil der Abbruch selbst laut gezeigt wird (Zustand 5). |
+| 2026-09-07 | Was ist während eines Abbruchs bedienbar? | **nichts** — und genau das wird gezeigt: die Fläche wird ruhiger statt unlesbar, die mitlaufenden Dauern halten an, die Marke nennt den Stand | Bei Blazor Server hängt jede Interaktion am Kreislauf; „bedienbar bleiben" ist keine Gestaltungswahl, sondern nicht vorhanden. Der Wert des getrennten Schirms ist, dass er **über sein Alter nicht lügt**. Eine Uhr, die ohne Verbindung weiterzählt, wäre die eine Zahl, die sicher falsch ist — dieselbe Begründung, mit der `B0326` und `B0335` die Dauer ohne Live-Kanal weggelassen haben. |
+| 2026-09-07 | Aufschließen: **Ereignisse nachspielen** oder **frisch holen**? | **frisch holen**, mit einem Band „Wieder verbunden · 4 Änderungen nachgeholt" und Marken mit Uhrzeit statt „vor 3 Sek" | Das Fertig-Kriterium von I0029 sagt „holt den verpassten **Stand** nach" — den Stand, nicht die Ereignisse. Der Bestand hält es schon so: die Kopfzeile holt bei jedem Anlass frisch, statt in der Hand nachzuziehen (`Kopfzeile.razor`, „danach wird die Liste frisch geholt"). Ein Nachspielen bräuchte ein Ereignisjournal samt Reihenfolge, das nirgends geführt wird und dessen Lücken niemand bemerkte. Diese Marken bleiben als einzige stehen, bis das Band geschlossen wird: nach einer Trennung sind sie das Protokoll der Lücke. |
+| 2026-09-07 | Löst der Live-Kanal die **Kopfzeilen-Plakette** aus ihrer Schuld? | **nur zur Hälfte**: die Zahl wächst jetzt ohne Ladeanlass, aber sie bleibt eine **Zahl**; die Dauer bekommt das Popover | R00030 nennt zwei Gründe für die fehlende Dauer. Der erste (ohne Live-Kanal ab der ersten Sekunde falsch) fällt hier weg. Der zweite überlebt: über alle Boards dürfen mehrere eigene Timer laufen (I0023, Entscheidung 1), und eine Dauer in der Plakette müsste einen davon auswählen — jede Auswahl wäre eine Zusage, die sie nicht halten kann. I0027 hat den Ausweg schon benannt: „Dauer und ,welcher denn‘ beantwortet einen Klick weiter das Popover, wo eine Zeile **ein** Eintrag ist". |
+| 2026-09-07 | Wie kommt eine Änderung **der API** in die offenen Sichten? | **nicht entschieden — als markierte Lücke gezeichnet** (Zustand 4, gestricheltes Feld mit „?") | Der Weg vom WebApi-Prozess (5280) zurück in die Blazor-Sichten (5180) existiert nicht; `KanbanC.Contracts/Ereignisse/` liegt leer im Bestand und ist genau dafür freigehalten (belegt in `B0295`). **Wie** er gebaut wird, ist eine Architektur- und Bubble-Frage, keine Gestaltungsfrage — dasselbe Muster wie die markierten Lücken in `D0001` (I0038/I0039) und `D0005` (Klassenfilter). Gezeichnet ist deshalb nur, **was das Bild verspricht**: gleiche Kante, gleiche Zeile, derselbe Augenblick, egal wer gehandelt hat. |
+| 2026-09-07 | Rahmenhöhe und Platz von `D0007` auf dem Canvas | **1440×4420** bei `x` 9360, `y` 1300 | Gemessen, nicht geschätzt (Chrome headless, Google-Fonts-Fassung derselben Schriften, `document.fonts.ready` abgewartet): 4200,7 px. 4420 trägt rund 5 % Reserve — dieselbe Rechnung wie bei `D0005` und `D0006`. Der Platz schließt die Reihe nach rechts an `D0006` an, mit 120 px Abstand. |
 
 ## Zuordnung Schirm → Dialog
 
@@ -214,7 +229,7 @@ Auffüllen.
 | **D0004** Karteninhalt pflegen | „Kartendetail" (ganz) | **C** — eigene Seite, entschieden 2026-09-05 bei I0015 | **Verlauf** — alle drei Varianten des alten Satzes zeichnen eine Verlaufsspur („wer, wann, über welche Grenze"); die WBS kennt dazu keinen Knoten. Seit 2026-09-05 als `D0004.dc.html` gezeichnet; der Verlauf steht dort **nicht** im Bild, sondern als Frage 13. |
 | **D0005** Karten-Klassen | „Board anlegen & gestalten" **B**, Abschnitt *Klassen* (I0020) · „Kartendetail" und die Kartenform in „Board" (I0021, Nummer auf der Karte) | Klassen-Teil aus **B** gesetzt | **I0022** — reine API-Zusage, absichtlich ohne Schirm; die Oberflächenentsprechung wäre der Klassenfilter, der mit R00005 aus dem Boardkopf nach Zone 3 gewandert ist. Seit 2026-09-06 als `D0005.dc.html` gezeichnet: der Aufruf steht im Bild, der Filter als markierte Lücke. **Ändern und Entfernen einer Klasse** hat keinen Knoten — Frage 17 |
 | **D0006** Zeiterfassung | „Kartendetail" (Zeitentabelle und Timerzeile, in allen drei Varianten dieselbe Spalte) · „Zeiten je Kontributor" (nur die **Bausteine**: laufender Eintrag mit Beginn/Ende/Quelle, Nachtragezeile, Banner der laufenden Timer) · „Start B" Banner (I0027, als Inhalt — nicht als Ort) | **keine der beiden** Zeiten-Varianten wird ein Schirm, entschieden 2026-09-06 — A und B sind Auswertungen über Kontributoren hinweg und gehören zu **D0009** | — alle fünf gezeichnet; seit 2026-09-06 als `D0006.dc.html`. Ohne Vorlage im alten Satz waren der **erzwungene Identitätsschritt** vor dem ersten Timer (in D0002 nur als Preis von Variante C benannt) und der **zweite Timer während einer läuft** — beide stehen jetzt als Rand im Bild, der zweite ausdrücklich unentschieden (Frage 20) |
-| **D0007** Live-Aktualisierung | **kein eigener Schirm** — nur als Merkmal *innerhalb* von „Board": Ereignisspur rechts (**A**) oder Laufband oben (**B**), dazu die Marke „● live" in der Kopfzeile und der Live-Punkt in „Start B" | Spur oder Laufband entscheidet **I0028**, nicht vorher | **I0029** Aufschließen nach Verbindungsabbruch — weder Zustand noch Meldung gezeichnet |
+| **D0007** Live-Aktualisierung | **kein eigener Schirm** — nur als Merkmal *innerhalb* von „Board": Ereignisspur rechts (**A**) oder Laufband oben (**B**), dazu die Marke „● live" in der Kopfzeile und der Live-Punkt in „Start B" | **keine von beiden** — entschieden 2026-09-07: weder Spur noch Laufband, weil kein Fertig-Kriterium eine Liste vergangener Ereignisse verlangt; ebenso fällt die dauerhafte Marke „● live" | — beide Interactions gezeichnet; seit 2026-09-07 als `D0007.dc.html`. **I0029** hatte im älteren Satz keine Vorlage und ist entworfen, nicht abgeschrieben: drei Stufen des Abbruchs und das Aufschließen. Ohne Vorlage waren ebenso die **Einflugmarke** und die Regel **Angebot statt Austausch** für offene Felder |
 | **D0008** WBS-Import | „WBS-Import" (ganz) | **offen** — A oder B, Wahl bei I0030–I0032 | — |
 | **D0009** Auswertungen | „Auswertungen" (ganz) | **offen** — A oder B, Wahl bei I0033–I0037 | **I0037** — reine API-Zusage, absichtlich ohne Schirm |
 
@@ -474,3 +489,39 @@ Die Gegenrichtung, Schirm → Dialogs, in Kurzform:
     `I0033` bereits voraus („der erfassten Zeit steht die WBS-Zählung gegenüber").
     Ob das Soll ein Feld der Karte ist oder aus dem WBS-Import (`D0008`) kommt,
     ist nicht entschieden — im Bild steht es als Zahl, im Index als Frage.
+
+24. **Der Weg von der API zurück in die offenen Sichten fehlt — und ist der Kern
+    von `I0028`.** Das Fertig-Kriterium sagt „bewegt ein Browser **oder die API**
+    eine Karte". Ein Browser bewegt über den Blazor-Kreislauf, der schon steht; ein
+    Agent bewegt über `KanbanC.WebApi` (Port 5280), einen **eigenen Prozess**, und
+    von dort führt heute nichts zurück in die Blazor-Sitzungen (Port 5180).
+    `KanbanC.Contracts/Ereignisse/` liegt seit dem 29.08. leer im Bestand und ist
+    genau dafür freigehalten (`B0295`). `D0007.dc.html`, Zustand 4 zeichnet die
+    Lücke als markiertes Feld statt eines erfundenen Wegs — **wie** sie geschlossen
+    wird, gehört `/architektur` und den Bubbles, nicht dem Bild. Das Bild sagt nur,
+    was zu halten ist: gleiche Kante, gleiche Zeile, derselbe Augenblick.
+
+25. **`ReconnectModal.razor` ist gebaut und spricht Englisch.** Der Dialog aus der
+    Blazor-Vorlage steht im Bestand, ist mit den Projekt-Tokens gestaltet
+    (`--radius-lg`, `--color-accent`, `--shadow-lg`) und trägt „Rejoining the
+    server…", „Retry", „The session has been paused by the server." — in einer
+    Anwendung, deren Oberfläche sonst durchgehend deutsch ist. `D0007.dc.html`,
+    Zustand 5 zeichnet die deutsche Zielform samt der einen Zeile, die die Vorlage
+    nicht hat: **seit wann der Stand alt ist**. Ob die Umschrift zum
+    Fertig-Kriterium von `I0029` gehört oder in eine eigene Anforderung, ist nicht
+    entschieden — es ist ein Befund am Bestand, kein Entwurf.
+
+26. **Wie lange die Einflugmarke steht, ist eine Größenordnung, kein Messwert.**
+    „Etwa zehn Sekunden" steht im Bild, damit die Marke überhaupt eine Dauer hat;
+    geprüft ist sie nicht. Dieselbe Unschärfe trifft die Frage, ab wie vielen
+    nachgeholten Änderungen ein Aufschließen sie einzeln markiert, statt sie
+    zusammenzufassen — gezeichnet sind vier, ein Board mit hundert Änderungen ist
+    nicht gezeichnet.
+
+27. **Die mitlaufende Dauer ist gezeichnet, ihr Takt nicht entschieden.**
+    `B0326`, `B0328`, `B0335` und `B0362` haben die Dauer weggelassen, weil sie
+    ohne Live-Kanal ab der ersten Sekunde falsch wäre — und weil „ein Sekundentakt
+    je Karte über den Blazor-Kreislauf in jedem E2E-Lauf ein Wackelkandidat" wäre.
+    Der erste Grund fällt mit `I0028` weg, **der zweite nicht**: ob die Dauer im
+    Browser weiterzählt oder vom Server getaktet wird, entscheidet der Slice.
+    Gezeichnet ist nur, dass sie dasteht und beim Abbruch anhält.

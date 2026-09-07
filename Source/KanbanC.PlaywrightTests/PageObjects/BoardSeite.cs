@@ -72,6 +72,19 @@ public sealed class BoardSeite
         return karte.Locator(".karte-timer");
     }
 
+    // Die Einflugmarke einer eben fremd bewegten Karte: Akzentkante an der Karte, Fußzeile in ihr.
+    public ILocator Einflugmarken => _seite.Locator("#spaltenbahnen .karte-einflugmarke");
+
+    public ILocator EingefloreneKarten => _seite.Locator("#spaltenbahnen .karte-eingeflogen");
+
+    public ILocator EinflugmarkeDerKarte(ILocator karte)
+    {
+        return karte.Locator(".karte-einflugmarke");
+    }
+
+    // Die zurückgehaltene fremde Bewegung steht über den Bahnen, nicht an einer Karte.
+    public ILocator WartendeAenderung => _seite.Locator("#wartende-aenderung");
+
     public ILocator LeerhinweiseDerBahnen => _seite.Locator("#spaltenbahnen .spaltenbahn-leer");
 
     public ILocator Datumsgruppen => _seite.Locator("#spaltenbahnen .spaltenbahn-datumsgruppe");
@@ -247,6 +260,13 @@ public sealed class BoardSeite
     public ILocator KartentitelDerBahn(ILocator bahn)
     {
         return bahn.Locator(".karte-titel");
+    }
+
+    // Die Karten selbst, nicht ihre Titel: nur so ist zu sehen, dass in der Herkunftsbahn kein
+    // Platzhalter stehen bleibt.
+    public ILocator KartenDerBahn(ILocator bahn)
+    {
+        return bahn.Locator(".karte");
     }
 
     public ILocator LeerhinweisDerBahn(ILocator bahn)

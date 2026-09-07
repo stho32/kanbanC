@@ -157,9 +157,11 @@ public class KarteVerschiebenE2ETests : PageTest
     }
 
 
-    // Der Browser zeigt einen Stand, den es nicht mehr gibt: während die Seite offen ist, räumt
-    // ein Agent die Zielbahn über die API leer. Die untere Hälfte der zweiten Karte zielt danach
-    // auf eine Position, die es nach dem Zug nicht mehr gäbe.
+    // Der Browser zeigt einen Stand, den es nicht mehr gibt — seit I0028 gibt es dafür genau eine
+    // Lage: **jemand hält eine Karte in der Hand.** Dann wartet die fremde Bewegung sichtbar, die
+    // Bahn ordnet sich nicht um, und die untere Hälfte der zweiten Karte zielt auf eine Position,
+    // die es nach dem Zug nicht mehr gibt. Vorher entstand dieselbe Lage von selbst, weil ein
+    // offenes Board nichts nachzog; das ist seit dem Live-Kanal nicht mehr herstellbar.
     [Test]
     [Category("US-5")]
     public async Task Wenn_die_Zielbahn_inzwischen_leerer_ist_dann_erscheint_eine_lesbare_Zurueckweisung_und_die_Karte_kehrt_zurueck()
@@ -168,9 +170,13 @@ public class KarteVerschiebenE2ETests : PageTest
         var rueckstand = seite.SpaltenbahnAnStelle(0);
         var inArbeit = seite.SpaltenbahnAnStelle(1);
         await Expect(seite.KartentitelDerBahn(inArbeit)).ToHaveTextAsync(["X", "Y"]);
+        await seite.NimmKarteAuf(seite.KarteMitTitel("D"));
+        await Expect(seite.UntereHaelfte(seite.KarteMitTitel("Y"))).ToBeVisibleAsync();
         await RaeumeZweiteBahnLeer();
+        await Expect(seite.WartendeAenderung).ToBeVisibleAsync();
+        await Expect(seite.KartentitelDerBahn(inArbeit)).ToHaveTextAsync(["X", "Y"]);
 
-        await seite.ZieheKarteAuf(seite.KarteMitTitel("D"), seite.UntereHaelfte(seite.KarteMitTitel("Y")));
+        await seite.LegeAufStelleAb(seite.UntereHaelfte(seite.KarteMitTitel("Y")));
 
         await Expect(seite.KarteZurueckweisung).ToBeVisibleAsync();
         await Expect(seite.KarteZurueckweisung).ToContainTextAsync("liegt außerhalb der Zielspalte");
@@ -201,8 +207,11 @@ public class KarteVerschiebenE2ETests : PageTest
     {
         var seite = await BoardMitKarten(["A", "B", "C", "D"], ["X", "Y"]);
         var inArbeit = seite.SpaltenbahnAnStelle(1);
+        await seite.NimmKarteAuf(seite.KarteMitTitel("D"));
+        await Expect(seite.UntereHaelfte(seite.KarteMitTitel("Y"))).ToBeVisibleAsync();
         await RaeumeZweiteBahnLeer();
-        await seite.ZieheKarteAuf(seite.KarteMitTitel("D"), seite.UntereHaelfte(seite.KarteMitTitel("Y")));
+        await Expect(seite.WartendeAenderung).ToBeVisibleAsync();
+        await seite.LegeAufStelleAb(seite.UntereHaelfte(seite.KarteMitTitel("Y")));
         await Expect(seite.KarteZurueckweisung).ToBeVisibleAsync();
 
         Testumgebung.Aktuelle.HalteWebApiAn();

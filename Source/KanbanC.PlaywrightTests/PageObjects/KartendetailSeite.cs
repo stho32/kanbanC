@@ -31,6 +31,12 @@ public sealed class KartendetailSeite
 
     public ILocator Spalte => _seite.Locator("#karte-spalte");
 
+    // Dieselbe Marke wie an der Karte am Board, hier neben der Spaltenangabe.
+    public ILocator Einflugmarke => _seite.Locator("#karte-einflugmarke");
+
+    // Steht ein Feld offen, wartet die fremde Bewegung sichtbar — und tauscht nichts aus.
+    public ILocator WartendeAenderung => _seite.Locator("#karte-wartende-aenderung");
+
     public ILocator Rueckpfeil => _seite.Locator("#karte-zurueck");
 
     public ILocator Brotkrumen => _seite.Locator("#brotkrumen");

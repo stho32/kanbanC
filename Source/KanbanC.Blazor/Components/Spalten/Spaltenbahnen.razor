@@ -4,6 +4,12 @@
 @using KanbanC.Contracts.Zeiten
 @inject KartenApiKlient KartenKlient
 
+@* Die zurueckgehaltene Meldung steht ueber den Bahnen und nicht an einer Karte: sie sagt, dass
+   etwas wartet, und noch nicht, wo. *@
+@if (WartendeAenderungen > 0)
+{
+    <p class="wartende-aenderung" id="wartende-aenderung" role="status">@Wartetext</p>
+}
 <div class="spaltenbahnen" id="spaltenbahnen" @ondragenter="VerlasseZiel">
     @foreach (var spalte in Spalten)
     {
@@ -129,6 +135,7 @@
                Kartendaten="kartendaten"
                LaufendeZeiteintraege="LaufendeDerKarte(kartendaten.KarteId)"
                GewaehlteKontributorId="GewaehlteKontributorId"
+               Einflugmarke="@MarkeDerKarte(kartendaten.KarteId)"
                IstZiehbar="ZeigtZiehbareKarten"
                WirdGezogen="WirdGezogen(kartendaten.KarteId)"
                NimmtAn="ZeigtAblageziele"
@@ -150,6 +157,7 @@
                Kartendaten="erledigte"
                LaufendeZeiteintraege="LaufendeDerKarte(erledigte.KarteId)"
                GewaehlteKontributorId="GewaehlteKontributorId"
+               Einflugmarke="@MarkeDerKarte(erledigte.KarteId)"
                IstZiehbar="ZeigtZiehbareKarten"
                WirdGezogen="WirdGezogen(erledigte.KarteId)"
                NimmtAn="false"
@@ -161,6 +169,7 @@
 
 @code {
     private const int ObersteStelle = 1;
+    private const int EineAenderung = 1;
     private Dictionary<long, SpaltenFormular> _formulare = [];
 
     // Das Nachladen ist eine Handlung, keine Einstellung des Boards: der naechste Board-Abruf
@@ -192,6 +201,48 @@
 
     [Parameter]
     public long? GewaehlteKontributorId { get; set; }
+
+    // Was an einer eben fremd bewegten Karte steht, gerechnet vom Board: die Bahn reicht es nur an
+    // die Karte weiter, der es gehoert.
+    [Parameter]
+    public IReadOnlyDictionary<long, string> Einflugmarken { get; set; } = new Dictionary<long, string>();
+
+    // Wie viele fremde Bewegungen gerade darauf warten, dass der laufende Zug endet.
+    [Parameter]
+    public int WartendeAenderungen { get; set; }
+
+    // Beginn und Ende des Zugs gehen nach oben, Muster KarteWurdeAbgelegt: das Board haelt die
+    // fremde Bewegung zurueck, solange jemand eine Karte in der Hand hat.
+    [Parameter]
+    public EventCallback ZugWurdeBegonnen { get; set; }
+
+    [Parameter]
+    public EventCallback ZugWurdeBeendet { get; set; }
+
+    private string? MarkeDerKarte(long karteId)
+    {
+        var dieKarteTraegtEineMarke = Einflugmarken.TryGetValue(karteId, out var beschriftung);
+        if (dieKarteTraegtEineMarke)
+        {
+            return beschriftung;
+        }
+
+        return null;
+    }
+
+    private string Wartetext
+    {
+        get
+        {
+            var genauEineAenderungWartet = WartendeAenderungen == EineAenderung;
+            if (genauEineAenderungWartet)
+            {
+                return "1 Änderung wartet";
+            }
+
+            return $"{WartendeAenderungen} Änderungen warten";
+        }
+    }
 
     private IReadOnlyList<Zeiteintrag> LaufendeDerKarte(long karteId)
     {
@@ -324,15 +375,17 @@
         await SpalteGeaendert.InvokeAsync(_formulare[spalteId].AlsGespeichert(spalteId));
     }
 
-    private void BeginneZug(long spalteId, long karteId)
+    private async Task BeginneZug(long spalteId, long karteId)
     {
         _laufenderZug = new Kartenzug(karteId, spalteId);
+        await ZugWurdeBegonnen.InvokeAsync();
     }
 
-    private void BeendeZug()
+    private async Task BeendeZug()
     {
         _laufenderZug = null;
         _ablageziel = null;
+        await ZugWurdeBeendet.InvokeAsync();
     }
 
     // Aufgerufen vom dragenter der bedienfreien Flächen, nicht von einem dragleave: der Browser
@@ -382,7 +435,7 @@
     private async Task LegeAb(long spalteId, int position)
     {
         var abgelegteKarte = _laufenderZug;
-        BeendeZug();
+        await BeendeZug();
         if (abgelegteKarte is null)
         {
             return;

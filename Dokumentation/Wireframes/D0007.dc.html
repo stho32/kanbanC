@@ -1,0 +1,806 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@300..900&display=swap">
+  <style>
+    /* D0007 „Live-Aktualisierung" — Werte exakt aus dem Bestand uebernommen, nichts gerundet:
+       Source/KanbanC.Blazor/wwwroot/gestaltung.css und oberflaeche.css (Tokens und Formen),
+       Components/Layout/Kopfzeile.razor(.css) (drei Zonen, min-height 35.2px, Laufzeitplakette
+       und Identitaetsplatz in Zone 3), Components/Layout/ReconnectModal.razor(.css) (der
+       gebaute Trennungsdialog — Zustand 5), Components/Spalten/Spaltenbahnen.razor(.css)
+       (Bahn, Bahnenkopf, Kartenform), Components/Pages/Kartendetail.razor (Zeitenblock,
+       „laeuft seit 08:04" ohne Dauer — die Schuld, die dieses Artboard einloest).
+       Formsprache uebernommen aus D0003.dc.html (Bahnen, Karten, Ablegeflaeche,
+       .meldung-abweisung), D0004.dc.html (Kartenseite, Eigenschaftenspalte, gestrichelter
+       Kasten fuer fremde Dialogs) und D0006.dc.html (Zeitenblock, Laufplakette, Popover,
+       Artfarben Olive/Terrakotta).
+       Beispieldaten aus D0003.dc.html und wireframes.js (WBS-14, WBS-21, WBS-11, BUG-05,
+       Stefan, Nina Barth, Claude-Agent, Board „KanbanC — Release 2").
+       D0007 ist vollstaendig rot — das ganze Artboard ist Zielform, nichts davon gebaut. */
+    :root {
+      --color-bg: #f5ead8;
+      --color-surface: #ebddc5;
+      --color-text: #201e1d;
+      --color-accent: #c67139;
+      --color-accent-2: #7a8a5e;
+      --color-divider: color-mix(in srgb, #201e1d 16%, transparent);
+
+      --color-neutral-100: #f9f4ed;
+      --color-neutral-200: #eee7db;
+      --color-neutral-300: #dcd3c4;
+      --color-neutral-800: #474238;
+
+      --color-accent-100: #fff2eb;
+      --color-accent-200: #ffe1d0;
+      --color-accent-700: #8c491a;
+      --color-accent-800: #643312;
+
+      --color-accent-2-100: #f0fae1;
+      --color-accent-2-200: #e1eecc;
+      --color-accent-2-800: #3d472b;
+
+      --font-heading: "Caprasimo", system-ui, sans-serif;
+      --font-body: "Figtree", system-ui, sans-serif;
+
+      --space-1: 4.4px;
+      --space-2: 8.8px;
+      --space-3: 13.2px;
+      --space-4: 17.6px;
+      --space-6: 26.4px;
+
+      --radius-xs: 4px;
+      --radius-md: 16px;
+      --radius-lg: 28px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-family: var(--font-body);
+      font-size: 15px;
+      line-height: 1.55;
+      font-weight: 400;
+    }
+    h1, h2, h3, h4 {
+      font-family: var(--font-heading);
+      font-weight: 400;
+      line-height: 1.12;
+      letter-spacing: -0.015em;
+      margin: 0;
+    }
+    a { color: var(--color-accent); text-underline-offset: 3px; text-decoration: none; }
+    a:hover { color: #8c491a; }
+    svg { display: block; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #ebddc5; display: flex; flex-direction: column">
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 1 — Das Board, waehrend sich etwas bewegt, das ich nicht bewegt
+     habe. D0007 hat keinen eigenen Schirm: Live-Aktualisierung ist etwas, das
+     an D0003 (Board), D0004 (Kartenseite) und der Kopfzeile geschieht. Der
+     Index haelt das ausdruecklich fest — „kein eigener Schirm, nur als Merkmal
+     innerhalb von Board".
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 17.6px 26.4px 8.8px">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 1 · Hauptzustand · /boards/3 · Fenster 1440 × 900 · I0028 · Zielform, nichts davon gebaut</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Der Claude-Agent hat <span style="color: #201e1d">WBS-14</span> über die API nach <span style="color: #201e1d">In Arbeit</span> gezogen — dieser Browser hat nichts getan. Die Karte <span style="color: #201e1d">bewegt sich einfach</span>, und weil eine Karte, die von selbst springt, wie ein Fehler aussieht, trägt sie für kurze Zeit eine <span style="color: #201e1d">Einflugmarke</span>: wer es war und über welchen Weg. Die Bahnenzahlen ziehen mit — sie sind gerechnet, nicht gespeichert. In „Bereit“ bleibt <span style="color: #201e1d">kein Platzhalter</span> stehen; die Lücke schließt sich.</p>
+</div>
+
+<div style="position: relative; width: 1440px; height: 900px; background: #f5ead8; overflow: hidden; display: flex; flex-direction: column">
+
+  <!-- ══ Navigationszeile — Layout/Kopfzeile.razor(.css), drei Zonen ═════════
+       Zone 3 traegt die Laufzeitplakette (I0027) und den Identitaetsplatz.
+       **Keine Marke „live"**, solange die Verbindung steht: dieselbe Regel, mit
+       der Laufzaehler.Fuer null liefert und die Stelle leer bleibt — „die
+       Kopfzeile ist der knappste Platz der Anwendung; ein Element, das nichts
+       zu sagen hat, gibt ihn zurueck". Die Marke erscheint erst, wenn die
+       Verbindung weg ist (Zustand 5). ══════════════════════════════════════ -->
+  <header style="display: flex; align-items: stretch; gap: 17.6px; min-height: 35.2px; padding: 0 17.6px; overflow: hidden; background: #ebddc5; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent); flex: 0 0 auto">
+
+    <div style="display: flex; flex: none; align-items: center; gap: 8.8px; min-width: 0; max-width: 45%">
+      <h1 style="margin: 0; flex-shrink: 1; min-width: 35.2px; font-size: 17px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">KanbanC — Release 2</h1>
+      <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #fff2eb; color: #643312">Projektboard</span>
+      <span style="flex-shrink: 1000; overflow: hidden; white-space: nowrap; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">Start 01.08.2026 · Ziel 30.09.2026</span>
+    </div>
+
+    <div style="display: flex; flex: 1; align-items: center; gap: 17.6px; min-width: 0; padding-left: 17.6px; border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+      <nav style="display: flex; align-self: stretch; align-items: stretch; gap: 13.2px">
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: color-mix(in srgb, #201e1d 35%, transparent); border-bottom: 2px solid transparent">Auswertungen</span>
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: color-mix(in srgb, #201e1d 35%, transparent); border-bottom: 2px solid transparent">Kontributoren</span>
+      </nav>
+    </div>
+
+    <div style="display: flex; flex: none; align-items: center; gap: 8.8px">
+      <!-- I0027, gefuellte Fassung: einer der drei laufenden Timer ist Stefans.
+           Die Zahl ist auf 3 gewachsen, **ohne** dass jemand die Seite gewechselt
+           hat — genau die Luecke, die R00030 offen liess. Keine Dauer in der
+           Plakette: der Grund dafuer ist nicht der fehlende Live-Kanal, sondern
+           dass ueber alle Boards mehrere eigene Timer laufen duerfen (I0023) —
+           er ueberlebt diesen Slice. Die Dauer steht im Popover (Zustand 6). -->
+      <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 3px 10px; border-radius: 999px; background: #c67139; color: #f5ead8"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>3 laufen<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+      <span style="display: inline-flex; align-items: center; gap: 8.8px; padding-left: 8.8px; font-size: 13px; border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+        <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #e1eecc; color: #3d472b">ST</span>Stefan
+      </span>
+    </div>
+  </header>
+
+  <!-- ══ Inhalt — .inhalt aus MainLayout.razor.css: padding 13.2px 17.6px ══ -->
+  <main style="flex: 1; min-height: 0; min-width: 0; padding: 13.2px 17.6px; overflow: hidden; display: flex; flex-direction: column">
+
+    <div style="display: flex; flex: 1; flex-direction: column; min-height: 0">
+      <div style="display: flex; flex: 1; align-items: stretch; gap: 0; min-height: 0; overflow: hidden">
+
+        <!-- ═══ Bahn 1 · Rückstand — unberührt ═══════════════════════════════ -->
+        <section style="display: flex; flex: 0 0 256px; flex-direction: column; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+          <header style="display: flex; flex-wrap: wrap; align-items: baseline; align-content: flex-start; gap: 8.8px; line-height: 26.4px; padding: 8.8px 13.2px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+            <span style="font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 15px">Rückstand</span>
+            <span style="margin-left: auto; min-width: 17.6px; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent); text-align: right">11</span>
+          </header>
+          <div style="flex: 1; min-height: 0; padding: 8.8px; display: flex; flex-direction: column; gap: 8.8px; overflow: hidden">
+            <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+              <div style="display: flex; align-items: center; gap: 8.8px">
+                <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-31</span>
+              </div>
+              <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty; overflow-wrap: anywhere">Klassen-Nummerierung über die API</p>
+              <div style="display: flex; align-items: center; gap: 8.8px; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">
+                <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #e1eecc; color: #3d472b">ST</span>
+                <span style="margin-left: auto">3:00 Soll</span>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+              <div style="display: flex; align-items: center; gap: 8.8px">
+                <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">BES-04</span>
+              </div>
+              <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty; overflow-wrap: anywhere">Playwright-Lizenz klären</p>
+              <div style="display: flex; align-items: center; gap: 8.8px; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">
+                <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #e1eecc; color: #3d472b">ST</span>
+                <span style="margin-left: auto">0:30 Soll</span>
+              </div>
+            </div>
+          </div>
+          <footer style="padding: 8.8px 13.2px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+            <span style="display: inline-flex; align-items: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-size: 14px; line-height: 1.2; color: #c67139; padding: 8.8px 4.4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Karte</span>
+          </footer>
+        </section>
+
+        <!-- ═══ Bahn 2 · Bereit — hier stand WBS-14 bis vor drei Sekunden.
+             Kein Platzhalter, keine Luecke: die Bahn schliesst sich. Die
+             Kopfzahl ist von 6 auf 5 gefallen und traegt kurz denselben
+             Akzentton wie die Einflugmarke — sie ist gerechnet und muss
+             mitziehen, sonst behauptet der Kopf etwas anderes als die Bahn
+             darunter. ═════════════════════════════════════════════════════ -->
+        <section style="display: flex; flex: 0 0 256px; flex-direction: column; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-left: none">
+          <header style="display: flex; flex-wrap: wrap; align-items: baseline; align-content: flex-start; gap: 8.8px; line-height: 26.4px; padding: 8.8px 13.2px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+            <span style="font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 15px">Bereit</span>
+            <span style="margin-left: auto; min-width: 17.6px; font-size: 12px; text-align: right; padding: 0 6px; border-radius: 999px; background: #ffe1d0; color: #8c491a">5</span>
+          </header>
+          <div style="flex: 1; min-height: 0; padding: 8.8px; display: flex; flex-direction: column; gap: 8.8px; overflow: hidden">
+            <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+              <div style="display: flex; align-items: center; gap: 8.8px">
+                <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-28</span>
+              </div>
+              <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty; overflow-wrap: anywhere">Anzeigegrenze im Spaltenkopf</p>
+              <div style="display: flex; align-items: center; gap: 8.8px; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">
+                <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #e1eecc; color: #3d472b">ST</span>
+                <span style="margin-left: auto">2:00 Soll</span>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+              <div style="display: flex; align-items: center; gap: 8.8px">
+                <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">BUG-07</span>
+              </div>
+              <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty; overflow-wrap: anywhere">Timer läuft nach Reload doppelt</p>
+              <div style="display: flex; align-items: center; gap: 8.8px; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">
+                <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #e1eecc; color: #3d472b">ST</span>
+                <span style="margin-left: auto">0:45 Soll</span>
+              </div>
+            </div>
+          </div>
+          <footer style="padding: 8.8px 13.2px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+            <span style="display: inline-flex; align-items: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-size: 14px; line-height: 1.2; color: #c67139; padding: 8.8px 4.4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Karte</span>
+          </footer>
+        </section>
+
+        <!-- ═══ Bahn 3 · In Arbeit — die angekommene Karte ═══════════════════
+             WBS-14 steht **an der Stelle, an die der Agent sie gelegt hat**,
+             nicht oben und nicht unten: eine Live-Aktualisierung, die die
+             Reihenfolge selbst waehlt, waere eine zweite Wahrheit neben der
+             Reihenfolge, die I0012 pflegt. ══════════════════════════════════ -->
+        <section style="display: flex; flex: 0 0 256px; flex-direction: column; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-left: none">
+          <header style="display: flex; flex-wrap: wrap; align-items: baseline; align-content: flex-start; gap: 8.8px; line-height: 26.4px; padding: 8.8px 13.2px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+            <span style="font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 15px">In Arbeit</span>
+            <span style="margin-left: auto; min-width: 17.6px; font-size: 12px; text-align: right; padding: 0 6px; border-radius: 999px; background: #ffe1d0; color: #8c491a">4</span>
+          </header>
+          <div style="flex: 1; min-height: 0; padding: 8.8px; display: flex; flex-direction: column; gap: 8.8px; overflow: hidden">
+
+            <!-- ── Die angekommene Karte: Akzentkante links, Einflugmarke im
+                 Fuss. Die Marke steht **in** der Karte und nicht daneben —
+                 sie gehoert der Karte, nicht der Bahn, und sie verschwindet
+                 nach kurzer Zeit von selbst (Anatomie in Zustand 3). ────── -->
+            <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-left: 3px solid #c67139; border-radius: 4px; box-shadow: 0 3px 10px color-mix(in srgb, #2e2b25 16%, transparent)">
+              <div style="display: flex; align-items: center; gap: 8.8px">
+                <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-14</span>
+                <span style="margin-left: auto; display: inline-flex; align-items: center; gap: 4.4px; font-size: 11px; padding: 3px 8px; border-radius: 999px; background: #ffe1d0; color: #8c491a"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>läuft seit 08:04 · 1:36</span>
+              </div>
+              <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty; overflow-wrap: anywhere">WBS-Import: Markdown-Baum in Karten überführen</p>
+              <div style="display: flex; align-items: center; gap: 8.8px; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">
+                <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #ffe1d0; color: #643312">KI</span>
+                <span style="display: inline-flex; align-items: center; gap: 4.4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="m8 12 3 3 5-6"/></svg>1/4</span>
+                <span style="margin-left: auto">5:00 Soll</span>
+              </div>
+              <p style="margin: 0; padding-top: 4.4px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent); font-size: 11px; line-height: 1.3; color: #8c491a">Claude-Agent · über die API · gerade eben</p>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+              <div style="display: flex; align-items: center; gap: 8.8px">
+                <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-21</span>
+                <span style="margin-left: auto; display: inline-flex; align-items: center; gap: 4.4px; font-size: 11px; padding: 3px 8px; border-radius: 999px; background: #c67139; color: #f5ead8"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>läuft seit 09:31 · 0:12</span>
+              </div>
+              <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty; overflow-wrap: anywhere">Timer starten und stoppen</p>
+              <div style="display: flex; align-items: center; gap: 8.8px; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">
+                <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #e1eecc; color: #3d472b">ST</span>
+                <span style="margin-left: auto">2:30 Soll</span>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+              <div style="display: flex; align-items: center; gap: 8.8px">
+                <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">BUG-05</span>
+                <span style="margin-left: auto; display: inline-flex; align-items: center; gap: 4.4px; font-size: 11px; padding: 3px 8px; border-radius: 999px; background: #ffe1d0; color: #8c491a"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>läuft seit 09:20 · 0:23</span>
+              </div>
+              <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty; overflow-wrap: anywhere">SignalR bricht nach Standby</p>
+              <div style="display: flex; align-items: center; gap: 8.8px; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">
+                <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #ffe1d0; color: #643312">KI</span>
+                <span style="margin-left: auto">1:00 Soll</span>
+              </div>
+            </div>
+
+          </div>
+          <footer style="padding: 8.8px 13.2px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+            <span style="display: inline-flex; align-items: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-size: 14px; line-height: 1.2; color: #c67139; padding: 8.8px 4.4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Karte</span>
+          </footer>
+        </section>
+
+        <!-- ═══ Bahn 4 · Prüfung ═════════════════════════════════════════════ -->
+        <section style="display: flex; flex: 0 0 256px; flex-direction: column; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-left: none">
+          <header style="display: flex; flex-wrap: wrap; align-items: baseline; align-content: flex-start; gap: 8.8px; line-height: 26.4px; padding: 8.8px 13.2px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+            <span style="font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 15px">Prüfung</span>
+            <span style="margin-left: auto; min-width: 17.6px; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent); text-align: right">1</span>
+          </header>
+          <div style="flex: 1; min-height: 0; padding: 8.8px; display: flex; flex-direction: column; gap: 8.8px; overflow: hidden">
+            <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+              <div style="display: flex; align-items: center; gap: 8.8px">
+                <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-11</span>
+              </div>
+              <p style="margin: 0; font-size: 13px; line-height: 1.35; text-wrap: pretty; overflow-wrap: anywhere">Kontributoren anlegen</p>
+              <div style="display: flex; align-items: center; gap: 8.8px; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">
+                <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #e1eecc; color: #3d472b">ST</span>
+                <span style="display: inline-flex; align-items: center; gap: 4.4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="m8 12 3 3 5-6"/></svg>2/2</span>
+                <span style="margin-left: auto">2:18</span>
+              </div>
+            </div>
+          </div>
+          <footer style="padding: 8.8px 13.2px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+            <span style="display: inline-flex; align-items: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-size: 14px; line-height: 1.2; color: #c67139; padding: 8.8px 4.4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Karte</span>
+          </footer>
+        </section>
+
+        <!-- ═══ Bahn 5 · Fertig — Abschlussspalte (I0013) ════════════════════ -->
+        <section style="display: flex; flex: 1 1 0; min-width: 0; flex-direction: column; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-left: none">
+          <header style="display: flex; flex-wrap: wrap; align-items: baseline; align-content: flex-start; gap: 8.8px; line-height: 26.4px; padding: 8.8px 13.2px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+            <span style="font-family: Caprasimo, system-ui, sans-serif; font-weight: 400; font-size: 15px">Fertig ✓</span>
+            <span style="margin-left: auto; min-width: 17.6px; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent); text-align: right">20+</span>
+          </header>
+          <div style="flex: 1; min-height: 0; padding: 8.8px; display: flex; flex-direction: column; gap: 8.8px; overflow: hidden">
+            <p style="margin: 0; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">Heute</p>
+            <div style="display: flex; align-items: center; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+              <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-09</span>
+              <span style="font-size: 13px; line-height: 1.35">Boards anlegen</span>
+            </div>
+            <p style="margin: 0; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">Gestern</p>
+            <div style="display: flex; align-items: center; gap: 8.8px; padding: 8.8px 13.2px; background: #f5ead8; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+              <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-06</span>
+              <span style="font-size: 13px; line-height: 1.35">Migrationen idempotent</span>
+            </div>
+          </div>
+          <footer style="padding: 8.8px 13.2px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+            <span style="font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">20 neueste · älteres nachladen</span>
+          </footer>
+        </section>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 2 — Die Kartenseite, waehrend jemand anders an derselben Karte
+     arbeitet. Hier steht die schwerste Frage dieses Dialogs: was passiert,
+     waehrend ich selbst etwas tue? Eine Aenderung, die mir unter der Hand den
+     Text austauscht, waere schlimmer als gar keine Live-Aktualisierung.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 26.4px 26.4px 8.8px">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 2 · /karten/14 · Fenster 1440 × 900 · I0028 · fremde Änderung, während ich schreibe</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Zwei Regeln, die sich hier trennen. <span style="color: #201e1d">Was ich nicht in der Hand habe, zieht nach</span> — der Kommentar des Agenten erscheint einfach, mit Einflugmarke. <span style="color: #201e1d">Was ich in der Hand habe, wird nie ausgetauscht</span> — Ninas Fassung der Beschreibung steht als <span style="color: #201e1d">Angebot</span> über dem Feld, mein ungesendeter Text bleibt stehen. Rechts löst der Zeitenblock zwei alte Schulden ein: die <span style="color: #201e1d">mitlaufende Dauer</span> und die <span style="color: #201e1d">laufende Zeit in der Ist-Summe</span>.</p>
+</div>
+
+<div style="position: relative; width: 1440px; height: 900px; background: #f5ead8; overflow: hidden; display: flex; flex-direction: column">
+
+  <header style="display: flex; align-items: stretch; gap: 17.6px; min-height: 35.2px; padding: 0 17.6px; overflow: hidden; background: #ebddc5; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent); flex: 0 0 auto">
+    <div style="display: flex; flex: none; align-items: center; gap: 8.8px; min-width: 0; max-width: 45%">
+      <span style="display: flex; flex: none; align-items: center; justify-content: center; width: 26.4px; height: 26.4px; font-size: 15px; line-height: 1; color: color-mix(in srgb, #201e1d 60%, transparent); border-radius: 4px">←</span>
+      <h1 style="margin: 0; flex-shrink: 1; min-width: 35.2px; font-size: 17px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">KanbanC — Release 2</h1>
+      <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-14</span>
+      <span style="flex-shrink: 1000; overflow: hidden; white-space: nowrap; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">Spalte In Arbeit</span>
+    </div>
+    <div style="display: flex; flex: 1; align-items: center; gap: 17.6px; min-width: 0; padding-left: 17.6px; border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+      <nav style="display: flex; align-self: stretch; align-items: stretch; gap: 13.2px">
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: color-mix(in srgb, #201e1d 35%, transparent); border-bottom: 2px solid transparent">Auswertungen</span>
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: color-mix(in srgb, #201e1d 35%, transparent); border-bottom: 2px solid transparent">Kontributoren</span>
+      </nav>
+    </div>
+    <div style="display: flex; flex: none; align-items: center; gap: 8.8px">
+      <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 3px 10px; border-radius: 999px; background: #c67139; color: #f5ead8"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>3 laufen<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+      <span style="display: inline-flex; align-items: center; gap: 8.8px; padding-left: 8.8px; font-size: 13px; border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+        <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.02em; background: #e1eecc; color: #3d472b">ST</span>Stefan
+      </span>
+    </div>
+  </header>
+
+  <main style="flex: 1; min-height: 0; min-width: 0; padding: 13.2px 17.6px; overflow: hidden; display: flex; flex-direction: column; gap: 13.2px">
+
+    <div style="display: flex; align-items: center; gap: 8.8px; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">
+      <span>Boards</span><span>/</span><span style="color: #8c491a">KanbanC — Release 2</span><span>/</span><span style="color: #201e1d">WBS-14</span>
+    </div>
+
+    <div style="display: flex; flex: 1; min-height: 0; gap: 26.4px; align-items: stretch">
+
+      <!-- ═══════════ Linke Spalte · Inhalt der Karte ═══════════════════════ -->
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 13.2px">
+        <h2 style="font-size: 32px; text-wrap: pretty">WBS-Import: Markdown-Baum in Karten überführen</h2>
+
+        <!-- ── Beschreibung im Bearbeiten. Das Angebot steht **ueber** dem Feld
+             und nicht darin: es aendert nichts, es sagt nur, dass es etwas
+             Neueres gibt, und nennt die Kompensationsaktion. Dieselbe Haltung
+             wie bei den Fehlerantworten der API — Grund und Ausweg, nie eine
+             stille Korrektur. ──────────────────────────────────────────── -->
+        <div style="display: flex; flex-direction: column; gap: 4.4px">
+          <div style="display: flex; align-items: baseline; gap: 8.8px">
+            <h3 style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">Beschreibung</h3>
+            <span style="margin-left: auto; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: #ffe1d0; color: #643312">I0028</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8.8px; padding: 8.8px 13.2px; border-left: 3px solid #8c491a; border-radius: 16px; background: #f9f4ed; font-size: 12px; line-height: 1.4">
+            <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: #e1eecc; color: #3d472b">NB</span>
+            <span style="flex: 1; min-width: 0">Nina hat die Beschreibung geändert, während du schreibst.</span>
+            <span style="display: inline-flex; align-items: center; padding: 4.4px 13.2px; border-radius: 999px; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); font-family: Caprasimo, system-ui, sans-serif; font-size: 12px">ansehen</span>
+            <span style="display: inline-flex; align-items: center; padding: 4.4px 13.2px; border-radius: 999px; background: #c67139; color: #f5ead8; font-family: Caprasimo, system-ui, sans-serif; font-size: 12px">übernehmen</span>
+          </div>
+          <div style="min-height: 92px; padding: 8.8px 14px; font-size: 14px; line-height: 1.5; background: #f5ead8; border: 1px solid #c67139; border-radius: 16px">Der Import liest die WBS-Datei als Baum und legt je Interaction eine Karte an. Offen ist noch, was mit Knoten geschieht, die es schon gibt —<span style="display: inline-block; width: 1px; height: 15px; margin-left: 1px; vertical-align: -2px; background: #201e1d"></span></div>
+          <p style="margin: 0; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">Dein Text ist nicht gesendet. Er bleibt stehen, auch wenn du „übernehmen“ drückst — dann steht Ninas Fassung daneben.</p>
+        </div>
+
+        <!-- ── Kommentare. Was ich **nicht** in der Hand habe, zieht einfach
+             nach: der Kommentar des Agenten steht da, mit Einflugmarke. ─── -->
+        <div style="flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8.8px">
+          <div style="display: flex; align-items: baseline; gap: 8.8px">
+            <h3 style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">Kommentare</h3>
+            <span style="font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">3</span>
+          </div>
+
+          <div style="display: flex; gap: 8.8px; padding: 8.8px 13.2px; background: #ebddc5; border-left: 3px solid #c67139; border-radius: 16px">
+            <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: #ffe1d0; color: #643312">KI</span>
+            <div style="flex: 1; min-width: 0">
+              <p style="margin: 0; font-size: 13px; line-height: 1.4">Der Baum hat 37 Interactions; 4 davon tragen schon eine Karte. Ich lege die übrigen 33 an.</p>
+              <p style="margin: 2px 0 0; font-size: 11px; color: #8c491a">Claude-Agent · über die API · gerade eben</p>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 8.8px; padding: 8.8px 13.2px; background: #ebddc5; border-radius: 16px">
+            <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: #e1eecc; color: #3d472b">NB</span>
+            <div style="flex: 1; min-width: 0">
+              <p style="margin: 0; font-size: 13px; line-height: 1.4">Bitte den Wiederholungsfall zuerst — sonst legen wir bei jedem Lauf Dubletten an.</p>
+              <p style="margin: 2px 0 0; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">Nina Barth · vor 12 Min</p>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 8.8px; padding: 8.8px 13.2px; background: #ebddc5; border-radius: 16px">
+            <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: #e1eecc; color: #3d472b">ST</span>
+            <div style="flex: 1; min-width: 0">
+              <p style="margin: 0; font-size: 13px; line-height: 1.4">Einverstanden. I0031 hat dafür das Soll-Ist-Muster.</p>
+              <p style="margin: 2px 0 0; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">Stefan · vor 9 Min</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════ Rechte Spalte · Eigenschaften und Zeiten ══════════════ -->
+      <aside style="flex: 0 0 372px; display: flex; flex-direction: column; gap: 13.2px">
+
+        <section style="display: flex; flex-direction: column; gap: 4.4px; padding: 13.2px; border-radius: 32.2px; border: 1px dashed color-mix(in srgb, #201e1d 35%, transparent)">
+          <div style="display: flex; align-items: baseline; gap: 8.8px">
+            <h3 style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">Eigenschaften · Klasse und Nummer</h3>
+            <span style="margin-left: auto; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">D0004 · D0005</span>
+          </div>
+          <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Gezeichnet in ihren Dialogs. Für D0007 gilt dort dieselbe Regel wie links: ein <span style="color: #201e1d">geschlossenes</span> Feld zieht nach, ein <span style="color: #201e1d">offenes</span> bekommt ein Angebot.</p>
+        </section>
+
+        <!-- ═══ Der Zeitenblock — hier loest der Live-Kanal zwei Schulden ein.
+             (1) „laeuft seit 08:04" traegt jetzt die **mitlaufende Dauer**: der
+             Grund fuer ihr Fehlen war ausdruecklich, dass eine gerenderte Dauer
+             ohne Live-Kanal ab der ersten Sekunde falsch ist (Kartendetail.razor,
+             Laufplakette, R00028). Mit dem Kanal faellt der Grund weg.
+             (2) Die laufende Zeit zaehlt in die Ist-Summe — und bleibt trotzdem
+             **getrennt genannt**, damit man sieht, welcher Teil noch waechst. ══ -->
+        <section style="flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8.8px; padding: 13.2px; border-radius: 32.2px; background: #ebddc5; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+
+          <div style="display: flex; align-items: baseline; gap: 8.8px">
+            <h3 style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">Zeiten</h3>
+            <span style="margin-left: auto; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: #ffe1d0; color: #643312">I0028 löst I0023–I0027 ein</span>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8.8px">
+            <span style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: Caprasimo, system-ui, sans-serif; font-size: 14px; line-height: 1.2; padding: 8.8px 15.84px; border-radius: 999px; background: #c67139; color: #f5ead8"><svg width="13" height="13" viewBox="0 0 24 24" fill="#f5ead8" stroke="none"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>Stoppen<span style="font-size: 11px; opacity: 0.85">läuft seit 08:04 · 1:36</span></span>
+            <span style="margin-left: auto; text-align: right; font-size: 11px; line-height: 1.35; color: color-mix(in srgb, #201e1d 55%, transparent)">Ist <span style="font-size: 15px; color: #201e1d">4:27</span><br>davon 1:36 laufend</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 4.4px; padding-top: 8.8px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+            <div style="display: flex; align-items: center; gap: 8.8px; font-size: 13px">
+              <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: #ffe1d0; color: #643312">KI</span>Claude-Agent
+              <span style="margin-left: auto; font-variant-numeric: tabular-nums">2:51</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8.8px; font-size: 13px">
+              <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: #e1eecc; color: #3d472b">ST</span>Stefan
+              <span style="margin-left: auto; font-variant-numeric: tabular-nums">1:36</span>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 4.4px; padding-top: 8.8px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+            <div style="display: flex; align-items: center; gap: 8.8px; padding: 4.4px 8.8px; border-left: 3px solid #c67139; border-radius: 16px; background: #f5ead8; font-size: 12px">
+              <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: #e1eecc; color: #3d472b">ST</span>
+              <span>heute 08:04 – läuft</span>
+              <span style="margin-left: auto; font-variant-numeric: tabular-nums; color: #8c491a">1:36</span>
+              <span style="display: inline-flex; color: #8c491a"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8.8px; padding: 4.4px 8.8px; font-size: 12px">
+              <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: #ffe1d0; color: #643312">KI</span>
+              <span>heute 06:12 – 08:01</span>
+              <span style="margin-left: auto; font-variant-numeric: tabular-nums">1:49</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8.8px; padding: 4.4px 8.8px; font-size: 12px">
+              <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: #ffe1d0; color: #643312">KI</span>
+              <span>gestern 21:40 – 22:42</span>
+              <span style="margin-left: auto; font-variant-numeric: tabular-nums">1:02</span>
+            </div>
+          </div>
+
+          <p style="margin: auto 0 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Stoppt jemand <span style="color: #201e1d">diesen</span> Timer aus dem Kopfzeilen-Popover, zieht dieser Block mit — bis heute bleibt er dort bis zum Seitenwechsel auf „läuft seit“ stehen (R00030). Der Live-Kanal macht den Sonderweg <span style="color: #201e1d">Laufzeitmelder</span> nicht falsch, nur überflüssig als einzigen Weg.</p>
+        </section>
+      </aside>
+    </div>
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 3 — Die Anatomie der Einflugmarke. Drei Fassungen nebeneinander:
+     die eigene Handlung, die fremde aus einem Browser, die fremde ueber die
+     API. Die Unterscheidung laeuft ueber **Anwesenheit und Wortlaut**, nie
+     ueber die Farbe: Olive und Terrakotta tragen in diesem Canvas die Art des
+     Kontributors (D0002, D0006).
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 26.4px 26.4px 8.8px">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 3 · Anatomie der Einflugmarke · I0028 · Ausschnitt</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Die Marke beantwortet drei Fragen in einer Zeile: <span style="color: #201e1d">wer</span>, <span style="color: #201e1d">über welchen Weg</span>, <span style="color: #201e1d">wann</span>. Sie steht in der Karte, gehört ihr und verschwindet nach etwa zehn Sekunden von selbst — eine Marke, die bleibt, ist keine Nachricht mehr, sondern ein Verlauf, und den führt D0007 nicht.</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; padding: 0 26.4px 26.4px; display: flex; gap: 26.4px; align-items: flex-start">
+
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">A · ich selbst</p>
+    <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #ebddc5; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+      <div style="display: flex; align-items: center; gap: 8.8px">
+        <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-11</span>
+      </div>
+      <p style="margin: 0; font-size: 13px; line-height: 1.35">Kontributoren anlegen</p>
+      <div style="display: flex; align-items: center; gap: 8.8px; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">
+        <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: #e1eecc; color: #3d472b">ST</span>
+        <span style="margin-left: auto">2:18</span>
+      </div>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty"><span style="color: #201e1d">Keine Marke.</span> Wer selbst zieht, weiß es schon — die Rückmeldung war die Bewegung unter der Maus. Eine Marke an der eigenen Handlung machte aus jedem Klick eine Benachrichtigung über sich selbst.</p>
+  </div>
+
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">B · ein Mensch in einem anderen Browser</p>
+    <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #ebddc5; border-left: 3px solid #c67139; border-radius: 4px; box-shadow: 0 3px 10px color-mix(in srgb, #2e2b25 16%, transparent)">
+      <div style="display: flex; align-items: center; gap: 8.8px">
+        <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-11</span>
+      </div>
+      <p style="margin: 0; font-size: 13px; line-height: 1.35">Kontributoren anlegen</p>
+      <div style="display: flex; align-items: center; gap: 8.8px; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">
+        <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: #e1eecc; color: #3d472b">NB</span>
+        <span style="margin-left: auto">2:18</span>
+      </div>
+      <p style="margin: 0; padding-top: 4.4px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent); font-size: 11px; line-height: 1.3; color: #8c491a">Nina Barth · vor 3 Sek</p>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Ein Mensch an der Oberfläche: <span style="color: #201e1d">Name und Zeitpunkt</span>, kein Weg — die Oberfläche ist der Normalfall und braucht keine Nennung.</p>
+  </div>
+
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">C · ein Agent über die API</p>
+    <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #ebddc5; border-left: 3px solid #c67139; border-radius: 4px; box-shadow: 0 3px 10px color-mix(in srgb, #2e2b25 16%, transparent)">
+      <div style="display: flex; align-items: center; gap: 8.8px">
+        <span style="display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-11</span>
+      </div>
+      <p style="margin: 0; font-size: 13px; line-height: 1.35">Kontributoren anlegen</p>
+      <div style="display: flex; align-items: center; gap: 8.8px; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">
+        <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: #ffe1d0; color: #643312">KI</span>
+        <span style="margin-left: auto">2:18</span>
+      </div>
+      <p style="margin: 0; padding-top: 4.4px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent); font-size: 11px; line-height: 1.3; color: #8c491a">Claude-Agent · über die API · vor 3 Sek</p>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Der <span style="color: #201e1d">Weg</span> wird genannt, weil er die einzige Auskunft ist, die ein Mensch sonst nirgends bekommt — nicht, weil ein Agent weniger gilt. <span style="color: #201e1d">Die Marke sieht gleich aus</span>: gleiche Kante, gleiche Zeile, gleiche Dauer.</p>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 4 — Woher die Aenderung kommt. Das Fertig-Kriterium von I0028 sagt
+     „ein Browser **oder die API**", und genau das ist der schwierige Teil: der
+     Weg vom WebApi-Prozess zurueck in die offenen Blazor-Sichten existiert
+     nicht. Er gehoert der Architektur; hier steht, **was das Bild verspricht**
+     — und wo die Luecke sitzt.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 26.4px 26.4px 8.8px">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 4 · Browser und API sind gleichberechtigt · I0028 · das Versprechen des Bildes</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Was ein Mensch sieht, hängt <span style="color: #201e1d">nicht davon ab, wer gehandelt hat</span> — dasselbe Nachziehen, dieselbe Marke, derselbe Augenblick. Der Unterschied steht in <span style="color: #201e1d">einem Wort</span> („über die API“) und nirgends sonst. Das ist die Zusage der Vision, in Gestaltung übersetzt.</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; padding: 0 26.4px 26.4px">
+  <div style="display: flex; align-items: stretch; gap: 13.2px; padding: 17.6px; border-radius: 32.2px; background: #ebddc5; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+
+    <div style="flex: 0 0 236px; display: flex; flex-direction: column; gap: 8.8px">
+      <div style="display: flex; align-items: center; gap: 8.8px; padding: 8.8px 13.2px; border-radius: 28px; background: #f5ead8; font-size: 12px">
+        <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: #e1eecc; color: #3d472b">NB</span>
+        <span>Nina zieht eine Karte<br><span style="color: color-mix(in srgb, #201e1d 55%, transparent)">Oberfläche · Port 5180</span></span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8.8px; padding: 8.8px 13.2px; border-radius: 28px; background: #f5ead8; font-size: 12px">
+        <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: #ffe1d0; color: #643312">KI</span>
+        <span>Claude ruft PUT auf<br><span style="color: color-mix(in srgb, #201e1d 55%, transparent)">WebApi · Port 5280</span></span>
+      </div>
+    </div>
+
+    <div style="flex: 0 0 26.4px; display: flex; align-items: center; justify-content: center; color: color-mix(in srgb, #201e1d 35%, transparent)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+
+    <div style="flex: 0 0 212px; display: flex; align-items: center; justify-content: center; padding: 13.2px; border-radius: 28px; background: #f5ead8; text-align: center; font-size: 12px; line-height: 1.4">
+      <span><span style="color: #201e1d">Die Fachlogik</span><br><span style="color: color-mix(in srgb, #201e1d 55%, transparent)">KanbanC.BL · eine SQLite-Datei — der eine Ort, an dem die Änderung wahr wird</span></span>
+    </div>
+
+    <div style="flex: 0 0 26.4px; display: flex; align-items: center; justify-content: center; color: color-mix(in srgb, #201e1d 35%, transparent)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+
+    <!-- Die Luecke, markiert und nicht erfunden: von der Fachlogik zurueck in
+         die offenen Sichten fuehrt heute kein Weg. KanbanC.Contracts/Ereignisse/
+         liegt seit dem 29.08. leer im Bestand und ist genau dafuer freigehalten
+         (belegt in B0295). Wie er gebaut wird, entscheiden die Bubbles. -->
+    <div style="flex: 0 0 244px; display: flex; flex-direction: column; justify-content: center; gap: 4.4px; padding: 13.2px; border-radius: 28px; border: 1px dashed color-mix(in srgb, #201e1d 35%, transparent); text-align: center">
+      <p style="margin: 0; font-family: Caprasimo, system-ui, sans-serif; font-size: 28px; line-height: 1; color: #c67139">?</p>
+      <p style="margin: 0; font-size: 11px; line-height: 1.4; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty"><span style="color: #201e1d">Den Weg zurück gibt es nicht.</span> Der Ordner <span style="color: #201e1d">Contracts/Ereignisse/</span> liegt leer und ist dafür freigehalten. Wie er gebaut wird, gehört den Bubbles — nicht dem Bild.</p>
+    </div>
+
+    <div style="flex: 0 0 26.4px; display: flex; align-items: center; justify-content: center; color: color-mix(in srgb, #201e1d 35%, transparent)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+
+    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8.8px; padding: 13.2px; border-radius: 28px; background: #f5ead8">
+      <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">jede andere offene Sicht</p>
+      <div style="display: flex; align-items: center; gap: 8.8px; padding: 4.4px 8.8px; border-left: 3px solid #c67139; border-radius: 16px; background: #ebddc5; font-size: 12px">
+        <span style="display: inline-flex; align-items: center; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-14</span>
+        <span style="color: #8c491a">Nina Barth · vor 3 Sek</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8.8px; padding: 4.4px 8.8px; border-left: 3px solid #c67139; border-radius: 16px; background: #ebddc5; font-size: 12px">
+        <span style="display: inline-flex; align-items: center; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-14</span>
+        <span style="color: #8c491a">Claude-Agent · über die API · vor 3 Sek</span>
+      </div>
+      <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Dieselbe Kante, dieselbe Zeile, derselbe Augenblick. <span style="color: #201e1d">Eine Oberflächenfunktion, die der Agent nicht auslösen könnte, gäbe es hier zu sehen</span> — und das wäre der Befund, den die Kernregel des Projekts verhindern soll.</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 5 — I0029, erster Teil: die Verbindung ist weg. Drei Stufen. Der
+     dritte Kasten ist **gebaut** (ReconnectModal.razor) und spricht Englisch —
+     das ist ein Befund, kein Entwurf, und steht hier in der Zielform.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 26.4px 26.4px 8.8px">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 5 · Die Verbindung ist weg · I0029 · Ausschnitte</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Solange die Verbindung steht, sagt die Kopfzeile <span style="color: #201e1d">nichts</span> — dieselbe Regel, mit der die Laufzeitplakette verschwindet, wenn nichts läuft. Bricht sie ab, ist genau das die Nachricht: der Schirm <span style="color: #201e1d">altert</span>, und er sagt, seit wann. Bedienbar bleibt bei Blazor Server ohnehin nichts; der Wert des getrennten Schirms ist, dass er über sein Alter nicht lügt.</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; padding: 0 26.4px 26.4px; display: flex; gap: 26.4px; align-items: flex-start">
+
+  <!-- ── Stufe 1 · verbunden — die Kopfzeile schweigt ────────────────────── -->
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">1 · verbunden</p>
+    <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8.8px; min-height: 35.2px; padding: 0 13.2px; background: #ebddc5; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+      <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 3px 10px; border-radius: 999px; background: #c67139; color: #f5ead8"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>3 laufen</span>
+      <span style="display: inline-flex; align-items: center; gap: 8.8px; padding-left: 8.8px; font-size: 13px; border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+        <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: #e1eecc; color: #3d472b">ST</span>Stefan
+      </span>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty"><span style="color: #201e1d">Keine Marke „live“.</span> Der ältere Satz zeichnet sie dauerhaft (<span style="color: #201e1d">wireframes.js</span>, <span style="color: #201e1d">liveMarke</span>); übernommen wird sie nicht. Die Kopfzeile ist der knappste Platz der Anwendung, und ein Element, das im Normalfall nichts zu sagen hat, gibt ihn zurück — dieselbe Regel wie bei <span style="color: #201e1d">Laufzaehler.Fuer</span>. <span style="color: #201e1d">Abwesenheit heißt: es steht.</span></p>
+  </div>
+
+  <!-- ── Stufe 2 · getrennt, verbindet neu — der Schirm altert sichtbar ──── -->
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">2 · getrennt, verbindet neu</p>
+    <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8.8px; min-height: 35.2px; padding: 0 13.2px; background: #ebddc5; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+      <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px solid #8c491a; color: #8c491a"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8.5A16 16 0 0 1 22 8.5"/><path d="M6.5 12.5a10 10 0 0 1 11 0"/><circle cx="12" cy="18" r="1"/><path d="m3 3 18 18"/></svg>nicht live · Stand von 09:12</span>
+      <span style="display: inline-flex; align-items: center; gap: 8.8px; padding-left: 8.8px; font-size: 13px; border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent); opacity: 0.5">
+        <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: #e1eecc; color: #3d472b">ST</span>Stefan
+      </span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 13.2px; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); opacity: 0.55">
+      <div style="display: flex; align-items: center; gap: 8.8px">
+        <span style="display: inline-flex; align-items: center; font-size: 11px; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-14</span>
+        <span style="margin-left: auto; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">läuft seit 08:04</span>
+      </div>
+      <p style="margin: 0; font-size: 13px; line-height: 1.35">WBS-Import: Markdown-Baum in Karten überführen</p>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Die Fläche wird <span style="color: #201e1d">ruhiger, nicht unlesbar</span> — man darf weiterlesen, was dasteht. Die <span style="color: #201e1d">mitlaufenden Dauern halten an</span>: eine Uhr, die ohne Verbindung weiterzählt, wäre die eine Zahl, die sicher falsch ist. Aus demselben Grund steht in der Marke ein <span style="color: #201e1d">Zeitpunkt</span>, keine Sekundenzählung.</p>
+  </div>
+
+  <!-- ── Stufe 3 · endgueltig — der gebaute Dialog, in Zielform ──────────── -->
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">3 · endgültig gescheitert</p>
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 13.2px; padding: 26.4px; border-radius: 28px; background: #ebddc5; box-shadow: 0 12px 32px color-mix(in srgb, #2e2b25 22%, transparent)">
+      <span style="display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 999px; border: 3px solid #c67139; color: #c67139"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8.5A16 16 0 0 1 22 8.5"/><path d="M6.5 12.5a10 10 0 0 1 11 0"/><circle cx="12" cy="18" r="1"/><path d="m3 3 18 18"/></svg></span>
+      <p style="margin: 0; text-align: center; font-size: 14px; line-height: 1.4">Die Verbindung ist abgerissen.<br><span style="font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">Was du siehst, ist der Stand von 09:12.</span></p>
+      <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-size: 14px; line-height: 1.2; padding: 8.8px 17.6px; border-radius: 999px; background: #c67139; color: #f5ead8">Erneut verbinden</span>
+      <span style="font-size: 12px; color: #8c491a">oder die Seite neu laden</span>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty"><span style="color: #201e1d">Befund, kein Entwurf:</span> diesen Dialog gibt es schon — <span style="color: #201e1d">ReconnectModal.razor</span> steht im Bestand, ist mit den Tokens des Projekts gestaltet (<span style="color: #201e1d">--radius-lg</span>, <span style="color: #201e1d">--color-accent</span>) und <span style="color: #201e1d">spricht Englisch</span>: „Rejoining the server…“, „Retry“. Gezeichnet ist die deutsche Zielform samt der einen Zeile, die die Vorlage nicht hat: <span style="color: #201e1d">seit wann der Stand alt ist</span>.</p>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 6 — I0029, zweiter Teil: das Aufschliessen. Die Frage lautet nicht
+     „kommt alles nach", sondern „nachspielen oder neu holen". Entschieden ist
+     **neu holen**, mit Belegen aus dem Bestand.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 26.4px 26.4px 8.8px">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 6 · Aufschließen nach dem Abbruch · I0029 · Ausschnitte</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Das Fertig-Kriterium sagt „<span style="color: #201e1d">holt den verpassten Stand nach</span>“ — den <span style="color: #201e1d">Stand</span>, nicht die Ereignisse. Gezeichnet ist deshalb ein <span style="color: #201e1d">frisches Holen</span> und kein Nachspielen: die Sicht fragt, was jetzt gilt, und markiert, was sich gegenüber dem alten Bild geändert hat. Ein Nachspielen bräuchte ein Ereignisjournal, das der Bestand nirgends führt.</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; padding: 0 26.4px 26.4px; display: flex; gap: 26.4px; align-items: flex-start">
+
+  <div style="flex: 1.4 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">wieder verbunden · was sich geändert hat</p>
+    <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8.8px; min-height: 35.2px; padding: 0 13.2px; background: #ebddc5; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+      <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 3px 10px; border-radius: 999px; background: #c67139; color: #f5ead8"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>2 laufen</span>
+      <span style="display: inline-flex; align-items: center; gap: 8.8px; padding-left: 8.8px; font-size: 13px; border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+        <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: #e1eecc; color: #3d472b">ST</span>Stefan
+      </span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8.8px; padding: 8.8px 13.2px; border-left: 3px solid #8c491a; border-radius: 16px; background: #f9f4ed; font-size: 12px; line-height: 1.4">
+      <span style="flex: 1; min-width: 0">Wieder verbunden. <span style="color: #201e1d">4 Änderungen</span> seit 09:12 sind nachgeholt und unten markiert.</span>
+      <span style="display: inline-flex; align-items: center; padding: 4.4px 13.2px; border-radius: 999px; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); font-family: Caprasimo, system-ui, sans-serif; font-size: 12px">schließen</span>
+    </div>
+    <div style="display: flex; gap: 8.8px">
+      <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #ebddc5; border-left: 3px solid #c67139; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+        <span style="display: inline-flex; align-self: flex-start; align-items: center; font-size: 11px; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-14</span>
+        <p style="margin: 0; font-size: 13px; line-height: 1.35">WBS-Import: Markdown-Baum in Karten überführen</p>
+        <p style="margin: 0; padding-top: 4.4px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent); font-size: 11px; line-height: 1.3; color: #8c491a">Claude-Agent · über die API · 09:31</p>
+      </div>
+      <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px 13.2px; background: #ebddc5; border-left: 3px solid #c67139; border-radius: 4px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+        <span style="display: inline-flex; align-self: flex-start; align-items: center; font-size: 11px; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-11</span>
+        <p style="margin: 0; font-size: 13px; line-height: 1.35">Kontributoren anlegen</p>
+        <p style="margin: 0; padding-top: 4.4px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent); font-size: 11px; line-height: 1.3; color: #8c491a">Nina Barth · 09:24</p>
+      </div>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Die Marken tragen hier <span style="color: #201e1d">Uhrzeiten statt „vor 3 Sek“</span> — sie sind während der Abwesenheit entstanden, und „gerade eben“ wäre gelogen. Sie bleiben, bis das Band geschlossen wird: nach einer Trennung ist die Marke keine Nachricht mehr, sondern das <span style="color: #201e1d">Protokoll der Lücke</span>, und das darf man in Ruhe lesen. Es ist die einzige Stelle, an der eine Marke nicht von selbst verschwindet.</p>
+  </div>
+
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">was das Aufschließen nicht anfasst</p>
+    <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 13.2px; border-radius: 32.2px; background: #ebddc5; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+      <div style="min-height: 72px; padding: 8.8px 14px; font-size: 13px; line-height: 1.5; background: #f5ead8; border: 1px solid #c67139; border-radius: 16px">Offen ist noch, was mit Knoten geschieht, die es schon gibt —<span style="display: inline-block; width: 1px; height: 14px; margin-left: 1px; vertical-align: -2px; background: #201e1d"></span></div>
+      <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty"><span style="color: #201e1d">Der ungesendete Text überlebt die Trennung.</span> Ein Aufschließen, das ein offenes Feld überschreibt, wäre die teuerste Art, recht zu haben. Hat sich dasselbe Feld unterdessen geändert, gilt die Regel aus Zustand 2: ein <span style="color: #201e1d">Angebot</span> darüber, kein Austausch darin.</p>
+      <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty"><span style="color: #201e1d">Belege für „neu holen“ statt „nachspielen“:</span> die Kopfzeile holt heute schon bei jedem Anlass <span style="color: #201e1d">frisch</span> statt in der Hand nachzuziehen (<span style="color: #201e1d">Kopfzeile.razor</span>, „danach wird die Liste frisch geholt“) — und ein Nachspielen verlangte eine Reihenfolge über Ereignisse, die niemand führt und deren Lücken niemand bemerkte.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     RAENDER — drei Faelle, die den Entwurf haerten. Der dritte ist eine
+     ausdrueckliche **Nicht**-Zeichnung: er sagt, was der aeltere Satz an dieser
+     Stelle vorschlaegt und warum es hier nicht ins Bild kommt.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 26.4px 26.4px 8.8px">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Ränder · Karte in der Hand · die offene Karte verschwindet · Ereignisspur ohne Knoten</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; padding: 0 26.4px 26.4px; display: flex; gap: 26.4px; align-items: flex-start">
+
+  <!-- ── Rand A · eine Bewegung waehrend eines laufenden Zugs ────────────── -->
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">A · ich habe eine Karte in der Hand</p>
+    <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 13.2px; border-radius: 32.2px; background: #ebddc5; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+      <div style="position: relative; display: flex; flex-direction: column; gap: 8.8px; padding: 8.8px; background: #f5ead8; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 4px">
+        <div style="height: 2px; background: #c67139; border-radius: 999px"></div>
+        <div style="transform: rotate(-1.5deg); display: flex; flex-direction: column; gap: 4.4px; padding: 8.8px 13.2px; background: #f9f4ed; border-radius: 4px; box-shadow: 0 12px 32px color-mix(in srgb, #2e2b25 22%, transparent)">
+          <span style="display: inline-flex; align-self: flex-start; align-items: center; font-size: 11px; padding: 3px 10px; border-radius: 999px; background: #f9f4ed; color: #474238">WBS-28</span>
+          <p style="margin: 0; font-size: 13px; line-height: 1.35">Anzeigegrenze im Spaltenkopf</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; padding: 4.4px 8.8px; border-radius: 16px; background: #ebddc5; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">
+          <span style="width: 6px; height: 6px; border-radius: 999px; background: #c67139"></span>1 Änderung wartet
+        </div>
+      </div>
+      <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty"><span style="color: #201e1d">Die fremde Bewegung wartet, bis ich losgelassen habe.</span> Ordnete sich die Bahn unter der Maus um, zeigte die Einfügelinie auf eine Stelle, die es beim Loslassen nicht mehr gibt. Der Bestand kennt den Gedanken schon: die Ablegefläche ändert ihr Aussehen, „solange ein Zug läuft“ (<span style="color: #201e1d">D0003.dc.html</span>, <span style="color: #201e1d">ablegeflaeche-laeuft</span>).</p>
+      <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Trifft mein Ablegen auf eine Karte, die es nicht mehr gibt, <span style="color: #201e1d">gilt die Antwort des Servers</span> — nie eine örtliche Fassung, die schöner aussieht. Gezeigt wird sie in der Form der zurückgewiesenen Anlage (<span style="color: #201e1d">.meldung-abweisung</span>), mit Grund und Ausweg.</p>
+    </div>
+  </div>
+
+  <!-- ── Rand B · die geoeffnete Karte verschwindet unter mir ────────────── -->
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">B · die offene Karte wird archiviert</p>
+    <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 13.2px; border-radius: 32.2px; background: #ebddc5; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">
+      <div style="display: flex; align-items: flex-start; gap: 8.8px; padding: 8.8px 13.2px; border-left: 3px solid #8c491a; border-radius: 16px; background: #f5ead8; font-size: 12px; line-height: 1.4">
+        <span style="width: 20px; height: 20px; flex: 0 0 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; background: #ffe1d0; color: #643312">KI</span>
+        <span>Der Claude-Agent hat <span style="color: #201e1d">WBS-14</span> gerade archiviert. Die Karte steht in keiner Bahn mehr; ihr Inhalt bleibt lesbar.</span>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8.8px">
+        <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-size: 14px; line-height: 1.2; padding: 8.8px 15.84px; border-radius: 999px; background: #c67139; color: #f5ead8">zum Board</span>
+        <span style="display: inline-flex; align-items: center; justify-content: center; font-family: Caprasimo, system-ui, sans-serif; font-size: 14px; line-height: 1.2; padding: 8.8px 15.84px; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 999px; color: #201e1d">hier bleiben</span>
+      </div>
+      <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty"><span style="color: #201e1d">Kein Wegspringen.</span> Eine Sicht, die sich unter dem Leser schließt, nimmt ihm den Text, den er gerade liest. Die Seite bleibt stehen, sagt <span style="color: #201e1d">den Sachverhalt mit seinen Werten</span> und nennt die Ausweghandlung — dieselbe Haltung, mit der die API auch bei 404 den Grund und die Kompensation nennt.</p>
+    </div>
+  </div>
+
+  <!-- ── Rand C · die ausdrueckliche Nicht-Zeichnung ─────────────────────── -->
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">C · Ereignisspur oder Laufband — nicht gezeichnet</p>
+    <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 13.2px; border-radius: 32.2px; border: 1px dashed color-mix(in srgb, #201e1d 35%, transparent)">
+      <div style="display: flex; align-items: baseline; gap: 8.8px">
+        <h3 style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">ohne Knoten</h3>
+        <span style="margin-left: auto; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">Befund</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 4.4px; padding: 8.8px; border-radius: 16px; background: #ebddc5; font-size: 11px; line-height: 1.35; color: color-mix(in srgb, #201e1d 55%, transparent); opacity: 0.6">
+        <span>Aktivität</span>
+        <span>Claude bewegt <span style="color: #201e1d">WBS-14</span> nach In Arbeit · vor 6 Min · API</span>
+        <span>Stefan gibt <span style="color: #201e1d">WBS-11</span> zur Prüfung · vor 24 Min · Oberfläche</span>
+      </div>
+      <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Der ältere Satz führt eine <span style="color: #201e1d">Aktivitätsspur rechts</span> (Board A) oder ein <span style="color: #201e1d">Laufband oben</span> (Board B); der Index lässt die Wahl ausdrücklich diesem Slice. <span style="color: #201e1d">Gewählt wird keine von beiden.</span> Das Fertig-Kriterium von I0028 verlangt, dass eine Änderung <span style="color: #201e1d">ankommt</span> — eine Liste vergangener Ereignisse ist etwas anderes und hätte keinen Knoten in der WBS. Sie wäre ein <span style="color: #201e1d">Verlauf</span>, und der steht schon bei D0004 als offene Frage.</p>
+      <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Ersatz ist die <span style="color: #201e1d">Einflugmarke an der Sache selbst</span>: sie steht dort, wo die Änderung ist, statt in einer Liste daneben, die man mit dem Board abgleichen müsste — und sie kostet keinen Platz, sobald nichts passiert.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     Lesehilfe — gehoert zum Wireframe, nicht zum Schirm
+     ══════════════════════════════════════════════════════════════════════ -->
+<footer style="display: flex; flex-direction: column; gap: 4.4px; padding: 17.6px 26.4px; background: #ebddc5; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent); font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent)">
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">D0007 zeigt hier:</span> <span style="color: #8c491a">I0028</span> die fremde Bewegung am Board samt mitziehender Bahnenzahl (Zustand 1), die fremde Änderung an der offenen Kartenseite mit der Trennung „zieht nach“ / „wird angeboten“ (Zustand 2), die Anatomie der Einflugmarke in drei Fassungen (Zustand 3) und die Gleichstellung von Browser und API (Zustand 4) · <span style="color: #8c491a">I0029</span> die drei Stufen des Abbruchs (Zustand 5) und das Aufschließen samt dem, was es nicht anfasst (Zustand 6). Ränder: Karte in der Hand, die offene Karte verschwindet, Ereignisspur ohne Knoten. <span style="color: #201e1d">Nichts davon ist gebaut</span> — das ganze Artboard ist Zielform.</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Dieser Dialog hat keinen eigenen Schirm</span>, und das ist keine Lücke: Live-Aktualisierung ist ein <span style="color: #201e1d">Verhalten an vorhandenen Schirmen</span> — am Board (D0003), an der Kartenseite (D0004), in Zone 3 der Kopfzeile. Gezeichnet sind deshalb <span style="color: #201e1d">Zustände und Übergänge</span> an diesen Schirmen und kein neuer Bildschirm; der Index hält genau das seit dem 30.08. fest („kein eigener Schirm — nur als Merkmal innerhalb von Board“).</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Vier Schulden aus früheren Slices, hier eingelöst:</span> <span style="color: #201e1d">(1) die mitlaufende Dauer im Zeitenblock</span> — „läuft seit 08:04 · 1:36“ statt „läuft“, und die laufende Zeit zählt in die Ist-Summe, getrennt genannt („4:27 · davon 1:36 laufend“); der Grund für ihr Fehlen war wörtlich der fehlende Live-Kanal. <span style="color: #201e1d">(2) Die Kopfzeilen-Plakette</span> — sie bleibt bei der <span style="color: #201e1d">Zahl</span>; ihr zweiter Grund überlebt diesen Slice, denn über alle Boards dürfen mehrere eigene Timer laufen, und eine Dauer müsste einen davon auswählen (I0023). Die Dauer bekommt das Popover, wo eine Zeile ein Eintrag ist. <span style="color: #201e1d">(3) Der fremde Start</span> — die Zahl wächst jetzt ohne Ladeanlass, die Lücke der langen offenen Seite ist zu. <span style="color: #201e1d">(4) Der fehlende Gegenweg zur Kartenseite</span> — der Zeitenblock zieht nach, wenn jemand diesen Timer aus dem Popover stoppt; der Laufzeitmelder bleibt richtig, ist aber nicht mehr der einzige Weg.</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Drei Regeln, die das Bild trägt:</span> <span style="color: #201e1d">eigen und fremd</span> unterscheiden sich über <span style="color: #201e1d">Anwesenheit und Wortlaut</span>, nie über die Farbe — Olive und Terrakotta tragen in diesem Canvas die Art des Kontributors (D0002, D0006) · <span style="color: #201e1d">was ich in der Hand habe, wird nie ausgetauscht</span>, es bekommt ein Angebot · <span style="color: #201e1d">was nichts zu sagen hat, nimmt keinen Platz</span> — die Marke verschwindet, und im Normalfall steht in der Kopfzeile keine „live“-Anzeige.</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Zwei Abweichungen vom älteren Satz, benannt:</span> die dauerhafte Marke <span style="color: #201e1d">„● live“</span> (wireframes.js, <span style="color: #201e1d">liveMarke</span>) wird nicht übernommen — sie erscheint erst, wenn die Verbindung weg ist · <span style="color: #201e1d">Aktivitätsspur und Laufband</span> werden nicht gezeichnet, weil das Fertig-Kriterium sie nicht verlangt und die WBS keinen Knoten dafür führt (Rand C).</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Ein Befund im Bestand:</span> <span style="color: #201e1d">ReconnectModal.razor</span> ist gebaut, mit den Projekt-Tokens gestaltet und <span style="color: #201e1d">englisch beschriftet</span> („Rejoining the server…“, „Retry“, „The session has been paused by the server.“). Zustand 5 zeichnet die deutsche Zielform; ob die Umschrift zu I0029 gehört oder in eine eigene Anforderung, entscheidet der Slice — nicht dieses Bild.</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Bewusst offen gelassen:</span> <span style="color: #201e1d">wie die Änderung aus dem WebApi-Prozess in die offenen Blazor-Sichten kommt</span> — Zustand 4 zeichnet die Lücke als markiertes Feld, nicht als erfundenen Weg; <span style="color: #201e1d">Contracts/Ereignisse/</span> liegt dafür leer im Bestand · <span style="color: #201e1d">wie lange die Einflugmarke steht</span> — „etwa zehn Sekunden“ ist eine Größenordnung, kein Messwert · <span style="color: #201e1d">wie viele Änderungen ein Aufschließen einzeln markiert</span>, bevor die Sicht sie zusammenfasst.</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Zahlen und Namen</span> stammen aus <span style="color: #201e1d">D0003.dc.html</span> (WBS-14, WBS-21, WBS-11, WBS-28, WBS-31, BUG-07, BES-04, Sollzeiten, Bahnennamen), <span style="color: #201e1d">D0006.dc.html</span> (Summen der Karte 14, Startzeit 08:04) und <span style="color: #201e1d">wireframes.js</span> (BUG-05 „SignalR bricht nach Standby“, die Ereigniszeilen in Rand C). Die Bahnenzahlen sind auf die gezeigte Bewegung nachgerechnet — „Bereit“ 6 → 5, „In Arbeit“ 3 → 4 —, statt die älteren Werte abzuschreiben.</p>
+</footer>
+
+</div>
+</x-dc>
+</body>
+</html>

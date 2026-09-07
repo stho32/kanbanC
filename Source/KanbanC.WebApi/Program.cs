@@ -17,6 +17,7 @@ using KanbanC.BL.Persistenz.Kontributoren;
 using KanbanC.BL.Persistenz.Migrationen;
 using KanbanC.BL.Persistenz.Zeiten;
 using KanbanC.Contracts.Karten;
+using KanbanC.WebApi;
 using KanbanC.WebApi.Endpunkte;
 using Microsoft.AspNetCore.Http.Features;
 
@@ -55,6 +56,10 @@ builder.Services.AddSingleton<KontributorenService>();
 builder.Services.AddSingleton<KartenklassenService>();
 builder.Services.AddSingleton<ZeitenService>();
 
+// Eine Drehscheibe je Prozess: sie nimmt die Meldungen der Endpunkte an und gibt jedem Abonnenten
+// von GET /api/ereignisse seinen eigenen Strom.
+builder.Services.AddSingleton<Ereignisdrehscheibe>();
+
 var app = builder.Build();
 
 app.Services.GetRequiredService<Migrationslaeufer>().FuehreAus();
@@ -75,6 +80,7 @@ KartenEndpunkte.Registriere(app);
 KontributorenEndpunkte.Registriere(app);
 KartenklassenEndpunkte.Registriere(app);
 ZeitenEndpunkte.Registriere(app);
+EreignisEndpunkte.Registriere(app);
 
 app.Run();
 
