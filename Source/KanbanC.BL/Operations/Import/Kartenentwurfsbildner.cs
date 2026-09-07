@@ -25,6 +25,7 @@ public static class Kartenentwurfsbildner
             zeilen.Add(new Importberichtzeile(knoten.Zeilennummer, OrdneKnotenEinUndBerichteSeineWirkung(baum, knoten, kartenkennungen, abgelegteKarten, teilaufgabenJeKarte)));
         }
 
+        var sollbaenderJeKartenknoten = Sollbandrechner.RechneJeKartenknoten(baum, kartenknoten);
         var entwuerfe = new List<Kartenentwurf>();
         foreach (var knoten in kartenknoten)
         {
@@ -44,10 +45,23 @@ public static class Kartenentwurfsbildner
                 Kartenfelder.Beschreibung(knoten),
                 Etiketten(baum, knoten),
                 teilaufgaben,
-                Herkunftsverweis.Fuer(pfadDerAnfrage, dateiname, knoten.Id)));
+                Herkunftsverweis.Fuer(pfadDerAnfrage, dateiname, knoten.Id),
+                SollbandDerKarte(sollbaenderJeKartenknoten, knoten)));
         }
 
         return new Kartenentwurfsbildung(new Kartenentwuerfe(entwuerfe), zeilen);
+    }
+
+    // null heißt „unter dieser Karte schätzt keine Zeile einen Aufwand“ — die Karte steht dann
+    // ohne Soll da und nicht bei null Stunden.
+    private static Sollband? SollbandDerKarte(IReadOnlyDictionary<string, Sollband> sollbaenderJeKartenknoten, Wbsknoten knoten)
+    {
+        if (sollbaenderJeKartenknoten.TryGetValue(knoten.Id, out var band))
+        {
+            return band;
+        }
+
+        return null;
     }
 
     // Ein Titel über tausend Zeichen ginge durch keine Kartenanlage; die Karte entfällt, und ihre

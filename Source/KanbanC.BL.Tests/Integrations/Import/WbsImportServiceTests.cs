@@ -552,7 +552,8 @@ public class WbsImportServiceTests
             Spaltenbezeichnung(knotenId),
             IstArchiviert: false,
             TimeSpan.Zero,
-            Kommentarzahl: 0);
+            Kommentarzahl: 0,
+            Sollband: null);
     }
 
     // Der erste Lauf hat I0001 (gruen) in die Abschlussspalte gelegt und I0002 (rot) in die erste.

@@ -31,6 +31,51 @@ public class KartenabbildvergleichTests
         Assert.That(Kartenabbildvergleich.SindGleich(Abbild(), ist, Dateietiketten), Is.False);
     }
 
+    // Ohne diesen Vergleich könnte ein zweiter Lauf ein geändertes Sollband nie nachziehen: die
+    // Karte bliebe „unverändert“, und die Soll-Spalte bliebe leer.
+    [Test]
+    public void Wenn_sich_nur_das_Sollband_unterscheidet_dann_gilt_die_Karte_als_geaendert()
+    {
+        var soll = Abbild() with { Sollband = new Sollband(3.2m, 4.3m) };
+        var ist = Abbild() with { Sollband = new Sollband(3.2m, 5.0m) };
+
+        Assert.That(Kartenabbildvergleich.SindGleich(soll, ist, Dateietiketten), Is.False);
+    }
+
+    [Test]
+    public void Wenn_die_Karte_noch_kein_Sollband_traegt_und_die_Datei_eines_liefert_dann_gilt_sie_als_geaendert()
+    {
+        var soll = Abbild() with { Sollband = new Sollband(3.2m, 4.3m) };
+
+        Assert.That(Kartenabbildvergleich.SindGleich(soll, Abbild(), Dateietiketten), Is.False);
+    }
+
+    [Test]
+    public void Wenn_die_Aufwandszelle_geleert_wurde_dann_gilt_die_Karte_als_geaendert()
+    {
+        var ist = Abbild() with { Sollband = new Sollband(3.2m, 4.3m) };
+
+        Assert.That(Kartenabbildvergleich.SindGleich(Abbild(), ist, Dateietiketten), Is.False);
+    }
+
+    [Test]
+    public void Wenn_beide_Seiten_kein_Sollband_tragen_dann_bleibt_die_Karte_unveraendert()
+    {
+        var soll = Abbild() with { Sollband = null };
+        var ist = Abbild() with { Sollband = null };
+
+        Assert.That(Kartenabbildvergleich.SindGleich(soll, ist, Dateietiketten), Is.True);
+    }
+
+    [Test]
+    public void Wenn_beide_Seiten_dasselbe_Sollband_tragen_dann_bleibt_die_Karte_unveraendert()
+    {
+        var soll = Abbild() with { Sollband = new Sollband(3.2m, 4.3m) };
+        var ist = Abbild() with { Sollband = new Sollband(3.2m, 4.3m) };
+
+        Assert.That(Kartenabbildvergleich.SindGleich(soll, ist, Dateietiketten), Is.True);
+    }
+
     [Test]
     public void Wenn_die_Beschreibung_von_nichts_auf_einen_Text_wechselt_dann_gilt_die_Karte_als_geaendert()
     {
@@ -137,7 +182,8 @@ public class KartenabbildvergleichTests
             "In Arbeit",
             IstArchiviert: true,
             TimeSpan.FromMinutes(260),
-            Kommentarzahl: 2);
+            Kommentarzahl: 2,
+            Sollband: null);
 
         Assert.That(Kartenabbildvergleich.SindGleich(Abbild(), Kartenabbildbildner.AusIststand(iststand), Dateietiketten), Is.True);
     }
@@ -148,6 +194,7 @@ public class KartenabbildvergleichTests
             "[I0001] Board anlegen",
             "Ein neues Board entsteht",
             ["Boards führen", "WBS-Import"],
-            [new Teilaufgabenentwurf("F0001 Board anlegen", true)]);
+            [new Teilaufgabenentwurf("F0001 Board anlegen", true)],
+            Sollband: null);
     }
 }

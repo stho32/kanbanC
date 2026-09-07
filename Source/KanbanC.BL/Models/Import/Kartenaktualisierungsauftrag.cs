@@ -8,4 +8,5 @@ public record Kartenaktualisierungsauftrag(
     string Titel,
     string? Beschreibung,
     Etikettenabgleichergebnis Etiketten,
-    Teilaufgabenabgleichergebnis Teilaufgaben);
+    Teilaufgabenabgleichergebnis Teilaufgaben,
+    Sollband? Sollband);

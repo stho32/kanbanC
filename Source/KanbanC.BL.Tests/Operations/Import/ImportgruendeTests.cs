@@ -105,11 +105,11 @@ public class ImportgruendeTests
     private static Kartenentwurf Entwurf(string knotenId, string titel)
     {
         var knoten = new Wbsknoten(knotenId, Wbsebene.Interaction, "D0001", "Karten führen", Wbsstatus.Rot, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, 1);
-        return new Kartenentwurf(knoten, titel, null, [], [], $"Dokumentation/Planung/kanbanc.md#{knotenId}");
+        return new Kartenentwurf(knoten, titel, null, [], [], $"Dokumentation/Planung/kanbanc.md#{knotenId}", Sollband: null);
     }
 
     private static Karteniststand Karte(string kartennummer, string spalte, TimeSpan erfassteZeit, int kommentarzahl, string titel = "Karte")
     {
-        return new Karteniststand(1, kartennummer, titel, null, [], [], [], spalte, IstArchiviert: false, erfassteZeit, kommentarzahl);
+        return new Karteniststand(1, kartennummer, titel, null, [], [], [], spalte, IstArchiviert: false, erfassteZeit, kommentarzahl, Sollband: null);
     }
 }

@@ -51,6 +51,7 @@ builder.Services.AddScoped<KontributorenApiKlient>();
 builder.Services.AddScoped<KartenklassenApiKlient>();
 builder.Services.AddScoped<ZeitenApiKlient>();
 builder.Services.AddScoped<ImportApiKlient>();
+builder.Services.AddScoped<AuswertungenApiKlient>();
 builder.Services.AddScoped<Identitaetsspeicher>();
 builder.Services.AddScoped<Laufzeitmelder>();
 builder.Services.AddScoped<Pfadkopie>();

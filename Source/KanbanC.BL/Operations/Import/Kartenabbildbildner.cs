@@ -8,7 +8,7 @@ public static class Kartenabbildbildner
 {
     public static Kartenabbild AusEntwurf(Kartenentwurf entwurf)
     {
-        return new Kartenabbild(entwurf.Titel, entwurf.Beschreibung, entwurf.Etiketten, entwurf.Teilaufgaben);
+        return new Kartenabbild(entwurf.Titel, entwurf.Beschreibung, entwurf.Etiketten, entwurf.Teilaufgaben, entwurf.Sollband);
     }
 
     // Die Reihenfolge der Teilaufgaben ist die ihrer Position — dieselbe, in der sie an der Karte
@@ -21,6 +21,6 @@ public static class Kartenabbildbildner
             teilaufgaben.Add(new Teilaufgabenentwurf(teilaufgabe.Text, teilaufgabe.Abgehakt));
         }
 
-        return new Kartenabbild(iststand.Titel, iststand.Beschreibung, iststand.Etiketten, teilaufgaben);
+        return new Kartenabbild(iststand.Titel, iststand.Beschreibung, iststand.Etiketten, teilaufgaben, iststand.Sollband);
     }
 }

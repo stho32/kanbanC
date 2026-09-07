@@ -3,8 +3,11 @@ using KanbanC.BL.Models.Import;
 namespace KanbanC.BL.Operations.Import;
 
 // **Was „geändert“ heißt — Feld für Feld, nicht nach Gefühl.** Zwei Abbilder sind gleich, wenn
-// Titel, Beschreibung, Etikettenmenge und die ID-tragenden Teilaufgaben mit ihren Haken
+// Titel, Beschreibung, Sollband, Etikettenmenge und die ID-tragenden Teilaufgaben mit ihren Haken
 // übereinstimmen.
+// Das Sollband steht mit im Vergleich, weil ein zweiter Lauf es sonst **nie** nachziehen könnte:
+// eine Karte, deren Aufwandsspanne sich in der Datei ändert, wäre ohne diesen Vergleich weiter
+// „unverändert“. Beide Seiten ohne Band sind gleich.
 // Nie verglichen und damit nie ein Grund für „geändert“: Spalte, Position, Verantwortlicher,
 // Fälligkeit, Farbe, Zeiten, Kommentare, Anhänge, Kartennummer, Archivstand und ErledigtAm — sie
 // stehen gar nicht erst im Abbild. Der Dateiverweis fehlt ebenfalls: er ist der Schlüssel.
@@ -21,6 +24,12 @@ public static class Kartenabbildvergleich
         }
 
         if (!string.Equals(soll.Beschreibung, ist.Beschreibung, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var dasSollbandDerDateiHatSichGeaendert = soll.Sollband != ist.Sollband;
+        if (dasSollbandDerDateiHatSichGeaendert)
         {
             return false;
         }

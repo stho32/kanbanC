@@ -1,3 +1,4 @@
+using System.Globalization;
 using Dapper;
 using KanbanC.BL.Models.Import;
 using KanbanC.BL.Operations.Boards;
@@ -408,7 +409,126 @@ public class WbsImportRepositoryTests
         });
     }
 
-    private static Kartenaktualisierungsauftrag Aktualisierung(Karteniststand karte)
+    // Das Sollband reist mit dem Entwurf durch den Schreiblauf und kommt am Iststand zurück —
+    // ohne die zurückgelesene Zahl gäbe es keinen Beweis, dass es die Datenbank erreicht hat.
+    [Test]
+    public void Wenn_ein_Lauf_mit_Sollbaendern_geschrieben_wird_dann_gibt_LiesIststand_sie_zurueck()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new WbsImportRepository(datenbank.Verbindungsfabrik);
+
+        repository.Schreibe(AuftraegeMitSollband(aufbau, new Sollband(3.2m, 4.3m)), [], aufbau.KartenklasseId, aufbau.KontributorId);
+
+        var karte = Einzelne(repository.LiesIststand(aufbau.BoardId, aufbau.KartenklasseId), ErsteKarteId(datenbank));
+        Assert.That(karte.Sollband, Is.EqualTo(new Sollband(3.2m, 4.3m)));
+    }
+
+    // Zehntelstunden gehen als REAL durch die Spalte; die zurückgelesene Zahl ist zeichengenau
+    // dieselbe. Der Grund, aus dem sie nicht als Minuten-INTEGER abgelegt sind.
+    [TestCase("0.4", "0.4")]
+    [TestCase("0.4", "1.5")]
+    [TestCase("38.0", "44.0")]
+    [TestCase("22.4", "37.9")]
+    public void Wenn_ein_Sollband_mit_Zehntelstunden_geschrieben_wird_dann_kommt_es_zeichengenau_zurueck(string von, string bis)
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new WbsImportRepository(datenbank.Verbindungsfabrik);
+        var band = new Sollband(decimal.Parse(von, CultureInfo.InvariantCulture), decimal.Parse(bis, CultureInfo.InvariantCulture));
+
+        repository.Schreibe(AuftraegeMitSollband(aufbau, band), [], aufbau.KartenklasseId, aufbau.KontributorId);
+
+        var karte = Einzelne(repository.LiesIststand(aufbau.BoardId, aufbau.KartenklasseId), ErsteKarteId(datenbank));
+        Assert.That(karte.Sollband, Is.EqualTo(band));
+    }
+
+    [Test]
+    public void Wenn_ein_Lauf_ohne_Aufwaende_geschrieben_wird_dann_traegt_keine_Karte_ein_Sollband()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new WbsImportRepository(datenbank.Verbindungsfabrik);
+
+        repository.Schreibe(Auftraege(aufbau), [], aufbau.KartenklasseId, aufbau.KontributorId);
+
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        Assert.Multiple(() =>
+        {
+            Assert.That(Zahl(verbindung, "Kartensollzeit"), Is.Zero);
+            Assert.That(Einzelne(repository.LiesIststand(aufbau.BoardId, aufbau.KartenklasseId), ErsteKarteId(datenbank)).Sollband, Is.Null);
+        });
+    }
+
+    [Test]
+    public void Wenn_ein_zweiter_Lauf_ein_anderes_Sollband_nachzieht_dann_steht_das_neue_an_der_Karte()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new WbsImportRepository(datenbank.Verbindungsfabrik);
+        repository.Schreibe(AuftraegeMitSollband(aufbau, new Sollband(3.2m, 4.3m)), [], aufbau.KartenklasseId, aufbau.KontributorId);
+        var karteId = ErsteKarteId(datenbank);
+        var karteVorher = Einzelne(repository.LiesIststand(aufbau.BoardId, aufbau.KartenklasseId), karteId);
+
+        repository.Schreibe([], [Aktualisierung(karteVorher, new Sollband(5m, 9m))], aufbau.KartenklasseId, aufbau.KontributorId);
+
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        var karte = Einzelne(repository.LiesIststand(aufbau.BoardId, aufbau.KartenklasseId), karteId);
+        Assert.Multiple(() =>
+        {
+            Assert.That(karte.Sollband, Is.EqualTo(new Sollband(5m, 9m)));
+            Assert.That(Zahl(verbindung, "Kartensollzeit"), Is.EqualTo(2), "Der zweite Lauf hat der nachgezogenen Karte eine zweite Zeile gegeben statt ihre vorhandene zu ersetzen.");
+        });
+    }
+
+    // Ein Knoten, dessen Aufwandszelle geleert wird, verliert sein Band: die Datei ist die
+    // Wahrheit über den geschätzten Umfang, und eine Zahl ohne Quelle bliebe sonst stehen.
+    [Test]
+    public void Wenn_der_Aufwand_in_der_Datei_verschwindet_dann_verliert_die_Karte_ihre_Sollzeitzeile()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new WbsImportRepository(datenbank.Verbindungsfabrik);
+        repository.Schreibe(AuftraegeMitSollband(aufbau, new Sollband(3.2m, 4.3m)), [], aufbau.KartenklasseId, aufbau.KontributorId);
+        var karteId = ErsteKarteId(datenbank);
+        var karteVorher = Einzelne(repository.LiesIststand(aufbau.BoardId, aufbau.KartenklasseId), karteId);
+
+        repository.Schreibe([], [Aktualisierung(karteVorher, sollband: null)], aufbau.KartenklasseId, aufbau.KontributorId);
+
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        Assert.Multiple(() =>
+        {
+            Assert.That(Einzelne(repository.LiesIststand(aufbau.BoardId, aufbau.KartenklasseId), karteId).Sollband, Is.Null);
+            Assert.That(Zahl(verbindung, "Kartensollzeit"), Is.EqualTo(1), "Die Zeile der nicht nachgezogenen zweiten Karte hat den Lauf nicht überlebt.");
+        });
+    }
+
+    // Dieselbe Transaktion wie der übrige Schreiblauf: bricht die Anlage ab, steht danach auch
+    // keine halbe Sollzeit.
+    [Test]
+    public void Wenn_der_Lauf_mittendrin_abbricht_dann_steht_danach_keine_Sollzeitzeile()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var aufbau = Aufbau(datenbank);
+        var repository = new WbsImportRepository(datenbank.Verbindungsfabrik);
+        BelegeZaehlerstand(datenbank, aufbau, belegterStand: 2);
+
+        Assert.Throws<SqliteException>(() => repository.Schreibe(AuftraegeMitSollband(aufbau, new Sollband(3.2m, 4.3m)), [], aufbau.KartenklasseId, aufbau.KontributorId));
+
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        Assert.That(Zahl(verbindung, "Kartensollzeit"), Is.Zero);
+    }
+
+    private static IReadOnlyList<Kartenschreibauftrag> AuftraegeMitSollband(Testaufbau aufbau, Sollband sollband)
+    {
+        return
+        [
+            Auftrag("I0001", Wbsstatus.Gruen, aufbau.AbschlussspalteId, inDerAbschlussspalte: true, sollband),
+            Auftrag("I0002", Wbsstatus.Rot, aufbau.ErsteSpalteId, inDerAbschlussspalte: false, sollband),
+        ];
+    }
+
+    private static Kartenaktualisierungsauftrag Aktualisierung(Karteniststand karte, Sollband? sollband = null)
     {
         var entwuerfe = new List<Teilaufgabenentwurf> { new("F0001 Feature neu", false), new("B0002 Neue Bubble", false) };
         return new Kartenaktualisierungsauftrag(
@@ -416,7 +536,8 @@ public class WbsImportRepositoryTests
             "[I0001] Neuer Name",
             "Neue Beschreibung",
             Etikettenabgleich.Gleiche(["WBS-Import"], karte.Etiketten, new HashSet<string>(["Boards führen", "WBS-Import"], StringComparer.Ordinal)),
-            Teilaufgabenabgleich.Gleiche(entwuerfe, karte.Teilaufgaben));
+            Teilaufgabenabgleich.Gleiche(entwuerfe, karte.Teilaufgaben),
+            sollband);
     }
 
     private static Karteniststand Einzelne(Karteniststaende iststaende, long karteId)
@@ -492,14 +613,14 @@ public class WbsImportRepositoryTests
         ];
     }
 
-    private static Kartenschreibauftrag Auftrag(string id, Wbsstatus status, long spalteId, bool inDerAbschlussspalte)
+    private static Kartenschreibauftrag Auftrag(string id, Wbsstatus status, long spalteId, bool inDerAbschlussspalte, Sollband? sollband = null)
     {
         var knoten = new Wbsknoten(id, Wbsebene.Interaction, "D0001", $"Knoten {id}", status, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, 1);
         var teilaufgaben = id == "I0001"
             ? new List<Teilaufgabenentwurf> { new("F0001 Feature", true), new("B0001 Bubble", false) }
             : [new Teilaufgabenentwurf("F0002 Feature", false)];
         var beschreibung = id == "I0001" ? "Ein neues Board entsteht" : null;
-        var entwurf = new Kartenentwurf(knoten, $"[{id}] Knoten {id}", beschreibung, ["Boards führen"], teilaufgaben, $"Dokumentation/Planung/kanbanc.md#{id}");
+        var entwurf = new Kartenentwurf(knoten, $"[{id}] Knoten {id}", beschreibung, ["Boards führen"], teilaufgaben, $"Dokumentation/Planung/kanbanc.md#{id}", sollband);
         return new Kartenschreibauftrag(entwurf, spalteId, inDerAbschlussspalte);
     }
 

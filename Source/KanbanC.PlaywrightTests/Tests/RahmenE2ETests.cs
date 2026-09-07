@@ -41,8 +41,10 @@ public class RahmenE2ETests : PageTest
         await Expect(rahmen.PunktBoards).ToHaveClassAsync(new System.Text.RegularExpressions.Regex("navigationspunkt-aktiv"));
     }
 
+    // Mit R00036 fuehrt auch Auswertungen irgendwohin: aus dem gesperrten span wird ein NavLink,
+    // und die Zahl der Verweise steigt von zwei auf drei.
     [Test]
-    public async Task Wenn_eine_Seite_offen_ist_dann_steht_Auswertungen_ohne_Weg_da_und_Kontributoren_mit()
+    public async Task Wenn_eine_Seite_offen_ist_dann_fuehren_Auswertungen_und_Kontributoren_beide_irgendwohin()
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
         var liste = new BoardsSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
@@ -52,10 +54,11 @@ public class RahmenE2ETests : PageTest
 
         await Expect(rahmen.PunktAuswertungen).ToBeVisibleAsync();
         await Expect(rahmen.PunktKontributoren).ToBeVisibleAsync();
-        await Expect(rahmen.PunktAuswertungen).ToHaveAttributeAsync("aria-disabled", "true");
+        await Expect(rahmen.PunktAuswertungen).Not.ToHaveAttributeAsync("aria-disabled", "true");
         await Expect(rahmen.PunktKontributoren).Not.ToHaveAttributeAsync("aria-disabled", "true");
+        await Expect(rahmen.PunktAuswertungen).ToHaveAttributeAsync("href", "auswertungen");
         await Expect(rahmen.PunktKontributoren).ToHaveAttributeAsync("href", "kontributoren");
-        await Expect(rahmen.NavigationsVerweise).ToHaveCountAsync(2);
+        await Expect(rahmen.NavigationsVerweise).ToHaveCountAsync(3);
     }
 
     [Test]

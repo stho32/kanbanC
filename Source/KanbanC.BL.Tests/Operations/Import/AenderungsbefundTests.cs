@@ -107,12 +107,12 @@ public class AenderungsbefundTests
     private static Kartenentwurf Entwurf(string titel, string? beschreibung)
     {
         var knoten = new Wbsknoten("I0002", Wbsebene.Interaction, "D0001", "Name", Wbsstatus.Rot, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, 1);
-        return new Kartenentwurf(knoten, titel, beschreibung, ["Boards führen"], [], "Dokumentation/Planung/kanbanc.md#I0002");
+        return new Kartenentwurf(knoten, titel, beschreibung, ["Boards führen"], [], "Dokumentation/Planung/kanbanc.md#I0002", Sollband: null);
     }
 
     private static Karteniststand Karte(string titel, string? beschreibung)
     {
-        return new Karteniststand(9, "WBS-02", titel, beschreibung, ["Boards führen"], [], ["Dokumentation/Planung/kanbanc.md#I0002"], "Bereit", IstArchiviert: false, TimeSpan.Zero, Kommentarzahl: 0);
+        return new Karteniststand(9, "WBS-02", titel, beschreibung, ["Boards führen"], [], ["Dokumentation/Planung/kanbanc.md#I0002"], "Bereit", IstArchiviert: false, TimeSpan.Zero, Kommentarzahl: 0, Sollband: null);
     }
 
     private static Teilaufgabenentwurf Schritt(string text, bool abgehakt)

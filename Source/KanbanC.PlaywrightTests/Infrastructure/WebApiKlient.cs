@@ -203,6 +203,21 @@ public sealed class WebApiKlient : IDisposable
         return zeiteintrag;
     }
 
+    // Nachgetragen statt gemessen: eine Dauer, die der Test kennt, laesst sich ueber die Uhr des
+    // Laufs nicht herstellen.
+    public async Task<Zeiteintrag> TrageZeitNach(long karteId, long kontributorId, DateTimeOffset beginn, DateTimeOffset ende)
+    {
+        var antwort = await _klient.PostAsJsonAsync($"{KartenRoute}/{karteId}/zeiten", new ZeiteintragNachtragenAnfrage(kontributorId, beginn, ende));
+        antwort.EnsureSuccessStatusCode();
+        var zeiteintrag = await antwort.Content.ReadFromJsonAsync<Zeiteintrag>();
+        if (zeiteintrag is null)
+        {
+            throw new InvalidOperationException("Die WebApi hat keinen Zeiteintrag zurückgegeben.");
+        }
+
+        return zeiteintrag;
+    }
+
     // Derselbe Aufruf ohne EnsureSuccessStatusCode: der Test will die Zurueckweisung sehen, statt
     // an ihr zu scheitern.
     public async Task<HttpResponseMessage> VersucheZeitmessungZuStarten(long karteId, long kontributorId)

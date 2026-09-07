@@ -1082,6 +1082,86 @@ public class MigrationslaeuferTests
         });
     }
 
+    [Test]
+    public void Wenn_die_Migration_gelaufen_ist_dann_traegt_das_Schema_die_Tabelle_Kartensollzeit_mit_ihren_drei_Spalten()
+    {
+        using var datenbank = new TemporaereDatenbank();
+
+        new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus();
+
+        Assert.That(Tabellennamen(datenbank), Does.Contain("Kartensollzeit"));
+        Assert.That(Spaltennamen(datenbank, "Kartensollzeit"),
+            Is.EqualTo(new[] { "Karte", "SollzeitVonStunden", "SollzeitBisStunden" }));
+    }
+
+    // **Ein halbes Band gibt es nicht**: fehlt die Zeile, gibt es kein Soll — eine Zeile mit nur
+    // einer Grenze wäre ein dritter Zustand, den niemand deuten kann.
+    [Test]
+    public void Wenn_die_Migration_gelaufen_ist_dann_nimmt_keine_der_beiden_Grenzen_einen_Nullwert()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "WBS-Datei importieren", 1);
+
+        Assert.Throws<SqliteException>(() => FuegeKartensollzeitEin(datenbank, karteId: 1, von: 38.0, bis: null));
+        Assert.Throws<SqliteException>(() => FuegeKartensollzeitEin(datenbank, karteId: 1, von: null, bis: 44.0));
+        Assert.That(Kartensollzeitzeilen(datenbank), Is.Empty);
+    }
+
+    // Der Fremdschlüssel ist zugleich der Schlüssel: eine Karte trägt höchstens ein Sollband.
+    [Test]
+    public void Wenn_dieselbe_Karte_ein_zweites_Sollband_bekommt_dann_weist_der_Schluessel_es_ab()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "WBS-Datei importieren", 1);
+        FuegeKartensollzeitEin(datenbank, karteId: 1, von: 38.0, bis: 44.0);
+
+        Assert.Throws<SqliteException>(() => FuegeKartensollzeitEin(datenbank, karteId: 1, von: 22.4, bis: 37.9));
+
+        Assert.That(Kartensollzeitzeilen(datenbank), Is.EqualTo(new[] { (1L, 38.0, 44.0) }));
+    }
+
+    // Der Migrationsläufer kennt kein Journal und führt jedes Skript bei jedem Start aus: ein
+    // ALTER TABLE ADD COLUMN scheiterte hier, die eigene Tabelle übersteht den zweiten Lauf.
+    [Test]
+    public void Wenn_die_Migration_ein_zweites_Mal_laeuft_dann_bleiben_Schema_und_Sollzeiten_unveraendert()
+    {
+        using var datenbank = new TemporaereDatenbank().MitSchema();
+        var boardId = LegeBoardAn(datenbank);
+        var spalteId = ErsteSpalteId(datenbank, boardId);
+        FuegeKarteEin(datenbank, spalteId, "WBS-Datei importieren", 1);
+        FuegeKartensollzeitEin(datenbank, karteId: 1, von: 0.4, bis: 1.5);
+        var schemaVorher = SchemaDefinitionen(datenbank);
+
+        Assert.That(() => new Migrationslaeufer(datenbank.Verbindungsfabrik).FuehreAus(), Throws.Nothing);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(SchemaDefinitionen(datenbank), Is.EqualTo(schemaVorher));
+            Assert.That(Kartensollzeitzeilen(datenbank), Is.EqualTo(new[] { (1L, 0.4, 1.5) }));
+        });
+    }
+
+    private static void FuegeKartensollzeitEin(TemporaereDatenbank datenbank, long karteId, double? von, double? bis)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        verbindung.Execute(@"
+            INSERT INTO Kartensollzeit (Karte, SollzeitVonStunden, SollzeitBisStunden)
+            VALUES (@Karte, @Von, @Bis)", new { Karte = karteId, Von = von, Bis = bis });
+    }
+
+    private static (long Karte, double SollzeitVonStunden, double SollzeitBisStunden)[] Kartensollzeitzeilen(TemporaereDatenbank datenbank)
+    {
+        using var verbindung = datenbank.Verbindungsfabrik.Oeffne();
+        return verbindung.Query<(long Karte, double SollzeitVonStunden, double SollzeitBisStunden)>(@"
+            SELECT Karte, SollzeitVonStunden, SollzeitBisStunden
+              FROM Kartensollzeit
+             ORDER BY Karte").ToArray();
+    }
+
     private static void FuegeZeiteintragEin(TemporaereDatenbank datenbank, long karteId, long kontributorId, string? beginn, string? ende)
     {
         using var verbindung = datenbank.Verbindungsfabrik.Oeffne();

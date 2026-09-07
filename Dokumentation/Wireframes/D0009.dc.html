@@ -1,0 +1,652 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@300..900&display=swap">
+  <style>
+    /* D0009 „Auswertungen" — Werte exakt aus dem Bestand uebernommen, nichts gerundet:
+       Source/KanbanC.Blazor/wwwroot/gestaltung.css und oberflaeche.css (Tokens und Formen),
+       Components/Layout/Kopfzeile.razor (drei Zonen, min-height 35.2px) und
+       Kopfzeile.razor.css (.navigationspunkt 75%, -aktiv Text + Akzentkante,
+       -gesperrt 35% — der Punkt „Auswertungen" ist heute genau dieser gesperrte span).
+       Formsprache uebernommen aus D0008.dc.html (Fenster, Zustandsleisten, Randmeldungen),
+       D0005.dc.html (der Aufruf als Bedienelement des Agenten, markierte Luecke als
+       gestrichelter Kasten) und D0006.dc.html (Zeitenblock, Ist-gegen-Soll-Zeile).
+
+       Beispieldaten sind **echt** und im Repository nachschlagbar:
+       - 41 Interactions, davon 7 rot — gezaehlt in Dokumentation/Planung/kanbanc.md;
+         dieselbe 41, die D0008 als Kartenzahl auf Interaction-Schnitt nennt.
+       - die Tagesreihe des Burndowns aus Schaetzungen/_ist-zeiten.md (R-Abschluesse
+         je Kalendertag, 29.08. bis 07.09.).
+       - Soll und Ist der Vergleichstabelle stehen woertlich in Schaetzungen/_ist-zeiten.md
+         (Spalten `geschaetzt` und `brutto`) — Bandbreiten eingeschlossen.
+       - Board „KanbanC — Release 2", Klasse WBS, Kontributoren Stefan und Claude wie in
+         D0003.dc.html, D0005.dc.html und D0006.dc.html.
+
+       D0009 ist vollstaendig rot — das ganze Artboard ist Zielform, nichts davon gebaut. */
+    :root {
+      --color-bg: #f5ead8;
+      --color-surface: #ebddc5;
+      --color-text: #201e1d;
+      --color-accent: #c67139;
+      --color-accent-2: #7a8a5e;
+
+      --color-neutral-100: #f9f4ed;
+      --color-neutral-200: #eee7db;
+      --color-neutral-300: #dcd3c4;
+      --color-neutral-800: #474238;
+
+      --color-accent-100: #fff2eb;
+      --color-accent-700: #8c491a;
+      --color-accent-800: #643312;
+
+      --color-accent-2-100: #f0fae1;
+      --color-accent-2-200: #e1eecc;
+      --color-accent-2-800: #3d472b;
+
+      --font-heading: "Caprasimo", system-ui, sans-serif;
+      --font-body: "Figtree", system-ui, sans-serif;
+
+      --space-1: 4.4px;
+      --space-2: 8.8px;
+      --space-3: 13.2px;
+      --space-4: 17.6px;
+      --space-6: 26.4px;
+
+      --radius-xs: 4px;
+      --radius-md: 16px;
+      --radius-lg: 28px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-family: var(--font-body);
+      font-size: 15px;
+      line-height: 1.55;
+      font-weight: 400;
+    }
+    h1, h2, h3, h4 {
+      font-family: var(--font-heading);
+      font-weight: 400;
+      line-height: 1.12;
+      letter-spacing: -0.015em;
+      margin: 0;
+    }
+    a { color: var(--color-accent); text-underline-offset: 3px; text-decoration: none; }
+    a:hover { color: var(--color-accent-700); }
+    svg { display: block; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #ebddc5; display: flex; flex-direction: column">
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 1 — Wo die Auswertungen wohnen.
+
+     Anders als bei D0005 und D0008 muss der Ort nicht gesucht werden: die
+     gebaute Kopfzeile traegt den Punkt „Auswertungen" bereits, und zwar als
+     **gesperrten span** mit title="Noch nicht verfuegbar"
+     (Kopfzeile.razor, Zone 2). D0009 ist der Dialog, der ihn zum NavLink macht.
+     Ein eigener Schirm also, kein Reiter am Board — die Zone-2-Punkte sind die
+     drei Orte der Anwendung, und einer davon heisst seit R00005 so.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 26.4px 26.4px 8.8px">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 1 · Wo die Auswertungen wohnen · Ausschnitt Zone 2 der Kopfzeile</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Der Ort steht schon fest, und zwar im gebauten Code: <span style="color: #201e1d">Kopfzeile.razor</span> führt in Zone 2 den Punkt „Auswertungen" als <span style="color: #201e1d">gesperrten span</span> mit <span style="font-family: ui-monospace, monospace; font-size: 11px">title="Noch nicht verfügbar"</span> — die Stelle ist freigehalten, sie führt nur nirgendwohin. <span style="color: #201e1d">D0009 macht daraus einen NavLink auf /auswertungen.</span> Damit ist die Frage „eigener Schirm oder Reiter am Board" nicht zu entscheiden, sondern nachzulesen: die drei Punkte in Zone 2 sind die drei Orte der Anwendung, und einer heißt so.</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; padding: 0 26.4px 26.4px; display: flex; gap: 26.4px; align-items: flex-start">
+
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">heute · gebaut</p>
+    <div style="display: flex; align-items: stretch; gap: 17.6px; min-height: 35.2px; padding: 0 17.6px; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 4px">
+      <nav style="display: flex; align-self: stretch; align-items: stretch; gap: 13.2px">
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: color-mix(in srgb, #201e1d 75%, transparent); border-bottom: 2px solid transparent">Boards</span>
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: color-mix(in srgb, #201e1d 35%, transparent); border-bottom: 2px solid transparent">Auswertungen</span>
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: color-mix(in srgb, #201e1d 75%, transparent); border-bottom: 2px solid transparent">Kontributoren</span>
+      </nav>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Grau bei 35 % Deckung, <span style="font-family: ui-monospace, monospace; font-size: 11px">aria-disabled="true"</span>, kein Ziel. Der Punkt ist ein Versprechen, das dieser Dialog einlöst.</p>
+  </div>
+
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: #8c491a">mit D0009 · Zielform</p>
+    <div style="display: flex; align-items: stretch; gap: 17.6px; min-height: 35.2px; padding: 0 17.6px; background: #ebddc5; border: 1px solid color-mix(in srgb, #201e1d 16%, transparent); border-radius: 4px">
+      <nav style="display: flex; align-self: stretch; align-items: stretch; gap: 13.2px">
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: color-mix(in srgb, #201e1d 75%, transparent); border-bottom: 2px solid transparent">Boards</span>
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: #201e1d; border-bottom: 2px solid #c67139">Auswertungen</span>
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: color-mix(in srgb, #201e1d 75%, transparent); border-bottom: 2px solid transparent">Kontributoren</span>
+      </nav>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Volle Textfarbe, Akzentkante — die Klasse <span style="font-family: ui-monospace, monospace; font-size: 11px">navigationspunkt-aktiv</span>, die auch Boards und Kontributoren tragen. Kein neues Vokabular.</p>
+  </div>
+
+  <div style="flex: 0 0 420px; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">die Variantenwahl, hier gefällt</p>
+    <div style="padding: 13.2px; background: #ebddc5; border-radius: 16px; display: flex; flex-direction: column; gap: 4.4px">
+      <p style="margin: 0; font-size: 13px; line-height: 1.5"><span style="color: #201e1d">B — Umschalter links, eine Auswertung groß.</span> Der ältere Satz stellt A („ein Blatt, vier Felder") daneben; gewählt ist B, aus einem Grund, den erst dieser Dialog kennt: <span style="color: #201e1d">drei seiner fünf Interactions haben heute keine vollständige Datengrundlage</span>. Vier Felder nebeneinander könnten das nur als Loch zeigen, ein Umschalter kann es an der Fläche sagen und begründen.</p>
+      <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent)">Aus A übernommen ist genau eine Sache, und es ist ihre beste: <span style="color: #201e1d">jede Auswertung nennt im Fuß ihren API-Pfad</span>. Das ist die einzige Stelle, an der I0037 für einen Menschen sichtbar wird — siehe Zustand 6.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 2 — Burndown. I0034.
+
+     Das Fertig-Kriterium sagt „der Restumfang ueber die Zeit ist als Verlauf
+     dargestellt" und mehr nicht. Zwei Achsen sind damit zu entscheiden:
+
+     X: **Kalendertage.** Das Projekt kennt keine Iteration und keinen Sprint —
+        die Vision schliesst Termin- und Kapazitaetsplanung ausdruecklich aus.
+        Ein Burndown ohne Sprintbegriff laeuft an der Kalenderachse; sie ist die
+        einzige Achse, die der Bestand ohne neue Planungsgroesse hergibt.
+     Y: **offene Karten des Kartenbestands**, nicht Stunden. Stunden setzten
+        eine Sollzeit voraus, und die gibt es nicht (I0026, Zustand 3). Der
+        Kartenbestand ist derselbe wie bei I0033: Board + Kartenklasse, also
+        genau das Set aus I0022.
+
+     Die Datengrundlage ist gebaut: `ErledigtAm` wird beim Zug in die
+     Abschlussspalte gesetzt und vom Import mitgegeben. Eine Karte gilt an einem
+     Tag als offen, wenn ihr `ErledigtAm` an dessen Ende noch leer war.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 26.4px 26.4px 8.8px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 2 · Hauptzustand · Burndown · /auswertungen · I0034 · Zielform, nichts davon gebaut</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Der Dialog hat keinen Sprintbegriff — die Vision schließt Termin- und Kapazitätsplanung aus. Also laufen die Achsen an dem, was da ist: <span style="color: #201e1d">X sind Kalendertage</span>, <span style="color: #201e1d">Y sind offene Karten des Kartenbestands</span> (Board + Kartenklasse, dasselbe Set wie I0022). Stunden auf der Y-Achse setzten ein Soll voraus, und das gibt es nicht. Die Grundlage ist gebaut: <span style="color: #201e1d">ErledigtAm</span> wird beim Zug in die Abschlussspalte gesetzt und vom Import mitgegeben.</p>
+</div>
+
+<div style="width: 1440px; height: 900px; background: #f5ead8; overflow: hidden; display: flex; flex-direction: column">
+
+  <!-- Navigationszeile, unveraendert aus D0008.dc.html — hier ohne offenes Board,
+       deshalb steht „Boards" in Zone 2 (Kopfzeile.razor blendet ihn nur aus,
+       solange ein Board offen ist) und Zone 1 traegt den Seitentitel. -->
+  <header style="display: flex; align-items: stretch; gap: 17.6px; min-height: 35.2px; padding: 0 17.6px; overflow: hidden; background: #ebddc5; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent); flex: 0 0 auto">
+    <div style="display: flex; flex: none; align-items: center; gap: 8.8px; min-width: 0; max-width: 45%">
+      <h1 style="margin: 0; font-size: 17px; line-height: 1.2; white-space: nowrap">Auswertungen</h1>
+    </div>
+    <div style="display: flex; flex: 1; align-items: center; gap: 17.6px; min-width: 0; padding-left: 17.6px; border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+      <nav style="display: flex; align-self: stretch; align-items: stretch; gap: 13.2px">
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: color-mix(in srgb, #201e1d 75%, transparent); border-bottom: 2px solid transparent">Boards</span>
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: #201e1d; border-bottom: 2px solid #c67139">Auswertungen</span>
+        <span style="display: flex; align-items: center; padding: 0 4.4px; font-size: 14px; color: color-mix(in srgb, #201e1d 75%, transparent); border-bottom: 2px solid transparent">Kontributoren</span>
+      </nav>
+    </div>
+    <div style="display: flex; flex: none; align-items: center; gap: 8.8px">
+      <span style="padding-left: 8.8px; font-size: 13px; color: color-mix(in srgb, #201e1d 55%, transparent); border-left: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">Stefan</span>
+    </div>
+  </header>
+
+  <div style="flex: 1; min-height: 0; display: flex">
+
+    <!-- ══ Der Umschalter — die fuenf Auswertungen des Dialogs ════════════════
+         Vier Eintraege sind Interactions dieses Dialogs; der fuenfte
+         („Rohdaten / API") ist keine Auswertung, sondern der Weg an der
+         Oberflaeche vorbei — er steht hier, weil I0037 sonst nirgends
+         sichtbar waere. Erfunden ist damit kein Knoten: der Eintrag zeigt
+         Aufrufe, er bedient nichts. -->
+    <nav style="flex: 0 0 264px; display: flex; flex-direction: column; gap: 4.4px; padding: 17.6px 13.2px; background: #ebddc5; border-right: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+      <p style="margin: 0 0 4.4px 4.4px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">Auswertung</p>
+
+      <span style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px; font-size: 14px; color: #201e1d; background: #f5ead8; border-radius: 999px; box-shadow: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent)">Burndown<span style="margin-left: auto; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 45%, transparent)">I0034</span></span>
+
+      <span style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px; font-size: 14px; color: color-mix(in srgb, #201e1d 75%, transparent); border-radius: 999px">Soll-Ist gegen die WBS<span style="margin-left: auto; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 45%, transparent)">I0033</span></span>
+
+      <span style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px; font-size: 14px; color: color-mix(in srgb, #201e1d 75%, transparent); border-radius: 999px">Puffer-Verbrauch<span style="margin-left: auto; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 45%, transparent)">I0035</span></span>
+
+      <span style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px; font-size: 14px; color: color-mix(in srgb, #201e1d 75%, transparent); border-radius: 999px">Zeiten exportieren<span style="margin-left: auto; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 45%, transparent)">I0036</span></span>
+
+      <span style="display: flex; align-items: center; gap: 8.8px; padding: 6px 13.2px; font-size: 14px; color: color-mix(in srgb, #201e1d 75%, transparent); border-radius: 999px">Rohdaten über die API<span style="margin-left: auto; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 45%, transparent)">I0037</span></span>
+
+      <p style="margin: 13.2px 4.4px 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Die Liste wächst mit — eine sechste Auswertung ist ein Eintrag mehr, kein Umbau der Fläche.</p>
+    </nav>
+
+    <!-- ══ Die Flaeche ════════════════════════════════════════════════════════ -->
+    <main style="flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 17.6px 26.4px 26.4px">
+
+      <!-- Filterzeile: Board und Kartenklasse bilden zusammen den „Kartenbestand"
+           aus dem Fertig-Kriterium von I0033 — genau das Set, das I0022 liefert.
+           Der Zeitraum gehoert der Kalenderachse. -->
+      <div style="display: flex; align-items: center; gap: 8.8px; padding-bottom: 13.2px; border-bottom: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+        <span style="display: inline-flex; align-items: center; gap: 4.4px; padding: 5px 14px; font-size: 13px; background: #ebddc5; border-radius: 999px">KanbanC — Release 2<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+        <span style="display: inline-flex; align-items: center; gap: 4.4px; padding: 5px 14px; font-size: 13px; background: #ebddc5; border-radius: 999px">Kartenklasse WBS<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+        <span style="display: inline-flex; align-items: center; gap: 4.4px; padding: 5px 14px; font-size: 13px; background: #ebddc5; border-radius: 999px">seit 29.08.<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+        <span style="margin-left: auto; font-size: 12px; color: color-mix(in srgb, #201e1d 55%, transparent)">Board und Kartenklasse sind zusammen der „Kartenbestand" aus dem Kriterium von I0033</span>
+      </div>
+
+      <!-- Kopfzahlen: was die Kurve in Worten sagt. -->
+      <div style="display: flex; align-items: baseline; gap: 35.2px; padding: 13.2px 0">
+        <span style="display: flex; flex-direction: column"><span style="font-family: Caprasimo, system-ui, sans-serif; font-size: 32px; line-height: 1.12">7</span><span style="font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">offen</span></span>
+        <span style="display: flex; flex-direction: column"><span style="font-family: Caprasimo, system-ui, sans-serif; font-size: 32px; line-height: 1.12">34</span><span style="font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">erledigt</span></span>
+        <span style="display: flex; flex-direction: column"><span style="font-family: Caprasimo, system-ui, sans-serif; font-size: 32px; line-height: 1.12">41</span><span style="font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">im Bestand</span></span>
+        <span style="margin-left: auto; max-width: 420px; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Kein Sollstrich und keine Prognoselinie: beide brauchten eine geplante Dauer, und die hat der Bestand nicht. Die Kurve sagt, was war — sie sagt nicht, wann es fertig ist.</span>
+      </div>
+
+      <!-- ══ Die Kurve ═══════════════════════════════════════════════════════
+           Tageswerte aus Schaetzungen/_ist-zeiten.md gerechnet: Abschluesse je
+           Kalendertag, kumuliert von 41 abgezogen. Im gebauten Zustand kommt
+           dieselbe Reihe aus `ErledigtAm` je Karte. -->
+      <div style="flex: 1; min-height: 0; padding: 13.2px 17.6px; background: #ebddc5; border-radius: 16px; display: flex; flex-direction: column">
+        <svg viewBox="0 0 900 290" style="width: 100%; height: 100%" role="img" aria-label="Burndown: offene Karten je Kalendertag, von 41 am 28.08. auf 9 am 07.09.">
+          <g stroke="color-mix(in srgb, #201e1d 12%, transparent)" stroke-width="1">
+            <line x1="60" y1="250" x2="880" y2="250"/>
+            <line x1="60" y1="201.2" x2="880" y2="201.2"/>
+            <line x1="60" y1="152.4" x2="880" y2="152.4"/>
+            <line x1="60" y1="103.7" x2="880" y2="103.7"/>
+            <line x1="60" y1="54.9" x2="880" y2="54.9"/>
+          </g>
+          <line x1="60" y1="40" x2="60" y2="250" stroke="color-mix(in srgb, #201e1d 35%, transparent)" stroke-width="1"/>
+          <line x1="60" y1="250" x2="880" y2="250" stroke="color-mix(in srgb, #201e1d 35%, transparent)" stroke-width="1"/>
+
+          <g font-family="Figtree, system-ui, sans-serif" font-size="12" fill="color-mix(in srgb, #201e1d 55%, transparent)" text-anchor="end">
+            <text x="50" y="254">0</text>
+            <text x="50" y="205.2">10</text>
+            <text x="50" y="156.4">20</text>
+            <text x="50" y="107.7">30</text>
+            <text x="50" y="58.9">40</text>
+          </g>
+          <text x="60" y="26" font-family="Figtree, system-ui, sans-serif" font-size="11" letter-spacing="0.06em" fill="color-mix(in srgb, #201e1d 55%, transparent)">OFFENE KARTEN</text>
+
+          <polyline points="60,50 140,64.6 220,69.5 300,74.4 380,74.4 460,79.3 540,89 620,118.3 700,137.8 780,186.6 860,206.1"
+                    fill="none" stroke="#c67139" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <g fill="#c67139">
+            <circle cx="60" cy="50" r="3.2"/>
+            <circle cx="140" cy="64.6" r="3.2"/>
+            <circle cx="220" cy="69.5" r="3.2"/>
+            <circle cx="300" cy="74.4" r="3.2"/>
+            <circle cx="380" cy="74.4" r="3.2"/>
+            <circle cx="460" cy="79.3" r="3.2"/>
+            <circle cx="540" cy="89" r="3.2"/>
+            <circle cx="620" cy="118.3" r="3.2"/>
+            <circle cx="700" cy="137.8" r="3.2"/>
+            <circle cx="780" cy="186.6" r="3.2"/>
+            <circle cx="860" cy="206.1" r="4.4"/>
+          </g>
+          <text x="860" y="196" font-family="Figtree, system-ui, sans-serif" font-size="13" fill="#8c491a" text-anchor="end">9</text>
+
+          <g font-family="Figtree, system-ui, sans-serif" font-size="12" fill="color-mix(in srgb, #201e1d 55%, transparent)" text-anchor="middle">
+            <text x="60" y="270">28.08.</text>
+            <text x="220" y="270">30.08.</text>
+            <text x="380" y="270">01.09.</text>
+            <text x="540" y="270">03.09.</text>
+            <text x="700" y="270">05.09.</text>
+            <text x="860" y="270">07.09.</text>
+          </g>
+        </svg>
+      </div>
+
+      <!-- ══ Die Zahlen, aus denen die Kurve entsteht ════════════════════════
+           Der aeltere Satz zeichnet fuenf Spalten: Tag, Rest Soll, Rest Ist,
+           erledigt, wer. **Zwei davon haben im Bestand keine Quelle** und
+           stehen deshalb gestrichelt statt gefuellt — das ist der eigentliche
+           Befund dieses Dialogs, und er gehoert an die Stelle, an der er
+           auffaellt. -->
+      <div style="display: flex; gap: 26.4px; align-items: flex-start; padding-top: 13.2px">
+        <div style="flex: 1 1 0; min-width: 0">
+          <div style="display: flex; gap: 4.4px; padding: 0 8.8px 4.4px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">
+            <span style="flex: 0 0 92px">Tag</span>
+            <span style="flex: 0 0 84px; text-align: right">erledigt</span>
+            <span style="flex: 0 0 84px; text-align: right">offen</span>
+            <span style="flex: 1">Karten, die an diesem Tag ihr ErledigtAm bekamen</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 2px; font-size: 13px">
+            <div style="display: flex; gap: 4.4px; padding: 4px 8.8px; background: #ebddc5; border-radius: 4px"><span style="flex: 0 0 92px">05.09.</span><span style="flex: 0 0 84px; text-align: right">4</span><span style="flex: 0 0 84px; text-align: right">23</span><span style="flex: 1; color: color-mix(in srgb, #201e1d 55%, transparent)">WBS-15 … WBS-18</span></div>
+            <div style="display: flex; gap: 4.4px; padding: 4px 8.8px; background: #ebddc5; border-radius: 4px"><span style="flex: 0 0 92px">06.09.</span><span style="flex: 0 0 84px; text-align: right">10</span><span style="flex: 0 0 84px; text-align: right">13</span><span style="flex: 1; color: color-mix(in srgb, #201e1d 55%, transparent)">WBS-19 … WBS-28</span></div>
+            <div style="display: flex; gap: 4.4px; padding: 4px 8.8px; background: #ebddc5; border-radius: 4px"><span style="flex: 0 0 92px">07.09.</span><span style="flex: 0 0 84px; text-align: right">4</span><span style="flex: 0 0 84px; text-align: right">9</span><span style="flex: 1; color: color-mix(in srgb, #201e1d 55%, transparent)">WBS-29 … WBS-32</span></div>
+          </div>
+        </div>
+
+        <div style="flex: 0 0 396px; display: flex; flex-direction: column; gap: 4.4px; padding: 8.8px 13.2px; border: 1px dashed color-mix(in srgb, #201e1d 45%, transparent); border-radius: 16px">
+          <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: #8c491a">zwei Spalten des älteren Satzes fehlen</p>
+          <p style="margin: 0; font-size: 12px; line-height: 1.45; color: #8c491a"><span style="font-family: ui-monospace, monospace; font-size: 11px">Rest Soll</span> — es gibt keine Sollzeit (Zustand 3).</p>
+          <p style="margin: 0; font-size: 12px; line-height: 1.45; color: #8c491a"><span style="font-family: ui-monospace, monospace; font-size: 11px">wer</span> — <span style="color: color-mix(in srgb, #201e1d 65%, transparent)">wer eine Karte in die Abschlussspalte gezogen hat, hält der Bestand nirgends fest. Ein Verlauf je Karte hat keinen WBS-Knoten (Index, Frage 13).</span></p>
+        </div>
+      </div>
+
+      <p style="margin: 8.8px 0 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty"><span style="color: #201e1d">Herkunft der Zahlen, offengelegt:</span> die Tagesreihe ist aus <span style="font-family: ui-monospace, monospace">Schaetzungen/_ist-zeiten.md</span> gerechnet — Abschlüsse je Kalendertag, das nächstliegende echte Erledigungsprotokoll dieses Repositorys. Sie endet bei 9, während die WBS heute 7 rote Interactions zählt; die Differenz ist echt und lehrreich: das Protokoll zählt je <span style="color: #201e1d">Anforderung</span>, die WBS je <span style="color: #201e1d">Interaction</span> (R00006 deckt zwei), und eine Anforderung hat keine Protokollzeile. Der gebaute Burndown rechnet aus <span style="color: #201e1d">ErledigtAm</span> je Karte und hat diese Differenz nicht.</p>
+
+      <p style="margin: 8.8px 0 0; font-family: ui-monospace, monospace; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">GET /api/boards/2/auswertungen/burndown?kartenklasse=1&amp;seit=2026-08-29 — dieselbe Reihe, die die Tabelle zeigt</p>
+
+    </main>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 3 — Soll-Ist-Vergleich. I0033. Die geerbte Luecke.
+
+     Das Fertig-Kriterium: „Fuer einen Kartenbestand steht die erfasste Zeit der
+     WBS-Zaehlung gegenueber." Die erfasste Zeit ist da — `Zeiteintrag` je Karte
+     und Kontributor, Summe im Zeitenblock (I0026). Die WBS-Zaehlung ist **nicht**
+     da, und zwar aus zwei belegten Entscheidungen:
+
+       I0026: „im Bestand gibt es keine Sollzeit … ein Feld hier zu erfinden
+              naehme I0033 die Entscheidung vorweg, wo das Soll wohnt, und waere
+              bis dahin tote Flexibilitaet (C24)."
+       I0030: die Spalte `Aufwand` wird bewusst nicht importiert — „die Aufwaende
+              der Datei kommen mit diesem Slice **nicht** ins System; wer I0033
+              baut, braucht ein Feld an der Karte und danach einen erneuten
+              Import." D0008.dc.html Zustand 4 zeichnet die Zeile bereits als
+              gestrichelten Kasten.
+
+     Gezeichnet ist deshalb: die Haelfte, die es gibt, gefuellt — die Haelfte,
+     die fehlt, gestrichelt, mit dem Weg dorthin. Kein erfundenes Feld.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 26.4px 26.4px 8.8px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 3 · Soll-Ist gegen die WBS-Zählung · I0033 · Ausschnitt der Fläche · die geerbte Lücke</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Die eine Hälfte ist gebaut: <span style="color: #201e1d">Zeiteintrag</span> je Karte und Kontributor, Summe im Zeitenblock (I0026). Die andere fehlt, und nicht aus Versehen — <span style="color: #201e1d">I0026 hat nachgesehen und festgehalten, dass es im Bestand keine Sollzeit gibt</span>, <span style="color: #201e1d">I0030 hat die Spalte Aufwand bewusst nicht importiert</span> („wer I0033 baut, braucht ein Feld an der Karte und danach einen erneuten Import"). Gezeichnet ist deshalb die Lücke mit ihrem Weg, kein erfundenes Feld.</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; padding: 0 26.4px 26.4px; display: flex; gap: 26.4px; align-items: flex-start">
+
+  <!-- Links: die Vergleichstabelle, halb gefuellt. -->
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">die Auswertung · Kartenbestand „WBS" auf Release 2</p>
+
+    <div style="display: flex; gap: 4.4px; padding: 0 8.8px 4.4px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">
+      <span style="flex: 1">Karte</span>
+      <span style="flex: 0 0 108px; text-align: right">Ist</span>
+      <span style="flex: 0 0 150px; text-align: right">Soll · WBS-Zählung</span>
+      <span style="flex: 0 0 108px; text-align: right">Abweichung</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 2px; font-size: 13px">
+      <div style="display: flex; align-items: center; gap: 4.4px; padding: 6px 8.8px; background: #ebddc5; border-radius: 4px">
+        <span style="flex: 1; min-width: 0">WBS-30 · [I0030] WBS-Datei importieren</span>
+        <span style="flex: 0 0 108px; text-align: right">2:24</span>
+        <span style="flex: 0 0 150px; text-align: right; color: #8c491a; border: 1px dashed color-mix(in srgb, #201e1d 45%, transparent); border-radius: 4px">32,0–44,0 h</span>
+        <span style="flex: 0 0 108px; text-align: right; color: color-mix(in srgb, #201e1d 35%, transparent)">—</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 4.4px; padding: 6px 8.8px; background: #ebddc5; border-radius: 4px">
+        <span style="flex: 1; min-width: 0">WBS-28 · [I0028] Änderung ohne Reload sehen</span>
+        <span style="flex: 0 0 108px; text-align: right">1:54</span>
+        <span style="flex: 0 0 150px; text-align: right; color: #8c491a; border: 1px dashed color-mix(in srgb, #201e1d 45%, transparent); border-radius: 4px">22,4–37,9 h</span>
+        <span style="flex: 0 0 108px; text-align: right; color: color-mix(in srgb, #201e1d 35%, transparent)">—</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 4.4px; padding: 6px 8.8px; background: #ebddc5; border-radius: 4px">
+        <span style="flex: 1; min-width: 0">WBS-29 · [I0029] Nach Verbindungsabbruch aufschließen</span>
+        <span style="flex: 0 0 108px; text-align: right">1:00</span>
+        <span style="flex: 0 0 150px; text-align: right; color: #8c491a; border: 1px dashed color-mix(in srgb, #201e1d 45%, transparent); border-radius: 4px">15,6–24,0 h</span>
+        <span style="flex: 0 0 108px; text-align: right; color: color-mix(in srgb, #201e1d 35%, transparent)">—</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 4.4px; padding: 6px 8.8px; background: #ebddc5; border-radius: 4px">
+        <span style="flex: 1; min-width: 0">WBS-22 · [I0022] Karten einer Klasse abrufen</span>
+        <span style="flex: 0 0 108px; text-align: right">0:42</span>
+        <span style="flex: 0 0 150px; text-align: right; color: #8c491a; border: 1px dashed color-mix(in srgb, #201e1d 45%, transparent); border-radius: 4px">2,8–3,9 h</span>
+        <span style="flex: 0 0 108px; text-align: right; color: color-mix(in srgb, #201e1d 35%, transparent)">—</span>
+      </div>
+    </div>
+
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Die Ist-Spalte ist heute baubar, die Soll-Spalte nicht: sie steht gestrichelt, weil kein Feld sie trägt. <span style="color: #201e1d">Die Zahlen sind echt</span> — sie stehen so in <span style="font-family: ui-monospace, monospace">Schaetzungen/_ist-zeiten.md</span>, Spalten <span style="font-family: ui-monospace, monospace">geschaetzt</span> und <span style="font-family: ui-monospace, monospace">brutto</span>. Genau diese Tabelle wird heute von Hand geführt; <span style="color: #201e1d">I0033 ist der Slice, der sie das Board rechnen lässt</span>.</p>
+  </div>
+
+  <!-- Rechts: der Weg zum Soll, in drei Schritten, und die Frage der Bandbreite. -->
+  <div style="flex: 0 0 528px; display: flex; flex-direction: column; gap: 13.2px">
+
+    <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 13.2px; border: 1px dashed color-mix(in srgb, #201e1d 45%, transparent); border-radius: 32.2px">
+      <div style="display: flex; align-items: baseline; gap: 8.8px">
+        <h3 style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #8c491a">woher das Soll kommt · nicht gezeichnet, weil es keinen Ort hat</h3>
+        <span style="margin-left: auto; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">D0009 · I0033</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8.8px; font-size: 12px; line-height: 1.5">
+        <div style="display: flex; gap: 8.8px">
+          <span style="flex: 0 0 20px; font-family: Caprasimo, system-ui, sans-serif; color: #8c491a">1</span>
+          <span style="flex: 1"><span style="color: #201e1d">Ein Feld an der Karte.</span> Es hat heute keinen WBS-Knoten — I0015 zählt Titel, Beschreibung, Verantwortlicher, Fälligkeit, Farbe und Etiketten auf, keine Sollzeit. Das ist ein <span style="color: #201e1d">Befund für /planung</span>, keine Lücke zum Auffüllen.</span>
+        </div>
+        <div style="display: flex; gap: 8.8px">
+          <span style="flex: 0 0 20px; font-family: Caprasimo, system-ui, sans-serif; color: #8c491a">2</span>
+          <span style="flex: 1"><span style="color: #201e1d">Der Import füllt es aus der Spalte Aufwand.</span> Die Quelle steht fest und ist nachlesbar: die WBS führt je Bubble einen Aufwand. I0030 hat sie ausdrücklich nicht übernommen; D0008 zeichnet die Zeile als gestrichelten Kasten mit der Adresse <span style="font-family: ui-monospace, monospace; font-size: 11px">I0033?</span>.</span>
+        </div>
+        <div style="display: flex; gap: 8.8px">
+          <span style="flex: 0 0 20px; font-family: Caprasimo, system-ui, sans-serif; color: #8c491a">3</span>
+          <span style="flex: 1"><span style="color: #201e1d">Ein erneuter Import.</span> Nicht als Nebenwirkung, sondern als Schritt: I0031 erkennt die Karten am Herkunftsverweis wieder und schreibt nur die Unterschiede. Ohne diesen zweiten Lauf bleibt die Soll-Spalte auch mit Feld leer.</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 4.4px; padding: 13.2px; background: #ebddc5; border-radius: 16px">
+      <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">und eine Frage, die daran hängt</p>
+      <p style="margin: 0; font-size: 12px; line-height: 1.5"><span style="color: #201e1d">Die Aufwandsspalte trägt Bandbreiten.</span> In <span style="font-family: ui-monospace, monospace; font-size: 11px">kanbanc.md</span> stehen <span style="font-family: ui-monospace, monospace; font-size: 11px">0,4</span> und <span style="font-family: ui-monospace, monospace; font-size: 11px">2</span> neben <span style="font-family: ui-monospace, monospace; font-size: 11px">2-4</span> und <span style="font-family: ui-monospace, monospace; font-size: 11px">0,4-1,5</span>. Eine Abweichung gegen eine Spanne zu rechnen heißt entscheiden, ob die Untergrenze gilt, die Obergrenze oder die Mitte — oder ob die Spalte zwei Zahlen trägt und die Auswertung ein Band statt eines Balkens zeichnet. <span style="color: #201e1d">Das ist eine Entscheidung von I0033</span>, deshalb steht in der Soll-Spalte oben die Spanne, wie die Datei sie führt, und in der Abweichungsspalte nichts.</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 4 — Puffer-Verbrauch. I0035. Die zweite, groessere Luecke.
+
+     Fertig-Kriterium: „Fuer eine Kette ist der verbrauchte Puffer gegen den
+     Fortschritt ablesbar", Notiz „Critical Chain". Nachgesehen:
+
+       Vision (R00000): „Critical Chain mit Puffer-Verbrauch" steht unter den
+       Zielen, und unter den Nicht-Zielen „Burndown und Critical Chain rechnen
+       aus den Ist-Daten; sie planen nicht." **Was ein Puffer ist, sagt sie
+       nicht** — und keine andere Interaction nennt das Wort.
+
+     Zwei Voraussetzungen fehlen, beide belegbar. Sie werden gezeichnet, nicht
+     ueberbrueckt: eine erfundene Kette waere ein Bedienelement ohne Knoten.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 26.4px 26.4px 8.8px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 4 · Puffer-Verbrauch · I0035 · die Frage, nicht die Antwort</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">In der Vision nachgesehen: „Critical Chain mit Puffer-Verbrauch" steht unter den Zielen, „Burndown und Critical Chain rechnen aus den Ist-Daten; sie planen nicht" unter den Nicht-Zielen. <span style="color: #201e1d">Was ein Puffer hier ist, erklärt sie nicht</span>, und keine andere Interaction nennt das Wort. Gezeichnet sind deshalb die zwei Voraussetzungen, die im Bestand fehlen — und die Frage, die dazwischen steht. Eine Fieberkurve mit erfundenen Achsen wäre eine Antwort, die niemand gegeben hat.</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; padding: 0 26.4px 26.4px; display: flex; gap: 26.4px; align-items: stretch">
+
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: #8c491a">fehlt · die Kette</p>
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 8.8px; padding: 13.2px; border: 1px dashed color-mix(in srgb, #201e1d 45%, transparent); border-radius: 32.2px">
+      <p style="margin: 0; font-size: 13px; line-height: 1.5"><span style="color: #201e1d">Zwischen zwei Karten gibt es keine Abhängigkeit.</span> Die WBS führt eine Spalte <span style="font-family: ui-monospace, monospace; font-size: 11px">Braucht</span> — der Import legt sie aber als <span style="color: #201e1d">Fließtext unter die Beschreibung</span> (D0008, Zustand 4: „Notiz · Braucht → Beschreibung, darunter"). Aus Prosa lässt sich kein Graph rechnen, und ohne Graph gibt es keine Kette, deren längster Pfad die kritische wäre.</p>
+      <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Der Weg dorthin wäre derselbe wie beim Soll: ein Feld, das es nicht gibt, und danach ein erneuter Import. Ob eine Kette überhaupt aus <span style="font-family: ui-monospace, monospace; font-size: 11px">Braucht</span> entsteht oder von Hand gelegt wird, entscheidet der Slice.</p>
+    </div>
+  </div>
+
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: #8c491a">fehlt · der Puffer</p>
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 8.8px; padding: 13.2px; border: 1px dashed color-mix(in srgb, #201e1d 45%, transparent); border-radius: 32.2px">
+      <p style="margin: 0; font-size: 13px; line-height: 1.5"><span style="color: #201e1d">Ein Puffer ist die Differenz zweier Dauern</span> — der geschützten Schätzung und dem, was übrig bleibt. Beide Größen fehlen aus demselben Grund wie in Zustand 3: es gibt keine Sollzeit. <span style="color: #201e1d">I0035 hängt in der WBS an I0034</span>, nicht an I0033 — die Abhängigkeit auf das Soll ist dort nicht verzeichnet und ist ein Befund für <span style="font-family: ui-monospace, monospace; font-size: 11px">/planung</span>.</p>
+      <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Das Ist ist da und reicht für den Verbrauch — nicht für das, wovon er verbraucht wird.</p>
+    </div>
+  </div>
+
+  <div style="flex: 0 0 484px; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">die Frage, die zuerst zu beantworten ist</p>
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 8.8px; padding: 13.2px; background: #ebddc5; border-radius: 16px">
+      <p style="margin: 0; font-size: 15px; line-height: 1.4"><span style="color: #201e1d">Was ist in KanbanC eine „Kette", und wovon ist ihr Puffer der Rest?</span></p>
+      <p style="margin: 0; font-size: 12px; line-height: 1.5; color: color-mix(in srgb, #201e1d 70%, transparent); text-wrap: pretty">Drei Lesarten stehen im Raum, und keine ist gesetzt: die Kette ist ein <span style="color: #201e1d">Kartenbestand</span> (dieselbe Klasse wie bei I0033) und der Puffer die Reserve über dessen Summe · die Kette ist ein <span style="color: #201e1d">Pfad durch die Braucht-Beziehungen</span>, sobald es sie gibt · die Kette ist ein <span style="color: #201e1d">Board-Termin</span> — Start und Ziel stehen bereits in der Kopfzeile des Boards, und der Puffer wäre die Restzeit bis zum Ziel gegen den Restumfang aus I0034.</p>
+      <p style="margin: 0; font-size: 12px; line-height: 1.5; color: color-mix(in srgb, #201e1d 70%, transparent); text-wrap: pretty">Die dritte ist die einzige, die <span style="color: #201e1d">heute schon Daten hätte</span> — sie ist deshalb nicht die richtige, sondern die billigste. Ein Wireframe darf das nebeneinanderstellen; entscheiden muss es der Slice. Bis dahin steht die Frage im Index.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 5 — Zeiten exportieren. I0036.
+
+     Fertig-Kriterium: „Zeiten je Aufgabe und Kontributor lassen sich als Datei
+     herausziehen." Drei Fragen, drei Antworten aus dem Bestand:
+
+     WAS  — eine Zeile je **Zeiteintrag**, nicht je Summe: „je Aufgabe und
+            Kontributor" verlangt beide Achsen, und aus Eintraegen laesst sich
+            summieren, aus Summen nicht aufteilen. Die Spalten sind genau die
+            Felder, die `Zeiteintrag` traegt (I0024/I0026).
+     WIE  — CSV. Der aeltere Satz zeichnet in beiden Varianten einen CSV-Knopf;
+            das Kriterium sagt „Datei", und CSV ist die eine Form, die ohne die
+            Anwendung lesbar ist — dieselbe Zusage wie bei I0038.
+     WOHIN — Browser-Download. Das Muster „als Text kopieren" (Pfadkopie /
+            Kopierergebnis, zuletzt B0469) ist der Bestand fuer *fluechtige*
+            Ausgaben; hier steht ausdruecklich „als Datei", und eine Datei ist
+            der Unterschied.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 26.4px 26.4px 8.8px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 5 · Zeiten exportieren · I0036 · Ausschnitt der Fläche · Zielform</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Eine Zeile je <span style="color: #201e1d">Zeiteintrag</span>, nicht je Summe: „je Aufgabe und Kontributor" verlangt beide Achsen, und aus Einträgen lässt sich summieren, aus Summen nicht aufteilen. Die Spalten sind genau die Felder, die ein Zeiteintrag trägt. <span style="color: #201e1d">CSV als Datei</span> — der ältere Satz zeichnet den Knopf, das Kriterium sagt „Datei", und das vorhandene Muster „als Text kopieren" (Pfadkopie, B0469) gehört flüchtigen Ausgaben.</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; padding: 0 26.4px 26.4px; display: flex; gap: 26.4px; align-items: flex-start">
+
+  <div style="flex: 0 0 352px; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">der Umfang</p>
+    <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 13.2px; background: #ebddc5; border-radius: 16px">
+      <div style="display: flex; align-items: center; gap: 8.8px; font-size: 13px"><span style="flex: 0 0 108px; color: color-mix(in srgb, #201e1d 65%, transparent)">Board</span><span style="flex: 1; display: inline-flex; align-items: center; gap: 4.4px; padding: 5px 14px; background: #f5ead8; border-radius: 999px">KanbanC — Release 2</span></div>
+      <div style="display: flex; align-items: center; gap: 8.8px; font-size: 13px"><span style="flex: 0 0 108px; color: color-mix(in srgb, #201e1d 65%, transparent)">Kartenklasse</span><span style="flex: 1; display: inline-flex; align-items: center; gap: 4.4px; padding: 5px 14px; background: #f5ead8; border-radius: 999px">WBS · alle</span></div>
+      <div style="display: flex; align-items: center; gap: 8.8px; font-size: 13px"><span style="flex: 0 0 108px; color: color-mix(in srgb, #201e1d 65%, transparent)">Kontributor</span><span style="flex: 1; display: inline-flex; align-items: center; gap: 4.4px; padding: 5px 14px; background: #f5ead8; border-radius: 999px">alle</span></div>
+      <div style="display: flex; align-items: center; gap: 8.8px; font-size: 13px"><span style="flex: 0 0 108px; color: color-mix(in srgb, #201e1d 65%, transparent)">Zeitraum</span><span style="flex: 1; display: inline-flex; align-items: center; gap: 4.4px; padding: 5px 14px; background: #f5ead8; border-radius: 999px">29.08. – 07.09.</span></div>
+      <div style="display: flex; align-items: center; gap: 8.8px; padding-top: 4.4px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+        <span style="min-width: 0; font-size: 12px; line-height: 1.35; color: color-mix(in srgb, #201e1d 55%, transparent)">218 Einträge · 34 Karten · 2 Kontributoren</span>
+        <span style="margin-left: auto; flex: none; display: inline-flex; align-items: center; gap: 4.4px; padding: 5px 14px; font-size: 13px; white-space: nowrap; color: #f5ead8; background: #c67139; border-radius: 999px"><svg style="flex: none" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 20h16"/></svg>CSV</span>
+      </div>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Der Umfang ist derselbe Filter wie oben — eine zweite Filterzeile gäbe es nicht. Der Dateiname trägt Board und Spanne: <span style="font-family: ui-monospace, monospace; font-size: 11px">release-2-zeiten-2026-08-29_2026-09-07.csv</span>.</p>
+  </div>
+
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">was in der Datei steht · eine Zeile je Zeiteintrag</p>
+    <div style="display: flex; flex-direction: column; gap: 4.4px; padding: 8.8px 13.2px; font-family: ui-monospace, monospace; font-size: 11px; line-height: 1.6; background: #ebddc5; border-radius: 4px; border-left: 3px solid #7a8a5e; overflow: hidden">
+      <span style="color: #3d472b">Kartennummer;Kartentitel;Kontributor;Art;Beginn;Ende;Dauer</span>
+      <span style="white-space: nowrap">WBS-30;[I0030] WBS-Datei importieren;Claude-Agent;Agent;2026-09-07T09:12;2026-09-07T11:24;2:12</span>
+      <span style="white-space: nowrap">WBS-30;[I0030] WBS-Datei importieren;Stefan;Mensch;2026-09-07T09:40;2026-09-07T09:52;0:12</span>
+      <span style="white-space: nowrap">WBS-24;[I0024] Timer stoppen;Stefan;Mensch;2026-09-06T14:02;2026-09-06T14:50;0:48</span>
+      <span style="color: color-mix(in srgb, #201e1d 45%, transparent)">… 215 weitere</span>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Kein aggregiertes Blatt und keine Summenzeile: wer summieren will, kann es aus diesen Zeilen — umgekehrt geht es nicht. Die <span style="color: #201e1d">Art</span> steht dabei, weil die Vision Menschen und Agenten gleichberechtigt führt und eine Auswertung sonst nicht trennen könnte. Ein laufender Eintrag hat <span style="color: #201e1d">kein Ende und keine Dauer</span> und steht so in der Datei — dieselbe Regel wie im Zeitenblock (I0026): eine mitlaufende Dauer wäre ab der ersten Sekunde falsch.</p>
+  </div>
+
+  <div style="flex: 0 0 330px; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: #8c491a">was die Datei nicht glattzieht</p>
+    <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 13.2px; background: #ebddc5; border-radius: 16px">
+      <p style="margin: 0; font-size: 12px; line-height: 1.5"><span style="color: #201e1d">Überlappende Einträge stehen unkorrigiert darin.</span> I0025 hat sie ausdrücklich erlaubt und den Preis benannt: eine Summe je Kontributor kann mehr als 24 Stunden je Tag ausweisen. Der Export meldet das nicht und rechnet es nicht weg — eine Warnung hätte hier keine Kompensationsaktion, und für einen Agenten, der an mehreren Karten zugleich rechnet, wäre sie eine Falschauskunft.</p>
+      <p style="margin: 0; font-size: 12px; line-height: 1.5"><span style="color: #201e1d">Die Dauer läuft über 24 Stunden hinaus.</span> <span style="font-family: ui-monospace, monospace; font-size: 11px">Dauerform</span> schreibt <span style="font-family: ui-monospace, monospace; font-size: 11px">31:40</span>, nicht <span style="font-family: ui-monospace, monospace; font-size: 11px">07:40</span> — die Datei folgt derselben Form wie der Schirm, damit beide Zahlen dieselbe Zahl sind.</p>
+    </div>
+    <p style="margin: 0; font-family: ui-monospace, monospace; font-size: 11px; color: color-mix(in srgb, #201e1d 55%, transparent)">GET /api/boards/2/auswertungen/zeiten.csv?kartenklasse=1&amp;von=…&amp;bis=…</p>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 6 — Rohdaten ueber die API. I0037.
+
+     Der zweite Slice dieses Projekts, dessen Fertig-Kriterium **nur die API**
+     nennt — nach I0022, und der Umgang ist derselbe: gezeichnet wird der Aufruf,
+     nicht ein erfundenes Bedienelement. Fuer einen Agenten *ist* der Aufruf das
+     Bedienelement (D0005, Zustand 5).
+
+     Was ein Mensch davon sieht, ist trotzdem beantwortbar und wird gezeichnet:
+     jede Auswertung nennt im Fuss ihren Pfad. Das ist die eine Idee, die aus
+     Variante A des aelteren Satzes uebernommen ist.
+
+     Und ein Wort des Kriteriums hat im Bestand keinen Gegenstand: „Verlaeufe".
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 26.4px 26.4px 8.8px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 6 · Rohdaten über die API · I0037 · der Aufruf als Bedienelement</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Der zweite Slice nach I0022, dessen Kriterium nur die API nennt — und derselbe Umgang: <span style="color: #201e1d">gezeichnet ist der Aufruf, kein erfundenes Bedienelement</span>. Der Kern des Motivs steht in der Vision: „eine fremde Cloud-API mit Limits gibt sie nicht her". <span style="color: #201e1d">„Ohne Limit" ist deshalb die Zusage, die im Bild stehen muss</span> — keine Seitengröße, kein stilles Abschneiden.</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; padding: 0 26.4px 26.4px; display: flex; gap: 26.4px; align-items: flex-start">
+
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">die Aufrufe · das Bedienelement des Agenten</p>
+    <div style="display: flex; flex-direction: column; gap: 4.4px; padding: 8.8px 13.2px; font-family: ui-monospace, monospace; font-size: 12px; line-height: 1.6; background: #ebddc5; border-radius: 4px; border-left: 3px solid #7a8a5e">
+      <span><span style="color: #7a8a5e">GET</span> /api/boards/2/karten</span>
+      <span style="color: color-mix(in srgb, #201e1d 55%, transparent)">200 — alle 41 Karten mit Spalte, Klasse, Etiketten, Teilaufgaben, Dateiverweisen; keine Seitengröße</span>
+      <span style="padding-top: 4.4px"><span style="color: #7a8a5e">GET</span> /api/boards/2/zeiten</span>
+      <span style="color: color-mix(in srgb, #201e1d 55%, transparent)">200 — alle 218 Zeiteinträge mit Karte, Kontributor, Beginn, Ende; laufende ohne Ende</span>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Beides sind <span style="color: #201e1d">Roh</span>daten, nicht die gerechneten Reihen aus Zustand 2 und 3 — die haben ihre eigenen Pfade und nennen sie selbst. Der Unterschied ist der Sinn dieses Slice: wer eigene Auswertungen rechnen will, will die Einträge, nicht deren Auslegung.</p>
+  </div>
+
+  <div style="flex: 0 0 396px; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: #8c491a">ein Wort des Kriteriums ohne Gegenstand</p>
+    <div style="display: flex; flex-direction: column; gap: 4.4px; padding: 13.2px; border: 1px dashed color-mix(in srgb, #201e1d 45%, transparent); border-radius: 32.2px">
+      <div style="display: flex; align-items: baseline; gap: 8.8px">
+        <h3 style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, #201e1d 55%, transparent)">GET /api/boards/2/verlaeufe</h3>
+        <span style="margin-left: auto; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: #8c491a">D0009 · I0037</span>
+      </div>
+      <p style="margin: 0; font-size: 12px; line-height: 1.5; color: color-mix(in srgb, #201e1d 70%, transparent); text-wrap: pretty">Das Kriterium verlangt „Karten, Zeiten <span style="color: #201e1d">und Verläufe</span>". Einen Verlauf gibt es im Bestand nicht: <span style="color: #201e1d">wer wann welche Karte über welche Grenze bewegt hat, wird nirgends festgehalten</span>. Der ältere Satz zeichnet eine Verlaufsspur auf der Kartenseite, die WBS kennt dazu keinen Knoten (Index, Frage 13); D0004 hat sie deshalb nicht ins Bild genommen. Derselbe Grund fehlt hier der Spalte „wer" in Zustand 2.</p>
+      <p style="margin: 0; font-size: 12px; line-height: 1.5; color: color-mix(in srgb, #201e1d 70%, transparent); text-wrap: pretty">Der Live-Kanal (D0007) <span style="color: #201e1d">sendet</span> jede Bewegung, aber er speichert keine — I0028 hat die Ereignisspur ausdrücklich verworfen, weil kein Kriterium eine Liste vergangener Ereignisse verlangt. Ob I0037 das Speichern mitbringt oder ob „Verläufe" ein drittes Mal auf einen fehlenden Knoten zeigt, entscheidet der Slice.</p>
+    </div>
+  </div>
+
+  <div style="flex: 0 0 372px; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">was ein Mensch davon sieht</p>
+    <div style="display: flex; flex-direction: column; gap: 8.8px; padding: 13.2px; background: #ebddc5; border-radius: 16px">
+      <p style="margin: 0; font-size: 12px; line-height: 1.5"><span style="color: #201e1d">Einen Fuß, und sonst nichts.</span> Jede Auswertung nennt unter ihrer Fläche den Pfad, aus dem sie entsteht — so steht es in Zustand 2 und Zustand 5. Wer einmal gesehen hat, dass die Kurve aus einem Aufruf kommt, findet den Weg an der Oberfläche vorbei; wer ihn nicht sucht, wird nicht behelligt.</p>
+      <p style="margin: 0; font-size: 12px; line-height: 1.5"><span style="color: #201e1d">Ein eigenes Bedienelement bekommt I0037 nicht.</span> Ein „Rohdaten"-Knopf, der eine JSON-Datei in den Browser lädt, wäre ein zweiter Export neben I0036 und eine Fähigkeit, die bei der API anfängt — dieselbe Lage wie der Klassenfilter bei I0022, und dort mit denselben Worten weggelassen. Der Umschaltereintrag zeigt die Aufrufe, er bedient nichts.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ZUSTAND 7 — Leer und Raender.
+
+     Eine Auswertung ohne Daten ist hier der Normalfall zu Beginn, nicht der
+     Ausnahmefall: ein frisches Board hat weder Karten der Klasse noch
+     Zeiteintraege. Jede Meldung nennt Grund **mit Werten** und die
+     Kompensationsaktion — die Hausregel dieses Projekts, damit ein Agent
+     daraus handeln kann. Form aus D0008.dc.html Zustand 7.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div style="padding: 26.4px 26.4px 8.8px; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent)">
+  <p style="margin: 0 0 4.4px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #c67139">Zustand 7 · Leer und Ränder · Zielform</p>
+  <p style="margin: 0; font-size: 12px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Leer ist hier <span style="color: #201e1d">der Anfangszustand, nicht der Fehlerfall</span> — ein frisches Board hat weder Karten der Klasse noch Zeiteinträge. Deshalb steht in allen drei Fällen kein leeres Diagramm und kein „keine Daten", sondern der Grund mit seinen Werten und der nächste Schritt.</p>
+</div>
+
+<div style="width: 1440px; background: #f5ead8; padding: 0 26.4px 26.4px; display: flex; gap: 26.4px; align-items: flex-start">
+
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">A · kein Kartenbestand</p>
+    <div style="margin: 0; padding: 13.2px; border-left: 3px solid #8c491a; border-radius: 16px; background: #ebddc5">
+      <p style="margin: 0 0 4.4px; font-size: 15px">Für dieses Board gibt es nichts auszuwerten:</p>
+      <ul style="margin: 0; padding-left: 17.6px; font-size: 15px">
+        <li>Das Board „Beschaffung" führt keine Kartenklasse. Lege im Layout-Modus eine an oder wähle oben ein Board, das eine hat.</li>
+      </ul>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Derselbe Satz wie die Sperre in D0008, Rand B — eine Auswertung braucht denselben Kartenbestand wie ein Import.</p>
+  </div>
+
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">B · Karten ja, Zeiten nein</p>
+    <div style="margin: 0; padding: 13.2px; border-left: 3px solid #c67139; border-radius: 16px; background: #ebddc5">
+      <p style="margin: 0 0 4.4px; font-size: 15px">41 Karten der Klasse WBS, kein einziger Zeiteintrag.</p>
+      <ul style="margin: 0; padding-left: 17.6px; font-size: 15px">
+        <li>Der <span style="color: #201e1d">Burndown steht trotzdem</span> — er rechnet aus ErledigtAm, nicht aus Zeiten.</li>
+        <li>Soll-Ist und Export bleiben leer. Starte einen Timer auf einer Karte oder trage eine Zeit nach.</li>
+      </ul>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Der Fall trennt die Auswertungen sauber: <span style="color: #201e1d">I0034 hängt an den Karten, I0033 und I0036 hängen an den Zeiten</span>. Ein gemeinsamer Leerzustand über alles wäre falsch.</p>
+  </div>
+
+  <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8.8px">
+    <p style="margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-family: Caprasimo, system-ui, sans-serif; color: color-mix(in srgb, #201e1d 55%, transparent)">C · WebApi nicht erreichbar</p>
+    <div style="margin: 0; padding: 13.2px; border-left: 3px solid #c67139; border-radius: 16px; background: #ebddc5">
+      <p style="margin: 0; font-size: 15px">Die WebApi ist nicht erreichbar. Bitte später erneut versuchen.</p>
+    </div>
+    <p style="margin: 0; font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent); text-wrap: pretty">Wie überall: <span style="color: #201e1d">WebApiAusfall.Meldung</span>, derselbe Satz auf jeder Seite. Der Umschalter links bleibt stehen — er kommt ohne Abruf aus, und ein Schirm, der bei einem Ausfall verschwindet, sagt weniger als einer, der stehen bleibt.</p>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     Lesehilfe — gehoert zum Wireframe, nicht zum Schirm
+     ══════════════════════════════════════════════════════════════════════ -->
+<footer style="display: flex; flex-direction: column; gap: 4.4px; padding: 17.6px 26.4px; background: #ebddc5; border-top: 1px solid color-mix(in srgb, #201e1d 16%, transparent); font-size: 11px; line-height: 1.45; color: color-mix(in srgb, #201e1d 55%, transparent)">
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">D0009 zeigt hier:</span> <span style="color: #8c491a">I0034</span> der Burndown als Hauptzustand mit Kalenderachse und offenen Karten, samt der Zahlen darunter · <span style="color: #8c491a">I0033</span> der Soll-Ist-Vergleich, halb gefüllt und halb gestrichelt, mit dem Weg zum Soll in drei Schritten · <span style="color: #8c491a">I0035</span> der Puffer-Verbrauch als <span style="color: #201e1d">Frage</span> mit seinen zwei fehlenden Voraussetzungen · <span style="color: #8c491a">I0036</span> der Export mit den Spalten der Datei und dem, was sie nicht glattzieht · <span style="color: #8c491a">I0037</span> die Aufrufe selbst, weil sie das Bedienelement des Agenten sind. Dazu der Weg hinein und drei Ränder. <span style="color: #201e1d">Nichts davon ist gebaut</span> — das ganze Artboard ist Zielform.</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Wo die Auswertungen wohnen, war nicht zu entscheiden, sondern nachzulesen:</span> die gebaute Kopfzeile führt den Punkt „Auswertungen" in Zone 2 bereits, als gesperrten span mit <span style="font-family: ui-monospace, monospace">title="Noch nicht verfügbar"</span> (<span style="color: #201e1d">Kopfzeile.razor</span>). D0009 macht daraus einen NavLink auf <span style="font-family: ui-monospace, monospace">/auswertungen</span> — ein eigener Schirm, kein Reiter am Board. <span style="color: #201e1d">Main.dc.html bleibt unverändert</span>: der Screen-Flow trägt den Kasten D0009 bereits.</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Die Variantenwahl ist damit gefallen:</span> <span style="color: #201e1d">B — Umschalter links, eine Auswertung groß</span>, mit einer Anleihe bei A (jede Auswertung nennt ihren API-Pfad). Der Grund ist keine Geschmacksfrage: drei der fünf Interactions dieses Dialogs haben heute keine vollständige Datengrundlage, und eine Fläche kann das begründen, während vier nebeneinandergestellte Felder es nur als Loch zeigen könnten. A bleibt im älteren Satz stehen.</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Die Achsen sind konkret, weil das Projekt keine Iteration kennt:</span> X sind <span style="color: #201e1d">Kalendertage</span> — die Vision schließt Termin- und Kapazitätsplanung aus, ein Sprintbegriff existiert nirgends. Y sind <span style="color: #201e1d">offene Karten des Kartenbestands</span> (Board + Kartenklasse, dasselbe Set, das I0022 liefert), nicht Stunden: Stunden setzten ein Soll voraus. Die Grundlage ist gebaut — ErledigtAm wird beim Zug in die Abschlussspalte gesetzt und vom Import mitgegeben. <span style="color: #201e1d">Kein Sollstrich, keine Prognoselinie</span>: beide brauchten eine geplante Dauer.</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Die geerbte Lücke, unverändert weitergereicht statt weggezeichnet:</span> es gibt keine Sollzeit. <span style="color: #201e1d">I0026</span> hat das entschieden („ein Feld hier zu erfinden nähme I0033 die Entscheidung vorweg … tote Flexibilität"), <span style="color: #201e1d">I0030</span> hat die Aufwandsspalte darum bewusst nicht importiert („wer I0033 baut, braucht ein Feld an der Karte und danach einen erneuten Import"), und <span style="color: #201e1d">D0008</span> zeichnet die Zeile als gestrichelten Kasten. Zustand 3 macht daraus keine Zahl, sondern eine gestrichelte Spalte plus den Weg in drei Schritten — und benennt die Frage, die daran hängt: <span style="color: #201e1d">die Aufwandsspalte trägt Bandbreiten</span> (<span style="font-family: ui-monospace, monospace">2-4</span>, <span style="font-family: ui-monospace, monospace">0,4-1,5</span>), und ob dagegen die Unter-, die Obergrenze oder ein Band verglichen wird, entscheidet I0033.</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Drei Stellen zeigen auf denselben fehlenden Knoten — den Verlauf:</span> die Spalte „wer" in der Burndown-Tabelle, das Wort „Verläufe" im Kriterium von I0037, und die Verlaufsspur, die der ältere Satz auf der Kartenseite zeichnet und die D0004 mit Frage 13 draußen gelassen hat. Wer eine Karte bewegt hat, hält der Bestand nirgends fest; der Live-Kanal sendet Bewegungen, speichert aber keine (I0028 hat die Ereignisspur verworfen). Das ist ein <span style="color: #201e1d">Befund für /planung</span>, keine Lücke zum Auffüllen.</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Nicht gezeichnet und bewusst so:</span> <span style="color: #201e1d">eine Fieberkurve für I0035</span> — sie brauchte eine Kette und einen Puffer, und beide fehlen; gezeichnet ist die Frage mit drei Lesarten nebeneinander · <span style="color: #201e1d">ein Export an der Burndown-Fläche</span> — I0036 nennt „Zeiten je Aufgabe und Kontributor", nicht Reihen; ein CSV-Knopf an der Kurve wäre ein Bedienelement ohne Knoten · <span style="color: #201e1d">ein Rohdaten-Knopf für I0037</span> — er wäre ein zweiter Export neben I0036 und eine Fähigkeit, die bei der API anfängt, weggelassen mit denselben Worten wie der Klassenfilter bei I0022 · <span style="color: #201e1d">eine Auswertung über Kontributoren hinweg als eigener Schirm</span> — die zwei Varianten „Zeiten je Kontributor" des älteren Satzes sind am 2026-09-06 bei D0006 hierher verwiesen worden; ihr Inhalt steckt in der Export-Datei, die je Karte und Kontributor eine Zeile führt. Ein eigener Schirm dafür hätte keinen Knoten.</p>
+  <p style="margin: 0; text-wrap: pretty"><span style="color: #201e1d">Zahlen und Namen:</span> 41 Interactions und 7 rote sind in <span style="font-family: ui-monospace, monospace">Dokumentation/Planung/kanbanc.md</span> gezählt — dieselbe 41, die D0008 als Kartenzahl auf Interaction-Schnitt nennt. Die Tagesreihe und die Soll-Ist-Zahlen stehen wörtlich in <span style="font-family: ui-monospace, monospace">Schaetzungen/_ist-zeiten.md</span>. Board, Klasse und Kontributoren wie in D0003, D0005 und D0006.</p>
+</footer>
+
+</div>
+</x-dc>
+</body>
+</html>

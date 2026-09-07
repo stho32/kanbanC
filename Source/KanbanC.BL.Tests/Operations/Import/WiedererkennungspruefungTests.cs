@@ -170,6 +170,6 @@ public class WiedererkennungspruefungTests
 
     private static Karteniststand Karte(long karteId, string kartennummer, IReadOnlyList<string> verweise)
     {
-        return new Karteniststand(karteId, kartennummer, $"[{kartennummer}] Knoten", null, [], [], verweise, "Bereit", IstArchiviert: false, TimeSpan.Zero, Kommentarzahl: 0);
+        return new Karteniststand(karteId, kartennummer, $"[{kartennummer}] Knoten", null, [], [], verweise, "Bereit", IstArchiviert: false, TimeSpan.Zero, Kommentarzahl: 0, Sollband: null);
     }
 }

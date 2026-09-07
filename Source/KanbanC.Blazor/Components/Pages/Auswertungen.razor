@@ -1,0 +1,250 @@
+@page "/auswertungen"
+@using System.Globalization
+@using KanbanC.Blazor.Components.Auswertungen
+@using KanbanC.Blazor.Services
+@using KanbanC.Contracts.Auswertungen
+@using KanbanC.Contracts.Boards
+@using KanbanC.Contracts.Fehler
+@using KanbanC.Contracts.Klassen
+@inject BoardApiKlient BoardKlient
+@inject KartenklassenApiKlient KartenklassenKlient
+@inject AuswertungenApiKlient AuswertungenKlient
+
+<PageTitle>Auswertungen</PageTitle>
+
+<SectionContent SectionName="kopfzeile-kontext">
+    <h1 class="kopfzeile-titel">Auswertungen</h1>
+</SectionContent>
+
+<div class="auswertungsflaeche">
+    @* Der Umschalter links kommt ohne Abruf aus und bleibt deshalb auch bei einem Ausfall stehen:
+       ein Schirm, der bei einem Ausfall verschwindet, sagt weniger als einer, der stehen bleibt.
+       Die Liste wächst mit — eine sechste Auswertung ist ein Eintrag mehr, kein Umbau. *@
+    <nav class="auswertungsliste" id="auswertungsliste" aria-label="Auswertung">
+        <p class="auswertungsliste-titel">Auswertung</p>
+        <span class="auswertungspunkt auswertungspunkt-aktiv" id="auswertung-soll-ist" aria-current="true">
+            Soll-Ist gegen die WBS
+        </span>
+        @foreach (var kuenftige in NochNichtGebaut)
+        {
+            <span class="auswertungspunkt auswertungspunkt-gesperrt"
+                  id="@($"auswertung-{kuenftige.Kennung}")"
+                  aria-disabled="true"
+                  title="Noch nicht verfügbar">@kuenftige.Beschriftung</span>
+        }
+    </nav>
+
+    <section class="auswertungsblatt">
+        <div class="seitenkopf">
+            <h2 class="auswertungstitel">Soll-Ist gegen die WBS-Zählung</h2>
+        </div>
+
+        <div class="bestandswahl" id="bestandswahl">
+            <div class="field">
+                <label for="auswertung-board">Board</label>
+                <select id="auswertung-board" class="input" @onchange="WaehleBoard" value="@_gewaehltesBoard">
+                    <option value="">Board wählen …</option>
+                    @foreach (var board in _boards)
+                    {
+                        <option value="@board.BoardId">@board.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="field">
+                <label for="auswertung-kartenklasse">Kartenklasse</label>
+                <select id="auswertung-kartenklasse" class="input" @onchange="WaehleKartenklasse" value="@_gewaehlteKartenklasse" disabled="@(_kartenklassen.Count == 0)">
+                    <option value="">Kartenklasse wählen …</option>
+                    @foreach (var kartenklasse in _kartenklassen)
+                    {
+                        <option value="@kartenklasse.KartenklasseId">@kartenklasse.Name (@kartenklasse.Praefix)</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        @if (_ausfallmeldung is not null)
+        {
+            <div class="meldung" role="alert" id="auswertung-fehlermeldung">@_ausfallmeldung</div>
+        }
+
+        @if (_zurueckweisung is not null)
+        {
+            <div class="meldung meldung-abweisung" role="alert" id="auswertung-zurueckweisung">
+                <p>Der Vergleich wurde nicht gerechnet:</p>
+                <ul>
+                    @foreach (var befund in _zurueckweisung.Befunde)
+                    {
+                        <li>@befund.Meldung <span class="auswertungskompensation">@befund.Kompensation</span></li>
+                    }
+                </ul>
+            </div>
+        }
+
+        @if (BestandIstUngewaehlt)
+        {
+            <p class="auswertungshinweis" id="auswertung-ohne-bestand">
+                Board und Kartenklasse sind zusammen der Kartenbestand. Wähle beide, und die Tabelle steht.
+            </p>
+        }
+        else if (_boardFuehrtKeineKartenklasse)
+        {
+            <p class="auswertungshinweis" id="auswertung-ohne-kartenklasse">
+                Für dieses Board gibt es nichts auszuwerten: es führt keine Kartenklasse. Lege im Layout-Modus eine an
+                oder wähle oben ein Board, das eine hat.
+            </p>
+        }
+        else if (_auswertung is not null)
+        {
+            @if (_auswertung.Zeilen.Count == 0)
+            {
+                <p class="auswertungshinweis" id="auswertung-leer">
+                    Dieser Kartenbestand führt keine Karte. Fahre eine WBS-Datei ein oder ordne Karten dieser Klasse zu.
+                </p>
+            }
+            else
+            {
+                <SollIstTabelle Auswertung="_auswertung" />
+            }
+        }
+
+        @* Derselbe Weg für einen Agenten — die einzige Stelle, an der die API im Schirm sichtbar
+           wird. *@
+        <div class="auswertungsaufruf" id="auswertung-aufruf">
+            <span class="auswertungsaufruf-titel">Derselbe Weg für einen Agenten</span>
+            <pre class="auswertungsaufruf-text">@Aufruf()</pre>
+        </div>
+    </section>
+</div>
+
+@code {
+    // Die vier übrigen Auswertungen des Dialogs stehen gesperrt daneben: sie sind bestellt und
+    // noch nicht gebaut, und eine Fläche, die sie verschweigt, sähe vollständig aus.
+    private static readonly Kuenftigeauswertung[] NochNichtGebaut =
+    [
+        new("burndown", "Burndown"),
+        new("puffer", "Puffer-Verbrauch"),
+        new("zeitexport", "Zeiten exportieren"),
+        new("rohdaten", "Rohdaten über die API"),
+    ];
+
+    private IReadOnlyList<BoardUebersicht> _boards = [];
+    private IReadOnlyList<Kartenklasse> _kartenklassen = [];
+    private long? _gewaehltesBoard;
+    private long? _gewaehlteKartenklasse;
+    private SollIstAuswertung? _auswertung;
+    private Zurueckweisung? _zurueckweisung;
+    private string? _ausfallmeldung;
+    private bool _boardFuehrtKeineKartenklasse;
+
+    // Ohne beide Hälften gibt es keinen Kartenbestand — und ohne Bestand nichts zu rechnen.
+    private bool BestandIstUngewaehlt => _gewaehltesBoard is null || (_gewaehlteKartenklasse is null && !_boardFuehrtKeineKartenklasse);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LadeBoards();
+    }
+
+    private async Task LadeBoards()
+    {
+        _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(async () => _boards = await BoardKlient.LadeAlleBoards(new Archivierung(false)));
+    }
+
+    private async Task WaehleBoard(ChangeEventArgs ereignis)
+    {
+        _gewaehltesBoard = Nummer(ereignis.Value);
+        _gewaehlteKartenklasse = null;
+        _kartenklassen = [];
+        _auswertung = null;
+        _zurueckweisung = null;
+        _boardFuehrtKeineKartenklasse = false;
+        if (_gewaehltesBoard is null)
+        {
+            return;
+        }
+
+        await LadeKartenklassen(_gewaehltesBoard.Value);
+    }
+
+    // Führt das Board genau eine Kartenklasse, ist der Bestand damit entschieden — eine Wahl mit
+    // einem Eintrag ist keine Wahl, sondern ein zusätzlicher Klick.
+    private async Task LadeKartenklassen(long boardId)
+    {
+        _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(async () =>
+        {
+            var ergebnis = await KartenklassenKlient.LadeKartenklassen(boardId);
+            if (ergebnis.WurdeZurueckgewiesen)
+            {
+                _zurueckweisung = ergebnis.Zurueckweisung;
+                return;
+            }
+
+            _kartenklassen = ergebnis.Wert;
+        });
+        _boardFuehrtKeineKartenklasse = _ausfallmeldung is null && _zurueckweisung is null && _kartenklassen.Count == 0;
+        var esGibtGenauEineKartenklasse = _kartenklassen.Count == 1;
+        if (esGibtGenauEineKartenklasse)
+        {
+            _gewaehlteKartenklasse = _kartenklassen[0].KartenklasseId;
+            await LadeAuswertung();
+        }
+    }
+
+    private async Task WaehleKartenklasse(ChangeEventArgs ereignis)
+    {
+        _gewaehlteKartenklasse = Nummer(ereignis.Value);
+        _auswertung = null;
+        _zurueckweisung = null;
+        if (_gewaehlteKartenklasse is null)
+        {
+            return;
+        }
+
+        await LadeAuswertung();
+    }
+
+    private async Task LadeAuswertung()
+    {
+        _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(async () =>
+        {
+            var ergebnis = await AuswertungenKlient.LadeSollIst(_gewaehltesBoard!.Value, _gewaehlteKartenklasse!.Value);
+            if (ergebnis.WurdeZurueckgewiesen)
+            {
+                _zurueckweisung = ergebnis.Zurueckweisung;
+                _auswertung = null;
+                return;
+            }
+
+            _auswertung = ergebnis.Wert;
+        });
+    }
+
+    private string Aufruf()
+    {
+        var boardId = Platzhalter(_gewaehltesBoard, "{boardId}");
+        var kartenklasseId = Platzhalter(_gewaehlteKartenklasse, "{kartenklasseId}");
+        return $"GET /api/boards/{boardId}/kartenklassen/{kartenklasseId}/soll-ist";
+    }
+
+    private static string Platzhalter(long? nummer, string platzhalter)
+    {
+        if (nummer is null)
+        {
+            return platzhalter;
+        }
+
+        return nummer.Value.ToString(CultureInfo.InvariantCulture);
+    }
+
+    private static long? Nummer(object? wert)
+    {
+        var text = wert?.ToString();
+        if (string.IsNullOrEmpty(text))
+        {
+            return null;
+        }
+
+        return long.Parse(text, CultureInfo.InvariantCulture);
+    }
+
+    private sealed record Kuenftigeauswertung(string Kennung, string Beschriftung);
+}

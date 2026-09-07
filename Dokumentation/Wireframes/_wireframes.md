@@ -12,16 +12,15 @@ zurueckgeholt: 2026-09-03
 
 # Wireframes — KanbanC
 
-Der Canvas trägt neun Artboards: `Main.dc.html`, den Screen-Flow über alle neun
-Dialogs, sowie `D0001.dc.html` bis `D0008.dc.html`, die acht ausdetaillierten
-Dialogs. Der
-übrige Dialog bleibt ein Kasten im Flow; sein Detail-Artboard entsteht mit
-`/wireframe verfeinern <dialog>`, wenn der Dialog dran ist (Rolling Wave). Woraus
-ein solcher Lauf schöpft, sagt die
+Der Canvas trägt zehn Artboards: `Main.dc.html`, den Screen-Flow über alle neun
+Dialogs, sowie `D0001.dc.html` bis `D0009.dc.html`, die neun ausdetaillierten
+Dialogs. **Seit dem 2026-09-07 ist der Canvas vollständig** — jeder Dialog, den die
+WBS führt, hat sein Artboard; kein Kasten im Flow wartet mehr auf einen
+`verfeinern`-Lauf. Woraus ein solcher Lauf geschöpft hat, sagt die
 [Zuordnung Schirm → Dialog](#zuordnung-schirm--dialog).
 
-Reife je Dialog wird aus dem Dateibestand gerechnet: `D0001` bis `D0008` stehen auf
-`wireframe`, der übrige (`D0009`) auf `flow`.
+Reife je Dialog wird aus dem Dateibestand gerechnet: `D0001` bis `D0009` stehen
+sämtlich auf `wireframe`.
 
 **`D0007` ist der eine Dialog ohne eigenen Schirm** und trotzdem ein Artboard: sein
 Gegenstand ist ein *Verhalten an vorhandenen Schirmen*. Gezeichnet sind deshalb
@@ -39,7 +38,8 @@ kein neuer Bildschirm.
 | `D0006.dc.html` | **Zeiterfassung**, Rahmen 1440×3480 (gemessen 3304,1) — die Zeiterfassung sitzt **auf der Kartenseite**, in dem Kasten, den `D0004.dc.html` dafür freihält: Hauptzustand als echtes Fenster 1440×900, der Zeitenblock in seinen übrigen Fassungen (mein Timer läuft, leer, Anatomie eines Eintrags), die Karte in der Bahn in drei Fassungen (I0023), die laufenden Timer in **Zone 3 der Kopfzeile** (I0027), Nachtragen und Ändern (I0025) und drei Ränder. Alle fünf Interactions I0023–I0027 sind sichtbar; nichts davon ist gebaut, das ganze Artboard ist Zielform |
 | `D0007.dc.html` | **Live-Aktualisierung**, Rahmen 1440×4420 (gemessen 4200,7) — **kein eigener Schirm, sondern Zustände an vorhandenen**: die fremde Bewegung am Board als Fenster 1440×900 (I0028), die fremde Änderung an der offenen Kartenseite als zweites Fenster mit der Trennung „zieht nach“ / „wird angeboten“, die Anatomie der Einflugmarke in drei Fassungen, die Gleichstellung von Browser und API samt markierter Lücke im Rückweg, die drei Stufen des Verbindungsabbruchs (I0029) und das Aufschließen, dazu drei Ränder. Beide Interactions I0028 und I0029 sind sichtbar; nichts davon ist gebaut, das ganze Artboard ist Zielform |
 | `D0008.dc.html` | **WBS-Import**, Rahmen 1440×5100 (gemessen 4844,3) — der Einstieg im **Layout-Modus des Boards** unter der Klassenpflege, dann drei Schritte auf eigener Adresse `/boards/2/import`: Datei (Fenster 1440×900, die gebaute Ablegefläche aus R00024), Vorschau (Fenster 1440×900, Baum links / Wirkung rechts, mit der **Schnittebene** als dem einen Regler), Bericht (I0032). Dazu die **Anatomie Baum → Board** Feld für Feld, der zweite Lauf mit vier Fächern und der Trennung „was die Datei nachzieht / was das Board behält" (I0031) und drei Ränder. Alle drei Interactions I0030–I0032 sind sichtbar; nichts davon ist gebaut, das ganze Artboard ist Zielform |
-| `canvas.json` | Layout des Canvas: der Flow oben, D0003, D0002, D0001, D0004, D0005, D0006, D0007 und D0008 in der Reihe darunter, Start in der Canvas-Ansicht |
+| `D0009.dc.html` | **Auswertungen**, Rahmen 1440×3920 (gemessen 3752,9) — ein **eigener Schirm** auf `/auswertungen`, weil die gebaute Kopfzeile den Navigationspunkt bereits als gesperrten `span` führt: der Weg hinein (Zone 2 vorher/nachher), der Burndown als Hauptzustand im Fenster 1440×900 mit Umschalter links (I0034), der Soll-Ist-Vergleich halb gefüllt und halb gestrichelt samt dem Weg zum Soll (I0033), der Puffer-Verbrauch als **Frage** mit seinen zwei fehlenden Voraussetzungen (I0035), der Export mit den Spalten der Datei (I0036), die Aufrufe als Bedienelement des Agenten (I0037) und drei Ränder. Alle fünf Interactions I0033–I0037 sind sichtbar; nichts davon ist gebaut, das ganze Artboard ist Zielform |
+| `canvas.json` | Layout des Canvas: der Flow oben, D0003, D0002, D0001, D0004, D0005, D0006, D0007, D0008 und D0009 in der Reihe darunter, Start in der Canvas-Ansicht |
 | `kanbanc-wireframes.html`, `wireframes.js`, `styles.css`, `README.md` | **älterer Satz, unangetastet** — acht gezeichnete Schirme mit Varianten, aus denen `verfeinern` schöpft; siehe Offene Fragen |
 
 ## Richtung
@@ -218,6 +218,15 @@ gehört in eine Anforderung, nicht ins Bild.
 | 2026-09-07 | Was sieht der Mensch, wenn ein **Agent** importiert? | **denselben Vorgang ohne Schirm** — `POST /api/boards/{id}/wbs-import` mit `trocken=true` für die Vorschau, danach der Live-Kanal aus D0007 | Die Zusage der Vision gilt auch für das Zeigen-vor-Schreiben: wäre die Vorschau nur ein Schirm, könnte ein Agent nicht prüfen, was er anrichtet. `trocken=true` gibt dieselbe Antwort, die Schritt 2 zeichnet, ohne dass etwas entsteht. Dass die entstehenden Karten in offenen Sichten erscheinen, ist keine Zutat, sondern eine **offene Schuld aus dem Bestand**: die WBS hält an `I0028`/`B0375` fest, die Meldung entstehe im Endpunkt, und „entsteht ein Weg an der WebApi vorbei (etwa der WBS-Import `I0030`), muss er die Meldung selbst tragen". Gezeichnet ist nur, dass es **ein** Vorgang ist und nicht 31 Bewegungen; wie ein Sammelereignis aussieht, gehört den Bubbles. |
 | 2026-09-07 | Bekommt die Karte eine **Sollzeit** aus der Spalte `Aufwand`? | **nein — gestrichelter Kasten statt erfundener Ablage** | `I0026` hat es entschieden und begründet: „eine Sollzeit gibt es im Bestand nicht; sie gehört `I0033`". `I0033` wiederum braucht `I0030` — die Zählung kommt also über den Import ins System, aber **wo sie landet**, ist nicht entschieden. Ein Feld danebenzuzeichnen hieße, `I0033` seine Entscheidung vorwegzunehmen. Dieselbe Haltung wie bei den markierten Lücken in `D0001` (I0038/I0039), `D0005` (Klassenfilter) und `D0007` (Rückweg der API). Siehe Frage 23, die damit geschärft ist. |
 | 2026-09-07 | Rahmenhöhe und Platz von `D0008` auf dem Canvas | **1440×5100** bei `x` 10920, `y` 1300 | Gemessen, nicht geschätzt (Chrome headless, Google-Fonts-Fassung derselben Schriften, `document.fonts.ready` abgewartet): 4844,3 px. 5100 trägt rund 5 % Reserve — dieselbe Rechnung wie bei `D0005` bis `D0007`. Der Platz schließt die Reihe nach rechts an `D0007` an, mit 120 px Abstand; Positionen der übrigen Artboards bleiben unverändert. |
+| 2026-09-07 | **D0009** — wo wohnen die Auswertungen? | **eigener Schirm auf `/auswertungen`**, erreichbar über den Navigationspunkt in Zone 2 | Nicht zu entscheiden, sondern nachzulesen: `Components/Layout/Kopfzeile.razor` führt den Punkt „Auswertungen“ heute als **gesperrten `span`** mit `aria-disabled="true"` und `title="Noch nicht verfügbar"` — die Stelle ist gebaut und freigehalten, sie führt nur nirgendwohin. D0009 macht daraus einen `NavLink`. Ein Reiter am Board scheidet damit aus, und er wäre auch falsch: I0033 und I0034 arbeiten über einen **Kartenbestand** (Board + Kartenklasse), I0036 über einen Zeitraum — keine dieser Auswertungen ist eine Sicht auf die Bahnen. `Main.dc.html` bleibt unverändert; der Screen-Flow trägt den Kasten D0009 bereits. |
+| 2026-09-07 | Welche Variante des älteren Satzes wird der Schirm? | **B** — Umschalter links, eine Auswertung groß; aus **A** übernommen nur der API-Pfad im Fuß jeder Auswertung | Keine Geschmacksfrage: **drei der fünf Interactions dieses Dialogs haben heute keine vollständige Datengrundlage** (I0033 kein Soll, I0035 weder Kette noch Puffer, I0037 keine Verläufe). Eine Fläche kann das begründen — vier nebeneinandergestellte Felder könnten es nur als Loch zeigen. B trägt außerdem die Zahlen unter dem Diagramm, und genau dort fallen die zwei Spalten ohne Quelle auf. A's beste Idee bleibt erhalten: „jedes Feld nennt seinen API-Pfad“ ist die einzige Stelle, an der `I0037` für einen Menschen sichtbar wird, ohne dass ein Bedienelement erfunden werden müsste. |
+| 2026-09-07 | **Woran läuft ein Burndown, wenn das Projekt keine Iteration kennt?** | **X = Kalendertage, Y = offene Karten des Kartenbestands** — kein Sollstrich, keine Prognoselinie | Ein Sprintbegriff existiert nirgends im Bestand, und die Vision schließt „Termin- und Kapazitätsplanung“ ausdrücklich aus; die Kalenderachse ist die einzige Zeitachse, die ohne neue Planungsgröße auskommt. Die Y-Achse zählt **Karten**, nicht Stunden: Stunden setzten eine Sollzeit voraus, und die gibt es nicht (Frage 23). Der Kartenbestand ist derselbe wie bei `I0033` — Board plus Kartenklasse, also genau das Set, das `I0022` liefert. Die Datengrundlage ist gebaut: `ErledigtAm` wird beim Zug in die Abschlussspalte gesetzt und vom Import mitgegeben. Ein Sollstrich und eine Prognoselinie sind **weggelassen**, weil beide eine geplante Dauer bräuchten — die Vision sagt „Burndown und Critical Chain rechnen aus den Ist-Daten; sie planen nicht“. |
+| 2026-09-07 | Woher kommt das **Soll** für `I0033`? | **nirgendwoher — gestrichelte Spalte plus der Weg in drei Schritten, keine erfundene Zahl** | Die Lücke ist geerbt und zweifach belegt: `I0026` hat festgehalten, dass es im Bestand keine Sollzeit gibt und ein Feld dort `I0033` die Entscheidung vorwegnähme (tote Flexibilität, C24); `I0030` hat die Spalte `Aufwand` bewusst **nicht** importiert, mit der Ansage „wer `I0033` baut, braucht ein Feld an der Karte und danach einen erneuten Import“. Gezeichnet ist deshalb dieselbe Form wie in `D0008` (Zustand 4) und `D0007` (Rückweg der API): die Hälfte, die es gibt, gefüllt — die Hälfte, die fehlt, gestrichelt, mit **Feld → Import → zweiter Lauf** daneben. Siehe Frage 23, damit ein zweites Mal geschärft. |
+| 2026-09-07 | Was ist ein **Puffer** (`I0035`)? | **nicht entschieden — die Frage ist gezeichnet, drei Lesarten stehen nebeneinander** | In der Vision nachgesehen: „Critical Chain mit Puffer-Verbrauch“ steht unter den Zielen, „Burndown und Critical Chain rechnen aus den Ist-Daten; sie planen nicht“ unter den Nicht-Zielen — **erklärt wird der Begriff nirgends**, und keine andere Interaction nennt das Wort. Zwei Voraussetzungen fehlen zudem belegbar: eine **Kette** (die WBS-Spalte `Braucht` landet beim Import als Fließtext unter der Beschreibung — `D0008.dc.html`, Zustand 4; aus Prosa entsteht kein Graph) und ein **Puffer** (er ist die Differenz zweier Dauern, und die zweite fehlt mit dem Soll). Eine Fieberkurve mit erfundenen Achsen wäre eine Antwort, die niemand gegeben hat. Fragen 32 und 33. |
+| 2026-09-07 | Was wird bei `I0036` exportiert, in welcher Form, wohin? | **eine Zeile je Zeiteintrag, CSV, als Datei** — kein aggregiertes Blatt, keine Summenzeile | „je Aufgabe **und** Kontributor“ verlangt beide Achsen: aus Einträgen lässt sich summieren, aus Summen nicht aufteilen. Die Spalten sind genau die Felder, die ein `Zeiteintrag` trägt (I0024/I0026), plus die **Art** des Kontributors, weil die Vision Mensch und Agent gleichstellt und eine Auswertung sonst nicht trennen könnte. CSV, weil das Kriterium „als **Datei**“ sagt und CSV die eine Form ist, die ohne die Anwendung lesbar bleibt — dieselbe Zusage wie bei `I0038`. Das vorhandene Muster „als Text kopieren“ (`Pfadkopie`/`Kopierergebnis`, `B0469`) gehört **flüchtigen** Ausgaben wie dem Importbericht; hier steht ausdrücklich eine Datei. Nicht glattgezogen werden zwei Dinge: überlappende Einträge (von `I0025` erlaubt, samt Preis) und Dauern über 24 Stunden (`Dauerform`). |
+| 2026-09-07 | Was sieht ein Mensch von `I0037`, dem zweiten Nur-API-Slice? | **einen Fuß, und sonst nichts** — jede Auswertung nennt unter ihrer Fläche den Pfad, aus dem sie entsteht; ein eigenes Bedienelement bekommt der Slice nicht | Dieselbe Lage und dieselbe Antwort wie bei `I0022` (2026-09-06): für einen Agenten **ist** der Aufruf das Bedienelement, und das Fertig-Kriterium nennt ausdrücklich nur die API. Ein „Rohdaten“-Knopf wäre ein zweiter Export neben `I0036` und eine Fähigkeit, die bei der API anfängt — weggelassen mit denselben Worten wie der Klassenfilter bei `I0022`. Der Umschaltereintrag „Rohdaten über die API“ zeigt die Aufrufe, er bedient nichts; damit ist die Interaction sichtbar, ohne dass ein Knoten erfunden wird. |
+| 2026-09-07 | Wie sieht eine Auswertung ohne Daten aus? | **drei getrennte Fälle mit Grund und Kompensationsaktion**, kein gemeinsames „keine Daten“ | Leer ist hier der **Anfangszustand**, nicht der Fehlerfall: ein frisches Board hat weder Karten der Klasse noch Zeiteinträge. Der Fall trennt die Auswertungen sauber — `I0034` hängt an den Karten (`ErledigtAm`), `I0033` und `I0036` hängen an den Zeiten; ein Board mit 41 Karten und ohne einen einzigen Zeiteintrag zeigt deshalb **einen stehenden Burndown und zwei leere Flächen**. Jede Meldung nennt Grund mit Werten und den nächsten Schritt, wie überall in diesem Projekt. Der Umschalter bleibt auch beim WebApi-Ausfall stehen: er kommt ohne Abruf aus. |
+| 2026-09-07 | Rahmenhöhe und Platz von `D0009` auf dem Canvas | **1440×3920** bei `x` 12480, `y` 1300 | Gemessen, nicht geschätzt (Chrome headless, Google-Fonts-Fassung derselben Schriften, `document.fonts.ready` abgewartet und `document.fonts.check` für beide Familien bestätigt): 3752,9 px. 3920 trägt rund 4,5 % Reserve — dieselbe Rechnung wie bei `D0005` bis `D0008`. Der Platz schließt die Reihe nach rechts an `D0008` an, mit 120 px Abstand; Positionen der übrigen Artboards bleiben unverändert. |
 
 ## Zuordnung Schirm → Dialog
 
@@ -243,7 +252,11 @@ Auffüllen.
 | **D0006** Zeiterfassung | „Kartendetail" (Zeitentabelle und Timerzeile, in allen drei Varianten dieselbe Spalte) · „Zeiten je Kontributor" (nur die **Bausteine**: laufender Eintrag mit Beginn/Ende/Quelle, Nachtragezeile, Banner der laufenden Timer) · „Start B" Banner (I0027, als Inhalt — nicht als Ort) | **keine der beiden** Zeiten-Varianten wird ein Schirm, entschieden 2026-09-06 — A und B sind Auswertungen über Kontributoren hinweg und gehören zu **D0009** | — alle fünf gezeichnet; seit 2026-09-06 als `D0006.dc.html`. Ohne Vorlage im alten Satz waren der **erzwungene Identitätsschritt** vor dem ersten Timer (in D0002 nur als Preis von Variante C benannt) und der **zweite Timer während einer läuft** — beide stehen jetzt als Rand im Bild, der zweite ausdrücklich unentschieden (Frage 20) |
 | **D0007** Live-Aktualisierung | **kein eigener Schirm** — nur als Merkmal *innerhalb* von „Board": Ereignisspur rechts (**A**) oder Laufband oben (**B**), dazu die Marke „● live" in der Kopfzeile und der Live-Punkt in „Start B" | **keine von beiden** — entschieden 2026-09-07: weder Spur noch Laufband, weil kein Fertig-Kriterium eine Liste vergangener Ereignisse verlangt; ebenso fällt die dauerhafte Marke „● live" | — beide Interactions gezeichnet; seit 2026-09-07 als `D0007.dc.html`. **I0029** hatte im älteren Satz keine Vorlage und ist entworfen, nicht abgeschrieben: drei Stufen des Abbruchs und das Aufschließen. Ohne Vorlage waren ebenso die **Einflugmarke** und die Regel **Angebot statt Austausch** für offene Felder |
 | **D0008** WBS-Import | „WBS-Import" (ganz) | **A als Gerüst, B als Inhalt von Schritt 2** — entschieden 2026-09-07. A allein (drei Schritte, Bilanz, Bericht) sagt nicht, was aus einem Baum wird; B allein (Baum links, Wirkung rechts) hat keinen Bericht und damit kein `I0032`. Beide Interactions verlangen beides | — alle drei gezeichnet; seit 2026-09-07 als `D0008.dc.html`. Ohne Vorlage im alten Satz waren der **Einstieg** (wo ein Import anfängt — der alte Satz zeigt den Schirm, nicht den Weg dorthin), die **Anatomie Baum → Board** Feld für Feld, die **Schnittebene** und das vierte Fach des zweiten Laufs (*„nicht mehr in der Datei"*). Der alte Satz bildet in beiden Varianten **Bubbles** auf Karten ab (`B0043`, `B0019`); das ist hier zur **Interaction** verschoben und als Regler sichtbar gemacht — Frage 28 |
-| **D0009** Auswertungen | „Auswertungen" (ganz) | **offen** — A oder B, Wahl bei I0033–I0037 | **I0037** — reine API-Zusage, absichtlich ohne Schirm |
+| **D0009** Auswertungen | „Auswertungen" (ganz) · „Zeiten je Kontributor" (die Kreuztabelle, am 2026-09-06 von D0006 hierher verwiesen) | **B** — Umschalter links, eine Auswertung groß; aus **A** übernommen ist nur der API-Pfad im Fuß jeder Auswertung. Entschieden 2026-09-07 | **I0037** — reine API-Zusage, absichtlich ohne Schirm; seit 2026-09-07 als `D0009.dc.html` gezeichnet: die Aufrufe stehen im Bild, ein eigenes Bedienelement nicht. Ohne Vorlage im alten Satz waren der **Weg hinein** (der alte Satz zeichnet den Schirm, nicht den gesperrten Navigationspunkt, aus dem er wird), die **Achsen des Burndowns** (der alte Satz zeichnet zwei Linien ohne Beschriftung) und die **Leerzustände**. Drei Spalten des alten Satzes haben im Bestand **keine Quelle** und stehen deshalb gestrichelt statt gefüllt: `Rest Soll` und die Soll-Spalte der Kreuztabelle (es gibt keine Sollzeit — Frage 23), `wer` (es gibt keinen Verlauf — Frage 13). Die Fieberkurve „Puffer-Verbrauch" ist **nicht** übernommen — Fragen 32 und 33 |
+
+**Alle neun Dialogs sind gezeichnet.** Mit `D0009` am 2026-09-07 ist der Canvas
+vollständig; die Spalte „Variante" trägt nirgends mehr `offen`, außer bei der
+Identitätswahl (Frage 4), die an `I0008` hängt und nicht an einem Dialog.
 
 **Ein Dialog ist von keinem Schirm gedeckt: D0007.** Live-Aktualisierung ist im
 alten Satz kein Bildschirm, sondern eine Eigenschaft zweier anderer. Wer D0007
@@ -508,6 +521,16 @@ Die Gegenrichtung, Schirm → Dialogs, in Kurzform:
     keine Sollzeit gibt. `D0008.dc.html`, Zustand 4 zeichnet die Zeile deshalb
     als **gestrichelten Kasten** („Aufwand → kein Ort im Bestand"), statt ein
     Feld zu erfinden, das `I0033` seine Entscheidung vorwegnähme.
+    **Ein zweites Mal geschärft am 2026-09-07 mit `D0009`, dem Dialog, der sie
+    erbt.** `D0009.dc.html`, Zustand 3 zeichnet die Soll-Spalte gestrichelt neben
+    einer gefüllten Ist-Spalte und daneben den Weg in **drei** Schritten: ein
+    Feld an der Karte (hat keinen Knoten — `I0015` zählt Titel, Beschreibung,
+    Verantwortlicher, Fälligkeit, Farbe und Etiketten auf, keine Sollzeit), der
+    Import füllt es aus der Spalte `Aufwand`, und danach ein **erneuter** Lauf
+    (`I0031`) — ohne den bliebe die Spalte auch mit Feld leer. Damit ist die
+    Frage nicht mehr „woher", sondern **„wohin", und sie ist ein Befund für
+    `/planung`**, keine Lücke zum Auffüllen. Zwei Anschlussfragen sind neu und
+    stehen als 33 und 32.
 
 24. **Der Weg von der API zurück in die offenen Sichten fehlt — und ist der Kern
     von `I0028`.** Das Fertig-Kriterium sagt „bewegt ein Browser **oder die API**
@@ -590,3 +613,59 @@ Die Gegenrichtung, Schirm → Dialogs, in Kurzform:
     Verlauf der Karte, Frage 15). Wer die Seite verlässt, bevor er den Bericht
     gelesen hat, bekommt ihn nicht wieder — das ist eine Entscheidung, die der
     Slice ausdrücklich treffen sollte, statt sie zu erben.
+
+32. **Was ist in KanbanC eine „Kette", und wovon ist ihr Puffer der Rest?**
+    `I0035` sagt „für eine **Kette** ist der verbrauchte Puffer gegen den
+    Fortschritt ablesbar" und trägt die Notiz „Critical Chain". Die Vision nennt
+    „Critical Chain mit Puffer-Verbrauch" unter den Zielen und „Burndown und
+    Critical Chain rechnen aus den Ist-Daten; sie planen nicht" unter den
+    Nicht-Zielen — **erklärt wird der Begriff nirgends**, und keine andere
+    Interaction nennt das Wort. Zwei Voraussetzungen fehlen belegbar: eine
+    **Kette** (die WBS-Spalte `Braucht` landet beim Import als Fließtext unter
+    der Beschreibung — `D0008.dc.html`, Zustand 4; aus Prosa entsteht kein Graph)
+    und ein **Puffer** (die Differenz zweier Dauern, und die zweite fehlt mit dem
+    Soll aus Frage 23). `D0009.dc.html`, Zustand 4 zeichnet deshalb die Frage
+    statt einer Fieberkurve und stellt drei Lesarten nebeneinander: die Kette ist
+    ein **Kartenbestand** und der Puffer die Reserve über dessen Summe · die
+    Kette ist ein **Pfad durch die Braucht-Beziehungen**, sobald es sie gibt ·
+    die Kette ist ein **Board-Termin** (Start und Ziel stehen bereits in der
+    Kopfzeile des Boards) und der Puffer die Restzeit gegen den Restumfang aus
+    `I0034`. Die dritte ist die einzige, die heute schon Daten hätte — sie ist
+    deshalb die billigste, nicht die richtige. **Nebenbefund für `/planung`:**
+    `I0035` braucht laut WBS nur `I0034`; die Abhängigkeit auf das Soll und
+    damit auf `I0033` ist dort nicht verzeichnet.
+
+33. **Die Aufwandsspalte trägt Bandbreiten — welcher Wert gilt im Soll-Ist?**
+    In `Dokumentation/Planung/kanbanc.md` stehen `0,4` und `2` neben `2-4` und
+    `0,4-1,5`. Eine Abweichung gegen eine Spanne zu rechnen heißt entscheiden, ob
+    die Untergrenze gilt, die Obergrenze, die Mitte — oder ob das Feld an der
+    Karte **zwei** Zahlen trägt und die Auswertung ein Band statt eines Balkens
+    zeichnet. `D0009.dc.html`, Zustand 3 führt deshalb in der Soll-Spalte die
+    Spanne, wie die Datei sie schreibt, und lässt die Abweichungsspalte leer. Die
+    Frage hängt an Frage 23 und wird mit `I0033` entschieden; sie ist zugleich
+    die Frage, ob das Feld an der Karte eine Zahl oder ein Intervall ist.
+
+34. **„Verläufe" im Fertig-Kriterium von `I0037` haben im Bestand keinen
+    Gegenstand — und es ist die dritte Stelle, die darauf zeigt.** `I0037`
+    verlangt „Karten, Zeiten **und Verläufe** … vollständig und ohne Limit".
+    Wer wann welche Karte über welche Grenze bewegt hat, hält der Bestand
+    nirgends fest: der ältere Satz zeichnet eine Verlaufsspur auf der
+    Kartenseite, die die WBS nicht kennt (Frage 13, `D0004` hat sie draußen
+    gelassen); `I0028` hat die Ereignisspur verworfen, weil kein Kriterium eine
+    Liste vergangener Ereignisse verlangt — der Live-Kanal **sendet** jede
+    Bewegung, **speichert** aber keine; und in `D0009.dc.html`, Zustand 2 fehlt
+    aus demselben Grund die Spalte `wer`, die der ältere Satz in seiner
+    Burndown-Tabelle führt. Ob `I0037` das Speichern mitbringt (Tabelle,
+    Migration, Endpunkt) oder ob „Verläufe" ein drittes Mal auf einen fehlenden
+    Knoten zeigt, entscheidet der Slice. Gezeichnet ist der Aufruf als
+    gestrichelter Kasten, nicht als Antwort.
+
+35. **„Ohne Limit" ist eine Zusage, deren Preis nicht gemessen ist.** Das Motiv
+    von `I0037` steht in der Vision: „eine fremde Cloud-API mit Limits gibt sie
+    nicht her." `D0009.dc.html`, Zustand 6 zeichnet die Aufrufe deshalb
+    ausdrücklich ohne Seitengröße. Wie groß eine solche Antwort wird, ist
+    ungemessen — `I0030` hat an derselben Datei bereits eine Notiz mit 7 988
+    Zeichen und eine Zeile mit 8 162 gefunden, und ein Board auf Bubble-Schnitt
+    trüge 431 Karten mit ihren Teilaufgaben. Ob „ohne Limit" heißt „keine
+    Seitengröße", „ein Datenstrom" oder „keine Grenze, aber eine Warnung", ist
+    eine Entscheidung des Slice; erfunden wird sie hier nicht.

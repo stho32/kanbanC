@@ -16,4 +16,5 @@ public record Karteniststand(
     string Spaltenbezeichnung,
     bool IstArchiviert,
     TimeSpan ErfassteZeit,
-    int Kommentarzahl);
+    int Kommentarzahl,
+    Sollband? Sollband);

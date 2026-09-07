@@ -84,6 +84,7 @@ public sealed class WbsImportRepository : IWbsImportRepository
         var verweiseJeKarte = LiesDateiverweise(verbindung, parameter);
         var zeitenJeKarte = LiesErfassteZeiten(verbindung, parameter);
         var kommentarzahlJeKarte = LiesKommentarzahlen(verbindung, parameter);
+        var sollbaenderJeKarte = LiesSollbaender(verbindung, parameter);
 
         var staende = new List<Karteniststand>();
         foreach (var zeile in kartenzeilen)
@@ -99,7 +100,8 @@ public sealed class WbsImportRepository : IWbsImportRepository
                 zeile.Spaltenbezeichnung,
                 zeile.ArchivierteKarte is not null,
                 Zeit(zeitenJeKarte, zeile.KarteId),
-                Kommentarzahl(kommentarzahlJeKarte, zeile.KarteId)));
+                Kommentarzahl(kommentarzahlJeKarte, zeile.KarteId),
+                SollbandOder(sollbaenderJeKarte, zeile.KarteId)));
         }
 
         return new Karteniststaende(staende);
@@ -215,6 +217,30 @@ public sealed class WbsImportRepository : IWbsImportRepository
         return jeKarte;
     }
 
+    // Die Stunden gehen als REAL durch die Spalte und werden erst hier zu decimal: Dapper
+    // materialisiert aus einer REAL-Spalte einen double, und die Umwandlung an **einer** Stelle
+    // hält die Zehntelstunden der Datei zeichengenau.
+    // Fehlt die Zeile, gibt es kein Band — das ist die Darstellung von „ohne Soll“.
+    private static Dictionary<long, Sollband> LiesSollbaender(IDbConnection verbindung, object parameter)
+    {
+        var zeilen = verbindung.Query<Sollzeitzeile>(@"
+            SELECT o.Karte, o.SollzeitVonStunden, o.SollzeitBisStunden
+              FROM Kartensollzeit o
+              JOIN Karte k ON k.KarteId = o.Karte
+              JOIN Spalte s ON s.SpalteId = k.Spalte
+              JOIN Kartenklassenzuordnung z ON z.Karte = k.KarteId
+             WHERE s.Board = @BoardId
+               AND z.Kartenklasse = @KartenklasseId
+             ORDER BY o.Karte", parameter);
+        var jeKarte = new Dictionary<long, Sollband>(); // stil-check: C11 Sollband je KarteId, kein Domaenenbestand
+        foreach (var zeile in zeilen)
+        {
+            jeKarte[zeile.Karte] = new Sollband((decimal)zeile.SollzeitVonStunden, (decimal)zeile.SollzeitBisStunden);
+        }
+
+        return jeKarte;
+    }
+
     private static List<TEintrag> Sammle<TEintrag>(Dictionary<long, List<TEintrag>> jeKarte, long karteId)
     {
         if (!jeKarte.TryGetValue(karteId, out var eintraege))
@@ -254,6 +280,16 @@ public sealed class WbsImportRepository : IWbsImportRepository
         }
 
         return 0;
+    }
+
+    private static Sollband? SollbandOder(Dictionary<long, Sollband> jeKarte, long karteId)
+    {
+        if (jeKarte.TryGetValue(karteId, out var band))
+        {
+            return band;
+        }
+
+        return null; // stil-check: C25 null heisst „diese Karte traegt kein Sollband“
     }
 
     private static string? Kartennummeroder(Iststandzeile zeile)
@@ -298,6 +334,7 @@ public sealed class WbsImportRepository : IWbsImportRepository
             SchreibeTeilaufgaben(verbindung, transaktion, karteId, auftrag.Entwurf.Teilaufgaben);
             FuegeDateiverweisEin(verbindung, transaktion, karteId, auftrag.Entwurf.Dateiverweis, kontributorId, jetzt);
             SchreibeErledigung(verbindung, transaktion, karteId, auftrag.InDerAbschlussspalte, heute);
+            SetzeSollband(verbindung, transaktion, karteId, auftrag.Entwurf.Sollband);
             anlageergebnisse.Add(new Kartenanlageergebnis(auftrag.Entwurf.Dateiverweis, karteId, Kartennummer.Aus(praefix, vergebenerStand)));
         }
 
@@ -332,6 +369,34 @@ public sealed class WbsImportRepository : IWbsImportRepository
         SetzeBeschreibung(verbindung, transaktion, auftrag.KarteId, auftrag.Beschreibung);
         ZiehEtikettenNach(verbindung, transaktion, auftrag.KarteId, auftrag.Etiketten);
         ZiehTeilaufgabenNach(verbindung, transaktion, auftrag.KarteId, auftrag.Teilaufgaben);
+        SetzeSollband(verbindung, transaktion, auftrag.KarteId, auftrag.Sollband);
+    }
+
+    // **Ein Knoten ohne Aufwand verliert sein Band**, statt das alte stehen zu lassen: die Datei
+    // ist die Wahrheit über den geschätzten Umfang, und ein Band, das sie nicht mehr führt, wäre
+    // eine Zahl ohne Quelle. Gelöscht und neu geschrieben statt aktualisiert, weil beide Fälle —
+    // erstes Band und geändertes Band — damit derselbe Weg sind.
+    // Die Stunden gehen als double in die REAL-Spalte; decimal käme über Microsoft.Data.Sqlite als
+    // Text an und verließe sich auf die Typaffinität der Spalte.
+    private static void SetzeSollband(IDbConnection verbindung, IDbTransaction transaktion, long karteId, Sollband? sollband)
+    {
+        verbindung.Execute(@"
+            DELETE FROM Kartensollzeit
+             WHERE Karte = @Karte", new { Karte = karteId }, transaktion);
+        if (sollband is null)
+        {
+            return;
+        }
+
+        var parameter = new
+        {
+            Karte = karteId,
+            SollzeitVonStunden = (double)sollband.VonStunden,
+            SollzeitBisStunden = (double)sollband.BisStunden,
+        };
+        verbindung.Execute(@"
+            INSERT INTO Kartensollzeit (Karte, SollzeitVonStunden, SollzeitBisStunden)
+            VALUES (@Karte, @SollzeitVonStunden, @SollzeitBisStunden)", parameter, transaktion);
     }
 
     // Die Karteneigenschaft entsteht erst, wenn etwas darin steht — eine Karte ohne Beschreibung
@@ -563,4 +628,6 @@ public sealed class WbsImportRepository : IWbsImportRepository
     private sealed record Zeitspannenzeile(long Karte, string Beginn, string? Ende);
 
     private sealed record Kommentarzeile(long KommentarId, long Karte);
+
+    private sealed record Sollzeitzeile(long Karte, double SollzeitVonStunden, double SollzeitBisStunden);
 }

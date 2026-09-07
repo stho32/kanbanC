@@ -89,6 +89,16 @@
       "title": "D0008 · WBS-Import",
       "expand": "fit",
       "print": "fixed"
+    },
+    {
+      "file": "D0009.dc.html",
+      "x": 12480,
+      "y": 1300,
+      "w": 1440,
+      "h": 3920,
+      "title": "D0009 · Auswertungen",
+      "expand": "fit",
+      "print": "fixed"
     }
   ],
   "launch": {

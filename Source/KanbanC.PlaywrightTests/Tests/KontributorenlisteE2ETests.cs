@@ -24,7 +24,7 @@ public class KontributorenlisteE2ETests : PageTest
         await Expect(kontributoren.Liste).ToBeVisibleAsync();
         await Expect(rahmen.Seitentitel).ToHaveTextAsync("Kontributoren");
         await Expect(rahmen.PunktKontributoren).ToHaveClassAsync(new System.Text.RegularExpressions.Regex("navigationspunkt-aktiv"));
-        await Expect(rahmen.PunktAuswertungen).ToHaveAttributeAsync("aria-disabled", "true");
+        await Expect(rahmen.PunktAuswertungen).Not.ToHaveAttributeAsync("aria-disabled", "true");
     }
 
     [Test]

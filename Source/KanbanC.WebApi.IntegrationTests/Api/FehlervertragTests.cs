@@ -452,6 +452,21 @@ public class FehlervertragTests
             await webApi.Klient.GetAsync($"{BoardsRoute}/{board.BoardId}/kartenklassen/999/karten?archiviert=vielleicht")));
 
         faelle.Add(new Fehlerfall(
+            "GET /api/boards/{boardId:long}/kartenklassen/{kartenklasseId:long}/soll-ist",
+            "Soll-Ist-Vergleich mit unbekannter BoardId",
+            await webApi.Klient.GetAsync($"{BoardsRoute}/999/kartenklassen/{aufbau.FremdeKartenklasse.KartenklasseId}/soll-ist")));
+
+        faelle.Add(new Fehlerfall(
+            "GET /api/boards/{boardId:long}/kartenklassen/{kartenklasseId:long}/soll-ist",
+            "Soll-Ist-Vergleich mit unbekannter KartenklasseId",
+            await webApi.Klient.GetAsync($"{BoardsRoute}/{board.BoardId}/kartenklassen/999/soll-ist")));
+
+        faelle.Add(new Fehlerfall(
+            "GET /api/boards/{boardId:long}/kartenklassen/{kartenklasseId:long}/soll-ist",
+            "Soll-Ist-Vergleich mit der Kartenklasse eines fremden Boards",
+            await webApi.Klient.GetAsync($"{BoardsRoute}/{board.BoardId}/kartenklassen/{aufbau.FremdeKartenklasse.KartenklasseId}/soll-ist")));
+
+        faelle.Add(new Fehlerfall(
             "PUT /api/karten/{karteId:long}/kartenklasse",
             "Kartenklasse zuordnen an unbekannter Karte",
             await webApi.Klient.PutAsJsonAsync("/api/karten/999/kartenklasse", new KartenklasseZuordnenAnfrage(1))));

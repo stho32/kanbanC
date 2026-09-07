@@ -1,0 +1,60 @@
+/* Die Karten und ihre Zahlen bekommen den Platz, das Beiwerk tritt zurück. Farben, Abstände und
+   Radien kommen aus gestaltung.css; Schriftgrößen und Spaltenbreiten stehen als Wert, weil das
+   Token-Sheet für sie keine Variable führt. */
+.sollisttabelle {
+    table-layout: fixed;
+}
+
+.spalte-karte {
+    width: 46%;
+}
+
+.spalte-zahl {
+    width: 16%;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.spalte-abweichung {
+    width: 22%;
+}
+
+/* Die Nummer trägt die Zeile, der Titel steht daneben: so lässt sich die Spalte senkrecht lesen. */
+.sollist-kartennummer {
+    display: inline-block;
+    min-width: var(--space-8);
+    color: var(--color-accent-700);
+}
+
+.sollist-titel {
+    margin-left: var(--space-2);
+}
+
+.sollist-archivmarke {
+    margin-left: var(--space-2);
+}
+
+/* Archiviert heißt nicht ungültig: die Zeile tritt zurück, ihre Zeit bleibt in der Summe. */
+.sollistzeile-archiviert {
+    color: color-mix(in srgb, var(--color-text) 62%, transparent);
+}
+
+/* Eine Lücke ist keine Zahl. */
+.sollist-ohne-band {
+    color: color-mix(in srgb, var(--color-text) 45%, transparent);
+}
+
+.sollist-summenzeile {
+    border-top: 2px solid var(--color-divider);
+    font-weight: 600;
+}
+
+.sollist-summenzeile > td {
+    padding: var(--space-2) var(--space-2);
+}
+
+.sollist-fusszeile {
+    margin: var(--space-2) 0 0;
+    font-size: 12px;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}

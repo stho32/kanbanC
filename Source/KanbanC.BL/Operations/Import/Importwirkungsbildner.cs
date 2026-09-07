@@ -48,7 +48,8 @@ public static class Importwirkungsbildner
             soll.Titel,
             soll.Beschreibung,
             Etikettenabgleich.Gleiche(soll.Etiketten, ist.Etiketten, dateietiketten),
-            Teilaufgabenabgleich.Gleiche(soll.Teilaufgaben, ist.Teilaufgaben));
+            Teilaufgabenabgleich.Gleiche(soll.Teilaufgaben, ist.Teilaufgaben),
+            soll.Sollband);
     }
 
     // Zuerst **was** sich ändert, dann die Gründe: je zurückgenommene Abhakung ein Satz — **nie

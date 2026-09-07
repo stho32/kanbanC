@@ -1,0 +1,78 @@
+@using KanbanC.Blazor.Services
+@using KanbanC.Contracts.Auswertungen
+
+@* Die Tabelle Karte · Ist · Soll · Abweichung mit ihrer Summenzeile. Sie rechnet nichts nach —
+   die Antwort der WebApi ist bereits die Auswertung. *@
+<table class="table sollisttabelle" id="sollist-tabelle">
+    <thead>
+        <tr>
+            <th class="spalte-karte">Karte</th>
+            <th class="spalte-zahl">Ist</th>
+            <th class="spalte-zahl">Soll · WBS-Zählung</th>
+            <th class="spalte-abweichung">Abweichung</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var zeile in Auswertung.Zeilen)
+        {
+            <tr class="sollistzeile @Zeilenklasse(zeile)" id="@($"sollist-zeile-{zeile.KarteId}")">
+                <td>
+                    <span class="sollist-kartennummer">@zeile.Kartennummer</span>
+                    <span class="sollist-titel">@zeile.Titel</span>
+                    @if (zeile.IstArchiviert)
+                    {
+                        <span class="tag tag-neutral sollist-archivmarke">archiviert</span>
+                    }
+                </td>
+                <td class="spalte-zahl">@Dauerform.AlsText(zeile.ErfassteZeit)</td>
+                <td class="spalte-zahl @SollklasseFuer(zeile.Sollband)">@Zeitbandform.AlsText(zeile.Sollband)</td>
+                <td class="spalte-abweichung">@Abweichungswort.AlsText(zeile.Abweichung)</td>
+            </tr>
+        }
+    </tbody>
+    <tfoot>
+        <tr class="sollist-summenzeile" id="sollist-summe">
+            <td>Summe über @Auswertung.Zeilen.Count Karten</td>
+            <td class="spalte-zahl">@Dauerform.AlsText(Auswertung.Summe.ErfassteZeit)</td>
+            <td class="spalte-zahl">@Zeitbandform.AlsText(Auswertung.Summe.Sollband)</td>
+            <td class="spalte-abweichung">@Abweichungswort.AlsText(Auswertung.Summe.Abweichung)</td>
+        </tr>
+    </tfoot>
+</table>
+
+@* Ohne diese Zeile ließe sich die Soll-Summe für vollständig halten: sie sagt, wie viele Karten
+   sie **nicht** enthält — die Ist-Summe enthält jede. Steht die Zeile nicht da, trägt jede Karte
+   ein Soll. *@
+@if (Auswertung.Summe.KartenOhneSoll > 0)
+{
+    <p class="sollist-fusszeile" id="sollist-ohne-soll">
+        @Auswertung.Summe.KartenOhneSoll von @Auswertung.Zeilen.Count Karten tragen kein Soll; die Soll-Summe enthält sie nicht.
+    </p>
+}
+
+@code {
+    [Parameter]
+    [EditorRequired]
+    public required SollIstAuswertung Auswertung { get; set; }
+
+    private static string Zeilenklasse(SollIstZeile zeile)
+    {
+        if (zeile.IstArchiviert)
+        {
+            return "sollistzeile-archiviert";
+        }
+
+        return "";
+    }
+
+    // Der Gedankenstrich einer Karte ohne Soll tritt zurück: er ist eine Lücke und keine Zahl.
+    private static string SollklasseFuer(Zeitband? sollband)
+    {
+        if (sollband is null)
+        {
+            return "sollist-ohne-band";
+        }
+
+        return "";
+    }
+}

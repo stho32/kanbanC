@@ -270,6 +270,35 @@ public class KartenentwurfsbildnerTests
         });
     }
 
+    // Der Entwurf trägt das Sollband seines Teilbaums; die Interaction-Zeile selbst schätzt
+    // keinen Aufwand, und ohne die Summierung bliebe die Spalte auf diesem Schnitt leer.
+    [Test]
+    public void Wenn_die_Bubbles_einer_Interaction_Aufwaende_tragen_dann_traegt_ihr_Entwurf_deren_Summe()
+    {
+        var baum = Probewbs.Baum(
+            MitAufwand("A0001", Wbsebene.Application, "—", string.Empty, 1),
+            MitAufwand("I0001", Wbsebene.Interaction, "A0001", string.Empty, 2),
+            MitAufwand("B0001", Wbsebene.Bubble, "I0001", "0,4", 3),
+            MitAufwand("B0002", Wbsebene.Bubble, "I0001", "2-4", 4));
+
+        var bildung = Bilde(baum, Schnittebene.Interaction);
+
+        Assert.That(bildung.Entwuerfe[0].Sollband, Is.EqualTo(new Sollband(2.4m, 4.4m)));
+    }
+
+    [Test]
+    public void Wenn_kein_Knoten_der_Karte_einen_Aufwand_traegt_dann_bleibt_ihr_Entwurf_ohne_Sollband()
+    {
+        var bildung = Bilde(Probewbs.Standardbaum(), Schnittebene.Interaction);
+
+        Assert.That(bildung.Entwuerfe[0].Sollband, Is.Null);
+    }
+
+    private static Wbsknoten MitAufwand(string id, Wbsebene ebene, string eltern, string aufwand, int zeilennummer)
+    {
+        return new Wbsknoten(id, ebene, eltern, $"Knoten {id}", Wbsstatus.Rot, string.Empty, string.Empty, aufwand, string.Empty, string.Empty, string.Empty, string.Empty, zeilennummer);
+    }
+
     private static Kartenentwurfsbildung Bilde(Wbsbaum baum, Schnittebene schnittebene)
     {
         return Kartenentwurfsbildner.Bilde(baum, schnittebene, "Dokumentation/Planung/probe.md", "probe.md");

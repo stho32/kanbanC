@@ -9,4 +9,5 @@ public record Kartenentwurf(
     string? Beschreibung,
     IReadOnlyList<string> Etiketten, // stil-check: C09 wie Spalte.Karten
     IReadOnlyList<Teilaufgabenentwurf> Teilaufgaben, // stil-check: C09 wie Spalte.Karten
-    string Dateiverweis);
+    string Dateiverweis,
+    Sollband? Sollband);
