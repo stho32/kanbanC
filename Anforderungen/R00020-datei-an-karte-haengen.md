@@ -1,6 +1,6 @@
 ---
 id: R00020
-status: Neu
+status: In Arbeit
 datum: 2026-09-06
 ---
 
@@ -68,99 +68,99 @@ Das **Entfernen** kommt aus demselben Grund mit: die Bytes liegen auf derselben 
 
 ### Der Anhang wird mit Urheber und Zeitpunkt festgehalten (API)
 
-- [ ] `POST /api/karten/{karteId}/anhaenge` mit einer Datei und einer `KontributorId` im multipart-Rumpf antwortet mit HTTP 200 und einem `Kartendetail`, dessen Anhangliste diese Datei als **letzten** Eintrag trägt.
-- [ ] Der Eintrag trägt eine eigene, von den anderen verschiedene `AnhangId`.
-- [ ] Der Eintrag trägt den **Originalnamen** der Datei und ihre **Größe in Bytes**. Rechenbeispiel: eine Datei aus 41 000 Bytes ergibt `Dateigroesse` = `41000` — nicht „41 kB", die Umrechnung ist Darstellung.
-- [ ] Die `Dateigroesse` stammt aus dem **tatsächlich geschriebenen** Strom, nicht aus einer vom Aufrufer gemeldeten Länge: wird eine falsche Länge mitgeschickt, steht trotzdem die wirkliche Größe in der Antwort.
-- [ ] Der Eintrag trägt den **ganzen** Urheber: Nummer, Name, Art und Stilllegungsstand — nicht nur die Nummer.
-- [ ] Der Eintrag trägt einen `Zeitpunkt` mit Uhrzeit. Rechenbeispiel: wird die Uhr **vor** dem Aufruf als `t0` und **nach** dem Aufruf als `t1` gemerkt, gilt `t0 ≤ Zeitpunkt ≤ t1`.
-- [ ] Der Aufrufer kann den Zeitpunkt **nicht** mitgeben; ein mitgeschicktes Feld ändert nichts am gespeicherten Wert.
-- [ ] `GET /api/karten/{karteId}` liefert danach dieselbe Liste in derselben Reihenfolge.
-- [ ] Rechenbeispiel Reihenfolge: an eine Karte ohne Anhänge werden nacheinander `a.md`, `b.png`, `c.pdf` gehängt → die Liste lautet in jedem folgenden Abruf `a.md`, `b.png`, `c.pdf` (ältester oben).
-- [ ] Werden zwei Anhänge **in der Datenbank** auf verschiedene Zeitpunkte gesetzt, steht der ältere oben — unabhängig von der Reihenfolge des Anhängens.
-- [ ] Zwei Aufrufe mit einer Datei **desselben Namens** werden beide angenommen und erzeugen zwei Einträge mit verschiedenen Nummern und je eigenen Bytes.
-- [ ] Die Anhänge hängen am `Kartendetail` und **nicht** an `Karte`: `GET /api/boards/{boardId}` liefert die Karten unverändert ohne Anhangliste.
-- [ ] Es gibt **kein** gespeichertes Zählfeld und **keine** gespeicherte Position: die Antwort trägt weder eine Anzahl noch eine Ordnungszahl neben der Liste.
-- [ ] Ein Anhang eines inzwischen **stillgelegten** Kontributors bleibt an der Karte sichtbar, mit Name und Stilllegungsstand.
-- [ ] Ein Neustart der Anwendung lässt Namen, Größen, Urheber, Zeitpunkte, Reihenfolge **und die Bytes** unverändert.
+- [x] `POST /api/karten/{karteId}/anhaenge` mit einer Datei und einer `KontributorId` im multipart-Rumpf antwortet mit HTTP 200 und einem `Kartendetail`, dessen Anhangliste diese Datei als **letzten** Eintrag trägt.
+- [x] Der Eintrag trägt eine eigene, von den anderen verschiedene `AnhangId`.
+- [x] Der Eintrag trägt den **Originalnamen** der Datei und ihre **Größe in Bytes**. Rechenbeispiel: eine Datei aus 41 000 Bytes ergibt `Dateigroesse` = `41000` — nicht „41 kB", die Umrechnung ist Darstellung.
+- [x] Die `Dateigroesse` stammt aus dem **tatsächlich geschriebenen** Strom, nicht aus einer vom Aufrufer gemeldeten Länge: wird eine falsche Länge mitgeschickt, steht trotzdem die wirkliche Größe in der Antwort.
+- [x] Der Eintrag trägt den **ganzen** Urheber: Nummer, Name, Art und Stilllegungsstand — nicht nur die Nummer.
+- [x] Der Eintrag trägt einen `Zeitpunkt` mit Uhrzeit. Rechenbeispiel: wird die Uhr **vor** dem Aufruf als `t0` und **nach** dem Aufruf als `t1` gemerkt, gilt `t0 ≤ Zeitpunkt ≤ t1`.
+- [x] Der Aufrufer kann den Zeitpunkt **nicht** mitgeben; ein mitgeschicktes Feld ändert nichts am gespeicherten Wert.
+- [x] `GET /api/karten/{karteId}` liefert danach dieselbe Liste in derselben Reihenfolge.
+- [x] Rechenbeispiel Reihenfolge: an eine Karte ohne Anhänge werden nacheinander `a.md`, `b.png`, `c.pdf` gehängt → die Liste lautet in jedem folgenden Abruf `a.md`, `b.png`, `c.pdf` (ältester oben).
+- [x] Werden zwei Anhänge **in der Datenbank** auf verschiedene Zeitpunkte gesetzt, steht der ältere oben — unabhängig von der Reihenfolge des Anhängens.
+- [x] Zwei Aufrufe mit einer Datei **desselben Namens** werden beide angenommen und erzeugen zwei Einträge mit verschiedenen Nummern und je eigenen Bytes.
+- [x] Die Anhänge hängen am `Kartendetail` und **nicht** an `Karte`: `GET /api/boards/{boardId}` liefert die Karten unverändert ohne Anhangliste.
+- [x] Es gibt **kein** gespeichertes Zählfeld und **keine** gespeicherte Position: die Antwort trägt weder eine Anzahl noch eine Ordnungszahl neben der Liste.
+- [x] Ein Anhang eines inzwischen **stillgelegten** Kontributors bleibt an der Karte sichtbar, mit Name und Stilllegungsstand.
+- [x] Ein Neustart der Anwendung lässt Namen, Größen, Urheber, Zeitpunkte, Reihenfolge **und die Bytes** unverändert.
 
 ### Herunterladen gibt genau das zurück, was hochgeladen wurde
 
-- [ ] `GET /api/karten/{karteId}/anhaenge/{anhangId}` antwortet mit HTTP 200 und den **Bytes** der Datei.
-- [ ] Die zurückgegebenen Bytes sind **byteweise identisch** mit den hochgeladenen. Rechenbeispiel: eine Datei aus 41 000 Bytes kommt mit 41 000 Bytes und gleichem Inhaltsvergleich zurück.
-- [ ] Die Antwort trägt einen `Content-Disposition`-Kopf mit dem **Originalnamen** (`wbs-export.md`), nicht mit der `AnhangId`.
-- [ ] Die Route liefert **keine** JSON und trägt **keine** Metadaten im Rumpf — die stehen im `Kartendetail`.
-- [ ] Eine `anhangId`, die es gibt, aber an einer **anderen** Karte, liefert HTTP 404 mit Rumpf und **keine** Bytes.
-- [ ] Fehlt die Zeile nicht, aber die **Datei auf der Platte**, scheitert der Abruf **sichtbar** mit Befund statt mit einem leeren Download.
+- [x] `GET /api/karten/{karteId}/anhaenge/{anhangId}` antwortet mit HTTP 200 und den **Bytes** der Datei.
+- [x] Die zurückgegebenen Bytes sind **byteweise identisch** mit den hochgeladenen. Rechenbeispiel: eine Datei aus 41 000 Bytes kommt mit 41 000 Bytes und gleichem Inhaltsvergleich zurück.
+- [x] Die Antwort trägt einen `Content-Disposition`-Kopf mit dem **Originalnamen** (`wbs-export.md`), nicht mit der `AnhangId`.
+- [x] Die Route liefert **keine** JSON und trägt **keine** Metadaten im Rumpf — die stehen im `Kartendetail`.
+- [x] Eine `anhangId`, die es gibt, aber an einer **anderen** Karte, liefert HTTP 404 mit Rumpf und **keine** Bytes.
+- [x] Fehlt die Zeile nicht, aber die **Datei auf der Platte**, scheitert der Abruf **sichtbar** mit Befund statt mit einem leeren Download.
 
 ### Entfernen nimmt die Zeile und die Bytes
 
-- [ ] `DELETE /api/karten/{karteId}/anhaenge/{anhangId}` antwortet mit HTTP 200 und dem `Kartendetail` **ohne** diesen Eintrag.
-- [ ] Nach dem Entfernen ist die **Datei auf der Platte weg** — geprüft am Ablageordner, nicht nur an der Antwort.
-- [ ] Ein zweiter `DELETE` derselben Nummer liefert HTTP 404 mit Rumpf.
-- [ ] Eine `anhangId` einer **anderen** Karte entfernt nichts und liefert HTTP 404 mit Rumpf; die andere Karte trägt ihren Anhang danach unverändert.
-- [ ] Die übrigen Anhänge derselben Karte bleiben unverändert, Bytes eingeschlossen.
+- [x] `DELETE /api/karten/{karteId}/anhaenge/{anhangId}` antwortet mit HTTP 200 und dem `Kartendetail` **ohne** diesen Eintrag.
+- [x] Nach dem Entfernen ist die **Datei auf der Platte weg** — geprüft am Ablageordner, nicht nur an der Antwort.
+- [x] Ein zweiter `DELETE` derselben Nummer liefert HTTP 404 mit Rumpf.
+- [x] Eine `anhangId` einer **anderen** Karte entfernt nichts und liefert HTTP 404 mit Rumpf; die andere Karte trägt ihren Anhang danach unverändert.
+- [x] Die übrigen Anhänge derselben Karte bleiben unverändert, Bytes eingeschlossen.
 
 ### Die Bytes liegen im Dateisystem neben der Datenbank
 
-- [ ] Neben der Datenbankdatei entsteht ein Ordner, dessen Name aus der **Verbindungszeichenfolge** gerechnet ist. Rechenbeispiel: `Data Source=kanbanc.db` ergibt `kanbanc.db-Files`; die Datei des Anhangs `7` an Karte `14` liegt unter `kanbanc.db-Files/14/7`.
-- [ ] Der Ordnername folgt der Datenbankdatei: benennt jemand sie in `projekt.db` um, heißt der Ordner `projekt.db-Files` — **ohne** einen zweiten Konfigurationsschlüssel.
-- [ ] Weitere Schlüssel in der Zeichenfolge (`Mode=`, `Cache=`) ändern den gerechneten Pfad nicht; ein absoluter `Data Source` ergibt einen absoluten Ablageordner.
-- [ ] Fehlt `Data Source` in der Zeichenfolge, scheitert die Rechnung **sichtbar** — es entsteht kein stiller Ordner im Arbeitsverzeichnis.
-- [ ] Die Datei auf der Platte heißt **exakt** die `AnhangId`, ohne Endung. Rechenbeispiel: `wbs-export.md` als Anhang `7` liegt als Datei `7`, nicht als `7.md` und nicht als `wbs-export.md`.
-- [ ] **In der Datenbank stehen keine Bytes:** die Tabelle `Anhang` hat keine BLOB-Spalte, und die Größe der Datenbankdatei wächst durch einen 5-MB-Anhang nicht um 5 MB.
-- [ ] **Es gibt keine Spalte für den Ablagepfad** — er wird gerechnet.
-- [ ] Bricht das Anhängen nach dem Schreiben der Bytes ab, bleibt höchstens eine **verwaiste Datei** zurück — **nie** eine Zeile, deren Datei fehlt.
-- [ ] Der zweite Lauf des `Migrationslaeufer` auf einer bestehenden Datei lässt Schema und Daten unverändert.
+- [x] Neben der Datenbankdatei entsteht ein Ordner, dessen Name aus der **Verbindungszeichenfolge** gerechnet ist. Rechenbeispiel: `Data Source=kanbanc.db` ergibt `kanbanc.db-Files`; die Datei des Anhangs `7` an Karte `14` liegt unter `kanbanc.db-Files/14/7`.
+- [x] Der Ordnername folgt der Datenbankdatei: benennt jemand sie in `projekt.db` um, heißt der Ordner `projekt.db-Files` — **ohne** einen zweiten Konfigurationsschlüssel.
+- [x] Weitere Schlüssel in der Zeichenfolge (`Mode=`, `Cache=`) ändern den gerechneten Pfad nicht; ein absoluter `Data Source` ergibt einen absoluten Ablageordner.
+- [x] Fehlt `Data Source` in der Zeichenfolge, scheitert die Rechnung **sichtbar** — es entsteht kein stiller Ordner im Arbeitsverzeichnis.
+- [x] Die Datei auf der Platte heißt **exakt** die `AnhangId`, ohne Endung. Rechenbeispiel: `wbs-export.md` als Anhang `7` liegt als Datei `7`, nicht als `7.md` und nicht als `wbs-export.md`.
+- [x] **In der Datenbank stehen keine Bytes:** die Tabelle `Anhang` hat keine BLOB-Spalte, und die Größe der Datenbankdatei wächst durch einen 5-MB-Anhang nicht um 5 MB.
+- [x] **Es gibt keine Spalte für den Ablagepfad** — er wird gerechnet.
+- [x] Bricht das Anhängen nach dem Schreiben der Bytes ab, bleibt höchstens eine **verwaiste Datei** zurück — **nie** eine Zeile, deren Datei fehlt.
+- [x] Der zweite Lauf des `Migrationslaeufer` auf einer bestehenden Datei lässt Schema und Daten unverändert.
 
 ### Zurückweisung, Obergrenze und Fehlerantworten für Agenten
 
-- [ ] Ein **leerer Dateiname** wird mit HTTP 400 **und Rumpf** zurückgewiesen; weder Zeile noch Datei entstehen.
-- [ ] Eine Datei der Größe **0** wird mit HTTP 400 und Rumpf zurückgewiesen.
-- [ ] Ein gemeldeter Name mit Pfadanteil wird auf den letzten Bestandteil gekürzt: `C:\Temp\wbs-export.md` und `ordner/wbs-export.md` werden beide als `wbs-export.md` gespeichert.
-- [ ] **Obergrenze 10 MB je Datei.** Rechenbeispiele: 41 kB und 5 MB kommen durch; **10 MB + 1 Byte** wird mit HTTP 400 und Rumpf zurückgewiesen, und der Befund nennt die Obergrenze **in Bytes**.
-- [ ] Die Obergrenze gilt **auch am direkten API-Aufruf**, der die Oberfläche nicht benutzt — sie steht in der WebApi und nicht nur in der Blazor-Anwendung.
-- [ ] Eine zurückgewiesene zu große Datei hinterlässt **keine halbe Datei** in der Ablage und keine Zeile mit voller `Dateigroesse`.
-- [ ] Eine **unbekannte** `karteId` wird an allen drei Routen mit HTTP 404 und einem Befund beantwortet, der Code, die aufgerufene Kartennummer und einen ausführbaren nächsten Aufruf nennt. Der Befund nennt **kein** Board — die Routen kennen keins.
-- [ ] Eine **unbekannte** `anhangId` wird mit HTTP 404 und einem Befund beantwortet, der **beide** Nummern nennt und als Kompensation `GET /api/karten/{karteId}` angibt.
-- [ ] Eine **unbekannte** `KontributorId` wird mit HTTP 404 und einem Befund beantwortet, der die Nummer und den Weg zur Kontributorenliste nennt; an der Karte hat sich nichts geändert.
-- [ ] Eine **stillgelegte** `KontributorId` wird mit HTTP **400** und Rumpf zurückgewiesen — es fehlt kein Ding, es wurde eine Regel verletzt.
-- [ ] Die Meldung der Stilllegung passt zum Anhang: sie sagt **weder** „kann nicht verantwortlich sein" **noch** „kann keinen Kommentar mehr schreiben" — beides wäre hier eine Falschaussage.
-- [ ] Keine der drei Routen liefert eine Fehlerantwort mit leerem Rumpf.
-- [ ] Der Vertragstest über alle registrierten Routen bleibt grün: **alle drei** neuen Routen werden von ihm abgerufen und stehen nicht als ungeprüft übrig (`FehlervertragTests.cs:41-58`).
+- [x] Ein **leerer Dateiname** wird mit HTTP 400 **und Rumpf** zurückgewiesen; weder Zeile noch Datei entstehen.
+- [x] Eine Datei der Größe **0** wird mit HTTP 400 und Rumpf zurückgewiesen.
+- [x] Ein gemeldeter Name mit Pfadanteil wird auf den letzten Bestandteil gekürzt: `C:\Temp\wbs-export.md` und `ordner/wbs-export.md` werden beide als `wbs-export.md` gespeichert.
+- [x] **Obergrenze 10 MB je Datei.** Rechenbeispiele: 41 kB und 5 MB kommen durch; **10 MB + 1 Byte** wird mit HTTP 400 und Rumpf zurückgewiesen, und der Befund nennt die Obergrenze **in Bytes**.
+- [x] Die Obergrenze gilt **auch am direkten API-Aufruf**, der die Oberfläche nicht benutzt — sie steht in der WebApi und nicht nur in der Blazor-Anwendung.
+- [x] Eine zurückgewiesene zu große Datei hinterlässt **keine halbe Datei** in der Ablage und keine Zeile mit voller `Dateigroesse`.
+- [x] Eine **unbekannte** `karteId` wird an allen drei Routen mit HTTP 404 und einem Befund beantwortet, der Code, die aufgerufene Kartennummer und einen ausführbaren nächsten Aufruf nennt. Der Befund nennt **kein** Board — die Routen kennen keins.
+- [x] Eine **unbekannte** `anhangId` wird mit HTTP 404 und einem Befund beantwortet, der **beide** Nummern nennt und als Kompensation `GET /api/karten/{karteId}` angibt.
+- [x] Eine **unbekannte** `KontributorId` wird mit HTTP 404 und einem Befund beantwortet, der die Nummer und den Weg zur Kontributorenliste nennt; an der Karte hat sich nichts geändert.
+- [x] Eine **stillgelegte** `KontributorId` wird mit HTTP **400** und Rumpf zurückgewiesen — es fehlt kein Ding, es wurde eine Regel verletzt.
+- [x] Die Meldung der Stilllegung passt zum Anhang: sie sagt **weder** „kann nicht verantwortlich sein" **noch** „kann keinen Kommentar mehr schreiben" — beides wäre hier eine Falschaussage.
+- [x] Keine der drei Routen liefert eine Fehlerantwort mit leerem Rumpf.
+- [x] Der Vertragstest über alle registrierten Routen bleibt grün: **alle drei** neuen Routen werden von ihm abgerufen und stehen nicht als ungeprüft übrig (`FehlervertragTests.cs:41-58`).
 
 ### Der Abschnitt auf der Kartenseite
 
-- [ ] Auf `/karten/{karteId}` steht hinter „Kommentare" ein Abschnitt mit der Überschrift **„Anhänge"**, als **linke** Hälfte einer zweispaltigen Sektion; die rechte Hälfte bleibt in diesem Slice leer und gehört `I0019`.
+- [x] Auf `/karten/{karteId}` steht hinter „Kommentare" ein Abschnitt mit der Überschrift **„Anhänge"**, als **linke** Hälfte einer zweispaltigen Sektion; die rechte Hälfte bleibt in diesem Slice leer und gehört `I0019`.
 - [ ] Jede Zeile zeigt eine Büroklammer, den Dateinamen, die Größe als Text, ein Symbol zum **Herunterladen** und ein `×` zum **Entfernen**.
-- [ ] Die Größe erscheint lesbar. Rechenbeispiele: `41000` → „41 kB"; `118000` → „118 kB"; `1200000` → „1,2 MB"; `0` → „0 kB"; `1000` → „1 kB"; `10485760` (die Obergrenze) → „10,5 MB".
-- [ ] **Urheber und Zeitpunkt stehen im `title` der Zeile** — die gezeichnete Form bleibt einzeilig, die Zusage der Vision wird trotzdem eingelöst.
-- [ ] Die Ablegefläche trägt den Text „Datei hierher ziehen oder wählen"; nach dem Anhängen steht die neue Zeile als letzte in der Liste.
-- [ ] Hat die Karte **keinen** Anhang, steht dort die Handlung statt einer Null; die Zeile teilt sich mit `I0019` und nennt beide.
-- [ ] **Ist keine Identität gewählt, ist die Ablegefläche gesperrt** und weist auf die Identitätswahl in der Kopfzeile hin. Board, Kartenseite und alle übrigen Handlungen bleiben ohne Wahl unverändert benutzbar.
-- [ ] Wird die Identität in der Kopfzeile gewechselt, **während** die Kartenseite offen ist, trägt der nächste Anhang den **neu** gewählten Urheber — ohne Reload.
-- [ ] Ein Klick auf das Download-Symbol lädt die Datei **mit ihrem Originalnamen** herunter, nicht mit der `AnhangId` als Namen.
-- [ ] Ein Klick auf `×` nimmt die Zeile sofort aus der Liste; nach einem Reload ist sie weiterhin weg.
-- [ ] Eine zu große Datei bringt eine **lesbare Meldung** auf der Seite; die Liste bleibt unverändert.
-- [ ] Eine 41-kB-Datei und eine 5-MB-Datei gehen **durch den Blazor-Kreislauf** — die 32-KB-Voreinstellung von SignalR steht dem nicht mehr im Weg.
-- [ ] Nach einem Reload zeigt die Seite dieselben Anhänge mit denselben Namen und Größen.
-- [ ] Der Browser holt die Bytes **direkt von der WebApi**: der `href` des Download-Symbols zeigt auf die WebApi-Adresse, nicht auf eine Blazor-Route, und `KartenApiKlient` hat **keine** Methode, die Bytes liest.
+- [x] Die Größe erscheint lesbar. Rechenbeispiele: `41000` → „41 kB"; `118000` → „118 kB"; `1200000` → „1,2 MB"; `0` → „0 kB"; `1000` → „1 kB"; `10485760` (die Obergrenze) → „10,5 MB".
+- [x] **Urheber und Zeitpunkt stehen im `title` der Zeile** — die gezeichnete Form bleibt einzeilig, die Zusage der Vision wird trotzdem eingelöst.
+- [x] Die Ablegefläche trägt den Text „Datei hierher ziehen oder wählen"; nach dem Anhängen steht die neue Zeile als letzte in der Liste.
+- [x] Hat die Karte **keinen** Anhang, steht dort die Handlung statt einer Null; die Zeile teilt sich mit `I0019` und nennt beide.
+- [x] **Ist keine Identität gewählt, ist die Ablegefläche gesperrt** und weist auf die Identitätswahl in der Kopfzeile hin. Board, Kartenseite und alle übrigen Handlungen bleiben ohne Wahl unverändert benutzbar.
+- [x] Wird die Identität in der Kopfzeile gewechselt, **während** die Kartenseite offen ist, trägt der nächste Anhang den **neu** gewählten Urheber — ohne Reload.
+- [x] Ein Klick auf das Download-Symbol lädt die Datei **mit ihrem Originalnamen** herunter, nicht mit der `AnhangId` als Namen.
+- [x] Ein Klick auf `×` nimmt die Zeile sofort aus der Liste; nach einem Reload ist sie weiterhin weg.
+- [x] Eine zu große Datei bringt eine **lesbare Meldung** auf der Seite; die Liste bleibt unverändert.
+- [x] Eine 41-kB-Datei und eine 5-MB-Datei gehen **durch den Blazor-Kreislauf** — die 32-KB-Voreinstellung von SignalR steht dem nicht mehr im Weg.
+- [x] Nach einem Reload zeigt die Seite dieselben Anhänge mit denselben Namen und Größen.
+- [x] Der Browser holt die Bytes **direkt von der WebApi**: der `href` des Download-Symbols zeigt auf die WebApi-Adresse, nicht auf eine Blazor-Route, und `KartenApiKlient` hat **keine** Methode, die Bytes liest.
 
 ### Der grüne Bestand bleibt grün — mit benannten Änderungen
 
-- [ ] **Benannte Änderung 1:** `Kartendetail` (`Source/KanbanC.Contracts/Karten/Kartendetail.cs`) wächst um `IReadOnlyList<Anhang> Anhaenge` — die **fünfte** Liste. Das sind **zwei** positionale `new Kartendetail(`-Aufrufstellen (`Kartenleser.cs:93`, `KartenServiceTests.cs:470`); beide werden angepasst, ihre Zusicherungen nicht.
-- [ ] **Benannte Änderung 2:** `Stillgelegt` (`Source/KanbanC.BL/Operations/Fehler/Stillgelegt.cs`) — die bestehende Schwester `Urheber` wird zu **`Kommentarurheber`** umbenannt (eine Aufrufstelle in `KartenService`, plus die Testzeile) und bekommt **`Anhangurheber`** daneben. **Derselbe Code** `kontributor-stillgelegt` (400) für beide, damit `Nichtgefunden.MeldetEinFehlendesDing` und die Statusabbildung unangetastet bleiben; eigen ist nur die Meldung. **Änderung an grünem Bestand aus Begriffsgründen** (C06): mit zwei Urhebersorten wäre `Urheber` nicht mehr kontexteindeutig.
-- [ ] **Benannte Änderung 3:** `Nichtgefunden` (`Source/KanbanC.BL/Operations/Fehler/Nichtgefunden.cs`) bekommt `Anhang(karteId, anhangId)` neben `Teilaufgabe(karteId, teilaufgabeId)` — Grund mit **beiden** Nummern und Kompensationsaktion, auch bei 404; `AlleCodes` wächst um den neuen Code.
+- [x] **Benannte Änderung 1:** `Kartendetail` (`Source/KanbanC.Contracts/Karten/Kartendetail.cs`) wächst um `IReadOnlyList<Anhang> Anhaenge` — die **fünfte** Liste. Das sind **zwei** positionale `new Kartendetail(`-Aufrufstellen (`Kartenleser.cs:93`, `KartenServiceTests.cs:470`); beide werden angepasst, ihre Zusicherungen nicht.
+- [x] **Benannte Änderung 2:** `Stillgelegt` (`Source/KanbanC.BL/Operations/Fehler/Stillgelegt.cs`) — die bestehende Schwester `Urheber` wird zu **`Kommentarurheber`** umbenannt (eine Aufrufstelle in `KartenService`, plus die Testzeile) und bekommt **`Anhangurheber`** daneben. **Derselbe Code** `kontributor-stillgelegt` (400) für beide, damit `Nichtgefunden.MeldetEinFehlendesDing` und die Statusabbildung unangetastet bleiben; eigen ist nur die Meldung. **Änderung an grünem Bestand aus Begriffsgründen** (C06): mit zwei Urhebersorten wäre `Urheber` nicht mehr kontexteindeutig.
+- [x] **Benannte Änderung 3:** `Nichtgefunden` (`Source/KanbanC.BL/Operations/Fehler/Nichtgefunden.cs`) bekommt `Anhang(karteId, anhangId)` neben `Teilaufgabe(karteId, teilaufgabeId)` — Grund mit **beiden** Nummern und Kompensationsaktion, auch bei 404; `AlleCodes` wächst um den neuen Code.
 - [ ] **Benannte Änderung 4:** `Kartendetailvergleich` (`Source/KanbanC.WebApi.IntegrationTests/Infrastructure/Kartendetailvergleich.cs`) vergleicht **alle** Listen des `Kartendetail`, also auch `Teilaufgaben`, `Kommentare` und die neuen `Anhaenge`; sein Kommentarkopf nennt die richtige Zahl. **Das ist zugleich die Behebung eines Bestandsbefunds** — siehe „Bestandsbefund" unten.
-- [ ] **Benannte Änderung 5:** `TestKartenRepository` (`Source/KanbanC.BL.Tests/TestHelpers/`) zieht mit den neuen Signaturen von `IKartenRepository` mit.
-- [ ] **Benannte Änderung 6:** `Blazor/Program.cs` setzt `HubOptions.MaximumReceiveMessageSize`, `WebApi/Program.cs` bzw. die Route setzt `MultipartBodyLengthLimit`; beide beziehen sich auf **dieselbe** Konstante `Anhangsgrenze`, es gibt keine zweite Zahl.
-- [ ] **Benannte Änderung 7:** `Blazor/appsettings.json` bekommt `WebApi:OeffentlicheBasisAdresse`, `Blazor/Program.cs` liest sie mit `WebApi:BasisAdresse` als Voreinstellung. Der bestehende Schlüssel `WebApi:BasisAdresse` bleibt in Bedeutung und Wirkung **unverändert**.
-- [ ] **Benannte Änderung 8:** `KartendetailSeite` (`Source/KanbanC.PlaywrightTests/PageObjects/`) wächst um die Locator des Abschnitts, `WebApiKlient` (`Infrastructure/WebApiKlient.cs`) um `HaengeAnhangAn`, und `KartendetailOeffnenE2ETests` um den Anhang-Leerstand in der Leerzustandszeile; die bestehenden Locator und Zusicherungen bleiben unverändert.
-- [ ] `Kopfzeile.razor` bleibt **unverändert** — die Kartenseite injiziert den `Identitaetsspeicher` selbst; kein `CascadingValue`, kein Zustandsdienst, kein `EventCallback`. `R00013` wird nicht angefasst.
-- [ ] `Karte.cs` und `Karte.razor` bleiben unverändert — **auf der Bahn ist kein Anhangzeichen**, und die Kartenzahl im Bahnenkopf zählt unverändert.
-- [ ] `KartenRepository.Heute()` und `KontributorenRepository` bleiben unverändert — es wird **keine** Uhr-Abstraktion eingeführt.
-- [ ] Alle E2E-Suiten aus `R00001`–`R00019` bleiben **ohne Änderung** grün, insbesondere die Kartendetail-Suiten von `R00017`–`R00019` und die Identitätssuite von `R00013`.
-- [ ] `GET /api/boards/{boardId}` und alle bestehenden Kartenrouten bleiben in Adresse, Verb und Antwortgestalt unverändert.
+- [x] **Benannte Änderung 5:** `TestKartenRepository` (`Source/KanbanC.BL.Tests/TestHelpers/`) zieht mit den neuen Signaturen von `IKartenRepository` mit.
+- [x] **Benannte Änderung 6:** `Blazor/Program.cs` setzt `HubOptions.MaximumReceiveMessageSize`, `WebApi/Program.cs` bzw. die Route setzt `MultipartBodyLengthLimit`; beide beziehen sich auf **dieselbe** Konstante `Anhangsgrenze`, es gibt keine zweite Zahl.
+- [x] **Benannte Änderung 7:** `Blazor/appsettings.json` bekommt `WebApi:OeffentlicheBasisAdresse`, `Blazor/Program.cs` liest sie mit `WebApi:BasisAdresse` als Voreinstellung. Der bestehende Schlüssel `WebApi:BasisAdresse` bleibt in Bedeutung und Wirkung **unverändert**.
+- [x] **Benannte Änderung 8:** `KartendetailSeite` (`Source/KanbanC.PlaywrightTests/PageObjects/`) wächst um die Locator des Abschnitts, `WebApiKlient` (`Infrastructure/WebApiKlient.cs`) um `HaengeAnhangAn`, und `KartendetailOeffnenE2ETests` um den Anhang-Leerstand in der Leerzustandszeile; die bestehenden Locator und Zusicherungen bleiben unverändert.
+- [x] `Kopfzeile.razor` bleibt **unverändert** — die Kartenseite injiziert den `Identitaetsspeicher` selbst; kein `CascadingValue`, kein Zustandsdienst, kein `EventCallback`. `R00013` wird nicht angefasst.
+- [x] `Karte.cs` und `Karte.razor` bleiben unverändert — **auf der Bahn ist kein Anhangzeichen**, und die Kartenzahl im Bahnenkopf zählt unverändert.
+- [x] `KartenRepository.Heute()` und `KontributorenRepository` bleiben unverändert — es wird **keine** Uhr-Abstraktion eingeführt.
+- [x] Alle E2E-Suiten aus `R00001`–`R00019` bleiben **ohne Änderung** grün, insbesondere die Kartendetail-Suiten von `R00017`–`R00019` und die Identitätssuite von `R00013`.
+- [x] `GET /api/boards/{boardId}` und alle bestehenden Kartenrouten bleiben in Adresse, Verb und Antwortgestalt unverändert.
 
 ## Betroffene Verzeichnisstruktur
 

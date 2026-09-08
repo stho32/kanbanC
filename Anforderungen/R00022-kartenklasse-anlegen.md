@@ -1,6 +1,6 @@
 ---
 id: R00022
-status: Neu
+status: In Arbeit
 datum: 2026-09-06
 ---
 
@@ -65,86 +65,86 @@ Für den KI-Agenten heißt der Slice: er kann sich seinen eigenen Nummernkreis a
 
 ### Die Kartenklasse entsteht mit Name und Präfix (API)
 
-- [ ] `POST /api/boards/{boardId}/kartenklassen` mit Name und Präfix antwortet mit HTTP 201 und einer `Kartenklasse` mit `KartenklasseId`, Name, Präfix und `Zaehlerstand`.
-- [ ] Die `Location`-Kopfzeile der Antwort zeigt auf die angelegte Kartenklasse.
-- [ ] Der `Zaehlerstand` der angelegten Kartenklasse ist **0** — und zwar auch dann, wenn das Board schon Karten trägt.
-- [ ] `GET /api/boards/{boardId}/kartenklassen` liefert danach HTTP 200 und diese Kartenklasse in der Liste.
-- [ ] Name und Präfix kommen **zeichengleich bis auf die Ränder** zurück. Rechenbeispiel: `"  Dokumentation  "` / `"  DOK-  "` wird als `Dokumentation` / `DOK-` gespeichert; `WBS_` bleibt `WBS_`, `wbs-` bleibt kleingeschrieben `wbs-`.
-- [ ] Ein Board **ohne** Kartenklasse liefert HTTP 200 und eine **leere Liste** — kein 404, keine Fehlermeldung.
-- [ ] Rechenbeispiel Reihenfolge: werden nacheinander `WBS`, `Bugmeldungen`, `Beschaffung` angelegt, lautet die Liste in jedem folgenden Abruf `WBS`, `Bugmeldungen`, `Beschaffung` — **Anlagereihenfolge**, nicht alphabetisch.
-- [ ] Die Kartenklassen hängen **nicht** am `Board`: `GET /api/boards/{boardId}` liefert das Board unverändert **ohne** Kartenklassenliste.
-- [ ] Ein Neustart der Anwendung lässt Namen, Präfixe, Zählerstände und Reihenfolge unverändert.
-- [ ] Der zweite Lauf des `Migrationslaeufer` auf einer bestehenden Datei lässt Schema und Daten unverändert.
+- [x] `POST /api/boards/{boardId}/kartenklassen` mit Name und Präfix antwortet mit HTTP 201 und einer `Kartenklasse` mit `KartenklasseId`, Name, Präfix und `Zaehlerstand`.
+- [x] Die `Location`-Kopfzeile der Antwort zeigt auf die angelegte Kartenklasse.
+- [x] Der `Zaehlerstand` der angelegten Kartenklasse ist **0** — und zwar auch dann, wenn das Board schon Karten trägt.
+- [x] `GET /api/boards/{boardId}/kartenklassen` liefert danach HTTP 200 und diese Kartenklasse in der Liste.
+- [x] Name und Präfix kommen **zeichengleich bis auf die Ränder** zurück. Rechenbeispiel: `"  Dokumentation  "` / `"  DOK-  "` wird als `Dokumentation` / `DOK-` gespeichert; `WBS_` bleibt `WBS_`, `wbs-` bleibt kleingeschrieben `wbs-`.
+- [x] Ein Board **ohne** Kartenklasse liefert HTTP 200 und eine **leere Liste** — kein 404, keine Fehlermeldung.
+- [x] Rechenbeispiel Reihenfolge: werden nacheinander `WBS`, `Bugmeldungen`, `Beschaffung` angelegt, lautet die Liste in jedem folgenden Abruf `WBS`, `Bugmeldungen`, `Beschaffung` — **Anlagereihenfolge**, nicht alphabetisch.
+- [x] Die Kartenklassen hängen **nicht** am `Board`: `GET /api/boards/{boardId}` liefert das Board unverändert **ohne** Kartenklassenliste.
+- [x] Ein Neustart der Anwendung lässt Namen, Präfixe, Zählerstände und Reihenfolge unverändert.
+- [x] Der zweite Lauf des `Migrationslaeufer` auf einer bestehenden Datei lässt Schema und Daten unverändert.
 
 ### Was geprüft wird — und was ausdrücklich nicht
 
-- [ ] Ein **leerer Name** wird mit HTTP 400 **und Rumpf** zurückgewiesen; es entsteht keine Zeile. Die Meldung lautet „Eine Klasse braucht einen Namen."
-- [ ] Ein Name, der **nur aus Leerzeichen** besteht, gilt als leer und wird ebenso zurückgewiesen.
-- [ ] Ein **leeres Präfix** wird mit HTTP 400 und Rumpf zurückgewiesen.
-- [ ] Ein Präfix mit einem **Leerzeichen** darin wird zurückgewiesen — eine Kartennummer wandert in Zweignamen, Meldungen und Suchfelder.
-- [ ] Ein Präfix mit einem Zeichen außerhalb von `A-Z`, `a-z`, `0-9`, `-`, `_` wird zurückgewiesen. Rechenbeispiel: `WBS-` und `WBS_2` gehen durch, `WBS/` und `WBS.` nicht.
-- [ ] Ein Präfix **über der Höchstlänge** wird zurückgewiesen; der Befund **nennt die Höchstlänge**. Rechenbeispiel: bei einer Höchstlänge von 8 geht `ABCDEFGH` durch, `ABCDEFGHI` nicht.
-- [ ] Ein Präfix, das **nicht** mit einem Trenner endet (`WBS`), wird **angenommen** — die Anwendung hängt nichts an.
-- [ ] Ein Präfix in **Kleinbuchstaben** (`wbs-`) wird angenommen und **unverändert** abgelegt.
-- [ ] Ein **doppelter Name** auf demselben Board wird **angenommen** — der Name wird nicht auf Eindeutigkeit geprüft.
-- [ ] Die Zurückweisung nennt in der Kompensationsaktion die **Route samt Boardnummer**, wie bei Spalte, Etikett, Teilaufgabe und Kommentar.
-- [ ] Nach jeder Zurückweisung wurde **nicht geschrieben**: die Liste des Boards ist unverändert.
+- [x] Ein **leerer Name** wird mit HTTP 400 **und Rumpf** zurückgewiesen; es entsteht keine Zeile. Die Meldung lautet „Eine Klasse braucht einen Namen."
+- [x] Ein Name, der **nur aus Leerzeichen** besteht, gilt als leer und wird ebenso zurückgewiesen.
+- [x] Ein **leeres Präfix** wird mit HTTP 400 und Rumpf zurückgewiesen.
+- [x] Ein Präfix mit einem **Leerzeichen** darin wird zurückgewiesen — eine Kartennummer wandert in Zweignamen, Meldungen und Suchfelder.
+- [x] Ein Präfix mit einem Zeichen außerhalb von `A-Z`, `a-z`, `0-9`, `-`, `_` wird zurückgewiesen. Rechenbeispiel: `WBS-` und `WBS_2` gehen durch, `WBS/` und `WBS.` nicht.
+- [x] Ein Präfix **über der Höchstlänge** wird zurückgewiesen; der Befund **nennt die Höchstlänge**. Rechenbeispiel: bei einer Höchstlänge von 8 geht `ABCDEFGH` durch, `ABCDEFGHI` nicht.
+- [x] Ein Präfix, das **nicht** mit einem Trenner endet (`WBS`), wird **angenommen** — die Anwendung hängt nichts an.
+- [x] Ein Präfix in **Kleinbuchstaben** (`wbs-`) wird angenommen und **unverändert** abgelegt.
+- [x] Ein **doppelter Name** auf demselben Board wird **angenommen** — der Name wird nicht auf Eindeutigkeit geprüft.
+- [x] Die Zurückweisung nennt in der Kompensationsaktion die **Route samt Boardnummer**, wie bei Spalte, Etikett, Teilaufgabe und Kommentar.
+- [x] Nach jeder Zurückweisung wurde **nicht geschrieben**: die Liste des Boards ist unverändert.
 
 ### Das Präfix ist je Board eindeutig
 
-- [ ] Ein zweiter `POST` mit **demselben** Präfix auf **dasselbe** Board antwortet mit HTTP 400 und Rumpf; die Liste bleibt bei **einem** Eintrag.
-- [ ] Die Prüfung greift **ohne Rücksicht auf Groß-/Kleinschreibung**: `WBS-` und `wbs-` gelten auf einem Board als dasselbe Präfix.
-- [ ] Die Prüfung greift auch, wenn sich die beiden Aufrufe nur an den **Rändern** unterscheiden: `"WBS-"` und `" WBS- "` sind dasselbe Präfix, weil getrimmt wird.
-- [ ] Der Befund **nennt die Kartenklasse, die das Präfix hält**, mit ihrem Namen: „Das Präfix WBS- führt auf diesem Board schon die Klasse „WBS". Wähle ein anderes Präfix." — Grund **und** Kompensationsaktion in einem Satz.
-- [ ] Dasselbe Präfix auf einem **zweiten Board** wird angenommen; beide Boards führen es danach nebeneinander.
-- [ ] Das Schema sichert die Regel zusätzlich ab: ein direkter zweiter `INSERT` mit demselben `(Board, Praefix)` — auch in abweichender Schreibweise — scheitert an der Datenbank.
-- [ ] Der Aufrufer trifft **nie** auf eine nackte Datenbankmeldung über einen verletzten Index.
+- [x] Ein zweiter `POST` mit **demselben** Präfix auf **dasselbe** Board antwortet mit HTTP 400 und Rumpf; die Liste bleibt bei **einem** Eintrag.
+- [x] Die Prüfung greift **ohne Rücksicht auf Groß-/Kleinschreibung**: `WBS-` und `wbs-` gelten auf einem Board als dasselbe Präfix.
+- [x] Die Prüfung greift auch, wenn sich die beiden Aufrufe nur an den **Rändern** unterscheiden: `"WBS-"` und `" WBS- "` sind dasselbe Präfix, weil getrimmt wird.
+- [x] Der Befund **nennt die Kartenklasse, die das Präfix hält**, mit ihrem Namen: „Das Präfix WBS- führt auf diesem Board schon die Klasse „WBS". Wähle ein anderes Präfix." — Grund **und** Kompensationsaktion in einem Satz.
+- [x] Dasselbe Präfix auf einem **zweiten Board** wird angenommen; beide Boards führen es danach nebeneinander.
+- [x] Das Schema sichert die Regel zusätzlich ab: ein direkter zweiter `INSERT` mit demselben `(Board, Praefix)` — auch in abweichender Schreibweise — scheitert an der Datenbank.
+- [x] Der Aufrufer trifft **nie** auf eine nackte Datenbankmeldung über einen verletzten Index.
 
 ### Der Zählerstand wird geführt, nicht gerechnet
 
-- [ ] `Kartenklasse` trägt ein Feld `Zaehlerstand`; es ist **gespeichert** und wird nicht aus den Karten der Klasse gerechnet.
-- [ ] Der Zählerstand einer frisch angelegten Kartenklasse ist 0 und bleibt es in diesem Slice — **keine** Route dieses Slice erhöht ihn.
-- [ ] Die nächste Nummer entsteht aus Präfix und `Zaehlerstand + 1`, **mindestens zweistellig**. Rechenbeispiele: Stand 0 → `WBS-01`; Stand 7 → `BUG-08`; Stand 31 → `WBS-32`; Stand 100 → `WBS-101`.
-- [ ] Die Auffüllung auf zwei Stellen ist **kein Abschneiden**: ein dreistelliger Stand wächst auf drei Stellen, ein vierstelliger auf vier.
-- [ ] Das Präfix geht **unverändert** in die Nummer ein: `WBS_` mit Stand 0 ergibt `WBS_01`, nicht `WBS-01`.
-- [ ] Die Bildung der Nummer ist **ohne Datenbank** prüfbar — sie ist reine Formatierung.
+- [x] `Kartenklasse` trägt ein Feld `Zaehlerstand`; es ist **gespeichert** und wird nicht aus den Karten der Klasse gerechnet.
+- [x] Der Zählerstand einer frisch angelegten Kartenklasse ist 0 und bleibt es in diesem Slice — **keine** Route dieses Slice erhöht ihn.
+- [x] Die nächste Nummer entsteht aus Präfix und `Zaehlerstand + 1`, **mindestens zweistellig**. Rechenbeispiele: Stand 0 → `WBS-01`; Stand 7 → `BUG-08`; Stand 31 → `WBS-32`; Stand 100 → `WBS-101`.
+- [x] Die Auffüllung auf zwei Stellen ist **kein Abschneiden**: ein dreistelliger Stand wächst auf drei Stellen, ein vierstelliger auf vier.
+- [x] Das Präfix geht **unverändert** in die Nummer ein: `WBS_` mit Stand 0 ergibt `WBS_01`, nicht `WBS-01`.
+- [x] Die Bildung der Nummer ist **ohne Datenbank** prüfbar — sie ist reine Formatierung.
 
 ### Fehlerantworten für Agenten
 
-- [ ] Ein **unbekanntes Board** liefert bei **beiden** Routen HTTP 404 **mit Rumpf** (Code, Meldung mit der aufgerufenen Nummer, Kompensationsaktion).
-- [ ] Der 404-Befund entsteht über `Nichtgefunden.Board(boardId)` und ist damit derselbe wie bei den Spalten- und Kartenrouten — keine handgeschriebene Variante.
+- [x] Ein **unbekanntes Board** liefert bei **beiden** Routen HTTP 404 **mit Rumpf** (Code, Meldung mit der aufgerufenen Nummer, Kompensationsaktion).
+- [x] Der 404-Befund entsteht über `Nichtgefunden.Board(boardId)` und ist damit derselbe wie bei den Spalten- und Kartenrouten — keine handgeschriebene Variante.
 - [ ] `Nichtgefunden` wächst in diesem Slice **nicht** um eine Schwester: es gibt keine Adresse auf eine einzelne Kartenklasse.
-- [ ] Jeder 400er-Befund trägt einen nichtleeren Code, eine Meldung mit den aufgerufenen Werten und eine nichtleere Kompensationsaktion.
-- [ ] `FehlervertragTests` ruft **beide** neuen Routen ab und bleibt grün; **keine** der beiden steht auf `RoutenOhneFehlerantwort`.
+- [x] Jeder 400er-Befund trägt einen nichtleeren Code, eine Meldung mit den aufgerufenen Werten und eine nichtleere Kompensationsaktion.
+- [x] `FehlervertragTests` ruft **beide** neuen Routen ab und bleibt grün; **keine** der beiden steht auf `RoutenOhneFehlerantwort`.
 
 ### Der Klassenbereich im Layout-Modus
 
-- [ ] Auf `/boards/{boardId}` erscheint der Bereich **nur im Layout-Modus**, unterhalb der Spaltenpflege, getrennt durch dieselbe Linie, die das Token-Sheet zieht.
-- [ ] In der **Arbeitsansicht** (Layout-Modus aus) ist der Bereich **nicht** da.
-- [ ] Der Bereich trägt die Überschrift **„Klassen"** — nicht „Kartenklassen".
-- [ ] Jede Zeile zeigt den **Namen**, das **Präfix als Plakette** und rechts „n vergeben · nächste `<Nummer>`". Rechenbeispiel: eine frische Klasse „WBS" mit Präfix `WBS-` zeigt „0 vergeben · nächste WBS-01".
-- [ ] Die Zeilen stehen in **Anlagereihenfolge**.
-- [ ] Vor der ersten Kartenklasse steht der Satz „Dieses Board hat keine Klasse." — **ein Satz, kein Kasten**, in Wortlaut und Form wie der Leerzustand der Spalten; ein Board ohne Klasse ist kein Fehler.
-- [ ] Unter der Liste steht die Anlegezeile mit den beschrifteten Feldern **„Name"** und **„Nummernkreis-Präfix"** und dem Knopf **„Klasse anlegen"**.
-- [ ] Die Eingabefelder tragen **kein `value`-Attribut** (`@bind`, wie bei Spalte, Teilaufgabe und Kommentar).
-- [ ] Nach dem Anlegen steht die neue Zeile als **letzte** in der Liste und die Felder sind leer.
-- [ ] Ein leerer Name und ein doppeltes Präfix bringen eine **lesbare Meldung** auf der Seite („Die Klasse wurde nicht angelegt:" plus Befundliste); die Liste bleibt unverändert.
-- [ ] Ist die WebApi nicht erreichbar, erscheint der übliche Ausfallsatz statt einer Ausnahmeseite.
-- [ ] Nach einem Reload zeigt der Bereich dieselben Kartenklassen in derselben Reihenfolge.
-- [ ] Alle Gestaltungswerte des Bereichs kommen aus `gestaltung.css`; die Komponenten-CSS-Datei enthält **kein** Farb-, Abstands- oder Radius-Literal.
+- [x] Auf `/boards/{boardId}` erscheint der Bereich **nur im Layout-Modus**, unterhalb der Spaltenpflege, getrennt durch dieselbe Linie, die das Token-Sheet zieht.
+- [x] In der **Arbeitsansicht** (Layout-Modus aus) ist der Bereich **nicht** da.
+- [x] Der Bereich trägt die Überschrift **„Klassen"** — nicht „Kartenklassen".
+- [x] Jede Zeile zeigt den **Namen**, das **Präfix als Plakette** und rechts „n vergeben · nächste `<Nummer>`". Rechenbeispiel: eine frische Klasse „WBS" mit Präfix `WBS-` zeigt „0 vergeben · nächste WBS-01".
+- [x] Die Zeilen stehen in **Anlagereihenfolge**.
+- [x] Vor der ersten Kartenklasse steht der Satz „Dieses Board hat keine Klasse." — **ein Satz, kein Kasten**, in Wortlaut und Form wie der Leerzustand der Spalten; ein Board ohne Klasse ist kein Fehler.
+- [x] Unter der Liste steht die Anlegezeile mit den beschrifteten Feldern **„Name"** und **„Nummernkreis-Präfix"** und dem Knopf **„Klasse anlegen"**.
+- [x] Die Eingabefelder tragen **kein `value`-Attribut** (`@bind`, wie bei Spalte, Teilaufgabe und Kommentar).
+- [x] Nach dem Anlegen steht die neue Zeile als **letzte** in der Liste und die Felder sind leer.
+- [x] Ein leerer Name und ein doppeltes Präfix bringen eine **lesbare Meldung** auf der Seite („Die Klasse wurde nicht angelegt:" plus Befundliste); die Liste bleibt unverändert.
+- [x] Ist die WebApi nicht erreichbar, erscheint der übliche Ausfallsatz statt einer Ausnahmeseite.
+- [x] Nach einem Reload zeigt der Bereich dieselben Kartenklassen in derselben Reihenfolge.
+- [x] Alle Gestaltungswerte des Bereichs kommen aus `gestaltung.css`; die Komponenten-CSS-Datei enthält **kein** Farb-, Abstands- oder Radius-Literal.
 
 ### Der grüne Bestand bleibt grün — mit benannten Änderungen
 
-- [ ] **Benannte Änderung 1:** `Source/KanbanC.Blazor/Components/Pages/Board.razor` (`:83-86`) — der Layout-Zweig bindet den neuen Bereich **zusätzlich** zu `<Spaltenpflege>` ein. Der Arbeitsansicht-Zweig bleibt unverändert.
-- [ ] **Benannte Änderung 2:** `Source/KanbanC.Blazor/Program.cs` — der neue Klient wird neben `BoardApiKlient`, `SpaltenApiKlient`, `KartenApiKlient` und `KontributorenApiKlient` registriert.
-- [ ] **Benannte Änderung 3:** `Source/KanbanC.PlaywrightTests/PageObjects/BoardSeite.cs` wächst um die Locator des neuen Bereichs. **Bestehende Locator werden nicht geändert.**
-- [ ] **Benannte Änderung 4:** `FehlervertragTests` ruft die zwei neuen Routen ab. `RoutenOhneFehlerantwort` (`:18-23`) bleibt **unverändert** — beide neuen Routen liefern eine Fehlerantwort.
-- [ ] **`LayoutModusE2ETests` bleibt unverändert grün.** Der neue Bereich trägt eigene Kennungen (`#klassenpflege` und Geschwister) und eigene Klassennamen; die Anlegezeile heißt bewusst **nicht** `.spaltenpflege-neu`, obwohl sie so aussieht. Zieht doch eine Zusicherung mit, ist das ein Befund und wird als benannte Änderung geführt — **nicht** durch Anpassen der Zahl erledigt.
-- [ ] `Spaltenpflege.razor`, `Spaltenbahnen.razor` und `Spaltenleser` bleiben unverändert.
-- [ ] `Board.cs`, `Spalte.cs` und `Karte.cs` (`KanbanC.Contracts`) bleiben unverändert — insbesondere wächst `Board` **nicht** um eine Kartenklassenliste.
-- [ ] `Karte.razor` bleibt unverändert — **auf der Bahn steht in diesem Slice keine Plakette und keine Nummer** (das ist `I0021`).
-- [ ] `Kartendetail.razor` bleibt unverändert — das Feld „Klasse" auf der Kartenseite ist `I0021`.
-- [ ] `GET /api/boards/{boardId}` und alle bestehenden Routen bleiben in Adresse, Verb und Antwortgestalt unverändert.
+- [x] **Benannte Änderung 1:** `Source/KanbanC.Blazor/Components/Pages/Board.razor` (`:83-86`) — der Layout-Zweig bindet den neuen Bereich **zusätzlich** zu `<Spaltenpflege>` ein. Der Arbeitsansicht-Zweig bleibt unverändert.
+- [x] **Benannte Änderung 2:** `Source/KanbanC.Blazor/Program.cs` — der neue Klient wird neben `BoardApiKlient`, `SpaltenApiKlient`, `KartenApiKlient` und `KontributorenApiKlient` registriert.
+- [x] **Benannte Änderung 3:** `Source/KanbanC.PlaywrightTests/PageObjects/BoardSeite.cs` wächst um die Locator des neuen Bereichs. **Bestehende Locator werden nicht geändert.**
+- [x] **Benannte Änderung 4:** `FehlervertragTests` ruft die zwei neuen Routen ab. `RoutenOhneFehlerantwort` (`:18-23`) bleibt **unverändert** — beide neuen Routen liefern eine Fehlerantwort.
+- [x] **`LayoutModusE2ETests` bleibt unverändert grün.** Der neue Bereich trägt eigene Kennungen (`#klassenpflege` und Geschwister) und eigene Klassennamen; die Anlegezeile heißt bewusst **nicht** `.spaltenpflege-neu`, obwohl sie so aussieht. Zieht doch eine Zusicherung mit, ist das ein Befund und wird als benannte Änderung geführt — **nicht** durch Anpassen der Zahl erledigt.
+- [x] `Spaltenpflege.razor`, `Spaltenbahnen.razor` und `Spaltenleser` bleiben unverändert.
+- [x] `Board.cs`, `Spalte.cs` und `Karte.cs` (`KanbanC.Contracts`) bleiben unverändert — insbesondere wächst `Board` **nicht** um eine Kartenklassenliste.
+- [x] `Karte.razor` bleibt unverändert — **auf der Bahn steht in diesem Slice keine Plakette und keine Nummer** (das ist `I0021`).
+- [x] `Kartendetail.razor` bleibt unverändert — das Feld „Klasse" auf der Kartenseite ist `I0021`.
+- [x] `GET /api/boards/{boardId}` und alle bestehenden Routen bleiben in Adresse, Verb und Antwortgestalt unverändert.
 - [ ] Alle E2E-Suiten aus `R00001`–`R00021` bleiben grün; geändert werden **nur** die vier oben benannten Stellen.
 
 ## Betroffene Verzeichnisstruktur

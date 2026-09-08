@@ -1,6 +1,6 @@
 ---
 id: R00018
-status: Neu
+status: Erledigt
 datum: 2026-09-05
 ---
 
@@ -49,51 +49,51 @@ Mit den Teilaufgaben bekommt der **Zwischenstand einer Karte** einen Ort. Für d
 
 ### Die Karte trägt Teilaufgaben (API)
 
-- [ ] `POST /api/karten/{karteId}/teilaufgaben` mit einem Text antwortet mit HTTP 200 und einem `Kartendetail`, dessen Teilaufgabenliste diesen Text als **letzten** Eintrag trägt.
-- [ ] Rechenbeispiel Reihenfolge: an eine Karte ohne Teilaufgaben werden nacheinander `A`, `B`, `C` angelegt → die Liste lautet in jedem folgenden Abruf `A`, `B`, `C`, unabhängig davon, welche danach abgehakt werden.
-- [ ] Jede Teilaufgabe trägt in der Antwort eine eigene, von den anderen verschiedene Nummer.
-- [ ] `GET /api/karten/{karteId}` liefert danach dieselbe Liste in derselben Reihenfolge.
-- [ ] Zwei Aufrufe mit **demselben** Text an derselben Karte werden beide angenommen und erzeugen zwei Einträge mit verschiedenen Nummern.
-- [ ] Die Teilaufgaben hängen am `Kartendetail` und **nicht** an `Karte`: `GET /api/boards/{boardId}` liefert die Karten unverändert ohne Teilaufgabenliste.
-- [ ] Ein Neustart der Anwendung lässt Texte, Reihenfolge und Abhakstand unverändert.
+- [x] `POST /api/karten/{karteId}/teilaufgaben` mit einem Text antwortet mit HTTP 200 und einem `Kartendetail`, dessen Teilaufgabenliste diesen Text als **letzten** Eintrag trägt.
+- [x] Rechenbeispiel Reihenfolge: an eine Karte ohne Teilaufgaben werden nacheinander `A`, `B`, `C` angelegt → die Liste lautet in jedem folgenden Abruf `A`, `B`, `C`, unabhängig davon, welche danach abgehakt werden.
+- [x] Jede Teilaufgabe trägt in der Antwort eine eigene, von den anderen verschiedene Nummer.
+- [x] `GET /api/karten/{karteId}` liefert danach dieselbe Liste in derselben Reihenfolge.
+- [x] Zwei Aufrufe mit **demselben** Text an derselben Karte werden beide angenommen und erzeugen zwei Einträge mit verschiedenen Nummern.
+- [x] Die Teilaufgaben hängen am `Kartendetail` und **nicht** an `Karte`: `GET /api/boards/{boardId}` liefert die Karten unverändert ohne Teilaufgabenliste.
+- [x] Ein Neustart der Anwendung lässt Texte, Reihenfolge und Abhakstand unverändert.
 
 ### Einzeln abhakbar (API)
 
-- [ ] `PUT /api/karten/{karteId}/teilaufgaben/{teilaufgabeId}` mit „abgehakt" antwortet mit HTTP 200 und einem `Kartendetail`, in dem **genau diese** Teilaufgabe abgehakt ist und die übrigen unverändert stehen.
-- [ ] Derselbe Aufruf mit „nicht abgehakt" nimmt das Abhaken zurück.
-- [ ] Rechenbeispiel: Karte mit `A`, `B`, `C`; `B` abhaken → `A` und `C` bleiben nicht abgehakt, Nummern und Reihenfolge aller drei bleiben dieselben.
-- [ ] Ein zweiter Aufruf mit demselben Stand ändert nichts und antwortet weiterhin mit HTTP 200.
+- [x] `PUT /api/karten/{karteId}/teilaufgaben/{teilaufgabeId}` mit „abgehakt" antwortet mit HTTP 200 und einem `Kartendetail`, in dem **genau diese** Teilaufgabe abgehakt ist und die übrigen unverändert stehen.
+- [x] Derselbe Aufruf mit „nicht abgehakt" nimmt das Abhaken zurück.
+- [x] Rechenbeispiel: Karte mit `A`, `B`, `C`; `B` abhaken → `A` und `C` bleiben nicht abgehakt, Nummern und Reihenfolge aller drei bleiben dieselben.
+- [x] Ein zweiter Aufruf mit demselben Stand ändert nichts und antwortet weiterhin mit HTTP 200.
 
 ### Zurückweisung und Fehlerantworten für Agenten
 
-- [ ] Ein leerer Text (auch ein Text nur aus Leerzeichen) wird mit HTTP 400 **und Rumpf** zurückgewiesen; die Liste der Karte bleibt danach unverändert.
-- [ ] Ein zu langer Text wird ebenso mit HTTP 400 und Rumpf zurückgewiesen; nichts wurde gespeichert.
-- [ ] Randleerzeichen fallen weg, der Text im Übrigen nicht: `"  Kaffee  "` wird als `"Kaffee"` gespeichert, Groß- und Kleinschreibung bleibt.
-- [ ] Eine **unbekannte** `karteId` beantworten **beide** Routen mit HTTP 404 und einem Befund, der Code, die aufgerufene Kartennummer und einen ausführbaren nächsten Aufruf nennt. Der Befund nennt **kein** Board — die Route kennt keins.
-- [ ] Eine `teilaufgabeId`, die es gibt, **aber zu einer anderen Karte gehört**, wird mit HTTP 404 und Rumpf beantwortet; an beiden Karten hat sich nichts geändert. Der Befund nennt **beide** Nummern und die Kompensationsaktion.
-- [ ] Keine der beiden Routen liefert eine Fehlerantwort mit leerem Rumpf.
-- [ ] Der Vertragstest über alle registrierten Routen bleibt grün: beide neuen Routen werden von ihm abgerufen und stehen nicht als ungeprüft übrig (`FehlervertragTests.cs:41-58`).
+- [x] Ein leerer Text (auch ein Text nur aus Leerzeichen) wird mit HTTP 400 **und Rumpf** zurückgewiesen; die Liste der Karte bleibt danach unverändert.
+- [x] Ein zu langer Text wird ebenso mit HTTP 400 und Rumpf zurückgewiesen; nichts wurde gespeichert.
+- [x] Randleerzeichen fallen weg, der Text im Übrigen nicht: `"  Kaffee  "` wird als `"Kaffee"` gespeichert, Groß- und Kleinschreibung bleibt.
+- [x] Eine **unbekannte** `karteId` beantworten **beide** Routen mit HTTP 404 und einem Befund, der Code, die aufgerufene Kartennummer und einen ausführbaren nächsten Aufruf nennt. Der Befund nennt **kein** Board — die Route kennt keins.
+- [x] Eine `teilaufgabeId`, die es gibt, **aber zu einer anderen Karte gehört**, wird mit HTTP 404 und Rumpf beantwortet; an beiden Karten hat sich nichts geändert. Der Befund nennt **beide** Nummern und die Kompensationsaktion.
+- [x] Keine der beiden Routen liefert eine Fehlerantwort mit leerem Rumpf.
+- [x] Der Vertragstest über alle registrierten Routen bleibt grün: beide neuen Routen werden von ihm abgerufen und stehen nicht als ungeprüft übrig (`FehlervertragTests.cs:41-58`).
 
 ### Der Abschnitt auf der Kartenseite
 
-- [ ] Auf `/karten/{karteId}` steht hinter „Beschreibung" ein Abschnitt mit der Überschrift **„Teilaufgaben"** — nicht „Subtasks".
-- [ ] Der Abschnitt zeigt den Fortschritt als Text und als Balken. Rechenbeispiel: 4 Teilaufgaben, 2 abgehakt → „2 von 4", Balken zu 50 %; alle 4 abgehakt → „4 von 4", Balken zu 100 %.
-- [ ] Hat die Karte **keine** Teilaufgabe, steht dort „Keine Teilaufgaben · anlegen" — kein „0 von 0", kein Balken.
-- [ ] Eine abgehakte Zeile ist durchgestrichen, eine offene nicht.
-- [ ] Ein Klick auf ein Kästchen ändert den Stand, und der Fortschritt springt im selben Zug mit. Rechenbeispiel: 2 Teilaufgaben, keine abgehakt, eine abhaken → „1 von 2".
-- [ ] Die Eingabezeile „Teilaufgabe hinzufügen" samt `+` legt an; danach steht der neue Eintrag als letzter in der Liste und das Feld ist wieder leer.
-- [ ] Ein leerer Text bringt eine lesbare Meldung auf der Seite, wie die Zurückweisung des Kartenblatts (`B0227`), und legt nichts an.
-- [ ] Nach einem Reload zeigt die Seite denselben Stand — Texte, Reihenfolge und Kästchen.
-- [ ] Der Fortschritt kommt **nicht** aus der Antwort: es gibt kein Feld im `Kartendetail`, das ihn trägt.
+- [x] Auf `/karten/{karteId}` steht hinter „Beschreibung" ein Abschnitt mit der Überschrift **„Teilaufgaben"** — nicht „Subtasks".
+- [x] Der Abschnitt zeigt den Fortschritt als Text und als Balken. Rechenbeispiel: 4 Teilaufgaben, 2 abgehakt → „2 von 4", Balken zu 50 %; alle 4 abgehakt → „4 von 4", Balken zu 100 %.
+- [x] Hat die Karte **keine** Teilaufgabe, steht dort „Keine Teilaufgaben · anlegen" — kein „0 von 0", kein Balken.
+- [x] Eine abgehakte Zeile ist durchgestrichen, eine offene nicht.
+- [x] Ein Klick auf ein Kästchen ändert den Stand, und der Fortschritt springt im selben Zug mit. Rechenbeispiel: 2 Teilaufgaben, keine abgehakt, eine abhaken → „1 von 2".
+- [x] Die Eingabezeile „Teilaufgabe hinzufügen" samt `+` legt an; danach steht der neue Eintrag als letzter in der Liste und das Feld ist wieder leer.
+- [x] Ein leerer Text bringt eine lesbare Meldung auf der Seite, wie die Zurückweisung des Kartenblatts (`B0227`), und legt nichts an.
+- [x] Nach einem Reload zeigt die Seite denselben Stand — Texte, Reihenfolge und Kästchen.
+- [x] Der Fortschritt kommt **nicht** aus der Antwort: es gibt kein Feld im `Kartendetail`, das ihn trägt.
 
 ### Der grüne Bestand bleibt grün — mit drei benannten Änderungen
 
-- [ ] **Benannte Änderung 1:** `Kartendetail` (`Source/KanbanC.Contracts/Karten/Kartendetail.cs:15-23`) wächst um die Teilaufgaben. Das sind **zwei** positionale `new Kartendetail(`-Aufrufstellen (`Kartenleser.cs:90`, `KartenServiceTests`); beide werden angepasst, ihre Zusicherungen nicht.
-- [ ] **Benannte Änderung 2:** `Nichtgefunden` (`Source/KanbanC.BL/Operations/Fehler/Nichtgefunden.cs:35`) bekommt die Schwester `Teilaufgabe(karteId, teilaufgabeId)` neben `Karte(karteId)`; der neue Code steht in `AlleCodes`, damit `MeldetEinFehlendesDing` ihn zu 404 zählt. Wortlaut und Kompensation der bestehenden Befunde bleiben unverändert.
-- [ ] **Benannte Änderung 3:** `KartendetailSeite` (`Source/KanbanC.PlaywrightTests/PageObjects/KartendetailSeite.cs`) wächst um die Locator des Abschnitts; die bestehenden Locator und die Tests, die sie nutzen, bleiben unverändert.
-- [ ] Alle E2E-Suiten aus `R00001`–`R00017` bleiben **ohne Änderung** grün, insbesondere die Kartendetail-Suiten von `R00017` (Titel, Beschreibung, Fälligkeit, Farbe, Verantwortlicher, Etiketten) und die Board-Suiten `KarteVerschiebenE2ETests`, `EinfuegelinieE2ETests`, `AbschlussbahnAblageE2ETests`, `KartenzahlImBahnenkopfE2ETests`, `KartenmenueE2ETests`.
-- [ ] `GET /api/boards/{boardId}` und die Kartenrouten unter dem Board bleiben in Adresse, Verb und Antwortgestalt unverändert.
-- [ ] Der zweite Lauf des `Migrationslaeufer` auf einer bestehenden Datei lässt Schema und Daten unverändert.
+- [x] **Benannte Änderung 1:** `Kartendetail` (`Source/KanbanC.Contracts/Karten/Kartendetail.cs:15-23`) wächst um die Teilaufgaben. Das sind **zwei** positionale `new Kartendetail(`-Aufrufstellen (`Kartenleser.cs:90`, `KartenServiceTests`); beide werden angepasst, ihre Zusicherungen nicht.
+- [x] **Benannte Änderung 2:** `Nichtgefunden` (`Source/KanbanC.BL/Operations/Fehler/Nichtgefunden.cs:35`) bekommt die Schwester `Teilaufgabe(karteId, teilaufgabeId)` neben `Karte(karteId)`; der neue Code steht in `AlleCodes`, damit `MeldetEinFehlendesDing` ihn zu 404 zählt. Wortlaut und Kompensation der bestehenden Befunde bleiben unverändert.
+- [x] **Benannte Änderung 3:** `KartendetailSeite` (`Source/KanbanC.PlaywrightTests/PageObjects/KartendetailSeite.cs`) wächst um die Locator des Abschnitts; die bestehenden Locator und die Tests, die sie nutzen, bleiben unverändert.
+- [x] Alle E2E-Suiten aus `R00001`–`R00017` bleiben **ohne Änderung** grün, insbesondere die Kartendetail-Suiten von `R00017` (Titel, Beschreibung, Fälligkeit, Farbe, Verantwortlicher, Etiketten) und die Board-Suiten `KarteVerschiebenE2ETests`, `EinfuegelinieE2ETests`, `AbschlussbahnAblageE2ETests`, `KartenzahlImBahnenkopfE2ETests`, `KartenmenueE2ETests`.
+- [x] `GET /api/boards/{boardId}` und die Kartenrouten unter dem Board bleiben in Adresse, Verb und Antwortgestalt unverändert.
+- [x] Der zweite Lauf des `Migrationslaeufer` auf einer bestehenden Datei lässt Schema und Daten unverändert.
 
 ## Betroffene Verzeichnisstruktur
 

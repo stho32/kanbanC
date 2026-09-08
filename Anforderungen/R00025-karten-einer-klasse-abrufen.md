@@ -1,6 +1,6 @@
 ---
 id: R00025
-status: Neu
+status: Erledigt
 datum: 2026-09-06
 ---
 
@@ -52,51 +52,51 @@ Nach diesem Slice ist ein Set **eine** Adresse. Davon leben die Verbraucher, die
 
 ### Genau ihre Karten, ohne die übrigen
 
-- [ ] `GET /api/boards/{boardId}/kartenklassen/{kartenklasseId}/karten` antwortet mit HTTP 200 und den Karten dieser Kartenklasse.
-- [ ] **Rechenbeispiel:** Board 1 führt die Kartenklassen `WBS-` (Stand 3) und `BUG-` (Stand 2). In drei Spalten liegen: `WBS-01`, `WBS-02`, `WBS-03`, dazu `BUG-01`, `BUG-02` und zwei Karten ohne Kartenklasse. Board 2 führt ebenfalls eine Kartenklasse mit Präfix `WBS-` und hat zwei Karten darin. Der Abruf auf die `WBS-`-Kartenklasse des Boards 1 liefert **genau 3** Karten: `WBS-01`, `WBS-02`, `WBS-03` — **nicht 5, nicht 7, nicht 9**.
-- [ ] Die Karten kommen **über Spaltengrenzen hinweg**: liegen die drei in drei verschiedenen Spalten, sind alle drei in **einer** Antwort.
-- [ ] Ein zweites Board mit **demselben Präfix** verändert das Ergebnis nicht — adressiert wird die `KartenklasseId`, nicht das Präfix.
+- [x] `GET /api/boards/{boardId}/kartenklassen/{kartenklasseId}/karten` antwortet mit HTTP 200 und den Karten dieser Kartenklasse.
+- [x] **Rechenbeispiel:** Board 1 führt die Kartenklassen `WBS-` (Stand 3) und `BUG-` (Stand 2). In drei Spalten liegen: `WBS-01`, `WBS-02`, `WBS-03`, dazu `BUG-01`, `BUG-02` und zwei Karten ohne Kartenklasse. Board 2 führt ebenfalls eine Kartenklasse mit Präfix `WBS-` und hat zwei Karten darin. Der Abruf auf die `WBS-`-Kartenklasse des Boards 1 liefert **genau 3** Karten: `WBS-01`, `WBS-02`, `WBS-03` — **nicht 5, nicht 7, nicht 9**.
+- [x] Die Karten kommen **über Spaltengrenzen hinweg**: liegen die drei in drei verschiedenen Spalten, sind alle drei in **einer** Antwort.
+- [x] Ein zweites Board mit **demselben Präfix** verändert das Ergebnis nicht — adressiert wird die `KartenklasseId`, nicht das Präfix.
 
 ### Ungekürzt — auch aus einer Abschlussspalte
 
-- [ ] Liegen zwei Karten der Kartenklasse in einer **Abschlussspalte mit Anzeigegrenze 1**, liefert der Abruf **beide**. `Abschlussbahn.Gekuerzt` wird auf diese Antwort **nicht** angewandt.
-- [ ] Dieselbe Boardantwort (`GET /api/boards/{boardId}`) zeigt diese Abschlussspalte weiterhin gekürzt — die Anzeigeregel des Boards bleibt unangetastet.
+- [x] Liegen zwei Karten der Kartenklasse in einer **Abschlussspalte mit Anzeigegrenze 1**, liefert der Abruf **beide**. `Abschlussbahn.Gekuerzt` wird auf diese Antwort **nicht** angewandt.
+- [x] Dieselbe Boardantwort (`GET /api/boards/{boardId}`) zeigt diese Abschlussspalte weiterhin gekürzt — die Anzeigeregel des Boards bleibt unangetastet.
 
 ### Die Ordnung ist die des Nummernkreises
 
-- [ ] Sortiert wird nach `Zaehlerstand` **aufsteigend**: `WBS-01`, `WBS-02`, `WBS-03` — unabhängig von Spalte und Position.
-- [ ] **Rechenbeispiel gegen die Textsortierung:** eine Kartenklasse mit den vergebenen Ständen 99 und 100 liefert `WBS-99` **vor** `WBS-100`. Nach der Kartennummer als Text stünde `WBS-100` vorn, weil `Kartennummer.Aus` nur zweistellig auffüllt.
+- [x] Sortiert wird nach `Zaehlerstand` **aufsteigend**: `WBS-01`, `WBS-02`, `WBS-03` — unabhängig von Spalte und Position.
+- [x] **Rechenbeispiel gegen die Textsortierung:** eine Kartenklasse mit den vergebenen Ständen 99 und 100 liefert `WBS-99` **vor** `WBS-100`. Nach der Kartennummer als Text stünde `WBS-100` vorn, weil `Kartennummer.Aus` nur zweistellig auffüllt.
 
 ### Der Archivfilter
 
-- [ ] **Ohne Parameter** liefert der Abruf den **aktiven** Bestand; archivierte Karten der Kartenklasse fehlen.
-- [ ] `?archiviert=true` liefert **genau die archivierten** Karten dieser Kartenklasse und keine aktive.
-- [ ] Ein unlesbarer Wert (`?archiviert=vielleicht`) ergibt HTTP 400 mit `archiv-filter-unlesbar`; die Kompensation nennt **die aufgerufene Adresse**, nicht eine fremde.
+- [x] **Ohne Parameter** liefert der Abruf den **aktiven** Bestand; archivierte Karten der Kartenklasse fehlen.
+- [x] `?archiviert=true` liefert **genau die archivierten** Karten dieser Kartenklasse und keine aktive.
+- [x] Ein unlesbarer Wert (`?archiviert=vielleicht`) ergibt HTTP 400 mit `archiv-filter-unlesbar`; die Kompensation nennt **die aufgerufene Adresse**, nicht eine fremde.
 
 ### Die Antwortgestalt
 
-- [ ] Jeder Eintrag ist eine `Klassenkarte` aus dem gebauten `Karte`-DTO plus `Spalte` und `Spaltenbezeichnung` — **keine zweite Kartengestalt**.
-- [ ] Die Karte trägt darin ihre `Kartennummer` (`WBS-02`), wie überall sonst auch.
-- [ ] `Board` und `Boardname` reisen **nicht** mit — sie stehen in der Adresse.
+- [x] Jeder Eintrag ist eine `Klassenkarte` aus dem gebauten `Karte`-DTO plus `Spalte` und `Spaltenbezeichnung` — **keine zweite Kartengestalt**.
+- [x] Die Karte trägt darin ihre `Kartennummer` (`WBS-02`), wie überall sonst auch.
+- [x] `Board` und `Boardname` reisen **nicht** mit — sie stehen in der Adresse.
 
 ### Die leere Klasse
 
-- [ ] Eine Kartenklasse **ohne** zugeordnete Karte antwortet mit HTTP 200 und `[]` — **kein** 404. Dieselbe Entscheidung wie beim Board ohne Kartenklasse in `R00022`.
-- [ ] Ein Board, dessen sämtliche Karten der Kartenklasse archiviert sind, liefert ohne Parameter ebenfalls `[]` und mit `?archiviert=true` die archivierten.
+- [x] Eine Kartenklasse **ohne** zugeordnete Karte antwortet mit HTTP 200 und `[]` — **kein** 404. Dieselbe Entscheidung wie beim Board ohne Kartenklasse in `R00022`.
+- [x] Ein Board, dessen sämtliche Karten der Kartenklasse archiviert sind, liefert ohne Parameter ebenfalls `[]` und mit `?archiviert=true` die archivierten.
 
 ### Fehlerantworten für Agenten
 
-- [ ] **Unbekanntes Board** → HTTP 404 mit `board-unbekannt`, Grund mit der Nummer und Kompensationsaktion.
-- [ ] **Unbekannte Kartenklasse** → HTTP 404 mit `kartenklasse-unbekannt`; die Kompensation nennt `GET /api/boards/{boardId}/kartenklassen`.
-- [ ] **Kartenklasse eines fremden Boards** → HTTP 404 mit `kartenklasse-fremd` und **nicht** mit `kartenklasse-unbekannt`: es gibt sie, nur nicht hier. Der Befund nennt beide Boardnummern.
-- [ ] Die Prüfreihenfolge ist **Board, dann Kartenklasse, dann Karten**: ein Lesezugriff auf die Karten einer fremden Kartenklasse findet **nicht** statt.
-- [ ] `FehlervertragTests` deckt die neue Route mit allen drei Fällen ab; sie steht **nicht** auf `RoutenOhneFehlerantwort`.
+- [x] **Unbekanntes Board** → HTTP 404 mit `board-unbekannt`, Grund mit der Nummer und Kompensationsaktion.
+- [x] **Unbekannte Kartenklasse** → HTTP 404 mit `kartenklasse-unbekannt`; die Kompensation nennt `GET /api/boards/{boardId}/kartenklassen`.
+- [x] **Kartenklasse eines fremden Boards** → HTTP 404 mit `kartenklasse-fremd` und **nicht** mit `kartenklasse-unbekannt`: es gibt sie, nur nicht hier. Der Befund nennt beide Boardnummern.
+- [x] Die Prüfreihenfolge ist **Board, dann Kartenklasse, dann Karten**: ein Lesezugriff auf die Karten einer fremden Kartenklasse findet **nicht** statt.
+- [x] `FehlervertragTests` deckt die neue Route mit allen drei Fällen ab; sie steht **nicht** auf `RoutenOhneFehlerantwort`.
 
 ### Der grüne Bestand bleibt grün
 
-- [ ] `GET /api/boards/{boardId}` und `GET /api/boards/{boardId}/spalten/{spalteId}/karten` antworten unverändert; insbesondere kürzt die Boardantwort ihre Abschlussspalte weiter.
-- [ ] Kein Glied wächst in `KanbanC.Blazor` — die Oberfläche ist von diesem Slice **nicht betroffen**, und keine E2E-Suite ändert sich.
-- [ ] Die Testsuiten aus `R00001`–`R00024` laufen unverändert weiter.
+- [x] `GET /api/boards/{boardId}` und `GET /api/boards/{boardId}/spalten/{spalteId}/karten` antworten unverändert; insbesondere kürzt die Boardantwort ihre Abschlussspalte weiter.
+- [x] Kein Glied wächst in `KanbanC.Blazor` — die Oberfläche ist von diesem Slice **nicht betroffen**, und keine E2E-Suite ändert sich.
+- [x] Die Testsuiten aus `R00001`–`R00024` laufen unverändert weiter.
 
 ## Betroffene Verzeichnisstruktur
 

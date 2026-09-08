@@ -1,6 +1,6 @@
 ---
 id: R00023
-status: Neu
+status: In Arbeit
 datum: 2026-09-06
 ---
 
@@ -53,54 +53,54 @@ Ohne diesen Slice bleiben `I0022` (Karten einer Klasse abrufen), `I0030` (WBS-Da
 
 ### Die Zuordnung vergibt die nächste Nummer
 
-- [ ] `PUT /api/karten/{karteId}/kartenklasse` mit `{ "kartenklasse": <KartenklasseId> }` ordnet die Karte zu und antwortet mit HTTP 200 und dem **ganzen Kartendetail**.
-- [ ] Die vergebene Nummer ist `Praefix` + `Zaehlerstand + 1`, mindestens zweistellig: Kartenklasse `WBS-` auf Stand **31** ergibt **`WBS-32`**; eine frische Kartenklasse auf Stand **0** ergibt **`WBS-01`**.
-- [ ] Der `Zaehlerstand` der Kartenklasse steht danach auf dem vergebenen Wert — nach `WBS-32` auf **32**; `GET /api/boards/{boardId}/kartenklassen` zeigt „32 vergeben · nächste WBS-33".
-- [ ] Erhöhen und Zuordnen geschehen in **einer** Transaktion: schlägt eines fehl, ist weder der Zählerstand gewachsen noch eine Zuordnung geschrieben.
-- [ ] Die Zuordnung überlebt Reload und Neustart der WebApi.
+- [x] `PUT /api/karten/{karteId}/kartenklasse` mit `{ "kartenklasse": <KartenklasseId> }` ordnet die Karte zu und antwortet mit HTTP 200 und dem **ganzen Kartendetail**.
+- [x] Die vergebene Nummer ist `Praefix` + `Zaehlerstand + 1`, mindestens zweistellig: Kartenklasse `WBS-` auf Stand **31** ergibt **`WBS-32`**; eine frische Kartenklasse auf Stand **0** ergibt **`WBS-01`**.
+- [x] Der `Zaehlerstand` der Kartenklasse steht danach auf dem vergebenen Wert — nach `WBS-32` auf **32**; `GET /api/boards/{boardId}/kartenklassen` zeigt „32 vergeben · nächste WBS-33".
+- [x] Erhöhen und Zuordnen geschehen in **einer** Transaktion: schlägt eines fehl, ist weder der Zählerstand gewachsen noch eine Zuordnung geschrieben.
+- [x] Die Zuordnung überlebt Reload und Neustart der WebApi.
 
 ### Wechsel, erneute Wahl und Lösen
 
-- [ ] **Wechsel:** Karte trägt `WBS-32` (Kartenklasse `WBS-` auf Stand 32), Zuordnung zu `BUG-` (Stand 7) → die Karte trägt **`BUG-08`**, `BUG-` steht auf **8**, `WBS-` bleibt auf **32**. Es gibt genau **eine** Zuordnungszeile.
-- [ ] **`WBS-32` wird nie wieder vergeben:** die nächste Zuordnung zu `WBS-` ergibt `WBS-33`.
-- [ ] **Dieselbe Kartenklasse erneut:** Karte trägt `WBS-32`, erneute Zuordnung zu derselben Kartenklasse → die Nummer bleibt **`WBS-32`**, der Zählerstand bleibt **32**. Es wird **keine** Nummer verbraucht.
-- [ ] **Lösen:** `{ "kartenklasse": null }` entfernt die Zuordnung; `Karte.Kartennummer` ist danach `null`, `Kartendetail.Kartenklasse` ist `null`, der Zählerstand der Kartenklasse bleibt **unverändert**.
-- [ ] Eine Karte **ohne** Zuordnung zu lösen ist **kein** Fehler: HTTP 200, das Ziel ist erreicht.
-- [ ] Die Folge **zuordnen → lösen → erneut zuordnen** am selben Board ergibt `WBS-32` → keine Nummer → **`WBS-33`**: der Zählerstand fällt nicht zurück.
+- [x] **Wechsel:** Karte trägt `WBS-32` (Kartenklasse `WBS-` auf Stand 32), Zuordnung zu `BUG-` (Stand 7) → die Karte trägt **`BUG-08`**, `BUG-` steht auf **8**, `WBS-` bleibt auf **32**. Es gibt genau **eine** Zuordnungszeile.
+- [x] **`WBS-32` wird nie wieder vergeben:** die nächste Zuordnung zu `WBS-` ergibt `WBS-33`.
+- [x] **Dieselbe Kartenklasse erneut:** Karte trägt `WBS-32`, erneute Zuordnung zu derselben Kartenklasse → die Nummer bleibt **`WBS-32`**, der Zählerstand bleibt **32**. Es wird **keine** Nummer verbraucht.
+- [x] **Lösen:** `{ "kartenklasse": null }` entfernt die Zuordnung; `Karte.Kartennummer` ist danach `null`, `Kartendetail.Kartenklasse` ist `null`, der Zählerstand der Kartenklasse bleibt **unverändert**.
+- [x] Eine Karte **ohne** Zuordnung zu lösen ist **kein** Fehler: HTTP 200, das Ziel ist erreicht.
+- [x] Die Folge **zuordnen → lösen → erneut zuordnen** am selben Board ergibt `WBS-32` → keine Nummer → **`WBS-33`**: der Zählerstand fällt nicht zurück.
 
 ### Die Nummer wiederholt sich nie — auch unter zwei Schreibern
 
-- [ ] Zwei **nebenläufige** Zuordnungen auf dieselbe Kartenklasse (Stand 31) ergeben **zwei verschiedene** Zählerstände (32 und 33); keine Nummer entsteht zweimal.
-- [ ] Greift die Serialisierung nicht, schlägt `UNIQUE(Kartenklasse, Zaehlerstand)` **sichtbar** an, statt still eine zweite `WBS-32` danebenzuschreiben.
-- [ ] Der eindeutige Index selbst wird geprüft: ein direkter zweiter `INSERT` mit demselben Paar `(Kartenklasse, Zaehlerstand)` scheitert an der Datenbank.
+- [x] Zwei **nebenläufige** Zuordnungen auf dieselbe Kartenklasse (Stand 31) ergeben **zwei verschiedene** Zählerstände (32 und 33); keine Nummer entsteht zweimal.
+- [x] Greift die Serialisierung nicht, schlägt `UNIQUE(Kartenklasse, Zaehlerstand)` **sichtbar** an, statt still eine zweite `WBS-32` danebenzuschreiben.
+- [x] Der eindeutige Index selbst wird geprüft: ein direkter zweiter `INSERT` mit demselben Paar `(Kartenklasse, Zaehlerstand)` scheitert an der Datenbank.
 
 ### Höchstens eine Kartenklasse je Karte
 
-- [ ] Eine Karte hat nie zwei Zuordnungen; `UNIQUE(Karte)` trägt die Regel ins Schema.
-- [ ] Ein direkter zweiter `INSERT` auf dieselbe `Karte` scheitert an der Datenbank.
+- [x] Eine Karte hat nie zwei Zuordnungen; `UNIQUE(Karte)` trägt die Regel ins Schema.
+- [x] Ein direkter zweiter `INSERT` auf dieselbe `Karte` scheitert an der Datenbank.
 
 ### Die Nummer ist sichtbar
 
-- [ ] `Karte` trägt genau **ein** neues Feld `string? Kartennummer`; es steht überall, wo eine Karte steht — auch in der Boardantwort, so dass ein Agent die Nummer **ohne zweiten Aufruf** sieht.
-- [ ] `Kartendetail` trägt die zugeordnete `Kartenklasse` als ganzes DTO (Name, Präfix, Zählerstand); `null` heißt „ohne Klasse".
-- [ ] Die Karte in der Bahn zeigt die Nummer als Plakette **über** dem Titel; eine Karte ohne Klasse zeigt nur ihren Titel, und die Stelle kostet keine Zeile.
-- [ ] Der Eigenschaftenblock der Kartenseite zeigt das Feld „Klasse" mit den Kartenklassen dieses Boards, dem Eintrag „ohne Klasse" und der Hinweiszeile „Vergibt beim Speichern `<nächste Nummer>`".
-- [ ] Ein Board **ohne** Kartenklasse zeigt an dieser Stelle einen Satz statt eines leeren Auswahlfeldes — Wortlaut und Form wie `#keine-klassen` in `Klassenpflege.razor:16`.
-- [ ] Die Klassenliste des Feldes kommt über `GET /api/boards/{boardId}/kartenklassen` mit dem `Board` aus dem Kartendetail — **das Kartendetail wächst nicht um eine siebte Liste.**
+- [x] `Karte` trägt genau **ein** neues Feld `string? Kartennummer`; es steht überall, wo eine Karte steht — auch in der Boardantwort, so dass ein Agent die Nummer **ohne zweiten Aufruf** sieht.
+- [x] `Kartendetail` trägt die zugeordnete `Kartenklasse` als ganzes DTO (Name, Präfix, Zählerstand); `null` heißt „ohne Klasse".
+- [x] Die Karte in der Bahn zeigt die Nummer als Plakette **über** dem Titel; eine Karte ohne Klasse zeigt nur ihren Titel, und die Stelle kostet keine Zeile.
+- [x] Der Eigenschaftenblock der Kartenseite zeigt das Feld „Klasse" mit den Kartenklassen dieses Boards, dem Eintrag „ohne Klasse" und der Hinweiszeile „Vergibt beim Speichern `<nächste Nummer>`".
+- [x] Ein Board **ohne** Kartenklasse zeigt an dieser Stelle einen Satz statt eines leeren Auswahlfeldes — Wortlaut und Form wie `#keine-klassen` in `Klassenpflege.razor:16`.
+- [x] Die Klassenliste des Feldes kommt über `GET /api/boards/{boardId}/kartenklassen` mit dem `Board` aus dem Kartendetail — **das Kartendetail wächst nicht um eine siebte Liste.**
 
 ### Fehlerantworten für Agenten
 
-- [ ] **Unbekannte Karte** → HTTP 404 mit `karte-unbekannt`, Grund mit der Nummer und Kompensationsaktion.
-- [ ] **Unbekannte Kartenklasse** → HTTP 404 mit `kartenklasse-unbekannt`, Grund mit der Nummer und der Kompensationsaktion `GET /api/boards/{boardId}/kartenklassen`.
-- [ ] **Kartenklasse eines fremden Boards** → eigener Befund `kartenklasse-fremd` nach dem Muster `karte-fremd`/`spalte-fremd`: eine Kartenklasse gehört **einem** Board, und die eines anderen ist an dieser Karte keine.
-- [ ] Nach einer Zurückweisung wurde **nicht geschrieben**: kein Zählerstand gewachsen, keine Zuordnung angelegt oder verändert.
-- [ ] `FehlervertragTests` deckt die neue Route ab; sie steht **nicht** auf `RoutenOhneFehlerantwort`.
+- [x] **Unbekannte Karte** → HTTP 404 mit `karte-unbekannt`, Grund mit der Nummer und Kompensationsaktion.
+- [x] **Unbekannte Kartenklasse** → HTTP 404 mit `kartenklasse-unbekannt`, Grund mit der Nummer und der Kompensationsaktion `GET /api/boards/{boardId}/kartenklassen`.
+- [x] **Kartenklasse eines fremden Boards** → eigener Befund `kartenklasse-fremd` nach dem Muster `karte-fremd`/`spalte-fremd`: eine Kartenklasse gehört **einem** Board, und die eines anderen ist an dieser Karte keine.
+- [x] Nach einer Zurückweisung wurde **nicht geschrieben**: kein Zählerstand gewachsen, keine Zuordnung angelegt oder verändert.
+- [x] `FehlervertragTests` deckt die neue Route ab; sie steht **nicht** auf `RoutenOhneFehlerantwort`.
 
 ### Der grüne Bestand bleibt grün — mit benannten Änderungen
 
-- [ ] `Kartendetailvergleich` wächst um das Glied `Kartenklasse` — sonst prüfte er zwei Details still als gleich, die es in der neuen Angabe nicht sind.
-- [ ] `LayoutModusE2ETests` mit seinen 17 `ToHaveCountAsync`-Zusagen ist nach dem Lauf **unverändert grün**.
-- [ ] `KindZiehbarkeitProbeE2ETests` und `VerweisInZiehbarerKarteProbeE2ETests` bleiben grün: die Plakette steht **über** dem Titelverweis, nicht in ihm.
+- [x] `Kartendetailvergleich` wächst um das Glied `Kartenklasse` — sonst prüfte er zwei Details still als gleich, die es in der neuen Angabe nicht sind.
+- [x] `LayoutModusE2ETests` mit seinen 17 `ToHaveCountAsync`-Zusagen ist nach dem Lauf **unverändert grün**.
+- [x] `KindZiehbarkeitProbeE2ETests` und `VerweisInZiehbarerKarteProbeE2ETests` bleiben grün: die Plakette steht **über** dem Titelverweis, nicht in ihm.
 - [ ] Die E2E-Suiten aus `R00001`–`R00022` laufen unverändert weiter.
 
 ## Betroffene Verzeichnisstruktur

@@ -1,6 +1,6 @@
 ---
 id: R00024
-status: Neu
+status: In Arbeit
 datum: 2026-09-06
 ursprung: Bug-Report
 ursprungslauf: R00020
@@ -161,50 +161,50 @@ Der Sperrzustand steckt heute als `Ablegesperre`-Getter (`Kartendetail.razor:109
 
 ### Kein Anhang geht verloren — geprüft bis in die Datenbank
 
-- [ ] Werden zwei Dateien so schnell nacheinander abgelegt, wie die Ablegefläche es zulässt, stehen danach **beide** Anhänge in der Datenbank. Rechenbeispiel: 3 145 728 Bytes zuerst, 2 048 Bytes danach → `GET /api/karten/{karteId}` trägt zwei Einträge mit `Dateigroesse` `3145728` und `2048`.
-- [ ] Zu **jedem** Eintrag liegt die Datei unter `<Ablageordner>/<KarteId>/<AnhangId>`, und ihre Länge stimmt mit der `Dateigroesse` der Zeile überein — geprüft am Dateisystem, nicht an der Antwort.
-- [ ] Die Zusicherung wird **nicht am DOM** genommen: sie liest die API und den Ablageordner. Begründung im Kriterium selbst: DOM und Datenbank stimmten in allen 35 Beobachtungen des Diagnoselaufs überein, ein DOM-Kriterium wäre grün gewesen.
-- [ ] **Bilanz:** Jeder vom Benutzer ausgelöste Ablegevorgang endet entweder als Zeile in der Datenbank **oder** als sichtbare Meldung, die seinen Dateinamen nennt — nie als keines von beidem. Rechenbeispiel: zwei Ablegevorgänge, einer davon zurückgewiesen → eine Zeile in der Datenbank plus eine sichtbare Meldung, Summe zwei; kein Vorgang ohne Spur.
-- [ ] Die Bilanz gilt auch, wenn die Überlappung **erzwungen** wird (ein Weg, den die Oberfläche nicht anbietet): dann darf ein Vorgang scheitern, aber nicht stumm.
-- [ ] Es entsteht nie eine Zeile ohne Datei und nie eine Datei, deren Länge von der `Dateigroesse` ihrer Zeile abweicht.
-- [ ] Der Reproduktionstest arbeitet mit **3 MB zuerst und 2 kB danach**. Mit 1 000 und 2 000 Bytes blieb der Fehler in 13 von 13 isolierten Läufen unsichtbar; die Größen sind Teil der Reproduktion und werden nicht „aufgeräumt".
+- [x] Werden zwei Dateien so schnell nacheinander abgelegt, wie die Ablegefläche es zulässt, stehen danach **beide** Anhänge in der Datenbank. Rechenbeispiel: 3 145 728 Bytes zuerst, 2 048 Bytes danach → `GET /api/karten/{karteId}` trägt zwei Einträge mit `Dateigroesse` `3145728` und `2048`.
+- [x] Zu **jedem** Eintrag liegt die Datei unter `<Ablageordner>/<KarteId>/<AnhangId>`, und ihre Länge stimmt mit der `Dateigroesse` der Zeile überein — geprüft am Dateisystem, nicht an der Antwort.
+- [x] Die Zusicherung wird **nicht am DOM** genommen: sie liest die API und den Ablageordner. Begründung im Kriterium selbst: DOM und Datenbank stimmten in allen 35 Beobachtungen des Diagnoselaufs überein, ein DOM-Kriterium wäre grün gewesen.
+- [x] **Bilanz:** Jeder vom Benutzer ausgelöste Ablegevorgang endet entweder als Zeile in der Datenbank **oder** als sichtbare Meldung, die seinen Dateinamen nennt — nie als keines von beidem. Rechenbeispiel: zwei Ablegevorgänge, einer davon zurückgewiesen → eine Zeile in der Datenbank plus eine sichtbare Meldung, Summe zwei; kein Vorgang ohne Spur.
+- [x] Die Bilanz gilt auch, wenn die Überlappung **erzwungen** wird (ein Weg, den die Oberfläche nicht anbietet): dann darf ein Vorgang scheitern, aber nicht stumm.
+- [x] Es entsteht nie eine Zeile ohne Datei und nie eine Datei, deren Länge von der `Dateigroesse` ihrer Zeile abweicht.
+- [x] Der Reproduktionstest arbeitet mit **3 MB zuerst und 2 kB danach**. Mit 1 000 und 2 000 Bytes blieb der Fehler in 13 von 13 isolierten Läufen unsichtbar; die Größen sind Teil der Reproduktion und werden nicht „aufgeräumt".
 
 ### Ein laufendes Anhängen ist unantastbar und sichtbar
 
-- [ ] Solange ein Anhängen läuft, ist die Ablegefläche gesperrt: das Dateifeld ist `disabled`, ein Klick öffnet keinen Dateiwähler, und eine auf die Fläche gezogene Datei löst kein zweites `change`-Ereignis aus.
-- [ ] Die Sperre ist **begründet** sichtbar: die Fläche sagt, dass gerade angehängt wird, und nennt die Datei. Rechenbeispiel: während `wbs-export.md` läuft, steht dort der Dateiname `wbs-export.md` und **nicht** der Hinweis auf die Identitätswahl.
-- [ ] Nach dem Ende des Vorgangs ist die Fläche wieder frei — **ohne Reload**, und zwar bei Erfolg, bei Zurückweisung und bei Ausfall gleichermaßen. Kein Ausgang lässt die Fläche gesperrt zurück.
-- [ ] Ohne gewählte Identität bleibt die Fläche gesperrt wie seit `R00020`; die beiden Gründe ergeben zusammen genau **einen** gesperrten Zustand, und der angezeigte Text nennt den Grund, den der Benutzer auflösen kann.
-- [ ] Der Sperrzustand ist **ohne Browser prüfbar**: er entsteht in einer Operation unter `Source/KanbanC.Blazor/Services/` und wird in `KanbanC.Blazor.Tests` mit allen vier Kombinationen (Identität ja/nein × Vorgang läuft ja/nein) belegt.
+- [x] Solange ein Anhängen läuft, ist die Ablegefläche gesperrt: das Dateifeld ist `disabled`, ein Klick öffnet keinen Dateiwähler, und eine auf die Fläche gezogene Datei löst kein zweites `change`-Ereignis aus.
+- [x] Die Sperre ist **begründet** sichtbar: die Fläche sagt, dass gerade angehängt wird, und nennt die Datei. Rechenbeispiel: während `wbs-export.md` läuft, steht dort der Dateiname `wbs-export.md` und **nicht** der Hinweis auf die Identitätswahl.
+- [x] Nach dem Ende des Vorgangs ist die Fläche wieder frei — **ohne Reload**, und zwar bei Erfolg, bei Zurückweisung und bei Ausfall gleichermaßen. Kein Ausgang lässt die Fläche gesperrt zurück.
+- [x] Ohne gewählte Identität bleibt die Fläche gesperrt wie seit `R00020`; die beiden Gründe ergeben zusammen genau **einen** gesperrten Zustand, und der angezeigte Text nennt den Grund, den der Benutzer auflösen kann.
+- [x] Der Sperrzustand ist **ohne Browser prüfbar**: er entsteht in einer Operation unter `Source/KanbanC.Blazor/Services/` und wird in `KanbanC.Blazor.Tests` mit allen vier Kombinationen (Identität ja/nein × Vorgang läuft ja/nein) belegt.
 
 ### Ein gescheitertes Anhängen wird sichtbar
 
 - [ ] Bricht die Übertragung der Bytes ab, erscheint eine lesbare Meldung auf der Kartenseite, die den **Dateinamen** nennt, sagt, dass die Datei **nicht angehängt** wurde, und die Kompensationsaktion nennt („erneut ablegen") — derselbe Anspruch, den `R00020` an die Fehlerantworten der API stellt, hier für die Oberfläche.
-- [ ] Die Anhangliste bleibt unverändert; die abgebrochene Datei steht **weder** in der Liste **noch** in der Datenbank **noch** in der Ablage. Es bleibt keine halbe Datei zurück.
-- [ ] Die Meldung unterscheidet sich von `WebApiAusfall.Meldung` — „Die WebApi ist nicht erreichbar" wäre hier eine Falschaussage: sie war erreichbar, die Datei war es nicht.
-- [ ] Im regulären Bedienweg erzeugt das Anhängen **keinen** `pageerror` in der Browserkonsole. Rechenbeispiel: der Ablauf „zwei Dateien nacheinander" erzeugt null Konsolenfehler; im Fehlerfall stand dort `Error: There was an exception invoking 'NotifyChange'`.
-- [ ] Die Blazor-Ausnahmeanzeige (`#blazor-error-ui`) bleibt in beiden Reproduktionstests unsichtbar — der Kreislauf bricht nicht ab.
+- [x] Die Anhangliste bleibt unverändert; die abgebrochene Datei steht **weder** in der Liste **noch** in der Datenbank **noch** in der Ablage. Es bleibt keine halbe Datei zurück.
+- [x] Die Meldung unterscheidet sich von `WebApiAusfall.Meldung` — „Die WebApi ist nicht erreichbar" wäre hier eine Falschaussage: sie war erreichbar, die Datei war es nicht.
+- [x] Im regulären Bedienweg erzeugt das Anhängen **keinen** `pageerror` in der Browserkonsole. Rechenbeispiel: der Ablauf „zwei Dateien nacheinander" erzeugt null Konsolenfehler; im Fehlerfall stand dort `Error: There was an exception invoking 'NotifyChange'`.
+- [x] Die Blazor-Ausnahmeanzeige (`#blazor-error-ui`) bleibt in beiden Reproduktionstests unsichtbar — der Kreislauf bricht nicht ab.
 
 ### Keine Meldung überschreibt eine fremde
 
 - [ ] Die Meldung und der Befund eines Anhängens werden nur von einem Vorgang zurückgesetzt, den der Benutzer **selbst ausgelöst** hat — nie von einem, der beim Auslösen schon lief.
-- [ ] Nach einer Zurückweisung bleibt deren Befund stehen, bis der Benutzer die nächste Handlung auslöst. Rechenbeispiel: eine Datei mit 10 MB + 1 Byte wird beanstandet, danach wird eine 2-kB-Datei angehängt → zuerst steht die Größenmeldung mit „10,5 MB", danach steht die neue Zeile und keine alte Meldung; zu keinem Zeitpunkt steht eine Meldung, die zu keiner der beiden Dateien gehört.
-- [ ] Es gibt keinen Zustand, in dem zwei Anhängevorgänge derselben Karte gleichzeitig laufen — belegt daran, dass die Fläche während eines Vorgangs kein zweites Ereignis annimmt.
+- [x] Nach einer Zurückweisung bleibt deren Befund stehen, bis der Benutzer die nächste Handlung auslöst. Rechenbeispiel: eine Datei mit 10 MB + 1 Byte wird beanstandet, danach wird eine 2-kB-Datei angehängt → zuerst steht die Größenmeldung mit „10,5 MB", danach steht die neue Zeile und keine alte Meldung; zu keinem Zeitpunkt steht eine Meldung, die zu keiner der beiden Dateien gehört.
+- [x] Es gibt keinen Zustand, in dem zwei Anhängevorgänge derselben Karte gleichzeitig laufen — belegt daran, dass die Fläche während eines Vorgangs kein zweites Ereignis annimmt.
 
 ### Der grüne Bestand bleibt grün — mit benannten Änderungen
 
-- [ ] **Benannte Änderung 1:** `Source/KanbanC.Blazor/Components/Pages/Kartendetail.razor` — `:366` liest den Sperrzustand statt `_urheber is null`; `NimmDatei` (`:1109`) und `UebernimmAnhang` (`:1137`) setzen und räumen den Vorgangszustand und bekommen den eigenen Fangpunkt.
-- [ ] **Benannte Änderung 2:** `Source/KanbanC.Blazor/Services/Ablegeflaechenstand.cs` (neu) und `Anhangausfall.cs` (neu) — pure Operationen, keine Abhängigkeit auf Komponenten, Muster `Dateigroesseform`/`WebApiAusfall`.
-- [ ] **Benannte Änderung 3:** `Source/KanbanC.Blazor/Services/WebApiAufruf.cs` bleibt **unverändert**, und `WebApiAufrufTests.cs` ebenso — insbesondere `:29`. Wer den gemeinsamen Helfer aufweitet, hat diese Anforderung nicht erfüllt, sondern eine zweite gebrochen.
-- [ ] **Benannte Änderung 4:** `Source/KanbanC.PlaywrightTests/PageObjects/KartendetailSeite.cs` wächst um die Locator des laufenden Vorgangs; `DateiAnKarteHaengenE2ETests` um die zwei Reproduktionstests. Die bestehenden Locator bleiben unverändert.
-- [ ] **Benannte Änderung 5:** die Gestaltung des laufenden Zustands nutzt ausschließlich Werte aus `Source/KanbanC.Blazor/wwwroot/gestaltung.css`; kein Literal in `Kartendetail.razor.css`, kein CSS-Framework (`CLAUDE.md`, „Zieldesign der Oberfläche").
+- [x] **Benannte Änderung 1:** `Source/KanbanC.Blazor/Components/Pages/Kartendetail.razor` — `:366` liest den Sperrzustand statt `_urheber is null`; `NimmDatei` (`:1109`) und `UebernimmAnhang` (`:1137`) setzen und räumen den Vorgangszustand und bekommen den eigenen Fangpunkt.
+- [x] **Benannte Änderung 2:** `Source/KanbanC.Blazor/Services/Ablegeflaechenstand.cs` (neu) und `Anhangausfall.cs` (neu) — pure Operationen, keine Abhängigkeit auf Komponenten, Muster `Dateigroesseform`/`WebApiAusfall`.
+- [x] **Benannte Änderung 3:** `Source/KanbanC.Blazor/Services/WebApiAufruf.cs` bleibt **unverändert**, und `WebApiAufrufTests.cs` ebenso — insbesondere `:29`. Wer den gemeinsamen Helfer aufweitet, hat diese Anforderung nicht erfüllt, sondern eine zweite gebrochen.
+- [x] **Benannte Änderung 4:** `Source/KanbanC.PlaywrightTests/PageObjects/KartendetailSeite.cs` wächst um die Locator des laufenden Vorgangs; `DateiAnKarteHaengenE2ETests` um die zwei Reproduktionstests. Die bestehenden Locator bleiben unverändert.
+- [x] **Benannte Änderung 5:** die Gestaltung des laufenden Zustands nutzt ausschließlich Werte aus `Source/KanbanC.Blazor/wwwroot/gestaltung.css`; kein Literal in `Kartendetail.razor.css`, kein CSS-Framework (`CLAUDE.md`, „Zieldesign der Oberfläche").
 - [ ] Die vier bestehenden Tests, die zwei Dateien nacheinander ablegen (`:47`, `:89`, `:121`, `:208`), bleiben **ohne Änderung** grün. Ihre Zwischenzusicherungen werden weder entfernt noch nachgeahmt: kein neuer Test setzt zwischen zwei Ablegevorgänge eine Zusicherung über das **Ergebnis** des ersten.
-- [ ] Alle E2E-Suiten aus `R00001`–`R00023` bleiben ohne Änderung grün.
-- [ ] **Keine Änderung an der WebApi:** Routen, Verben, Antwortgestalten und Fehlerverträge bleiben, wie sie sind; `FehlervertragTests` bleibt unverändert grün.
-- [ ] **Keine Änderung am Schema und keine Migration.** Der Migrationsläufer führt jedes Skript bei jedem Start aus und kennt kein Journal — diese Behebung braucht ihn nicht.
-- [ ] `KanbanC.Blazor` bekommt **keine** Projektreferenz auf `KanbanC.BL` (`CLAUDE.md`, „Die eine Regel, die den Aufbau trägt"). Die neuen Operationen kommen ohne aus; `Anhangsgrenze` liegt bereits in `KanbanC.Contracts`.
-- [ ] Der Reproduktionstest ist ohne Fix rot und mit Fix grün — beide, Bedienweg und Bilanz.
-- [ ] Keine neuen Fehler: alle Tests aller Ebenen grün, Coverage nicht gefallen, `TreatWarningsAsErrors` erfüllt.
+- [x] Alle E2E-Suiten aus `R00001`–`R00023` bleiben ohne Änderung grün.
+- [x] **Keine Änderung an der WebApi:** Routen, Verben, Antwortgestalten und Fehlerverträge bleiben, wie sie sind; `FehlervertragTests` bleibt unverändert grün.
+- [x] **Keine Änderung am Schema und keine Migration.** Der Migrationsläufer führt jedes Skript bei jedem Start aus und kennt kein Journal — diese Behebung braucht ihn nicht.
+- [x] `KanbanC.Blazor` bekommt **keine** Projektreferenz auf `KanbanC.BL` (`CLAUDE.md`, „Die eine Regel, die den Aufbau trägt"). Die neuen Operationen kommen ohne aus; `Anhangsgrenze` liegt bereits in `KanbanC.Contracts`.
+- [x] Der Reproduktionstest ist ohne Fix rot und mit Fix grün — beide, Bedienweg und Bilanz.
+- [x] Keine neuen Fehler: alle Tests aller Ebenen grün, Coverage nicht gefallen, `TreatWarningsAsErrors` erfüllt.
 
 ## Betroffene Verzeichnisstruktur
 

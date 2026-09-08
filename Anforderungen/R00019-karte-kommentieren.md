@@ -1,6 +1,6 @@
 ---
 id: R00019
-status: Neu
+status: In Arbeit
 datum: 2026-09-05
 ---
 
@@ -54,59 +54,59 @@ Damit fällt genau die Zusage aus, die den Kern der Vision trägt: dass an jeder
 
 ### Der Kommentar wird mit Urheber und Zeitpunkt festgehalten (API)
 
-- [ ] `POST /api/karten/{karteId}/kommentare` mit Text und `KontributorId` antwortet mit HTTP 200 und einem `Kartendetail`, dessen Kommentarliste diesen Text als **letzten** Eintrag trägt.
-- [ ] Der Eintrag trägt eine eigene, von den anderen verschiedene `KommentarId`.
-- [ ] Der Eintrag trägt den **ganzen** Urheber: Nummer, Name, Art und Stilllegungsstand — nicht nur die Nummer.
-- [ ] Der Eintrag trägt einen `Zeitpunkt` mit Uhrzeit. Rechenbeispiel: wird die Uhr **vor** dem Aufruf als `t0` und **nach** dem Aufruf als `t1` gemerkt, gilt `t0 ≤ Zeitpunkt ≤ t1`.
-- [ ] Der Aufrufer kann den Zeitpunkt **nicht** mitgeben: die Anfrage hat kein Feld dafür, und ein mitgeschicktes Feld ändert nichts am gespeicherten Wert.
-- [ ] `GET /api/karten/{karteId}` liefert danach dieselbe Liste in derselben Reihenfolge.
-- [ ] Rechenbeispiel Reihenfolge: an eine Karte ohne Kommentare werden nacheinander `A`, `B`, `C` geschrieben → die Liste lautet in jedem folgenden Abruf `A`, `B`, `C` (ältester oben).
-- [ ] Zwei Aufrufe mit **demselben** Text und demselben Urheber werden beide angenommen und erzeugen zwei Einträge mit verschiedenen Nummern.
-- [ ] Die Kommentare hängen am `Kartendetail` und **nicht** an `Karte`: `GET /api/boards/{boardId}` liefert die Karten unverändert ohne Kommentarliste.
-- [ ] Es gibt **kein** gespeichertes Zählfeld und **keine** gespeicherte Position: die Antwort trägt weder eine Anzahl noch eine Ordnungszahl neben der Liste.
-- [ ] Ein Kommentar eines inzwischen **stillgelegten** Kontributors bleibt an der Karte sichtbar, mit Name und Stilllegungsstand — das ist der zweite Halbsatz des Fertig-Kriteriums von `I0009`, den `R00014` ausdrücklich hierher weitergereicht hat.
-- [ ] Ein Neustart der Anwendung lässt Texte, Urheber, Zeitpunkte und Reihenfolge unverändert.
-- [ ] Die Sortierung ist die Zeitordnung: werden zwei Kommentare **in der Datenbank** auf verschiedene Zeitpunkte gesetzt, steht der ältere in der Antwort oben — unabhängig von der Reihenfolge, in der sie geschrieben wurden.
+- [x] `POST /api/karten/{karteId}/kommentare` mit Text und `KontributorId` antwortet mit HTTP 200 und einem `Kartendetail`, dessen Kommentarliste diesen Text als **letzten** Eintrag trägt.
+- [x] Der Eintrag trägt eine eigene, von den anderen verschiedene `KommentarId`.
+- [x] Der Eintrag trägt den **ganzen** Urheber: Nummer, Name, Art und Stilllegungsstand — nicht nur die Nummer.
+- [x] Der Eintrag trägt einen `Zeitpunkt` mit Uhrzeit. Rechenbeispiel: wird die Uhr **vor** dem Aufruf als `t0` und **nach** dem Aufruf als `t1` gemerkt, gilt `t0 ≤ Zeitpunkt ≤ t1`.
+- [x] Der Aufrufer kann den Zeitpunkt **nicht** mitgeben: die Anfrage hat kein Feld dafür, und ein mitgeschicktes Feld ändert nichts am gespeicherten Wert.
+- [x] `GET /api/karten/{karteId}` liefert danach dieselbe Liste in derselben Reihenfolge.
+- [x] Rechenbeispiel Reihenfolge: an eine Karte ohne Kommentare werden nacheinander `A`, `B`, `C` geschrieben → die Liste lautet in jedem folgenden Abruf `A`, `B`, `C` (ältester oben).
+- [x] Zwei Aufrufe mit **demselben** Text und demselben Urheber werden beide angenommen und erzeugen zwei Einträge mit verschiedenen Nummern.
+- [x] Die Kommentare hängen am `Kartendetail` und **nicht** an `Karte`: `GET /api/boards/{boardId}` liefert die Karten unverändert ohne Kommentarliste.
+- [x] Es gibt **kein** gespeichertes Zählfeld und **keine** gespeicherte Position: die Antwort trägt weder eine Anzahl noch eine Ordnungszahl neben der Liste.
+- [x] Ein Kommentar eines inzwischen **stillgelegten** Kontributors bleibt an der Karte sichtbar, mit Name und Stilllegungsstand — das ist der zweite Halbsatz des Fertig-Kriteriums von `I0009`, den `R00014` ausdrücklich hierher weitergereicht hat.
+- [x] Ein Neustart der Anwendung lässt Texte, Urheber, Zeitpunkte und Reihenfolge unverändert.
+- [x] Die Sortierung ist die Zeitordnung: werden zwei Kommentare **in der Datenbank** auf verschiedene Zeitpunkte gesetzt, steht der ältere in der Antwort oben — unabhängig von der Reihenfolge, in der sie geschrieben wurden.
 
 ### Kein Kommentar ohne Urheber — Zurückweisung und Fehlerantworten für Agenten
 
-- [ ] Ein leerer Text (auch ein Text nur aus Leerzeichen) wird mit HTTP 400 **und Rumpf** zurückgewiesen; die Liste der Karte bleibt danach unverändert.
-- [ ] Ein zu langer Text wird ebenso mit HTTP 400 und Rumpf zurückgewiesen; nichts wurde gespeichert.
-- [ ] Randleerzeichen fallen weg, der Text im Übrigen nicht: `"  Bitte prüfen  "` wird als `"Bitte prüfen"` gespeichert, Groß- und Kleinschreibung bleibt.
-- [ ] Eine **unbekannte** `karteId` wird mit HTTP 404 und einem Befund beantwortet, der Code, die aufgerufene Kartennummer und einen ausführbaren nächsten Aufruf nennt. Der Befund nennt **kein** Board — die Route kennt keins.
-- [ ] Eine **unbekannte** `KontributorId` wird mit HTTP 404 und einem Befund beantwortet, der die aufgerufene Nummer und den Weg zur Kontributorenliste nennt; an der Karte hat sich nichts geändert.
-- [ ] Eine **stillgelegte** `KontributorId` wird mit HTTP **400** und Rumpf zurückgewiesen — es fehlt kein Ding, es wurde eine Regel verletzt; an der Karte hat sich nichts geändert.
-- [ ] Die Meldung der Stilllegung passt zum Kommentar: sie sagt **nicht** „kann nicht verantwortlich sein" — dieser Wortlaut gehört dem Verantwortlichen an der Karte und wäre hier eine Falschaussage.
-- [ ] Die Route liefert **keine** Fehlerantwort mit leerem Rumpf.
-- [ ] Der Vertragstest über alle registrierten Routen bleibt grün: die neue Route wird von ihm abgerufen und steht nicht als ungeprüft übrig (`FehlervertragTests.cs:41-58`).
+- [x] Ein leerer Text (auch ein Text nur aus Leerzeichen) wird mit HTTP 400 **und Rumpf** zurückgewiesen; die Liste der Karte bleibt danach unverändert.
+- [x] Ein zu langer Text wird ebenso mit HTTP 400 und Rumpf zurückgewiesen; nichts wurde gespeichert.
+- [x] Randleerzeichen fallen weg, der Text im Übrigen nicht: `"  Bitte prüfen  "` wird als `"Bitte prüfen"` gespeichert, Groß- und Kleinschreibung bleibt.
+- [x] Eine **unbekannte** `karteId` wird mit HTTP 404 und einem Befund beantwortet, der Code, die aufgerufene Kartennummer und einen ausführbaren nächsten Aufruf nennt. Der Befund nennt **kein** Board — die Route kennt keins.
+- [x] Eine **unbekannte** `KontributorId` wird mit HTTP 404 und einem Befund beantwortet, der die aufgerufene Nummer und den Weg zur Kontributorenliste nennt; an der Karte hat sich nichts geändert.
+- [x] Eine **stillgelegte** `KontributorId` wird mit HTTP **400** und Rumpf zurückgewiesen — es fehlt kein Ding, es wurde eine Regel verletzt; an der Karte hat sich nichts geändert.
+- [x] Die Meldung der Stilllegung passt zum Kommentar: sie sagt **nicht** „kann nicht verantwortlich sein" — dieser Wortlaut gehört dem Verantwortlichen an der Karte und wäre hier eine Falschaussage.
+- [x] Die Route liefert **keine** Fehlerantwort mit leerem Rumpf.
+- [x] Der Vertragstest über alle registrierten Routen bleibt grün: die neue Route wird von ihm abgerufen und steht nicht als ungeprüft übrig (`FehlervertragTests.cs:41-58`).
 
 ### Der Abschnitt auf der Kartenseite
 
-- [ ] Auf `/karten/{karteId}` steht hinter „Teilaufgaben" ein Abschnitt mit der Überschrift **„Kommentare"** und der Anzahl daneben. Rechenbeispiel: drei Kommentare → „3".
-- [ ] Jede Zeile zeigt das **Kürzel** des Urhebers, den Text und darunter „Name · Zeitpunkt".
-- [ ] Ein Kommentar eines Agenten und einer eines Menschen sind am Kürzel auseinanderzuhalten (verschiedene Kürzelklasse aus `Kontributorartform`).
-- [ ] Hat die Karte **keinen** Kommentar, steht dort „Noch kein Kommentar · schreiben" — keine „0", keine leere Liste.
-- [ ] Die Schreibzeile trägt das Kürzel des **gewählten** Kontributors und den Knopf „senden"; nach dem Senden steht der neue Kommentar als letzter in der Liste und das Feld ist wieder leer.
+- [x] Auf `/karten/{karteId}` steht hinter „Teilaufgaben" ein Abschnitt mit der Überschrift **„Kommentare"** und der Anzahl daneben. Rechenbeispiel: drei Kommentare → „3".
+- [x] Jede Zeile zeigt das **Kürzel** des Urhebers, den Text und darunter „Name · Zeitpunkt".
+- [x] Ein Kommentar eines Agenten und einer eines Menschen sind am Kürzel auseinanderzuhalten (verschiedene Kürzelklasse aus `Kontributorartform`).
+- [x] Hat die Karte **keinen** Kommentar, steht dort „Noch kein Kommentar · schreiben" — keine „0", keine leere Liste.
+- [x] Die Schreibzeile trägt das Kürzel des **gewählten** Kontributors und den Knopf „senden"; nach dem Senden steht der neue Kommentar als letzter in der Liste und das Feld ist wieder leer.
 - [ ] Getippte Zeichen gehen **nicht** verloren, auch wenn währenddessen eine Antwort eintrifft: das Eingabefeld führt seinen Text selbst (`@ref` + `@oninput`, **kein** `value`-Attribut) — dieselbe Bauform wie das Teilaufgaben- und das Etikettenfeld, und die Lehre aus dem Oberflächenfehler in `I0015`.
-- [ ] Ein leerer Text bringt eine lesbare Meldung auf der Seite und schreibt nichts.
-- [ ] **Ist keine Identität gewählt, ist „senden" gesperrt** und die Schreibzeile weist auf die Identitätswahl in der Kopfzeile hin. Board, Kartenseite und alle übrigen Handlungen bleiben ohne Wahl unverändert benutzbar.
-- [ ] Wird die Identität in der Kopfzeile gewechselt, **während** die Kartenseite offen ist, trägt der nächste gesendete Kommentar den **neu** gewählten Urheber — ohne Reload.
-- [ ] Die Zeitangabe richtet sich nach dem Alter. Rechenbeispiele bei „jetzt" = `2026-08-31 12:00`: `11:38` desselben Tages → „vor 22 Min"; `2026-08-30 17:40` → „gestern 17:40"; `2026-08-25 17:40` → „2026-08-25 17:40".
-- [ ] Nach einem Reload zeigt die Seite dieselben Kommentare mit denselben Urhebern und denselben Zeitangaben.
-- [ ] Die Anzahl im Kopf kommt **nicht** aus der Antwort: es gibt kein Feld im `Kartendetail`, das sie trägt.
+- [x] Ein leerer Text bringt eine lesbare Meldung auf der Seite und schreibt nichts.
+- [x] **Ist keine Identität gewählt, ist „senden" gesperrt** und die Schreibzeile weist auf die Identitätswahl in der Kopfzeile hin. Board, Kartenseite und alle übrigen Handlungen bleiben ohne Wahl unverändert benutzbar.
+- [x] Wird die Identität in der Kopfzeile gewechselt, **während** die Kartenseite offen ist, trägt der nächste gesendete Kommentar den **neu** gewählten Urheber — ohne Reload.
+- [x] Die Zeitangabe richtet sich nach dem Alter. Rechenbeispiele bei „jetzt" = `2026-08-31 12:00`: `11:38` desselben Tages → „vor 22 Min"; `2026-08-30 17:40` → „gestern 17:40"; `2026-08-25 17:40` → „2026-08-25 17:40".
+- [x] Nach einem Reload zeigt die Seite dieselben Kommentare mit denselben Urhebern und denselben Zeitangaben.
+- [x] Die Anzahl im Kopf kommt **nicht** aus der Antwort: es gibt kein Feld im `Kartendetail`, das sie trägt.
 
 ### Der grüne Bestand bleibt grün — mit fünf benannten Änderungen
 
-- [ ] **Benannte Änderung 1:** `Kartendetail` (`Source/KanbanC.Contracts/Karten/Kartendetail.cs`) wächst um `IReadOnlyList<Kommentar> Kommentare`. Das sind **zwei** positionale `new Kartendetail(`-Aufrufstellen (`Kartenleser.cs:93`, `KartenServiceTests.cs:353`); beide werden angepasst, ihre Zusicherungen nicht.
-- [ ] **Benannte Änderung 2:** `Stillgelegt` (`Source/KanbanC.BL/Operations/Fehler/Stillgelegt.cs`) bekommt eine **Schwester** für den Urheber: **derselbe Code** `kontributor-stillgelegt` (400), aber eine eigene Meldung. Wortlaut und Kompensation des bestehenden `Stillgelegt.Kontributor` bleiben unverändert. `Nichtgefunden` bekommt **keinen** neuen Eintrag — `Nichtgefunden.Karte(karteId)` und `Nichtgefunden.Kontributor(kontributorId)` bestehen beide.
-- [ ] **Benannte Änderung 3:** `FehlervertragTests` (`Source/KanbanC.WebApi.IntegrationTests/Api/FehlervertragTests.cs:41-58`) wird rot, sobald die Route ohne Vertragsfall registriert ist. Die Vertragsfälle entstehen deshalb **in demselben Arbeitsgang** wie die Route, nicht danach.
-- [ ] **Benannte Änderung 4:** `KartendetailSeite` (`Source/KanbanC.PlaywrightTests/PageObjects/KartendetailSeite.cs`) wächst um die Locator des Abschnitts, und `KartendetailOeffnenE2ETests` um den Kommentar-Leerstand in der Leerzustandszeile; die bestehenden Locator und Zusicherungen bleiben unverändert.
-- [ ] **Benannte Änderung 5:** `Testdatenbank` (`Source/KanbanC.PlaywrightTests`) bekommt `SetzeKommentarzeitpunkt` neben dem bestehenden `SetzeErledigung` (`:27`).
-- [ ] **`Kopfzeile.razor` bleibt unverändert** — die Kartenseite injiziert den `Identitaetsspeicher` selbst; kein `CascadingValue`, kein Zustandsdienst, kein `EventCallback`. `R00013` wird nicht angefasst.
-- [ ] `KartenRepository.SchreibeErledigung`/`Heute()` (`:335-341`) und `KontributorenRepository` (`:96`) bleiben unverändert — es wird **keine** Uhr-Abstraktion eingeführt.
+- [x] **Benannte Änderung 1:** `Kartendetail` (`Source/KanbanC.Contracts/Karten/Kartendetail.cs`) wächst um `IReadOnlyList<Kommentar> Kommentare`. Das sind **zwei** positionale `new Kartendetail(`-Aufrufstellen (`Kartenleser.cs:93`, `KartenServiceTests.cs:353`); beide werden angepasst, ihre Zusicherungen nicht.
+- [x] **Benannte Änderung 2:** `Stillgelegt` (`Source/KanbanC.BL/Operations/Fehler/Stillgelegt.cs`) bekommt eine **Schwester** für den Urheber: **derselbe Code** `kontributor-stillgelegt` (400), aber eine eigene Meldung. Wortlaut und Kompensation des bestehenden `Stillgelegt.Kontributor` bleiben unverändert. `Nichtgefunden` bekommt **keinen** neuen Eintrag — `Nichtgefunden.Karte(karteId)` und `Nichtgefunden.Kontributor(kontributorId)` bestehen beide.
+- [x] **Benannte Änderung 3:** `FehlervertragTests` (`Source/KanbanC.WebApi.IntegrationTests/Api/FehlervertragTests.cs:41-58`) wird rot, sobald die Route ohne Vertragsfall registriert ist. Die Vertragsfälle entstehen deshalb **in demselben Arbeitsgang** wie die Route, nicht danach.
+- [x] **Benannte Änderung 4:** `KartendetailSeite` (`Source/KanbanC.PlaywrightTests/PageObjects/KartendetailSeite.cs`) wächst um die Locator des Abschnitts, und `KartendetailOeffnenE2ETests` um den Kommentar-Leerstand in der Leerzustandszeile; die bestehenden Locator und Zusicherungen bleiben unverändert.
+- [x] **Benannte Änderung 5:** `Testdatenbank` (`Source/KanbanC.PlaywrightTests`) bekommt `SetzeKommentarzeitpunkt` neben dem bestehenden `SetzeErledigung` (`:27`).
+- [x] **`Kopfzeile.razor` bleibt unverändert** — die Kartenseite injiziert den `Identitaetsspeicher` selbst; kein `CascadingValue`, kein Zustandsdienst, kein `EventCallback`. `R00013` wird nicht angefasst.
+- [x] `KartenRepository.SchreibeErledigung`/`Heute()` (`:335-341`) und `KontributorenRepository` (`:96`) bleiben unverändert — es wird **keine** Uhr-Abstraktion eingeführt.
 - [ ] Alle E2E-Suiten aus `R00001`–`R00018` bleiben **ohne Änderung** grün, insbesondere die Kartendetail-Suiten von `R00017` und `R00018` und die Identitätssuite von `R00013`.
-- [ ] `GET /api/boards/{boardId}` und alle bestehenden Kartenrouten bleiben in Adresse, Verb und Antwortgestalt unverändert.
-- [ ] Der zweite Lauf des `Migrationslaeufer` auf einer bestehenden Datei lässt Schema und Daten unverändert.
+- [x] `GET /api/boards/{boardId}` und alle bestehenden Kartenrouten bleiben in Adresse, Verb und Antwortgestalt unverändert.
+- [x] Der zweite Lauf des `Migrationslaeufer` auf einer bestehenden Datei lässt Schema und Daten unverändert.
 
 ## Betroffene Verzeichnisstruktur
 

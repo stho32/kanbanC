@@ -1,6 +1,6 @@
 ---
 id: R00021
-status: Neu
+status: In Arbeit
 datum: 2026-09-06
 ---
 
@@ -64,112 +64,112 @@ Das **Entfernen** kommt aus einem Grund mit, der hier ein anderer ist als beim A
 
 ### Der Dateiverweis wird mit Urheber und Zeitpunkt festgehalten (API)
 
-- [ ] `POST /api/karten/{karteId}/dateiverweise` mit einem Pfad und einer `KontributorId` antwortet mit HTTP 200 und einem `Kartendetail`, dessen Dateiverweisliste diesen Pfad als **letzten** Eintrag trägt.
-- [ ] Der Eintrag trägt eine eigene, von den anderen verschiedene `DateiverweisId`.
-- [ ] Der Eintrag trägt den Pfad **unverändert bis auf die Ränder**. Rechenbeispiel: `"  Dokumentation/Planung/kanbanc.md  "` wird als `Dokumentation/Planung/kanbanc.md` gespeichert; `Dokumentation\Planung\kanbanc.md` bleibt mit **Rückstrichen** stehen und wird nicht umgeschrieben.
-- [ ] Der Eintrag trägt den **ganzen** Urheber: Nummer, Name, Art und Stilllegungsstand — nicht nur die Nummer.
-- [ ] Der Eintrag trägt einen `Zeitpunkt` mit Uhrzeit. Rechenbeispiel: wird die Uhr **vor** dem Aufruf als `t0` und **nach** dem Aufruf als `t1` gemerkt, gilt `t0 ≤ Zeitpunkt ≤ t1`.
-- [ ] Der Aufrufer kann den Zeitpunkt **nicht** mitgeben; ein mitgeschicktes Feld ändert nichts am gespeicherten Wert.
-- [ ] `GET /api/karten/{karteId}` liefert danach dieselbe Liste in derselben Reihenfolge.
-- [ ] Rechenbeispiel Reihenfolge: an eine Karte ohne Dateiverweise werden nacheinander `a.md`, `b.md`, `c.md` eingetragen → die Liste lautet in jedem folgenden Abruf `a.md`, `b.md`, `c.md` (ältester oben).
-- [ ] Werden zwei Dateiverweise **in der Datenbank** auf verschiedene Zeitpunkte gesetzt, steht der ältere oben — unabhängig von der Reihenfolge des Eintragens.
-- [ ] Die Dateiverweise hängen am `Kartendetail` und **nicht** an `Karte`: `GET /api/boards/{boardId}` liefert die Karten unverändert ohne Dateiverweisliste.
-- [ ] Es gibt **kein** gespeichertes Zählfeld und **keine** gespeicherte Position: die Antwort trägt weder eine Anzahl noch eine Ordnungszahl neben der Liste.
-- [ ] Ein Dateiverweis eines inzwischen **stillgelegten** Kontributors bleibt an der Karte sichtbar, mit Name und Stilllegungsstand.
-- [ ] Ein Neustart der Anwendung lässt Pfade, Urheber, Zeitpunkte und Reihenfolge unverändert.
-- [ ] Der zweite Lauf des `Migrationslaeufer` auf einer bestehenden Datei lässt Schema und Daten unverändert.
+- [x] `POST /api/karten/{karteId}/dateiverweise` mit einem Pfad und einer `KontributorId` antwortet mit HTTP 200 und einem `Kartendetail`, dessen Dateiverweisliste diesen Pfad als **letzten** Eintrag trägt.
+- [x] Der Eintrag trägt eine eigene, von den anderen verschiedene `DateiverweisId`.
+- [x] Der Eintrag trägt den Pfad **unverändert bis auf die Ränder**. Rechenbeispiel: `"  Dokumentation/Planung/kanbanc.md  "` wird als `Dokumentation/Planung/kanbanc.md` gespeichert; `Dokumentation\Planung\kanbanc.md` bleibt mit **Rückstrichen** stehen und wird nicht umgeschrieben.
+- [x] Der Eintrag trägt den **ganzen** Urheber: Nummer, Name, Art und Stilllegungsstand — nicht nur die Nummer.
+- [x] Der Eintrag trägt einen `Zeitpunkt` mit Uhrzeit. Rechenbeispiel: wird die Uhr **vor** dem Aufruf als `t0` und **nach** dem Aufruf als `t1` gemerkt, gilt `t0 ≤ Zeitpunkt ≤ t1`.
+- [x] Der Aufrufer kann den Zeitpunkt **nicht** mitgeben; ein mitgeschicktes Feld ändert nichts am gespeicherten Wert.
+- [x] `GET /api/karten/{karteId}` liefert danach dieselbe Liste in derselben Reihenfolge.
+- [x] Rechenbeispiel Reihenfolge: an eine Karte ohne Dateiverweise werden nacheinander `a.md`, `b.md`, `c.md` eingetragen → die Liste lautet in jedem folgenden Abruf `a.md`, `b.md`, `c.md` (ältester oben).
+- [x] Werden zwei Dateiverweise **in der Datenbank** auf verschiedene Zeitpunkte gesetzt, steht der ältere oben — unabhängig von der Reihenfolge des Eintragens.
+- [x] Die Dateiverweise hängen am `Kartendetail` und **nicht** an `Karte`: `GET /api/boards/{boardId}` liefert die Karten unverändert ohne Dateiverweisliste.
+- [x] Es gibt **kein** gespeichertes Zählfeld und **keine** gespeicherte Position: die Antwort trägt weder eine Anzahl noch eine Ordnungszahl neben der Liste.
+- [x] Ein Dateiverweis eines inzwischen **stillgelegten** Kontributors bleibt an der Karte sichtbar, mit Name und Stilllegungsstand.
+- [x] Ein Neustart der Anwendung lässt Pfade, Urheber, Zeitpunkte und Reihenfolge unverändert.
+- [x] Der zweite Lauf des `Migrationslaeufer` auf einer bestehenden Datei lässt Schema und Daten unverändert.
 
 ### Was geprüft wird — und was ausdrücklich nicht
 
-- [ ] Ein **leerer** Pfad wird mit HTTP 400 **und Rumpf** zurückgewiesen; es entsteht keine Zeile.
-- [ ] Ein Pfad, der **nur aus Leerzeichen** besteht, gilt als leer und wird ebenso zurückgewiesen.
-- [ ] Ein Pfad **über der Höchstlänge** wird mit HTTP 400 und Rumpf zurückgewiesen; der Befund **nennt die Höchstlänge**. Rechenbeispiel: bei einer Höchstlänge von 500 geht ein Pfad aus 500 Zeichen durch, einer aus 501 nicht.
-- [ ] Ein Pfad auf eine **nicht existierende Datei** wird **angenommen** — die Anwendung prüft das Dasein nicht.
-- [ ] Ein **absoluter** Pfad (`/home/…`, `C:\…`), ein Pfad **außerhalb jedes Repositorys** und ein Pfad **ohne Endung** werden alle angenommen.
-- [ ] Ein Windows-Pfad mit Rückstrichen kommt **mit Rückstrichen** zurück; ein Unix-Pfad mit Schrägstrichen mit Schrägstrichen. Die Anwendung schreibt Trennzeichen **nicht** um.
-- [ ] Die Zurückweisung nennt in der Kompensationsaktion die **Route samt Kartennummer**, wie bei Etikett, Teilaufgabe, Kommentar und Anhang.
+- [x] Ein **leerer** Pfad wird mit HTTP 400 **und Rumpf** zurückgewiesen; es entsteht keine Zeile.
+- [x] Ein Pfad, der **nur aus Leerzeichen** besteht, gilt als leer und wird ebenso zurückgewiesen.
+- [x] Ein Pfad **über der Höchstlänge** wird mit HTTP 400 und Rumpf zurückgewiesen; der Befund **nennt die Höchstlänge**. Rechenbeispiel: bei einer Höchstlänge von 500 geht ein Pfad aus 500 Zeichen durch, einer aus 501 nicht.
+- [x] Ein Pfad auf eine **nicht existierende Datei** wird **angenommen** — die Anwendung prüft das Dasein nicht.
+- [x] Ein **absoluter** Pfad (`/home/…`, `C:\…`), ein Pfad **außerhalb jedes Repositorys** und ein Pfad **ohne Endung** werden alle angenommen.
+- [x] Ein Windows-Pfad mit Rückstrichen kommt **mit Rückstrichen** zurück; ein Unix-Pfad mit Schrägstrichen mit Schrägstrichen. Die Anwendung schreibt Trennzeichen **nicht** um.
+- [x] Die Zurückweisung nennt in der Kompensationsaktion die **Route samt Kartennummer**, wie bei Etikett, Teilaufgabe, Kommentar und Anhang.
 
 ### Derselbe Pfad zweimal an derselben Karte wird zurückgewiesen
 
-- [ ] Ein zweiter `POST` mit **demselben** Pfad an **dieselbe** Karte antwortet mit HTTP 400 und Rumpf; die Liste bleibt bei **einem** Eintrag.
-- [ ] Die Prüfung greift auch, wenn sich die beiden Aufrufe nur an den **Rändern** unterscheiden: `"kanbanc.md"` und `" kanbanc.md "` sind derselbe Pfad, weil getrimmt wird.
-- [ ] Die Prüfung greift auch bei **verschiedenen Urhebern**: derselbe Pfad, von zwei Kontributoren eingetragen, bleibt eine Zeile.
-- [ ] Zwei Pfade, die sich in der **Groß-/Kleinschreibung** unterscheiden, gelten als **verschieden** — Pfade sind auf der Zielplattform der Vision (Linux-Repositorys) unterschiedlich, und ein Vergleich, der das einebnet, wäre eine Annahme über fremde Dateisysteme.
-- [ ] Derselbe Pfad an **zwei verschiedenen** Karten wird zweimal angenommen.
-- [ ] Nach dem Entfernen lässt sich derselbe Pfad **wieder** eintragen.
-- [ ] Der Befund ist **lesbar** und nennt den doppelten Pfad und die Kartennummer — der Aufrufer trifft **nie** auf eine nackte Datenbankmeldung über einen verletzten Index.
-- [ ] Das Schema sichert die Regel zusätzlich ab: ein direkter zweiter `INSERT` mit demselben `(Karte, Pfad)` scheitert an der Datenbank.
+- [x] Ein zweiter `POST` mit **demselben** Pfad an **dieselbe** Karte antwortet mit HTTP 400 und Rumpf; die Liste bleibt bei **einem** Eintrag.
+- [x] Die Prüfung greift auch, wenn sich die beiden Aufrufe nur an den **Rändern** unterscheiden: `"kanbanc.md"` und `" kanbanc.md "` sind derselbe Pfad, weil getrimmt wird.
+- [x] Die Prüfung greift auch bei **verschiedenen Urhebern**: derselbe Pfad, von zwei Kontributoren eingetragen, bleibt eine Zeile.
+- [x] Zwei Pfade, die sich in der **Groß-/Kleinschreibung** unterscheiden, gelten als **verschieden** — Pfade sind auf der Zielplattform der Vision (Linux-Repositorys) unterschiedlich, und ein Vergleich, der das einebnet, wäre eine Annahme über fremde Dateisysteme.
+- [x] Derselbe Pfad an **zwei verschiedenen** Karten wird zweimal angenommen.
+- [x] Nach dem Entfernen lässt sich derselbe Pfad **wieder** eintragen.
+- [x] Der Befund ist **lesbar** und nennt den doppelten Pfad und die Kartennummer — der Aufrufer trifft **nie** auf eine nackte Datenbankmeldung über einen verletzten Index.
+- [x] Das Schema sichert die Regel zusätzlich ab: ein direkter zweiter `INSERT` mit demselben `(Karte, Pfad)` scheitert an der Datenbank.
 
 ### Entfernen nimmt die Zeile
 
-- [ ] `DELETE /api/karten/{karteId}/dateiverweise/{dateiverweisId}` antwortet mit HTTP 200 und dem `Kartendetail` **ohne** diesen Eintrag.
-- [ ] Ein zweiter `DELETE` derselben Nummer liefert HTTP 404 mit Rumpf.
-- [ ] Eine `dateiverweisId` einer **anderen** Karte entfernt nichts und liefert HTTP 404 mit Rumpf; die andere Karte trägt ihren Dateiverweis danach unverändert.
-- [ ] Die übrigen Dateiverweise derselben Karte bleiben unverändert.
-- [ ] Es gibt **keine** Route zum **Ändern** eines Dateiverweises.
+- [x] `DELETE /api/karten/{karteId}/dateiverweise/{dateiverweisId}` antwortet mit HTTP 200 und dem `Kartendetail` **ohne** diesen Eintrag.
+- [x] Ein zweiter `DELETE` derselben Nummer liefert HTTP 404 mit Rumpf.
+- [x] Eine `dateiverweisId` einer **anderen** Karte entfernt nichts und liefert HTTP 404 mit Rumpf; die andere Karte trägt ihren Dateiverweis danach unverändert.
+- [x] Die übrigen Dateiverweise derselben Karte bleiben unverändert.
+- [x] Es gibt **keine** Route zum **Ändern** eines Dateiverweises.
 
 ### Fehlerantworten für Agenten
 
-- [ ] Eine **unbekannte Karte** liefert HTTP 404 **mit Rumpf** (Code, Meldung mit der aufgerufenen Nummer, Kompensationsaktion) — bei beiden Routen.
-- [ ] Ein **unbekannter Dateiverweis** liefert HTTP 404 mit Rumpf; der Grund nennt **beide** Nummern (Karte und Dateiverweis).
-- [ ] Ein **unbekannter Kontributor** liefert HTTP 404 mit Rumpf.
-- [ ] Ein **stillgelegter** Kontributor liefert HTTP 400 mit Rumpf; die Meldung sagt, dass er **keinen Dateiverweis mehr eintragen** kann — nicht „kann nicht verantwortlich sein" und nicht „kann keinen Kommentar mehr schreiben".
-- [ ] Nach jeder Zurückweisung wurde **nicht geschrieben**: die Liste der Karte ist unverändert.
-- [ ] `FehlervertragTests` ruft **beide** neuen Routen ab und bleibt grün.
+- [x] Eine **unbekannte Karte** liefert HTTP 404 **mit Rumpf** (Code, Meldung mit der aufgerufenen Nummer, Kompensationsaktion) — bei beiden Routen.
+- [x] Ein **unbekannter Dateiverweis** liefert HTTP 404 mit Rumpf; der Grund nennt **beide** Nummern (Karte und Dateiverweis).
+- [x] Ein **unbekannter Kontributor** liefert HTTP 404 mit Rumpf.
+- [x] Ein **stillgelegter** Kontributor liefert HTTP 400 mit Rumpf; die Meldung sagt, dass er **keinen Dateiverweis mehr eintragen** kann — nicht „kann nicht verantwortlich sein" und nicht „kann keinen Kommentar mehr schreiben".
+- [x] Nach jeder Zurückweisung wurde **nicht geschrieben**: die Liste der Karte ist unverändert.
+- [x] `FehlervertragTests` ruft **beide** neuen Routen ab und bleibt grün.
 
 ### Der Abschnitt auf der Kartenseite
 
-- [ ] Auf `/karten/{karteId}` steht in der zweispaltigen Sektion hinter „Kommentare" **rechts** ein Abschnitt mit der Überschrift **„Dateiverweise"**; links steht unverändert „Anhänge".
-- [ ] Jede Zeile zeigt den Pfad in **Schreibmaschinenschrift** an einer **oliven linken Kante**, ein `↗` und ein `×`.
-- [ ] Ein zu langer Pfad wird in der Zeile **gekürzt dargestellt** (Ellipse) und zieht die Spalte nicht auf; gespeichert und kopiert wird der **ganze** Pfad.
-- [ ] **Urheber und Zeitpunkt stehen im `title` der Zeile** — die gezeichnete einzeilige Form bleibt, die Zusage der Vision wird trotzdem eingelöst.
-- [ ] Unter der Liste steht die Eingabezeile mit dem Text „Pfad im Repository eintragen".
-- [ ] Das Eingabefeld trägt **kein `value`-Attribut** (wie bei Teilaufgabe und Kommentar); abgeschickt wird mit der **Eingabetaste**, es gibt keinen Knopf.
-- [ ] Nach dem Eintragen steht die neue Zeile als **letzte** in der Liste und das Feld ist leer.
-- [ ] **Ist keine Identität gewählt, ist die Eingabezeile gesperrt** und weist auf die Identitätswahl in der Kopfzeile hin — mit demselben Muster wie die Ablegefläche daneben. Board, Kartenseite und alle übrigen Handlungen bleiben ohne Wahl unverändert benutzbar.
-- [ ] Wird die Identität in der Kopfzeile gewechselt, **während** die Kartenseite offen ist, trägt der nächste Dateiverweis den **neu** gewählten Urheber — ohne Reload.
-- [ ] Ein leerer oder doppelter Pfad bringt eine **lesbare Meldung** auf der Seite; die Liste bleibt unverändert.
-- [ ] Ein Klick auf `×` nimmt die Zeile sofort aus der Liste; nach einem Reload ist sie weiterhin weg.
-- [ ] Nach einem Reload zeigt die Seite dieselben Dateiverweise in derselben Reihenfolge.
-- [ ] Die Zeile eines Dateiverweises ist von der Zeile eines Anhangs **ohne Beschriftung** zu unterscheiden: Schreibmaschinenschrift und olive Kante hier, Büroklammer und Größenangabe dort.
+- [x] Auf `/karten/{karteId}` steht in der zweispaltigen Sektion hinter „Kommentare" **rechts** ein Abschnitt mit der Überschrift **„Dateiverweise"**; links steht unverändert „Anhänge".
+- [x] Jede Zeile zeigt den Pfad in **Schreibmaschinenschrift** an einer **oliven linken Kante**, ein `↗` und ein `×`.
+- [x] Ein zu langer Pfad wird in der Zeile **gekürzt dargestellt** (Ellipse) und zieht die Spalte nicht auf; gespeichert und kopiert wird der **ganze** Pfad.
+- [x] **Urheber und Zeitpunkt stehen im `title` der Zeile** — die gezeichnete einzeilige Form bleibt, die Zusage der Vision wird trotzdem eingelöst.
+- [x] Unter der Liste steht die Eingabezeile mit dem Text „Pfad im Repository eintragen".
+- [x] Das Eingabefeld trägt **kein `value`-Attribut** (wie bei Teilaufgabe und Kommentar); abgeschickt wird mit der **Eingabetaste**, es gibt keinen Knopf.
+- [x] Nach dem Eintragen steht die neue Zeile als **letzte** in der Liste und das Feld ist leer.
+- [x] **Ist keine Identität gewählt, ist die Eingabezeile gesperrt** und weist auf die Identitätswahl in der Kopfzeile hin — mit demselben Muster wie die Ablegefläche daneben. Board, Kartenseite und alle übrigen Handlungen bleiben ohne Wahl unverändert benutzbar.
+- [x] Wird die Identität in der Kopfzeile gewechselt, **während** die Kartenseite offen ist, trägt der nächste Dateiverweis den **neu** gewählten Urheber — ohne Reload.
+- [x] Ein leerer oder doppelter Pfad bringt eine **lesbare Meldung** auf der Seite; die Liste bleibt unverändert.
+- [x] Ein Klick auf `×` nimmt die Zeile sofort aus der Liste; nach einem Reload ist sie weiterhin weg.
+- [x] Nach einem Reload zeigt die Seite dieselben Dateiverweise in derselben Reihenfolge.
+- [x] Die Zeile eines Dateiverweises ist von der Zeile eines Anhangs **ohne Beschriftung** zu unterscheiden: Schreibmaschinenschrift und olive Kante hier, Büroklammer und Größenangabe dort.
 
 ### Der Pfeil kopiert den Pfad
 
-- [ ] Ein Klick auf `↗` legt den **ganzen** Pfad in die Zwischenablage; ein anschließendes Einfügen liefert genau diesen Text.
-- [ ] Die Zeile gibt eine **sichtbare Rückmeldung**, dass kopiert wurde.
-- [ ] Der Klick **navigiert nicht**: die Seite bleibt auf `/karten/{karteId}`, es öffnet sich kein Fenster und kein Download beginnt.
-- [ ] **Ist die Zwischenablage nicht verfügbar** (unsicherer Kontext, im Test durch Wegnehmen von `navigator.clipboard` erzwungen), erscheint **keine Ausnahmeseite**: der Pfad wird stattdessen in der Zeile **markiert**, so dass er von Hand kopiert werden kann.
-- [ ] Der Aufruf kommt **ohne eigene `.js`-Datei** aus.
+- [x] Ein Klick auf `↗` legt den **ganzen** Pfad in die Zwischenablage; ein anschließendes Einfügen liefert genau diesen Text.
+- [x] Die Zeile gibt eine **sichtbare Rückmeldung**, dass kopiert wurde.
+- [x] Der Klick **navigiert nicht**: die Seite bleibt auf `/karten/{karteId}`, es öffnet sich kein Fenster und kein Download beginnt.
+- [x] **Ist die Zwischenablage nicht verfügbar** (unsicherer Kontext, im Test durch Wegnehmen von `navigator.clipboard` erzwungen), erscheint **keine Ausnahmeseite**: der Pfad wird stattdessen in der Zeile **markiert**, so dass er von Hand kopiert werden kann.
+- [x] Der Aufruf kommt **ohne eigene `.js`-Datei** aus.
 
 ### Die gemeinsame Leerzeile über beide Hälften
 
-- [ ] Karte **ohne Anhang und ohne Dateiverweis**: es steht **eine** Zeile — „Keine Anhänge, keine Dateiverweise · hinzufügen" — und **nicht** zwei halbe.
-- [ ] Karte **mit Anhang, ohne Dateiverweis**: es steht die halbe Zeile der leeren Hälfte („Keine Dateiverweise · eintragen").
-- [ ] Karte **ohne Anhang, mit Dateiverweis**: es steht die halbe Zeile der anderen leeren Hälfte („Keine Anhänge · hinzufügen").
-- [ ] Karte **mit beidem**: es steht **keine** Leerzeile.
-- [ ] Der Wechsel zwischen den vier Zuständen geschieht **ohne Reload**: wird der letzte Dateiverweis einer Karte ohne Anhang entfernt, erscheint die gemeinsame Zeile sofort.
+- [x] Karte **ohne Anhang und ohne Dateiverweis**: es steht **eine** Zeile — „Keine Anhänge, keine Dateiverweise · hinzufügen" — und **nicht** zwei halbe.
+- [x] Karte **mit Anhang, ohne Dateiverweis**: es steht die halbe Zeile der leeren Hälfte („Keine Dateiverweise · eintragen").
+- [x] Karte **ohne Anhang, mit Dateiverweis**: es steht die halbe Zeile der anderen leeren Hälfte („Keine Anhänge · hinzufügen").
+- [x] Karte **mit beidem**: es steht **keine** Leerzeile.
+- [x] Der Wechsel zwischen den vier Zuständen geschieht **ohne Reload**: wird der letzte Dateiverweis einer Karte ohne Anhang entfernt, erscheint die gemeinsame Zeile sofort.
 - [ ] Die Handlung in der Zeile ist erreichbar: der Klick darauf führt zum jeweiligen Eingabeort.
 
 ### Der grüne Bestand bleibt grün — mit benannten Änderungen
 
-- [ ] **Benannte Änderung 1:** `Kartendetail` (`Source/KanbanC.Contracts/Karten/Kartendetail.cs`) wächst um `IReadOnlyList<Dateiverweis> Dateiverweise` — die **sechste** Liste. Das sind **zwei** positionale `new Kartendetail(`-Aufrufstellen (`Kartenleser.cs:93`, `KartenServiceTests.cs:667`); beide werden angepasst, ihre Zusicherungen nicht.
-- [ ] **Benannte Änderung 2:** `Kartendetailvergleich` (`Source/KanbanC.WebApi.IntegrationTests/Infrastructure/Kartendetailvergleich.cs`) vergleicht auch die neue Liste; sein Kommentarkopf nennt die richtige Zahl (**sechs** statt fünf). Ohne das nennt er zwei Details still gleich, die es in der neuen Liste nicht sind — die Datei sagt genau das über sich selbst voraus.
-- [ ] **Benannte Änderung 3:** `Stillgelegt` (`Source/KanbanC.BL/Operations/Fehler/Stillgelegt.cs`) bekommt die **vierte** Schwester `Dateiverweisurheber`. **Derselbe Code** `kontributor-stillgelegt` (400) wie bei den drei anderen, damit `Nichtgefunden.MeldetEinFehlendesDing` und die Statusabbildung unangetastet bleiben; eigen ist nur die Meldung.
-- [ ] **Benannte Änderung 4:** `Nichtgefunden` (`Source/KanbanC.BL/Operations/Fehler/Nichtgefunden.cs`) bekommt `Dateiverweis(karteId, dateiverweisId)` neben `Anhang(karteId, anhangId)` — Grund mit **beiden** Nummern und Kompensationsaktion, auch bei 404; `AlleCodes` wächst um den neuen Code.
-- [ ] **Benannte Änderung 5:** `IKartenRepository` und `TestKartenRepository` (`Source/KanbanC.BL.Tests/TestHelpers/`) ziehen mit den neuen Signaturen mit.
-- [ ] **Benannte Änderung 6 — die einzige, die grünes *Verhalten* ändert:** `Kartendetail.razor` ersetzt `<div class="blatthalbabschnitt" id="verweisplatz" aria-hidden="true"></div>` (`:347`) durch den gebauten Abschnitt, und der Leerstand (`:324-326`) wird zur gemeinsamen Zeile über beide Hälften. Der Kommentar bei `:284-292` („die rechte Hälfte bleibt in diesem Slice leer", „die gemeinsame Fassung mit den Verweisen entsteht mit I0019") wird damit falsch und wird nachgezogen.
-- [ ] **Benannte Änderung 7 — vier grüne Tests ziehen zwingend mit:**
+- [x] **Benannte Änderung 1:** `Kartendetail` (`Source/KanbanC.Contracts/Karten/Kartendetail.cs`) wächst um `IReadOnlyList<Dateiverweis> Dateiverweise` — die **sechste** Liste. Das sind **zwei** positionale `new Kartendetail(`-Aufrufstellen (`Kartenleser.cs:93`, `KartenServiceTests.cs:667`); beide werden angepasst, ihre Zusicherungen nicht.
+- [x] **Benannte Änderung 2:** `Kartendetailvergleich` (`Source/KanbanC.WebApi.IntegrationTests/Infrastructure/Kartendetailvergleich.cs`) vergleicht auch die neue Liste; sein Kommentarkopf nennt die richtige Zahl (**sechs** statt fünf). Ohne das nennt er zwei Details still gleich, die es in der neuen Liste nicht sind — die Datei sagt genau das über sich selbst voraus.
+- [x] **Benannte Änderung 3:** `Stillgelegt` (`Source/KanbanC.BL/Operations/Fehler/Stillgelegt.cs`) bekommt die **vierte** Schwester `Dateiverweisurheber`. **Derselbe Code** `kontributor-stillgelegt` (400) wie bei den drei anderen, damit `Nichtgefunden.MeldetEinFehlendesDing` und die Statusabbildung unangetastet bleiben; eigen ist nur die Meldung.
+- [x] **Benannte Änderung 4:** `Nichtgefunden` (`Source/KanbanC.BL/Operations/Fehler/Nichtgefunden.cs`) bekommt `Dateiverweis(karteId, dateiverweisId)` neben `Anhang(karteId, anhangId)` — Grund mit **beiden** Nummern und Kompensationsaktion, auch bei 404; `AlleCodes` wächst um den neuen Code.
+- [x] **Benannte Änderung 5:** `IKartenRepository` und `TestKartenRepository` (`Source/KanbanC.BL.Tests/TestHelpers/`) ziehen mit den neuen Signaturen mit.
+- [x] **Benannte Änderung 6 — die einzige, die grünes *Verhalten* ändert:** `Kartendetail.razor` ersetzt `<div class="blatthalbabschnitt" id="verweisplatz" aria-hidden="true"></div>` (`:347`) durch den gebauten Abschnitt, und der Leerstand (`:324-326`) wird zur gemeinsamen Zeile über beide Hälften. Der Kommentar bei `:284-292` („die rechte Hälfte bleibt in diesem Slice leer", „die gemeinsame Fassung mit den Verweisen entsteht mit I0019") wird damit falsch und wird nachgezogen.
+- [x] **Benannte Änderung 7 — vier grüne Tests ziehen zwingend mit:**
   - `AnhangabschnittTests.cs:46` prüft `id="verweisplatz"` — der Platzhalter ist weg, der Test prüft künftig den gebauten Abschnitt.
   - `KartendetailSeite.cs:204` (`Verweisplatz`-Locator) wird durch die Locator des Abschnitts ersetzt.
   - `DateiAnKarteHaengenE2ETests.cs:247` (`Expect(Verweisplatz).ToBeEmptyAsync()`) — die Hälfte ist dann gerade **nicht** mehr leer; die Zusicherung wird ersetzt, nicht gelöscht.
   - `KartendetailOeffnenE2ETests.cs:96-99` nagelt den **halben** Leerzeilen-Wortlaut fest; sein eigener Kommentar kündigt den Wechsel an („entsteht erst mit I0019").
-- [ ] **Benannte Änderung 8:** `WebApiKlient` (`Source/KanbanC.PlaywrightTests/Infrastructure/`) wächst um `TrageDateiverweisEin` für den Aufbau der E2E-Lage.
-- [ ] `Kopfzeile.razor` bleibt **unverändert** — die Kartenseite injiziert den `Identitaetsspeicher` selbst; kein `CascadingValue`, kein Zustandsdienst, kein `EventCallback`. `R00013` wird nicht angefasst.
-- [ ] `Karte.cs` und `Karte.razor` bleiben unverändert — **auf der Bahn ist kein Dateiverweiszeichen**, und die Kartenzahl im Bahnenkopf zählt unverändert.
-- [ ] `Anhang.cs`, `Anhangablage`, `Anhangpfad`, `Anhangadresse` und `Dateigroesseform` bleiben unverändert — dieser Slice fasst die **Bytes** nicht an.
-- [ ] `KartenRepository.Heute()` und `KontributorenRepository` bleiben unverändert — es wird **keine** Uhr-Abstraktion eingeführt.
-- [ ] Alle E2E-Suiten aus `R00001`–`R00020` bleiben grün; geändert werden **nur** die vier oben benannten Stellen.
-- [ ] `GET /api/boards/{boardId}` und alle bestehenden Kartenrouten bleiben in Adresse, Verb und Antwortgestalt unverändert.
+- [x] **Benannte Änderung 8:** `WebApiKlient` (`Source/KanbanC.PlaywrightTests/Infrastructure/`) wächst um `TrageDateiverweisEin` für den Aufbau der E2E-Lage.
+- [x] `Kopfzeile.razor` bleibt **unverändert** — die Kartenseite injiziert den `Identitaetsspeicher` selbst; kein `CascadingValue`, kein Zustandsdienst, kein `EventCallback`. `R00013` wird nicht angefasst.
+- [x] `Karte.cs` und `Karte.razor` bleiben unverändert — **auf der Bahn ist kein Dateiverweiszeichen**, und die Kartenzahl im Bahnenkopf zählt unverändert.
+- [x] `Anhang.cs`, `Anhangablage`, `Anhangpfad`, `Anhangadresse` und `Dateigroesseform` bleiben unverändert — dieser Slice fasst die **Bytes** nicht an.
+- [x] `KartenRepository.Heute()` und `KontributorenRepository` bleiben unverändert — es wird **keine** Uhr-Abstraktion eingeführt.
+- [x] Alle E2E-Suiten aus `R00001`–`R00020` bleiben grün; geändert werden **nur** die vier oben benannten Stellen.
+- [x] `GET /api/boards/{boardId}` und alle bestehenden Kartenrouten bleiben in Adresse, Verb und Antwortgestalt unverändert.
 
 ## Betroffene Verzeichnisstruktur
 

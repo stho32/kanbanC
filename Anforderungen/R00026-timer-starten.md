@@ -1,6 +1,6 @@
 ---
 id: R00026
-status: Neu
+status: In Arbeit
 datum: 2026-09-06
 ---
 
@@ -54,56 +54,56 @@ Das Fertig-Kriterium des Slice lautet wörtlich: **„Ein Timer läuft auf einer
 
 ### Ein Timer läuft — auf einer Karte, für den gewählten Kontributor
 
-- [ ] `POST /api/karten/{karteId}/zeiten/laufend` mit `{"kontributor": 3}` antwortet mit **201** und einem `Zeiteintrag`, der `karte`, `kontributor` und `beginn` trägt.
-- [ ] Der gelieferte Eintrag hat **kein Ende** (`ende` ist `null`) — und behält es über den ganzen Slice.
-- [ ] Der Kontributor reist als **ganzer Kontributor** (Nummer, Name, Art, `stillgelegtAm`), nicht als nackte Nummer — dieselbe Gestalt wie `Kommentar.Urheber`.
-- [ ] `beginn` ist ein Zeitpunkt in UTC im Format `O`; zwei unmittelbar nacheinander gestartete Timer tragen zwei Zeitpunkte, die sich in ihrer Ordnung nicht widersprechen.
-- [ ] Der Kontributor wird **mitgegeben und nie erraten**: ein Aufruf ohne `kontributor` wird zurückgewiesen und legt nichts an.
+- [x] `POST /api/karten/{karteId}/zeiten/laufend` mit `{"kontributor": 3}` antwortet mit **201** und einem `Zeiteintrag`, der `karte`, `kontributor` und `beginn` trägt.
+- [x] Der gelieferte Eintrag hat **kein Ende** (`ende` ist `null`) — und behält es über den ganzen Slice.
+- [x] Der Kontributor reist als **ganzer Kontributor** (Nummer, Name, Art, `stillgelegtAm`), nicht als nackte Nummer — dieselbe Gestalt wie `Kommentar.Urheber`.
+- [x] `beginn` ist ein Zeitpunkt in UTC im Format `O`; zwei unmittelbar nacheinander gestartete Timer tragen zwei Zeitpunkte, die sich in ihrer Ordnung nicht widersprechen.
+- [x] Der Kontributor wird **mitgegeben und nie erraten**: ein Aufruf ohne `kontributor` wird zurückgewiesen und legt nichts an.
 
 ### Ist als laufend erkennbar — über die API
 
-- [ ] `GET /api/boards/{boardId}` trägt nach dem Start eine Liste **laufender** Zeiteinträge, in der der neue Eintrag mit **Karte**, **Kontributor** und **Beginn** steht.
-- [ ] Diese Liste enthält **nur** Einträge ohne Ende und **nur** solche zu Karten dieses Boards.
-- [ ] `GET /api/karten/{karteId}` trägt den Eintrag in seiner Zeiteinträge-Liste, in Beginn-Folge.
-- [ ] Ein Board **ohne** laufenden Timer liefert eine **leere** Liste — kein `null`, kein Fehler.
-- [ ] Nach einem Neustart der WebApi steht derselbe laufende Eintrag noch da: er liegt in der Datenbank, nicht im Prozessgedächtnis.
+- [x] `GET /api/boards/{boardId}` trägt nach dem Start eine Liste **laufender** Zeiteinträge, in der der neue Eintrag mit **Karte**, **Kontributor** und **Beginn** steht.
+- [x] Diese Liste enthält **nur** Einträge ohne Ende und **nur** solche zu Karten dieses Boards.
+- [x] `GET /api/karten/{karteId}` trägt den Eintrag in seiner Zeiteinträge-Liste, in Beginn-Folge.
+- [x] Ein Board **ohne** laufenden Timer liefert eine **leere** Liste — kein `null`, kein Fehler.
+- [x] Nach einem Neustart der WebApi steht derselbe laufende Eintrag noch da: er liegt in der Datenbank, nicht im Prozessgedächtnis.
 
 ### Ist als laufend erkennbar — in der Oberfläche
 
-- [ ] Die Kartenseite `/karten/{karteId}` zeigt bei gewählter Identität einen Abschnitt „Zeiten" mit dem Knopf **„Timer starten"**.
-- [ ] Nach dem Start steht an derselben Stelle **„läuft seit <Uhrzeit>"** und **kein** Startknopf mehr.
-- [ ] Die Karte in der Spaltenbahn trägt eine Plakette, solange auf ihr ein Timer läuft; ohne laufenden Timer trägt sie **keine**.
-- [ ] Läuft der Timer für die **gewählte** Identität, ist die Plakette gefüllt und nennt die Startzeit; läuft ein **fremder**, ist sie ruhig und nennt den fremden Kontributor. Unterschieden wird über **Füllung und Wortlaut, nie über die Farbe** — Olive und Terrakotta tragen in diesem Canvas die *Art* des Kontributors.
-- [ ] Beides **überlebt den Reload**: nach `F5` steht dieselbe Plakette und dieselbe Zeile — der Zustand kommt aus der API, nicht aus dem Browser.
-- [ ] Ohne gewählte Identität gibt es kein „mich": jeder laufende Timer wird als fremder dargestellt.
+- [x] Die Kartenseite `/karten/{karteId}` zeigt bei gewählter Identität einen Abschnitt „Zeiten" mit dem Knopf **„Timer starten"**.
+- [x] Nach dem Start steht an derselben Stelle **„läuft seit <Uhrzeit>"** und **kein** Startknopf mehr.
+- [x] Die Karte in der Spaltenbahn trägt eine Plakette, solange auf ihr ein Timer läuft; ohne laufenden Timer trägt sie **keine**.
+- [x] Läuft der Timer für die **gewählte** Identität, ist die Plakette gefüllt und nennt die Startzeit; läuft ein **fremder**, ist sie ruhig und nennt den fremden Kontributor. Unterschieden wird über **Füllung und Wortlaut, nie über die Farbe** — Olive und Terrakotta tragen in diesem Canvas die *Art* des Kontributors.
+- [x] Beides **überlebt den Reload**: nach `F5` steht dieselbe Plakette und dieselbe Zeile — der Zustand kommt aus der API, nicht aus dem Browser.
+- [x] Ohne gewählte Identität gibt es kein „mich": jeder laufende Timer wird als fremder dargestellt.
 
 ### Mehrere Timer je Kontributor sind erlaubt
 
-- [ ] Läuft für einen Kontributor bereits ein Timer auf Karte A, so lässt sich für **denselben** Kontributor auf Karte B ein zweiter starten: **201**, und danach laufen **beide**.
-- [ ] Der Boardabruf zeigt beide; auf dem Board stehen dann **zwei** gefüllte Plaketten.
-- [ ] Zwei **verschiedene** Kontributoren dürfen auf **derselben** Karte gleichzeitig messen: der zweite Start antwortet mit **201**, und die Karte trägt danach zwei laufende Einträge.
-- [ ] Laufen auf einer Karte mehrere Timer, zeigt die Plakette den **eigenen** zuerst, sonst den **am längsten laufenden**; der `title` nennt alle.
+- [x] Läuft für einen Kontributor bereits ein Timer auf Karte A, so lässt sich für **denselben** Kontributor auf Karte B ein zweiter starten: **201**, und danach laufen **beide**.
+- [x] Der Boardabruf zeigt beide; auf dem Board stehen dann **zwei** gefüllte Plaketten.
+- [x] Zwei **verschiedene** Kontributoren dürfen auf **derselben** Karte gleichzeitig messen: der zweite Start antwortet mit **201**, und die Karte trägt danach zwei laufende Einträge.
+- [x] Laufen auf einer Karte mehrere Timer, zeigt die Plakette den **eigenen** zuerst, sonst den **am längsten laufenden**; der `title` nennt alle.
 
 ### Der zweite Start auf derselben Karte ist idempotent
 
-- [ ] Ein zweiter `POST …/zeiten/laufend` mit **demselben** Kontributor auf **derselben** Karte antwortet mit **200** — nicht 201, nicht 400, nicht 409 — und liefert **denselben** Eintrag mit **unverändertem** `zeiteintragId` und **unverändertem** `beginn`.
-- [ ] Danach gibt es zu diesem Paar (Karte, Kontributor) **genau einen** offenen Eintrag; die Zeiteinträge der Karte sind um **keinen** gewachsen.
-- [ ] **Rechenbeispiel:** Karte 14, Kontributor 3. Start → 201, `zeiteintragId` = 7, `beginn` = 08:04. Zweiter Start → 200, `zeiteintragId` = **7**, `beginn` = **08:04**. Dritter Start desselben Kontributors auf Karte 21 → 201, `zeiteintragId` = 8. Der Boardabruf zeigt danach **zwei** laufende Einträge (7 und 8), nicht drei und nicht einen.
-- [ ] Die Schranke steht **im Schema** und nicht nur im Dienst: ein Schreibweg, der am Dienst vorbeigeht, läuft in einen sichtbaren Anschlag statt still einen zweiten offenen Eintrag anzulegen.
+- [x] Ein zweiter `POST …/zeiten/laufend` mit **demselben** Kontributor auf **derselben** Karte antwortet mit **200** — nicht 201, nicht 400, nicht 409 — und liefert **denselben** Eintrag mit **unverändertem** `zeiteintragId` und **unverändertem** `beginn`.
+- [x] Danach gibt es zu diesem Paar (Karte, Kontributor) **genau einen** offenen Eintrag; die Zeiteinträge der Karte sind um **keinen** gewachsen.
+- [x] **Rechenbeispiel:** Karte 14, Kontributor 3. Start → 201, `zeiteintragId` = 7, `beginn` = 08:04. Zweiter Start → 200, `zeiteintragId` = **7**, `beginn` = **08:04**. Dritter Start desselben Kontributors auf Karte 21 → 201, `zeiteintragId` = 8. Der Boardabruf zeigt danach **zwei** laufende Einträge (7 und 8), nicht drei und nicht einen.
+- [x] Die Schranke steht **im Schema** und nicht nur im Dienst: ein Schreibweg, der am Dienst vorbeigeht, läuft in einen sichtbaren Anschlag statt still einen zweiten offenen Eintrag anzulegen.
 
 ### Ohne gewählte Identität
 
-- [ ] Ein Klick auf „Timer starten" **ohne** Eintrag in `sessionStorage` öffnet die **Identitätswahl** — keine Fehlermeldung: „nicht gewählt" ist eine fehlende Angabe, und die Wahl ist die Kompensationsaktion.
-- [ ] Nach der Wahl **läuft der Timer unmittelbar**, ohne zweiten Klick.
-- [ ] Die gewählte Identität gilt anschließend auch in der Kopfzeile — es entsteht kein zweiter Identitätsbegriff.
+- [x] Ein Klick auf „Timer starten" **ohne** Eintrag in `sessionStorage` öffnet die **Identitätswahl** — keine Fehlermeldung: „nicht gewählt" ist eine fehlende Angabe, und die Wahl ist die Kompensationsaktion.
+- [x] Nach der Wahl **läuft der Timer unmittelbar**, ohne zweiten Klick.
+- [x] Die gewählte Identität gilt anschließend auch in der Kopfzeile — es entsteht kein zweiter Identitätsbegriff.
 
 ### Fehlerantworten für Agenten
 
-- [ ] **Unbekannte Karte** → HTTP 404 mit `karte-unbekannt`, Grund **mit der Nummer** und Kompensationsaktion.
-- [ ] **Unbekannter Kontributor** → HTTP 404 mit `kontributor-unbekannt`, Grund mit der Nummer und Kompensationsaktion.
-- [ ] **Stillgelegter Kontributor** → HTTP **400** mit `kontributor-stillgelegt`; die Meldung sagt, dass er **keine Zeit mehr erfassen** kann — nicht „kann nicht verantwortlich sein", nicht „kann keinen Kommentar mehr schreiben", nicht „kann keine Datei mehr anhängen" und nicht „kann auf keine Datei mehr verweisen": alle vier wären hier eine Falschaussage.
-- [ ] Jede Zurückweisung hinterlässt **keinen** Eintrag; nach einem abgelehnten Aufruf ist die Zeiteinträge-Liste der Karte unverändert.
-- [ ] `FehlervertragTests` deckt die neue Route ab; sie steht **nicht** auf `RoutenOhneFehlerantwort`.
+- [x] **Unbekannte Karte** → HTTP 404 mit `karte-unbekannt`, Grund **mit der Nummer** und Kompensationsaktion.
+- [x] **Unbekannter Kontributor** → HTTP 404 mit `kontributor-unbekannt`, Grund mit der Nummer und Kompensationsaktion.
+- [x] **Stillgelegter Kontributor** → HTTP **400** mit `kontributor-stillgelegt`; die Meldung sagt, dass er **keine Zeit mehr erfassen** kann — nicht „kann nicht verantwortlich sein", nicht „kann keinen Kommentar mehr schreiben", nicht „kann keine Datei mehr anhängen" und nicht „kann auf keine Datei mehr verweisen": alle vier wären hier eine Falschaussage.
+- [x] Jede Zurückweisung hinterlässt **keinen** Eintrag; nach einem abgelehnten Aufruf ist die Zeiteinträge-Liste der Karte unverändert.
+- [x] `FehlervertragTests` deckt die neue Route ab; sie steht **nicht** auf `RoutenOhneFehlerantwort`.
 
 ### Was dieser Slice ausdrücklich nicht tut
 
@@ -113,9 +113,9 @@ Das Fertig-Kriterium des Slice lautet wörtlich: **„Ein Timer läuft auf einer
 
 ### Der grüne Bestand bleibt grün
 
-- [ ] Die Testsuiten aus `R00001`–`R00025` laufen unverändert weiter; insbesondere die `R00005`-Suite, die 17 `ToHaveCountAsync`-Zusagen der `LayoutModusE2ETests` und die Ziehproben (`KindZiehbarkeitProbeE2ETests`, `VerweisInZiehbarerKarteProbeE2ETests`) — die Karte in der Bahn wächst um eine Plakette.
-- [ ] `GET /api/boards/{boardId}` und `GET /api/karten/{karteId}` antworten im Übrigen unverändert; die Abschlussspalte kürzt weiter wie bisher.
-- [ ] Der zweite Lauf der Migrationen auf einer bestehenden Datei lässt Schema und Daten unverändert.
+- [x] Die Testsuiten aus `R00001`–`R00025` laufen unverändert weiter; insbesondere die `R00005`-Suite, die 17 `ToHaveCountAsync`-Zusagen der `LayoutModusE2ETests` und die Ziehproben (`KindZiehbarkeitProbeE2ETests`, `VerweisInZiehbarerKarteProbeE2ETests`) — die Karte in der Bahn wächst um eine Plakette.
+- [x] `GET /api/boards/{boardId}` und `GET /api/karten/{karteId}` antworten im Übrigen unverändert; die Abschlussspalte kürzt weiter wie bisher.
+- [x] Der zweite Lauf der Migrationen auf einer bestehenden Datei lässt Schema und Daten unverändert.
 
 ## Betroffene Verzeichnisstruktur
 
