@@ -189,18 +189,18 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-05 | R00015 Erledigte Karten gebündelt sehen | B0186 Erledigung schreiben und löschen | Standard | 2h | 0,0h | 0,0h | autonom |
 | 2026-09-05 | R00015 Erledigte Karten gebündelt sehen | B0187 Erledigungsdatum reist mit der Karte | Standard | 0,4-1,5h | 0,0h | 0,0h | autonom |
 | 2026-09-05 | R00015 Erledigte Karten gebündelt sehen | B0188 Erledigung über die API | Standard | 0,4h | 0,0h | 0,0h | autonom |
-| 2026-08-29 | R00003 Boards auflisten und öffnen | Lauf R00003 · S7 ausstehend | Nacharbeit | — | — | 0,1h | autonom |
-| 2026-08-30 | R00004 Layout-Modus für die Spaltenpflege | Lauf R00004 · S7 ausstehend | Nacharbeit | — | — | 0,4h | autonom |
-| 2026-09-02 | R00005 Oberfläche auf das gezeichnete Design bringen | Lauf R00005 · S7 ausstehend | Nacharbeit | — | — | 4,6h | autonom |
-| 2026-08-31 | R00006 Karten anlegen und am Board sehen | Lauf R00006 · S7 ausstehend | Nacharbeit | — | — | 0,9h | autonom |
-| 2026-09-03 | R00007 Karte verschieben | Lauf R00007 · S7 ausstehend | Nacharbeit | — | — | 1,2h | autonom |
-| 2026-09-03 | R00008 Einfügelinie statt Ablagekästen | Lauf R00008 · S7 ausstehend | Nacharbeit | — | — | 1,6h | autonom |
-| 2026-09-04 | R00009 Kartenzahl je Spalte anzeigen | Lauf R00009 · S7 ausstehend | Nacharbeit | — | — | 0,2h | autonom |
-| 2026-09-04 | R00010 Board umbenennen und archivieren | Lauf R00010 · S7 ausstehend | Nacharbeit | — | — | 0,3h | autonom |
-| 2026-09-04 | R00011 Kontributor anlegen | Lauf R00011 · S7 ausstehend | Nacharbeit | — | — | 0,2h | autonom |
-| 2026-09-04 | R00012 Kontributor bearbeiten | Lauf R00012 · S7 ausstehend | Nacharbeit | — | — | 0,4h | autonom |
-| 2026-09-04 | R00013 Identität wählen | Lauf R00013 · S7 ausstehend | Nacharbeit | — | — | 0,6h | autonom |
-| 2026-09-04 | R00014 Kontributor stilllegen | Lauf R00014 · S7 ausstehend | Nacharbeit | — | — | 0,2h | autonom |
+| 2026-08-29 | R00003 Boards auflisten und öffnen | Lauf R00003 | Nacharbeit | — | — | 0,1h | autonom |
+| 2026-08-30 | R00004 Layout-Modus für die Spaltenpflege | Lauf R00004 | Nacharbeit | — | — | 0,4h | autonom |
+| 2026-09-02 | R00005 Oberfläche auf das gezeichnete Design bringen | Lauf R00005 | Nacharbeit | — | — | 4,6h | autonom |
+| 2026-08-31 | R00006 Karten anlegen und am Board sehen | Lauf R00006 | Nacharbeit | — | — | 0,9h | autonom |
+| 2026-09-03 | R00007 Karte verschieben | Lauf R00007 | Nacharbeit | — | — | 1,2h | autonom |
+| 2026-09-03 | R00008 Einfügelinie statt Ablagekästen | Lauf R00008 | Nacharbeit | — | — | 1,6h | autonom |
+| 2026-09-04 | R00009 Kartenzahl je Spalte anzeigen | Lauf R00009 | Nacharbeit | — | — | 0,2h | autonom |
+| 2026-09-04 | R00010 Board umbenennen und archivieren | Lauf R00010 | Nacharbeit | — | — | 0,3h | autonom |
+| 2026-09-04 | R00011 Kontributor anlegen | Lauf R00011 | Nacharbeit | — | — | 0,2h | autonom |
+| 2026-09-04 | R00012 Kontributor bearbeiten | Lauf R00012 | Nacharbeit | — | — | 0,4h | autonom |
+| 2026-09-04 | R00013 Identität wählen | Lauf R00013 | Nacharbeit | — | — | 0,6h | autonom |
+| 2026-09-04 | R00014 Kontributor stilllegen | Lauf R00014 | Nacharbeit | — | — | 0,2h | autonom |
 | 2026-09-05 | R00015 Erledigte Karten gebündelt sehen | B0189 Erledigungsordnung und Kürzung | Standard | 0,4h | 0,0h | 0,0h | autonom |
 | 2026-09-05 | R00015 Erledigte Karten gebündelt sehen | B0190 Wahre Kartenzahl an der Spalte | Standard | 0,4h | 0,1h | 0,1h | autonom |
 | 2026-09-05 | R00015 Erledigte Karten gebündelt sehen | B0191 Gekürzte Spalte verlässt die API | Standard | 2h | 0,1h | 0,1h | autonom |
@@ -225,7 +225,7 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-05 | R00016 Karte archivieren | B0210 Archivierte Karten einer Spalte lesen | Standard | 0,4h | 0,2h | 0,2h | autonom |
 | 2026-09-05 | R00016 Karte archivieren | B0211 Archiv über die API | Standard | 2h | 0,2h | 0,2h | autonom |
 | 2026-09-05 | R00016 Karte archivieren | B0212 Zurückgeholte Karte steht wieder in ihrer Bahn | Standard | 0,4h | 0,2h | 0,2h | autonom |
-| 2026-09-05 | R00016 Karte archivieren | Lauf R00016 · S7 ausstehend | Nacharbeit | — | — | 0,2h | autonom |
+| 2026-09-05 | R00016 Karte archivieren | Lauf R00016 | Nacharbeit | — | — | 0,2h | autonom |
 | 2026-09-05 | R00017 Kartendetails bearbeiten | B0213 Kartendetail lesen | Standard | 0,4h | 0,0h | 0,1h | autonom |
 | 2026-09-05 | R00017 Kartendetails bearbeiten | B0214 Kartendetail verdrahten | Standard | 0,4h | 0,0h | 0,0h | autonom |
 | 2026-09-05 | R00017 Kartendetails bearbeiten | B0215 Endpunkt des Kartendetails | Standard | 2h | 0,0h | 0,0h | autonom |
@@ -256,7 +256,7 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-05 | R00017 Kartendetails bearbeiten | B0240 API-Klient der Etiketten | Standard | 2h | 0,0h | 0,0h | autonom |
 | 2026-09-05 | R00017 Kartendetails bearbeiten | B0241 Etikettenfeld mit Vervollstaendigung | Standard | 2h | 0,1h | 0,1h | autonom |
 | 2026-09-05 | R00017 Kartendetails bearbeiten | B0242 E2E Etiketten | Standard | 2-4h | 0,4h | 0,4h | autonom |
-| 2026-09-05 | R00017 Kartendetails bearbeiten | Lauf R00017 · S7 ausstehend | Nacharbeit | — | — | 1,3h | autonom |
+| 2026-09-05 | R00017 Kartendetails bearbeiten | Lauf R00017 | Nacharbeit | — | — | 1,3h | autonom |
 | 2026-09-05 | R00018 Karte gliedern | B0243 Teilaufgabentabelle anlegen | Standard | 0,4h | 0,0h | 0,0h | autonom |
 | 2026-09-05 | R00018 Karte gliedern | B0244 Teilaufgaben am Kartendetail lesen | Standard | 0,4h | 0,0h | 0,0h | autonom |
 | 2026-09-05 | R00018 Karte gliedern | B0245 Teilaufgabentext pruefen | Standard | 0,4h | 0,0h | 0,0h | autonom |
@@ -268,7 +268,7 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-05 | R00018 Karte gliedern | B0251 Teilaufgabenfortschritt rechnen | Standard | 0,4h | 0,0h | 0,0h | autonom |
 | 2026-09-05 | R00018 Karte gliedern | B0252 Teilaufgabenabschnitt der Kartenseite | Standard | 2h | 0,0h | 0,0h | autonom |
 | 2026-09-05 | R00018 Karte gliedern | B0253 E2E Karte gliedern | Standard | 2-4h | 0,2h | 0,2h | autonom |
-| 2026-09-05 | R00018 Karte gliedern | Lauf R00018 · S7 ausstehend | Nacharbeit | — | 0,5h | 0,5h | autonom |
+| 2026-09-05 | R00018 Karte gliedern | Lauf R00018 | Nacharbeit | — | 0,5h | 0,5h | autonom |
 | 2026-09-05 | R00019 Karte kommentieren | B0254 Probe: Zeitpunkt durch eine TEXT-Spalte | Standard | 0,4-1,5h | 0,1h | 0,1h | autonom |
 | 2026-09-05 | R00019 Karte kommentieren | B0255 Kommentartabelle anlegen | Standard | 0,4h | 0,0h | 0,0h | autonom |
 | 2026-09-05 | R00019 Karte kommentieren | B0256 Kommentare am Kartendetail lesen | Standard | 0,4h | 0,0h | 0,0h | autonom |
@@ -281,7 +281,7 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-05 | R00019 Karte kommentieren | B0263 Urheber aus dem Browser in den Aufruf | Standard | 0,4h | 0,1h | 0,1h | autonom |
 | 2026-09-05 | R00019 Karte kommentieren | B0264 Kommentarabschnitt der Kartenseite | Standard | 2h | 0,0h | 0,0h | autonom |
 | 2026-09-05 | R00019 Karte kommentieren | B0265 E2E Karte kommentieren | Standard | 2-4h | 0,4h | 0,4h | autonom |
-| 2026-09-06 | R00019 Karte kommentieren | Lauf R00019 · S7 ausstehend | Nacharbeit | — | 0,3h | 0,3h | autonom |
+| 2026-09-06 | R00019 Karte kommentieren | Lauf R00019 | Nacharbeit | — | 0,3h | 0,3h | autonom |
 | 2026-09-06 | R00020 Datei an Karte haengen | B0266 Probe: Datei durch multipart in die WebApi und zurueck | Standard | 0,4-1,5h | 0,1h | 0,1h | autonom |
 | 2026-09-06 | R00020 Datei an Karte haengen | B0267 Anhangtabelle anlegen | Standard | 0,4h | 0,1h | 0,1h | autonom |
 | 2026-09-06 | R00020 Datei an Karte haengen | B0268 Ablageort aus der Verbindungszeichenfolge rechnen | Standard | 0,4h | 0,1h | 0,1h | autonom |
@@ -298,7 +298,7 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-06 | R00020 Datei an Karte haengen | B0279 Dateigroesse als Text | Standard | 0,4h | 0,1h | 0,1h | autonom |
 | 2026-09-06 | R00020 Datei an Karte haengen | B0280 Anhangabschnitt der Kartenseite | Standard | 2h | 0,3h | 0,3h | autonom |
 | 2026-09-06 | R00020 Datei an Karte haengen | B0281 E2E Datei an Karte haengen | Standard | 2-4h | 0,6h | 0,6h | autonom |
-| 2026-09-06 | R00020 Datei an Karte haengen | Lauf R00020 · S7 ausstehend | Nacharbeit | — | 0,1h | 0,1h | autonom |
+| 2026-09-06 | R00020 Datei an Karte haengen | Lauf R00020 | Nacharbeit | — | 0,1h | 0,1h | autonom |
 | 2026-09-06 | R00021 Karte auf Dateien verweisen lassen | B0282 Probe: Zwischenablage aus dem Blazor-Kreislauf | Standard | 0,4-1,5h | 0,1h | 0,1h | autonom |
 | 2026-09-06 | R00021 Karte auf Dateien verweisen lassen | B0283 Dateiverweistabelle anlegen | Standard | 0,4h | 0,0h | 0,0h | autonom |
 | 2026-09-06 | R00021 Karte auf Dateien verweisen lassen | B0284 Dateiverweise am Kartendetail lesen | Standard | 0,4h | 0,2h | 0,2h | autonom |
@@ -311,7 +311,7 @@ Zeilen mit `brutto` `—` sind aus der Commit-Historie nachgetragen: `bestaetigt
 | 2026-09-06 | R00021 Karte auf Dateien verweisen lassen | B0291 Pfad kopieren am Pfeil | Standard | 0,4h | 0,1h | 0,1h | autonom |
 | 2026-09-06 | R00021 Karte auf Dateien verweisen lassen | B0292 Gemeinsame Leerzeile ueber beide Haelften | Standard | 0,4-1,5h | 0,1h | 0,1h | autonom |
 | 2026-09-06 | R00021 Karte auf Dateien verweisen lassen | B0293 E2E Karte auf Dateien verweisen lassen | Standard | 2-4h | 0,2h | 0,2h | autonom |
-| 2026-09-06 | R00021 Karte auf Dateien verweisen lassen | Lauf R00021 · S7 ausstehend | Nacharbeit | — | — | 0,7h | autonom |
+| 2026-09-06 | R00021 Karte auf Dateien verweisen lassen | Lauf R00021 | Nacharbeit | — | — | 0,7h | autonom |
 | 2026-09-06 | R00022 Kartenklasse anlegen | I0020 Lauf gesamt, 10 Bubbles B0294-B0303 (Station S6 ohne Bubble-Commits) | Standard | 10,4-12,4h | 0,4h | 0,4h | autonom |
 | 2026-09-06 | R00023 Karte einer Klasse zuordnen | I0021 Lauf gesamt, 11 Bubbles B0304-B0314 (Station S6 ohne Bubble-Commits) | Standard | 12,4-17,7h | 1,9h | 1,9h | autonom |
 | 2026-09-06 | R00025 Karten einer Klasse abrufen | I0022 Lauf gesamt, 4 Bubbles B0315-B0318 (Station S6 ohne Bubble-Commits) | Standard | 2,8-3,9h | 0,7h | 0,7h | autonom |
