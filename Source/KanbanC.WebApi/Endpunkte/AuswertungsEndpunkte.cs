@@ -16,6 +16,7 @@ public static class AuswertungsEndpunkte
     private const string BurndownRoute = "/api/boards/{boardId:long}/kartenklassen/{kartenklasseId:long}/burndown";
     private const string ZeitexportstandRoute = "/api/boards/{boardId:long}/kartenklassen/{kartenklasseId:long}/zeitexport";
     private const string ZeitexportdateiRoute = "/api/boards/{boardId:long}/kartenklassen/{kartenklasseId:long}/zeitexport.csv";
+    private const string PufferRoute = "/api/boards/{boardId:long}/kartenklassen/{kartenklasseId:long}/puffer";
     private const string Zeitexportinhaltstyp = "text/csv";
     private const string Seitgrenze = "seit";
     private const string Burndownwegstueck = "burndown";
@@ -28,6 +29,7 @@ public static class AuswertungsEndpunkte
         routen.MapGet(BurndownRoute, LadeBurndown).WithName("BurndownLesen");
         routen.MapGet(ZeitexportstandRoute, LadeZeitexportstand).WithName("ZeitexportstandLesen");
         routen.MapGet(ZeitexportdateiRoute, LadeZeitexportdatei).WithName("ZeitexportdateiLesen");
+        routen.MapGet(PufferRoute, LadePufferstand).WithName("PufferstandLesen");
     }
 
     // Ein Bestand ohne Karten ist kein Fehler: die leere Zeilenliste ist die Antwort, nicht 404.
@@ -86,6 +88,21 @@ public static class AuswertungsEndpunkte
         {
             var bytes = Zeitexportsatz.AlsCsv(ergebnis.Wert.Zeilen);
             return Results.File(bytes, Zeitexportinhaltstyp, ergebnis.Wert.Stand.Dateiname);
+        }
+
+        return Zurueckweisungen.AlsFehlerantwort(ergebnis.Befunde);
+    }
+
+    // **Kein Zeitraumparameter**: der Verbrauch ist ein Stand und kein Verlauf; ein „seit"
+    // schnitte eine Achse zu, die es hier nicht gibt.
+    // Ein Bestand ohne Karten, ein Bestand ohne Band und eine Kette ohne Puffer sind 200 ohne
+    // Prozentwerte — nicht 404 und keine Division durch null.
+    private static IResult LadePufferstand(long boardId, long kartenklasseId, AuswertungsService auswertungsService)
+    {
+        var ergebnis = auswertungsService.Puffer(boardId, kartenklasseId);
+        if (ergebnis.IstErfolg)
+        {
+            return Results.Ok(ergebnis.Wert);
         }
 
         return Zurueckweisungen.AlsFehlerantwort(ergebnis.Befunde);

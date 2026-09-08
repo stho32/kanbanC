@@ -105,6 +105,53 @@ public sealed class AuswertungenSeite
 
     public ILocator PunktRohdaten => _seite.Locator("#auswertung-rohdaten");
 
+    public ILocator PunktPuffer => _seite.Locator("#auswertung-puffer");
+
+    public ILocator Pufferflaeche => _seite.Locator("#puffer-flaeche");
+
+    public ILocator Pufferkopfzahlen => _seite.Locator("#puffer-kopfzahlen");
+
+    public ILocator Fieberkurve => _seite.Locator("#puffer-kurve");
+
+    public ILocator Fieberkurvenpunkt => _seite.Locator("#puffer-punkt");
+
+    public ILocator Fieberkurvenpunktwert => _seite.Locator("#puffer-punktwert");
+
+    public ILocator Puffertabelle => _seite.Locator("#puffer-tabelle");
+
+    public ILocator Pufferzeilen => _seite.Locator("#puffer-tabelle tbody .pufferzeile");
+
+    public ILocator Pufferzeile(long karteId)
+    {
+        return _seite.Locator($"#puffer-zeile-{karteId}");
+    }
+
+    public ILocator PufferFusszeile => _seite.Locator("#puffer-ohne-soll");
+
+    public ILocator OhneBandHinweis => _seite.Locator("#puffer-ohne-band");
+
+    public ILocator OhnePufferHinweis => _seite.Locator("#puffer-ohne-puffer");
+
+    public ILocator OhneAchseHinweis => _seite.Locator("#puffer-ohne-achse");
+
+    public ILocator FieberkurvenAchsentitel => _seite.Locator("#puffer-kurve .puffer-achsentitel");
+
+    public async Task WaehlePuffer()
+    {
+        await PunktPuffer.ClickAsync();
+        await Assertions.Expect(Auswertungstitel).ToContainTextAsync("Puffer-Verbrauch");
+    }
+
+    // Die Lage des Punktes — die Zahlen, an denen die Kurve prüfbar ist statt an einem Bild.
+    public async Task<(string X, string Y)> Punktlage()
+    {
+        var x = await Fieberkurvenpunkt.GetAttributeAsync("cx");
+        var y = await Fieberkurvenpunkt.GetAttributeAsync("cy");
+        Assert.That(x, Is.Not.Null, "Der Punkt trug kein cx-Attribut.");
+        Assert.That(y, Is.Not.Null, "Der Punkt trug kein cy-Attribut.");
+        return (x!, y!);
+    }
+
     public ILocator Rohdatenflaeche => _seite.Locator("#rohdaten-flaeche");
 
     public ILocator Rohdatenkartenaufruf => _seite.Locator("#rohdaten-karten-aufruf");

@@ -488,6 +488,21 @@ public class FehlervertragTests
             await webApi.Klient.GetAsync($"{BoardsRoute}/{board.BoardId}/kartenklassen/999/burndown?seit=gestern")));
 
         faelle.Add(new Fehlerfall(
+            "GET /api/boards/{boardId:long}/kartenklassen/{kartenklasseId:long}/puffer",
+            "Pufferstand mit unbekannter BoardId",
+            await webApi.Klient.GetAsync($"{BoardsRoute}/999/kartenklassen/{aufbau.FremdeKartenklasse.KartenklasseId}/puffer")));
+
+        faelle.Add(new Fehlerfall(
+            "GET /api/boards/{boardId:long}/kartenklassen/{kartenklasseId:long}/puffer",
+            "Pufferstand mit unbekannter KartenklasseId",
+            await webApi.Klient.GetAsync($"{BoardsRoute}/{board.BoardId}/kartenklassen/999/puffer")));
+
+        faelle.Add(new Fehlerfall(
+            "GET /api/boards/{boardId:long}/kartenklassen/{kartenklasseId:long}/puffer",
+            "Pufferstand mit der Kartenklasse eines fremden Boards",
+            await webApi.Klient.GetAsync($"{BoardsRoute}/{board.BoardId}/kartenklassen/{aufbau.FremdeKartenklasse.KartenklasseId}/puffer")));
+
+        faelle.Add(new Fehlerfall(
             "GET /api/boards/{boardId:long}/kartenklassen/{kartenklasseId:long}/zeitexport",
             "Zeitexportstand mit unbekannter BoardId",
             await webApi.Klient.GetAsync($"{BoardsRoute}/999/kartenklassen/{aufbau.FremdeKartenklasse.KartenklasseId}/zeitexport")));

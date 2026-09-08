@@ -1,0 +1,74 @@
+/* Die drei Zonen tragen die vorhandenen Skalen des Token-Sheets — es führt keine Statuspalette,
+   und ein Token, der genau einmal vorkäme, wäre ein Literal mit Namen. Farben und Radien kommen
+   aus gestaltung.css; Strichstärken und Schriftgrößen stehen als Wert, weil das Token-Sheet für
+   sie keine Variable führt. */
+.fieberkurve {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+}
+
+.puffer-zone {
+    stroke: none;
+}
+
+.puffer-zone-gruen {
+    fill: var(--color-accent-2-200);
+}
+
+.puffer-zone-gelb {
+    fill: var(--color-accent-300);
+}
+
+/* Die dunkelste Stufe würde die Fläche zulaufen lassen; gemischt bleibt sie eine Zone und wird
+   kein Block. */
+.puffer-zone-rot {
+    fill: color-mix(in srgb, var(--color-accent-700) 45%, transparent);
+}
+
+.puffer-achse {
+    stroke: var(--color-divider);
+    stroke-width: 1;
+}
+
+.puffer-wertmarke {
+    fill: var(--color-neutral-600);
+    font-size: 11px;
+    text-anchor: end;
+    dominant-baseline: middle;
+}
+
+.puffer-fortschrittmarke {
+    fill: var(--color-neutral-600);
+    font-size: 11px;
+    text-anchor: middle;
+}
+
+.puffer-achsentitel {
+    fill: var(--color-neutral-700);
+    font-size: 12px;
+    text-anchor: middle;
+}
+
+/* Der Punkt „heute" ist die Zahl, auf die es ankommt: er bekommt den Kontrast, die Zonen treten
+   zurück. */
+.puffer-punkt {
+    r: var(--radius-xs);
+    fill: var(--color-accent-800);
+    stroke: var(--color-surface);
+    stroke-width: 2;
+}
+
+.puffer-punktwert {
+    fill: var(--color-accent-800);
+    font-size: 13px;
+    font-weight: 600;
+    text-anchor: middle;
+}
+
+/* Ein Punkt am oberen Rand ist abgeschnitten und kein gemessener Ort: der Ring sagt, dass der
+   Wert daneben über die Fläche hinausgeht. */
+.puffer-punkt-ueberzug {
+    stroke: var(--color-accent-700);
+    stroke-width: 3;
+}

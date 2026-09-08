@@ -70,6 +70,65 @@ public sealed class AuswertungsService
         return Ergebnis<Zeitexport>.Erfolg(new Zeitexport(ausschnitt.Zeilen, Stand(ausschnitt)));
     }
 
+    // Der Pufferstand desselben Bestands — dieselbe Vorprüfung, dieselben drei Befunde und kein
+    // Zeitraum: der Verbrauch ist ein Stand und kein Verlauf.
+    // Ein Bestand ohne Karten, ein Bestand ohne jedes Band und eine Kette ohne Puffer sind drei
+    // Antworten und kein Fehler.
+    public Ergebnis<Pufferauswertung> Puffer(long boardId, long kartenklasseId)
+    {
+        var befundZumBestand = PruefeBestand(boardId, kartenklasseId);
+        if (befundZumBestand is not null)
+        {
+            return Zurueckgewiesen<Pufferauswertung>(befundZumBestand);
+        }
+
+        var bestand = _auswertungsrepository.LiesPufferstaende(boardId, kartenklasseId);
+        return Ergebnis<Pufferauswertung>.Erfolg(new Pufferauswertung(Pufferzeilen(bestand), Kopfzahlen(new Pufferkette(bestand))));
+    }
+
+    private static IReadOnlyList<Pufferzeile> Pufferzeilen(Pufferstandkarten bestand)
+    {
+        var zeilen = new List<Pufferzeile>();
+        foreach (var karte in bestand)
+        {
+            zeilen.Add(new Pufferzeile(
+                karte.KarteId,
+                karte.Kartennummer,
+                karte.Titel,
+                karte.Sollband,
+                karte.ErfassteZeit,
+                VerbrauchterPuffer(karte),
+                karte.ErledigtAm is not null,
+                karte.IstArchiviert));
+        }
+
+        return zeilen;
+    }
+
+    // Ohne Sollband gibt es nichts zu verbrauchen — die Zeile trägt dann keinen Wert und nicht 0,0.
+    private static decimal? VerbrauchterPuffer(Pufferstandkarte karte)
+    {
+        var kartenpuffer = Pufferrechner.Rechne(karte.ErfassteZeit, karte.Sollband);
+        if (kartenpuffer is null)
+        {
+            return null; // stil-check: C25 null heisst „diese Karte traegt kein Sollband"
+        }
+
+        return kartenpuffer.VerbrauchteStunden;
+    }
+
+    private static Pufferkopfzahlen Kopfzahlen(Pufferkette kette)
+    {
+        return new Pufferkopfzahlen(
+            kette.KettenpufferStunden,
+            kette.VerbrauchteStunden,
+            kette.VerbrauchsanteilProzent,
+            kette.FortschrittProzent,
+            kette.ErledigteKarten,
+            kette.Kartenanzahl,
+            kette.KartenOhneSoll);
+    }
+
     private static Zeitexportstand Stand(Zeitexportausschnitt ausschnitt)
     {
         var zeilen = ausschnitt.Zeilen;

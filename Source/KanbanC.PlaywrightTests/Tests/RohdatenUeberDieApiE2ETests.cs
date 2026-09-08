@@ -90,7 +90,7 @@ public class RohdatenUeberDieApiE2ETests : PageTest
     }
 
     // US-6: die Kartenklassenwahl tritt für diesen Eintrag zurück — ein Bedienelement ohne Wirkung
-    // wäre eine stille Lüge —, und `Puffer-Verbrauch` bleibt der einzige gesperrte Eintrag.
+    // wäre eine stille Lüge —, und `Puffer-Verbrauch` steht seit R00042 wählbar daneben.
     [Test]
     [Category("US-6")]
     public async Task Wenn_Rohdaten_gewaehlt_ist_dann_tritt_die_Kartenklassenwahl_zurueck_und_kommt_bei_der_naechsten_Wahl_wieder()
@@ -106,8 +106,8 @@ public class RohdatenUeberDieApiE2ETests : PageTest
 
         await Expect(seite.Kartenklassenwahl).ToHaveCountAsync(0);
         await Expect(seite.Boardwahl).ToBeVisibleAsync();
-        await Expect(seite.GesperrteAuswertungen).ToHaveCountAsync(1);
-        await Expect(seite.GesperrteAuswertungen).ToContainTextAsync("Puffer-Verbrauch");
+        await Expect(seite.GesperrteAuswertungen).ToHaveCountAsync(0);
+        await Expect(seite.PunktPuffer).ToBeVisibleAsync();
 
         await seite.WaehleBurndown();
 

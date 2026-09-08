@@ -1,0 +1,158 @@
+@using System.Globalization
+@using KanbanC.Blazor.Services
+@using KanbanC.Contracts
+@using KanbanC.Contracts.Auswertungen
+
+@* Kopfzahlen, Fieberkurve, Kartentabelle und Fußzeile — alle vier lesen **dieselbe** Auswertung;
+   keine von ihnen rechnet nach. *@
+<div class="pufferflaeche" id="puffer-flaeche">
+    <div class="puffer-kopfzahlen" id="puffer-kopfzahlen">
+        <span class="puffer-kopfzahl"><strong>@Stundenwert(Auswertung.Kopfzahlen.KettenpufferStunden)</strong> Kettenpuffer</span>
+        <span class="puffer-kopfzahl"><strong>@Stundenwert(Auswertung.Kopfzahlen.VerbrauchteStunden)</strong> verbraucht</span>
+        <span class="puffer-kopfzahl"><strong>@Prozentwert(Auswertung.Kopfzahlen.VerbrauchsanteilProzent)</strong> des Puffers</span>
+        <span class="puffer-kopfzahl"><strong>@Prozentwert(Auswertung.Kopfzahlen.FortschrittProzent)</strong> Fortschritt</span>
+        <span class="puffer-kopfzahl"><strong>@Auswertung.Kopfzahlen.ErledigteKarten von @Auswertung.Kopfzahlen.Kartenanzahl</strong> erledigt</span>
+    </div>
+
+    @if (DerBestandTraegtKeinBand)
+    {
+        <p class="pufferhinweis" id="puffer-ohne-band">
+            In diesem Bestand trägt keine Karte ein Sollband; ohne Soll gibt es weder Puffer noch Verbrauch — und
+            ohne Achsenwerte keine Kurve. Fahre die WBS-Datei mit ihrer Aufwandsspalte erneut ein.
+        </p>
+    }
+    else if (DieKetteHatKeinenPuffer)
+    {
+        <p class="pufferhinweis" id="puffer-ohne-puffer">
+            Dieser Bestand trägt nur Punktschätzungen — es gibt keinen Puffer zu verbrauchen. Die Stunden stehen
+            trotzdem oben; eine senkrechte Achse ohne Nenner hätte keine Bedeutung.
+        </p>
+    }
+    else if (!DieKurveIstZeichenbar)
+    {
+        <p class="pufferhinweis" id="puffer-ohne-achse">
+            Für diesen Bestand fehlt eine der beiden Achsen: die Untergrenzen seiner Sollbänder summieren sich auf
+            null, und ein Fortschritt am Soll wäre eine Division durch null.
+        </p>
+    }
+    else
+    {
+        <Fieberkurve FortschrittProzent="Auswertung.Kopfzahlen.FortschrittProzent!.Value"
+                     VerbrauchsanteilProzent="Auswertung.Kopfzahlen.VerbrauchsanteilProzent!.Value" />
+    }
+
+    @* Die Antwort auf „welche Karte frisst den Puffer", die die Kurve nicht gibt. *@
+    <table class="table puffertabelle" id="puffer-tabelle">
+        <thead>
+            <tr>
+                <th class="spalte-karte">Karte</th>
+                <th class="spalte-zahl">Soll · Band</th>
+                <th class="spalte-zahl">Ist</th>
+                <th class="spalte-zahl">verbraucht</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var zeile in Auswertung.Zeilen)
+            {
+                <tr class="pufferzeile @Zeilenklasse(zeile)" id="@($"puffer-zeile-{zeile.KarteId}")">
+                    <td>
+                        <span class="puffer-kartennummer">@zeile.Kartennummer</span>
+                        <span class="puffer-titel">@zeile.Titel</span>
+                        @if (zeile.IstErledigt)
+                        {
+                            <span class="tag tag-accent-2 puffer-erledigtmarke">erledigt</span>
+                        }
+                        @if (zeile.IstArchiviert)
+                        {
+                            <span class="tag tag-neutral puffer-archivmarke">archiviert</span>
+                        }
+                    </td>
+                    <td class="spalte-zahl @Luecke(zeile.Sollband is null)">@Zeitbandform.AlsText(zeile.Sollband)</td>
+                    <td class="spalte-zahl">@Dauerform.AlsText(zeile.ErfassteZeit)</td>
+                    <td class="spalte-zahl @Luecke(zeile.VerbrauchterPufferStunden is null)">@Verbrauchswert(zeile.VerbrauchterPufferStunden)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @* Ohne diese Zeile ließen sich die Kettenzahlen für vollständig halten: sie sagt, wie viele
+       Karten in keiner von ihnen vorkommen. *@
+    @if (Auswertung.Kopfzahlen.KartenOhneSoll > 0)
+    {
+        <p class="puffer-fusszeile" id="puffer-ohne-soll">
+            @Auswertung.Kopfzahlen.KartenOhneSoll von @Auswertung.Kopfzahlen.Kartenanzahl Karten tragen kein Soll;
+            weder Kettenpuffer noch Verbrauch noch Fortschritt enthalten sie.
+        </p>
+    }
+</div>
+
+@code {
+    private const string GanzeZahl = "0";
+    private const string StundenEinheit = " h";
+
+    [Parameter]
+    [EditorRequired]
+    public required Pufferauswertung Auswertung { get; set; }
+
+    // Ohne ein einziges Sollband gibt es keinen Kettenpuffer — `null` und nicht 0,0.
+    private bool DerBestandTraegtKeinBand => Auswertung.Kopfzahlen.KettenpufferStunden is null;
+
+    // Der häufige Fall: lauter Punktschätzungen. Der Kettenpuffer ist eine echte 0,0, und genau
+    // deshalb hat der Anteil keinen Wert.
+    private bool DieKetteHatKeinenPuffer => Auswertung.Kopfzahlen.KettenpufferStunden == 0m;
+
+    private bool DieKurveIstZeichenbar => Auswertung.Kopfzahlen.FortschrittProzent is not null && Auswertung.Kopfzahlen.VerbrauchsanteilProzent is not null;
+
+    private static string Stundenwert(decimal? stunden)
+    {
+        if (stunden is null)
+        {
+            return Zeitbandform.OhneBand;
+        }
+
+        return Zeitbandform.Stunden(stunden.Value) + StundenEinheit;
+    }
+
+    private static string Prozentwert(decimal? prozent)
+    {
+        if (prozent is null)
+        {
+            return Zeitbandform.OhneBand;
+        }
+
+        return $"{prozent.Value.ToString(GanzeZahl, CultureInfo.InvariantCulture)} %";
+    }
+
+    // Eine Karte ohne Band verbraucht **keinen** Puffer — der Gedankenstrich steht für die Lücke,
+    // eine 0,0 behauptete eine Messung.
+    private static string Verbrauchswert(decimal? verbrauchterPufferStunden)
+    {
+        if (verbrauchterPufferStunden is null)
+        {
+            return Zeitbandform.OhneBand;
+        }
+
+        return Zeitbandform.Stunden(verbrauchterPufferStunden.Value) + StundenEinheit;
+    }
+
+    // Archiviert heißt nicht ungültig: die Zeile tritt zurück, ihre Zeit bleibt in der Rechnung.
+    private static string Zeilenklasse(Pufferzeile zeile)
+    {
+        if (zeile.IstArchiviert)
+        {
+            return "pufferzeile-archiviert";
+        }
+
+        return "";
+    }
+
+    private static string Luecke(bool esFehltEinWert)
+    {
+        if (esFehltEinWert)
+        {
+            return "puffer-luecke";
+        }
+
+        return "";
+    }
+}

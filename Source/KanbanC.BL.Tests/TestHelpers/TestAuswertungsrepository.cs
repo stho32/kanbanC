@@ -9,6 +9,7 @@ public sealed class TestAuswertungsrepository : IAuswertungsrepository
     private readonly Dictionary<(long BoardId, long KartenklasseId), SollIstKarten> _bestaende = []; // stil-check: C11 Testablage je Bestand, kein Domaenenbestand
     private readonly Dictionary<(long BoardId, long KartenklasseId), Erledigungsstandkarten> _erledigungsstaende = []; // stil-check: C11 Testablage je Bestand, kein Domaenenbestand
     private readonly Dictionary<(long BoardId, long KartenklasseId), Zeitexportzeilen> _zeiteintraege = []; // stil-check: C11 Testablage je Bestand, kein Domaenenbestand
+    private readonly Dictionary<(long BoardId, long KartenklasseId), Pufferstandkarten> _pufferstaende = []; // stil-check: C11 Testablage je Bestand, kein Domaenenbestand
 
     public bool WurdeGelesen { get; private set; }
 
@@ -66,5 +67,23 @@ public sealed class TestAuswertungsrepository : IAuswertungsrepository
         }
 
         return new Zeitexportzeilen(Unbekanntesboard, []);
+    }
+
+    public TestAuswertungsrepository MitPufferstaenden(long boardId, long kartenklasseId, params Pufferstandkarte[] karten)
+    {
+        _pufferstaende[(boardId, kartenklasseId)] = new Pufferstandkarten(karten);
+        return this;
+    }
+
+    public Pufferstandkarten LiesPufferstaende(long boardId, long kartenklasseId)
+    {
+        WurdeGelesen = true;
+        Lesevorgaenge = Lesevorgaenge + 1;
+        if (_pufferstaende.TryGetValue((boardId, kartenklasseId), out var bestand))
+        {
+            return bestand;
+        }
+
+        return new Pufferstandkarten([]);
     }
 }

@@ -160,12 +160,11 @@ public class SollIstVergleichE2ETests : PageTest
         await Expect(seite.Tabelle).ToHaveCountAsync(0);
     }
 
-    // Der Umschalter links kommt ohne Abruf aus: die noch nicht gebauten Auswertungen stehen
-    // sichtbar und ohne Weg daneben. Seit R00037 ist der Burndown einer der Wege — es bleiben
-    // zwei gesperrte.
+    // Der Umschalter links kommt ohne Abruf aus und steht deshalb auch bei einem Ausfall. Seit
+    // R00042 ist jede seiner fünf Auswertungen ein Weg — es bleibt keine gesperrte.
     [Test]
     [Category("US-3")]
-    public async Task Wenn_der_Schirm_offen_ist_dann_steht_Soll_Ist_waehlbar_und_nur_der_Puffer_Verbrauch_gesperrt_daneben()
+    public async Task Wenn_der_Schirm_offen_ist_dann_steht_Soll_Ist_waehlbar_und_kein_Punkt_gesperrt_daneben()
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
         var seite = new AuswertungenSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
@@ -173,7 +172,7 @@ public class SollIstVergleichE2ETests : PageTest
         await seite.Oeffne();
 
         await Expect(seite.Auswertungspunkte).ToHaveCountAsync(5);
-        await Expect(seite.GesperrteAuswertungen).ToHaveCountAsync(1);
+        await Expect(seite.GesperrteAuswertungen).ToHaveCountAsync(0);
         await Expect(seite.OhneBestandHinweis).ToBeVisibleAsync();
     }
 

@@ -41,6 +41,14 @@ public sealed class AuswertungenApiKlient
         return await ApiAntwortleser.AlsErgebnisMitGemeldetenBefunden<Zeitexportstand>(antwort);
     }
 
+    // **Kein Abfrageparameter**: der Verbrauch ist ein Stand, kein Verlauf.
+    public async Task<ApiErgebnis<Pufferauswertung>> LadePufferstand(long boardId, long kartenklasseId)
+    {
+        using var klient = _klientFabrik.CreateClient(KlientName);
+        using var antwort = await klient.GetAsync($"{BoardsRoute}/{boardId}/kartenklassen/{kartenklasseId}/puffer");
+        return await ApiAntwortleser.AlsErgebnisMitGemeldetenBefunden<Pufferauswertung>(antwort);
+    }
+
     private static string Achsenabfrage(DateOnly? seit)
     {
         if (seit is null)

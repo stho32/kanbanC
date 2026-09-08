@@ -60,7 +60,7 @@ public sealed class Auswertungsrepository : IAuswertungsrepository
                 Kartennummer.Aus(zeile.Kartenklassenpraefix, (int)zeile.VergebenerZaehlerstand),
                 zeile.Titel,
                 Zeit(zeitenJeKarte, zeile.KarteId),
-                Band(zeile),
+                Band(zeile.SollzeitVonStunden, zeile.SollzeitBisStunden),
                 zeile.ArchivierteKarte is not null));
         }
 
@@ -104,14 +104,14 @@ public sealed class Auswertungsrepository : IAuswertungsrepository
 
     // Beide Grenzen sind in der Tabelle NOT NULL; fehlt die Zeile, fehlen beide — der LEFT JOIN
     // liefert dann null, und das heißt „ohne Soll“.
-    private static Zeitband? Band(Bestandszeile zeile)
+    private static Zeitband? Band(double? sollzeitVonStunden, double? sollzeitBisStunden)
     {
-        if (zeile.SollzeitVonStunden is null || zeile.SollzeitBisStunden is null)
+        if (sollzeitVonStunden is null || sollzeitBisStunden is null)
         {
             return null; // stil-check: C25 null heisst „diese Karte traegt kein Sollband“
         }
 
-        return new Zeitband((decimal)zeile.SollzeitVonStunden.Value, (decimal)zeile.SollzeitBisStunden.Value);
+        return new Zeitband((decimal)sollzeitVonStunden.Value, (decimal)sollzeitBisStunden.Value);
     }
 
     private static DateTimeOffset AlsZeitpunkt(string isoText)
@@ -187,6 +187,61 @@ public sealed class Auswertungsrepository : IAuswertungsrepository
         string? ErledigtAm,
         long? ArchivierteKarte,
         long IstAbschlussspalte);
+
+
+    // Der dritte Schnitt derselben Form, ein Lesevorgang je Bestand: zum Soll-Ist-Leseweg kommt
+    // allein der LEFT JOIN auf Karteerledigung, weil der Fortschritt das Erledigungsdatum braucht.
+    // Die Zeiten kommen weiter über denselben Zeitenschnitt, und ein laufender Timer zählt nicht
+    // mit.
+    public Pufferstandkarten LiesPufferstaende(long boardId, long kartenklasseId)
+    {
+        using var verbindung = _verbindungsfabrik.Oeffne();
+
+        var parameter = new { BoardId = boardId, KartenklasseId = kartenklasseId };
+        var kartenzeilen = verbindung.Query<Pufferstandzeile>(@"
+            SELECT k.KarteId, k.Titel,
+                   n.Praefix AS Kartenklassenpraefix, z.Zaehlerstand AS VergebenerZaehlerstand,
+                   a.Karte AS ArchivierteKarte,
+                   o.SollzeitVonStunden, o.SollzeitBisStunden,
+                   e.ErledigtAm
+              FROM Karte k
+              JOIN Spalte s ON s.SpalteId = k.Spalte
+              JOIN Kartenklassenzuordnung z ON z.Karte = k.KarteId
+              JOIN Kartenklasse n ON n.KartenklasseId = z.Kartenklasse
+              LEFT JOIN Kartenarchivierung a ON a.Karte = k.KarteId
+              LEFT JOIN Kartensollzeit o ON o.Karte = k.KarteId
+              LEFT JOIN Karteerledigung e ON e.Karte = k.KarteId
+             WHERE s.Board = @BoardId
+               AND z.Kartenklasse = @KartenklasseId
+             ORDER BY z.Zaehlerstand", parameter).ToList();
+
+        var zeitenJeKarte = LiesErfassteZeiten(verbindung, parameter);
+
+        var karten = new List<Pufferstandkarte>();
+        foreach (var zeile in kartenzeilen)
+        {
+            karten.Add(new Pufferstandkarte(
+                zeile.KarteId,
+                Kartennummer.Aus(zeile.Kartenklassenpraefix, (int)zeile.VergebenerZaehlerstand),
+                zeile.Titel,
+                Zeit(zeitenJeKarte, zeile.KarteId),
+                Band(zeile.SollzeitVonStunden, zeile.SollzeitBisStunden),
+                AlsTag(zeile.ErledigtAm),
+                zeile.ArchivierteKarte is not null));
+        }
+
+        return new Pufferstandkarten(karten);
+    }
+
+    private sealed record Pufferstandzeile(
+        long KarteId,
+        string Titel,
+        string Kartenklassenpraefix,
+        long VergebenerZaehlerstand,
+        long? ArchivierteKarte,
+        double? SollzeitVonStunden,
+        double? SollzeitBisStunden,
+        string? ErledigtAm);
 
 
     // Derselbe Schnitt über Spalte, Kartenklassenzuordnung und Kartenklasse wie oben, dazu der

@@ -224,10 +224,10 @@ public class ZeitenExportierenE2ETests : PageTest
         await Expect(seite.Auswertungspunkte).ToHaveCountAsync(5);
     }
 
-    // Der Umschalter führt fünf Auswertungen; seit den Rohdaten sind vier davon Wege.
+    // Der Umschalter führt fünf Auswertungen; seit dem Puffer-Verbrauch sind alle fünf davon Wege.
     [Test]
     [Category("US-1")]
-    public async Task Wenn_der_Schirm_offen_ist_dann_ist_Zeiten_exportieren_waehlbar_und_nur_der_Puffer_Verbrauch_bleibt_gesperrt()
+    public async Task Wenn_der_Schirm_offen_ist_dann_ist_Zeiten_exportieren_waehlbar_und_kein_Punkt_mehr_gesperrt()
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
         var seite = new AuswertungenSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
@@ -235,7 +235,7 @@ public class ZeitenExportierenE2ETests : PageTest
         await seite.Oeffne();
 
         await Expect(seite.Auswertungspunkte).ToHaveCountAsync(5);
-        await Expect(seite.GesperrteAuswertungen).ToHaveCountAsync(1);
+        await Expect(seite.GesperrteAuswertungen).ToHaveCountAsync(0);
 
         await seite.WaehleZeitexport();
 

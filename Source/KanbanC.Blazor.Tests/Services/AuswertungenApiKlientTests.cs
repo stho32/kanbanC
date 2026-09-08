@@ -343,4 +343,159 @@ public class AuswertungenApiKlientTests
 
         Assert.That(async () => await klient.LadeZeitexportstand(4, 2, von: null, bis: null), Throws.InstanceOf<HttpRequestException>());
     }
+
+    // Der Pufferstand des durchgehenden Rechenbeispiels, wie die WebApi ihn liefert: gerechnete
+    // Kopfzahlen und Zeilen, deren Band und Verbrauch zusammen fehlen dürfen.
+    private const string EinPufferstand = """
+        {
+          "zeilen": [
+            {
+              "karteId": 11,
+              "kartennummer": "WBS-01",
+              "titel": "K1",
+              "sollband": { "vonStunden": 2.0, "bisStunden": 4.0 },
+              "erfassteZeit": "05:00:00",
+              "verbrauchterPufferStunden": 3.0,
+              "istErledigt": true,
+              "istArchiviert": false
+            },
+            {
+              "karteId": 15,
+              "kartennummer": "WBS-05",
+              "titel": "K5",
+              "sollband": null,
+              "erfassteZeit": "08:00:00",
+              "verbrauchterPufferStunden": null,
+              "istErledigt": false,
+              "istArchiviert": true
+            }
+          ],
+          "kopfzahlen": {
+            "kettenpufferStunden": 5.1,
+            "verbrauchteStunden": 4.0,
+            "verbrauchsanteilProzent": 78,
+            "fortschrittProzent": 74,
+            "erledigteKarten": 2,
+            "kartenanzahl": 5,
+            "kartenOhneSoll": 1
+          }
+        }
+        """;
+
+    [Test]
+    public async Task Wenn_die_WebApi_den_Pufferstand_liefert_dann_traegt_das_Ergebnis_Kopfzahlen_und_Zeilen()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, EinPufferstand, JsonInhaltstyp);
+        var klient = new AuswertungenApiKlient(fabrik);
+
+        var ergebnis = await klient.LadePufferstand(4, 2);
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.False);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Wert.Kopfzahlen.KettenpufferStunden, Is.EqualTo(5.1m));
+            Assert.That(ergebnis.Wert.Kopfzahlen.VerbrauchteStunden, Is.EqualTo(4.0m));
+            Assert.That(ergebnis.Wert.Kopfzahlen.VerbrauchsanteilProzent, Is.EqualTo(78m));
+            Assert.That(ergebnis.Wert.Kopfzahlen.FortschrittProzent, Is.EqualTo(74m));
+            Assert.That(ergebnis.Wert.Kopfzahlen.ErledigteKarten, Is.EqualTo(2));
+            Assert.That(ergebnis.Wert.Kopfzahlen.Kartenanzahl, Is.EqualTo(5));
+            Assert.That(ergebnis.Wert.Kopfzahlen.KartenOhneSoll, Is.EqualTo(1));
+        });
+    }
+
+    // **`null` bleibt `null`**: eine Karte ohne Band trägt keinen Verbrauch und nicht 0,0 — auch
+    // nicht nach dem Weg durch JSON.
+    [Test]
+    public async Task Wenn_eine_Zeile_kein_Sollband_traegt_dann_bleibt_ihr_Verbrauch_ohne_Wert()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, EinPufferstand, JsonInhaltstyp);
+        var klient = new AuswertungenApiKlient(fabrik);
+
+        var ergebnis = await klient.LadePufferstand(4, 2);
+
+        var ohneBand = ergebnis.Wert.Zeilen[1];
+        Assert.Multiple(() =>
+        {
+            Assert.That(ergebnis.Wert.Zeilen[0].Sollband, Is.EqualTo(new Zeitband(2.0m, 4.0m)));
+            Assert.That(ergebnis.Wert.Zeilen[0].VerbrauchterPufferStunden, Is.EqualTo(3.0m));
+            Assert.That(ergebnis.Wert.Zeilen[0].ErfassteZeit, Is.EqualTo(TimeSpan.FromHours(5)));
+            Assert.That(ohneBand.Sollband, Is.Null);
+            Assert.That(ohneBand.VerbrauchterPufferStunden, Is.Null);
+            Assert.That(ohneBand.IstArchiviert, Is.True);
+        });
+    }
+
+    // **Kein Abfrageparameter**: der Verbrauch ist ein Stand und kein Verlauf.
+    [Test]
+    public async Task Wenn_der_Pufferstand_abgerufen_wird_dann_traegt_die_Adresse_keinen_Abfrageparameter()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.OK, EinPufferstand, JsonInhaltstyp);
+        var klient = new AuswertungenApiKlient(fabrik);
+
+        await klient.LadePufferstand(4, 2);
+
+        Assert.That(fabrik.AbgesetzterAufruf, Is.EqualTo("GET http://webapi.test/api/boards/4/kartenklassen/2/puffer"));
+    }
+
+    [Test]
+    public async Task Wenn_die_WebApi_das_Board_des_Pufferstands_nicht_kennt_dann_traegt_die_Zurueckweisung_den_gemeldeten_Befund()
+    {
+        const string Zurueckgewiesen = """
+            {"befunde":[{"code":"board-unbekannt","meldung":"Ein Board mit der Nummer 999 gibt es nicht.","kompensation":"`GET /api/boards` abrufen und den Aufruf mit einer der gelieferten BoardIds wiederholen."}]}
+            """;
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.NotFound, Zurueckgewiesen, JsonInhaltstyp);
+        var klient = new AuswertungenApiKlient(fabrik);
+
+        var ergebnis = await klient.LadePufferstand(999, 2);
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        var befund = ergebnis.Zurueckweisung.Befunde.Single();
+        Assert.Multiple(() =>
+        {
+            Assert.That(befund.Code, Is.EqualTo("board-unbekannt"));
+            Assert.That(befund.Meldung, Does.Contain("999"));
+            Assert.That(befund.Kompensation, Does.Contain("/api/boards"));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_WebApi_die_Kartenklasse_des_Pufferstands_einem_fremden_Board_zuschreibt_dann_steht_ihr_eigener_Code_in_der_Zurueckweisung()
+    {
+        const string Zurueckgewiesen = """
+            {"befunde":[{"code":"kartenklasse-fremd","meldung":"Die Kartenklasse 2 gehört zu Board 7 und nicht zu Board 4.","kompensation":"`GET /api/boards/4/kartenklassen` abrufen und eine Kartenklasse dieses Boards wählen."}]}
+            """;
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.NotFound, Zurueckgewiesen, JsonInhaltstyp);
+        var klient = new AuswertungenApiKlient(fabrik);
+
+        var ergebnis = await klient.LadePufferstand(4, 2);
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        var befund = ergebnis.Zurueckweisung.Befunde.Single();
+        Assert.Multiple(() =>
+        {
+            Assert.That(befund.Code, Is.EqualTo("kartenklasse-fremd"));
+            Assert.That(befund.Meldung, Does.Contain("7"));
+        });
+    }
+
+    [Test]
+    public async Task Wenn_die_Fehlerantwort_zum_Pufferstand_keinen_lesbaren_Rumpf_hat_dann_kommt_trotzdem_ein_Befund()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.NotFound, "<html>404</html>", "text/html");
+        var klient = new AuswertungenApiKlient(fabrik);
+
+        var ergebnis = await klient.LadePufferstand(4, 2);
+
+        Assert.That(ergebnis.WurdeZurueckgewiesen, Is.True);
+        Assert.That(ergebnis.Zurueckweisung.Befunde, Is.Not.Empty);
+    }
+
+    [Test]
+    public void Wenn_die_WebApi_beim_Pufferstand_ausfaellt_dann_laeuft_der_Fehler_bis_zum_Aufrufer_durch()
+    {
+        using var fabrik = TestKlientFabrik.MitAntwort(HttpStatusCode.ServiceUnavailable, string.Empty, JsonInhaltstyp);
+        var klient = new AuswertungenApiKlient(fabrik);
+
+        Assert.That(async () => await klient.LadePufferstand(4, 2), Throws.InstanceOf<HttpRequestException>());
+    }
 }

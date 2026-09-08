@@ -21,4 +21,10 @@ public interface IAuswertungsrepository
     // archivierte Karten und stillgelegte Kontributoren ebenfalls, denn ihre Zeit wurde geleistet.
     // Der Boardname reist mit, weil der Dateiname aus ihm entsteht.
     Zeitexportzeilen LiesZeiteintraege(long boardId, long kartenklasseId);
+
+    // Soll, Ist und Erledigung desselben Bestands in **einem** Lesevorgang: je Karte Nummer,
+    // Titel, erfasste Zeit, Sollband, Erledigungstag und Archivstand.
+    // Archivierte Karten stehen mit darin; ihre Zeit wurde geleistet.
+    // Ein Bestand ohne Karten liefert die leere Menge — das ist eine Antwort und kein Fehler.
+    Pufferstandkarten LiesPufferstaende(long boardId, long kartenklasseId);
 }

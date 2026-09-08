@@ -164,6 +164,61 @@ public class AuswertungsflaecheTests
         Assert.That(felder.Select(feld => feld.Name), Has.None.Contains("Soll").IgnoreCase);
     }
 
+    [Test]
+    public void Wenn_die_Stilvorlage_der_Pufferflaeche_gelesen_wird_dann_traegt_sie_kein_Farb_Abstands_oder_Radius_Literal()
+    {
+        ErwarteOhneLiterale(Pufferflaechenstilvorlage());
+    }
+
+    [Test]
+    public void Wenn_die_Stilvorlage_der_Fieberkurve_gelesen_wird_dann_traegt_sie_kein_Farb_Abstands_oder_Radius_Literal()
+    {
+        ErwarteOhneLiterale(Fieberkurvenstilvorlage());
+    }
+
+    // **Die Fieberkurve trägt ihre Gestaltung nicht im Markup.** Ein `fill`- oder `stroke`-Wert im
+    // SVG wäre genau die Stelle, an der eine Farbe am Token-Sheet vorbei in die Anwendung käme.
+    [Test]
+    public void Wenn_die_Fieberkurve_gelesen_wird_dann_traegt_ihr_Markup_weder_Farbe_noch_Strich_noch_Radius()
+    {
+        var kurve = OhneKommentare(File.ReadAllText(Quelltextbaum.BlazorDatei("Components", "Auswertungen", "Fieberkurve.razor"))); // stil-check: C03 die Ablage ist der Prüfgegenstand
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Regex.Matches(kurve, @"#[0-9a-fA-F]{3,8}\b"), Is.Empty, "Farben gehören ins Token-Sheet.");
+            Assert.That(kurve, Does.Not.Contain("fill="));
+            Assert.That(kurve, Does.Not.Contain("stroke="));
+            Assert.That(kurve, Does.Not.Contain("style="));
+            Assert.That(kurve, Does.Not.Contain(" r="));
+        });
+    }
+
+    // Die drei Zonen tragen die vorhandenen Skalen des Token-Sheets: es führt keine Statuspalette,
+    // und ein Token, der genau einmal vorkäme, wäre ein Literal mit Namen.
+    [Test]
+    public void Wenn_die_Stilvorlage_der_Fieberkurve_gelesen_wird_dann_holt_sie_ihre_Zonenfarben_aus_den_vorhandenen_Skalen()
+    {
+        var regeln = Fieberkurvenstilvorlage();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(regeln, Does.Contain("var(--color-accent-2-200)"));
+            Assert.That(regeln, Does.Contain("var(--color-accent-300)"));
+            Assert.That(regeln, Does.Contain("var(--color-accent-700)"));
+            Assert.That(regeln, Does.Not.Contain("--color-zone"));
+        });
+    }
+
+    private static string Pufferflaechenstilvorlage()
+    {
+        return File.ReadAllText(Quelltextbaum.BlazorDatei("Components", "Auswertungen", "Pufferflaeche.razor.css"));
+    }
+
+    private static string Fieberkurvenstilvorlage()
+    {
+        return File.ReadAllText(Quelltextbaum.BlazorDatei("Components", "Auswertungen", "Fieberkurve.razor.css"));
+    }
+
     private static string Auswertungsstilvorlage()
     {
         return File.ReadAllText(Quelltextbaum.BlazorDatei("Components", "Pages", "Auswertungen.razor.css"));

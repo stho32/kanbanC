@@ -1,0 +1,128 @@
+@using System.Globalization
+@using KanbanC.Blazor.Services
+
+@* Der Puffer-Verbrauch über den Fortschritt — SVG von Hand, kein Diagrammpaket. Geprüft wird an
+   `cx` und `cy` des Punktes, nicht an einem Bild. Farben kommen aus gestaltung.css; hier stehen
+   nur Geometriekonstanten. *@
+<svg class="fieberkurve" id="puffer-kurve"
+     viewBox="@Sichtfeld()"
+     role="img"
+     aria-label="Puffer-Verbrauch über den Fortschritt">
+    <g transform="@Zeichenversatz()">
+        <polygon class="puffer-zone puffer-zone-gruen" points="@_lage.Gruenflaeche" />
+        <polygon class="puffer-zone puffer-zone-gelb" points="@_lage.Gelbflaeche" />
+        <polygon class="puffer-zone puffer-zone-rot" points="@_lage.Rotflaeche" />
+
+        <line class="puffer-achse" x1="0" y1="0" x2="0" y2="@Hoehe" />
+        <line class="puffer-achse" x1="0" y1="@Hoehe" x2="@Breite" y2="@Hoehe" />
+
+        <text class="puffer-wertmarke" x="@(-Markenabstand)" y="@Hoehe">0 %</text>
+        <text class="puffer-wertmarke" x="@(-Markenabstand)" y="@(Hoehe / 2)">50 %</text>
+        <text class="puffer-wertmarke" x="@(-Markenabstand)" y="0">100 %</text>
+
+        <text class="puffer-fortschrittmarke" x="0" y="@(Hoehe + Fussabstand)">0 %</text>
+        <text class="puffer-fortschrittmarke" x="@(Breite / 2)" y="@(Hoehe + Fussabstand)">50 %</text>
+        <text class="puffer-fortschrittmarke" x="@Breite" y="@(Hoehe + Fussabstand)">100 %</text>
+
+        <text class="puffer-achsentitel" x="@(Breite / 2)" y="@(Hoehe + Titelabstand)">Fortschritt</text>
+        <text class="puffer-achsentitel" transform="@Senkrechtversatz()" x="@(-Titelabstand)" y="@(Hoehe / 2)">Puffer-Verbrauch</text>
+
+        <circle class="puffer-punkt @Randklasse()" id="puffer-punkt" cx="@Zahl(_lage.PunktX)" cy="@Zahl(_lage.PunktY)" />
+        <text class="puffer-punktwert" id="puffer-punktwert"
+              x="@Zahl(_lage.PunktX)"
+              y="@Zahl(_lage.PunktY - Punktabstand)">@Punktbeschriftung()</text>
+    </g>
+</svg>
+
+@code {
+    // Die Zeichenfläche in Nutzereinheiten des viewBox — Geometrie, keine Gestaltung. Links und
+    // unten bleibt Platz für die Beschriftungen der beiden Achsen.
+    private const int Breite = 400;
+    private const int Hoehe = 300;
+    private const int RandLinks = 62;
+    private const int RandOben = 18;
+    private const int RandUnten = 44;
+    private const int Markenabstand = 8;
+    private const int Fussabstand = 18;
+    private const int Titelabstand = 38;
+    private const int Punktabstand = 12;
+    private const string GanzeZahl = "0";
+    private const string EineNachkommastelle = "0.#";
+
+    private Fieberkurvenlage _lage = Fieberkurvenbild.Aus(0m, 0m, Breite, Hoehe);
+
+    [Parameter]
+    [EditorRequired]
+    public required decimal FortschrittProzent { get; set; }
+
+    [Parameter]
+    [EditorRequired]
+    public required decimal VerbrauchsanteilProzent { get; set; }
+
+    // Einmal gerechnet je Auswertung: Zonen, Punkt und Beschriftung lesen dieselbe Lage.
+    protected override void OnParametersSet()
+    {
+        _lage = Fieberkurvenbild.Aus(FortschrittProzent, VerbrauchsanteilProzent, Breite, Hoehe);
+    }
+
+    // Der Zahlenwert steht neben dem Punkt — auch und gerade dann, wenn er über 100 % liegt und
+    // der Punkt deshalb am oberen Rand sitzt.
+    private string Punktbeschriftung()
+    {
+        return $"{Prozent(VerbrauchsanteilProzent)} verbraucht · {Zonenwort()}";
+    }
+
+    // Sitzt der Punkt am oberen Rand, weil mehr verbraucht wurde als die Kette an Puffer hat, ist
+    // seine Lage abgeschnitten — die Marke sagt es auch grafisch, während die Beschriftung den
+    // ungekappten Wert nennt.
+    private string Randklasse()
+    {
+        if (_lage.DerVerbrauchLiegtUeberDemRand)
+        {
+            return "puffer-punkt-ueberzug";
+        }
+
+        return "";
+    }
+
+    // Die Zone als Wort, nicht nur als Farbe: eine Aussage, die auch ohne Farbwahrnehmung ankommt.
+    private string Zonenwort()
+    {
+        if (_lage.Zone == Verbrauchszone.Rot)
+        {
+            return "rot";
+        }
+
+        if (_lage.Zone == Verbrauchszone.Gelb)
+        {
+            return "gelb";
+        }
+
+        return "grün";
+    }
+
+    private static string Prozent(decimal prozent)
+    {
+        return $"{prozent.ToString(GanzeZahl, CultureInfo.InvariantCulture)} %";
+    }
+
+    private static string Sichtfeld()
+    {
+        return $"0 0 {Breite + RandLinks} {Hoehe + RandOben + RandUnten}";
+    }
+
+    private static string Zeichenversatz()
+    {
+        return $"translate({RandLinks},{RandOben})";
+    }
+
+    private static string Senkrechtversatz()
+    {
+        return $"rotate(-90 {-Titelabstand} {Hoehe / 2})";
+    }
+
+    private static string Zahl(double wert)
+    {
+        return wert.ToString(EineNachkommastelle, CultureInfo.InvariantCulture);
+    }
+}

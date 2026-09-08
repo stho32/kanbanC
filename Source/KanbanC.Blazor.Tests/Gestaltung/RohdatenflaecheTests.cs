@@ -55,20 +55,17 @@ public class RohdatenflaecheTests
         });
     }
 
-    // Der Umschalter führt Rohdaten als **gebaute** Auswertung; gesperrt bleibt allein der
-    // Puffer-Verbrauch. Bliebe der Punkt gesperrt, löge der Schirm über einen gebauten Slice.
+    // Der Umschalter führt jede Auswertung des Dialogs als **gebaute**: die Liste der gesperrten
+    // Punkte ist leer und bleibt trotzdem stehen — ein künftiger Eintrag wäre wieder ein Eintrag
+    // und kein Umbau. Bliebe ein Punkt gesperrt, löge der Schirm über einen gebauten Slice.
     [Test]
-    public void Wenn_der_Schirm_gelesen_wird_dann_steht_nur_noch_der_Puffer_Verbrauch_gesperrt()
+    public void Wenn_der_Schirm_gelesen_wird_dann_steht_kein_Punkt_mehr_gesperrt()
     {
         var schirm = OhneKommentare(File.ReadAllText(Quelltextbaum.BlazorDatei("Components", "Pages", "Auswertungen.razor")));
 
         var gesperrte = Regex.Match(schirm, @"NochNichtGebaut\s*=\s*\[(?<eintraege>[^\]]*)\]");
         Assert.That(gesperrte.Success, Is.True, "Die Liste der gesperrten Auswertungen wurde nicht gefunden.");
-        Assert.Multiple(() =>
-        {
-            Assert.That(gesperrte.Groups["eintraege"].Value, Does.Contain("puffer"));
-            Assert.That(gesperrte.Groups["eintraege"].Value, Does.Not.Contain("rohdaten"));
-        });
+        Assert.That(gesperrte.Groups["eintraege"].Value.Trim(), Is.Empty);
     }
 
     // Der Schirm ruft für diese Wahl nichts ab — es gibt keinen Rohdaten-Klienten, und tote

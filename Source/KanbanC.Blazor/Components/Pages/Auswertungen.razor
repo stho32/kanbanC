@@ -148,6 +148,10 @@
         {
             <Zeitexportflaeche Stand="_zeitexportstand" Verweisadresse="@Zeitexportverweis()" Von="_von" Bis="_bis" />
         }
+        else if (_pufferstand is not null)
+        {
+            <Pufferflaeche Auswertung="_pufferstand" />
+        }
 
         @* Derselbe Weg für einen Agenten — die einzige Stelle, an der die API im Schirm sichtbar
            wird; er folgt der gewählten Auswertung. *@
@@ -167,14 +171,12 @@
         new(Auswertungswahl.Burndown, "burndown", "Burndown"),
         new(Auswertungswahl.Zeitexport, "zeitexport", "Zeiten exportieren"),
         new(Auswertungswahl.Rohdaten, "rohdaten", "Rohdaten über die API"),
+        new(Auswertungswahl.Puffer, "puffer", "Puffer-Verbrauch"),
     ];
 
-    // Die eine übrige Auswertung des Dialogs steht gesperrt daneben: sie ist bestellt und noch
-    // nicht gebaut, und eine Fläche, die sie verschweigt, sähe vollständig aus.
-    private static readonly Kuenftigeauswertung[] NochNichtGebaut =
-    [
-        new("puffer", "Puffer-Verbrauch"),
-    ];
+    // Die Liste der noch nicht gebauten Auswertungen ist leer — der Dialog ist vollständig. Sie
+    // bleibt stehen, weil ein künftiger Eintrag wieder ein Eintrag wäre und kein Umbau.
+    private static readonly Kuenftigeauswertung[] NochNichtGebaut = [];
 
     private IReadOnlyList<BoardUebersicht> _boards = [];
     private IReadOnlyList<Kartenklasse> _kartenklassen = [];
@@ -187,6 +189,7 @@
     private SollIstAuswertung? _sollIst;
     private Burndownauswertung? _burndown;
     private Zeitexportstand? _zeitexportstand;
+    private Pufferauswertung? _pufferstand;
     private Zurueckweisung? _zurueckweisung;
     private string? _ausfallmeldung;
     private bool _boardFuehrtKeineKartenklasse;
@@ -208,7 +211,9 @@
         }
     }
 
-    private bool BestandIstLeer => (_sollIst is not null && _sollIst.Zeilen.Count == 0) || (_burndown is not null && _burndown.Kopfzahlen.ImBestand == 0);
+    private bool BestandIstLeer => (_sollIst is not null && _sollIst.Zeilen.Count == 0)
+        || (_burndown is not null && _burndown.Kopfzahlen.ImBestand == 0)
+        || (_pufferstand is not null && _pufferstand.Kopfzahlen.Kartenanzahl == 0);
 
     protected override async Task OnInitializedAsync()
     {
@@ -339,6 +344,12 @@
             return;
         }
 
+        if (_gewaehlteAuswertung == Auswertungswahl.Puffer)
+        {
+            await LadePufferstand();
+            return;
+        }
+
         await LadeSollIst();
     }
 
@@ -391,11 +402,28 @@
         });
     }
 
+    private async Task LadePufferstand()
+    {
+        _ausfallmeldung = await WebApiAufruf.MitAusfallmeldung(async () =>
+        {
+            var ergebnis = await AuswertungenKlient.LadePufferstand(_gewaehltesBoard!.Value, _gewaehlteKartenklasse!.Value);
+            if (ergebnis.WurdeZurueckgewiesen)
+            {
+                _zurueckweisung = ergebnis.Zurueckweisung;
+                _pufferstand = null;
+                return;
+            }
+
+            _pufferstand = ergebnis.Wert;
+        });
+    }
+
     private void VergissAuswertung()
     {
         _sollIst = null;
         _burndown = null;
         _zeitexportstand = null;
+        _pufferstand = null;
         _zurueckweisung = null;
     }
 
@@ -421,6 +449,11 @@
         if (_gewaehlteAuswertung == Auswertungswahl.Rohdaten)
         {
             return "Rohdaten über die API";
+        }
+
+        if (_gewaehlteAuswertung == Auswertungswahl.Puffer)
+        {
+            return "Puffer-Verbrauch der Kette";
         }
 
         return "Soll-Ist gegen die WBS-Zählung";
@@ -474,6 +507,12 @@
         if (_gewaehlteAuswertung == Auswertungswahl.Rohdaten)
         {
             return $"GET /api/boards/{boardId}/karten\nGET /api/boards/{boardId}/zeiten";
+        }
+
+        // Ohne Abfrageparameter: der Verbrauch ist ein Stand und kein Verlauf.
+        if (_gewaehlteAuswertung == Auswertungswahl.Puffer)
+        {
+            return $"GET /api/boards/{boardId}/kartenklassen/{kartenklasseId}/puffer";
         }
 
         return $"GET /api/boards/{boardId}/kartenklassen/{kartenklasseId}/soll-ist";
@@ -567,6 +606,7 @@
         Burndown,
         Zeitexport,
         Rohdaten,
+        Puffer,
     }
 
     private sealed record Gebauteauswertung(Auswertungswahl Wahl, string Kennung, string Beschriftung);
