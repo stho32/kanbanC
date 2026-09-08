@@ -537,6 +537,11 @@ public class FehlervertragTests
             await webApi.Klient.GetAsync($"{BoardsRoute}/999/zeiten")));
 
         faelle.Add(new Fehlerfall(
+            "GET /api/boards/{boardId:long}/export.json",
+            "Boarddatei eines unbekannten Boards",
+            await webApi.Klient.GetAsync($"{BoardsRoute}/999/export.json")));
+
+        faelle.Add(new Fehlerfall(
             "PUT /api/karten/{karteId:long}/kartenklasse",
             "Kartenklasse zuordnen an unbekannter Karte",
             await webApi.Klient.PutAsJsonAsync("/api/karten/999/kartenklasse", new KartenklasseZuordnenAnfrage(1))));

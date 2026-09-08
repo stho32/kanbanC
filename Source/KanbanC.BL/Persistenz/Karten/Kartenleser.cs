@@ -88,7 +88,8 @@ internal static class Kartenleser
             zeile.Spalte,
             zeile.Spaltenbezeichnung,
             new Archivierung(dieKarteIstArchiviert),
-            AlsKartenklasse(zeile.KartenklasseId, zeile.Kartenklassenname, zeile.Kartenklassenpraefix, zeile.Kartenklassenstand));
+            AlsKartenklasse(zeile.KartenklasseId, zeile.Kartenklassenname, zeile.Kartenklassenpraefix, zeile.Kartenklassenstand),
+            (int?)zeile.VergebenerZaehlerstand);
     }
 
     // Die Spalte zeigt entweder ihre aktiven oder ihre archivierten Karten, nie beide; die

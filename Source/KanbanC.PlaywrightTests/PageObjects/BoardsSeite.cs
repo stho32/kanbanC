@@ -168,6 +168,18 @@ public sealed class BoardsSeite
         return Boardzeile(boardId).Locator($".board-kachel-menuepunkt-{kennung}");
     }
 
+    // Der Export ist der einzige Menuepunkt, der ein Verweis ist: der Browser holt die Datei
+    // selbst, statt sie durch den Blazor-Kreislauf zu ziehen.
+    public ILocator Exportverweis(long boardId)
+    {
+        return Menuepunkt(boardId, "exportieren");
+    }
+
+    public ILocator Menuepunkte(long boardId)
+    {
+        return Boardzeile(boardId).Locator(".board-kachel-menuepunkt");
+    }
+
     public ILocator Zurueckholen(long boardId)
     {
         return Boardzeile(boardId).Locator(".board-kachel-zurueckholen");

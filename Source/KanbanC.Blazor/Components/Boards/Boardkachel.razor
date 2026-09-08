@@ -2,6 +2,7 @@
 @using KanbanC.Contracts.Boards
 @using KanbanC.Contracts.Fehler
 @inject BoardApiKlient ApiKlient
+@inject WebApibasisadresse WebApibasis
 
 <article class="board-kachel card elev-sm @_archivklasse" data-board-id="@Board.BoardId">
     <div class="board-kachel-kopf">
@@ -29,6 +30,16 @@
                         </button>
                         <span class="board-kachel-menuehinweis">verschwindet aus der Standardliste, bleibt über Filter und API abrufbar</span>
                     }
+                    @* Ein nackter Verweis und kein Knopf: der Browser holt die Datei selbst und
+                       behält Name, Fortschritt und Abbruch. Ein Knopf müsste die Bytes durch den
+                       Blazor-Kreislauf ziehen. Der Punkt steht auch an der archivierten Kachel —
+                       ein abgelegtes Board bleibt ausleitbar. *@
+                    <a class="board-kachel-menuepunkt board-kachel-menuepunkt-exportieren"
+                       href="@Exportadresse.Fuer(WebApibasis.Adresse, Board.BoardId)"
+                       @onclick="SchliesseMenue">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"></path><path d="M8 11l4 4 4-4"></path><path d="M4 19h16"></path></svg>
+                        Exportieren
+                    </a>
                 </div>
             }
         </div>
@@ -129,6 +140,13 @@
     private void SchalteMenue()
     {
         SetzeMenue(!_menueIstOffen);
+    }
+
+    // Der Verweis wird vom Browser verfolgt; geschlossen wird das Menü wie bei den zwei
+    // Punkten daneben.
+    private void SchliesseMenue()
+    {
+        SetzeMenue(false);
     }
 
     private void OeffneNamensfeld()

@@ -94,6 +94,15 @@
     background: color-mix(in srgb, var(--color-text) 7%, transparent);
 }
 
+/* Der Trennstrich des Artboards: der Export steht unter den Punkten, die das Board ändern.
+   Die Werte kommen aus dem Token-Sheet. */
+.board-kachel-menuepunkt-exportieren {
+    margin-top: var(--space-1);
+    padding-top: var(--space-2);
+    border-top: 1px solid color-mix(in srgb, var(--color-text) 16%, transparent);
+    text-decoration: none;
+}
+
 .board-kachel-menuehinweis {
     display: block;
     padding: 2px var(--space-3) var(--space-1);
