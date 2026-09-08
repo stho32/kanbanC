@@ -229,4 +229,50 @@ public sealed class BoardsSeite
     {
         await Boardzeile(boardId).Locator(".board-kachel-abbrechen").ClickAsync();
     }
+
+    // Der Einstieg des Boardimports steht im Seitenkopf neben „+ Board anlegen" und nicht im
+    // ⋯-Menü einer Kachel: das Menü handelt an einem vorhandenen Board, der Import erzeugt eines.
+    public ILocator Importknopf => _seite.Locator("#board-importieren-oeffnen");
+
+    public ILocator Importflaeche => _seite.Locator("#board-import");
+
+    public ILocator Importablegeflaeche => _seite.Locator("#board-import-ablegeflaeche");
+
+    public ILocator Importdateifeld => _seite.Locator("#board-import-datei");
+
+    public ILocator Importvorschau => _seite.Locator("#board-import-vorschau");
+
+    public ILocator Importboardname => _seite.Locator("#board-import-boardname");
+
+    public ILocator Importzahlen => _seite.Locator("#board-import-zahlen .importzahl");
+
+    public ILocator ImportDoppelteNamen => _seite.Locator("#board-import-doppelte-namen");
+
+    public ILocator Importanhanghinweis => _seite.Locator("#board-import-anhanghinweis");
+
+    public ILocator Importanlegen => _seite.Locator("#board-import-anlegen");
+
+    public ILocator Importbericht => _seite.Locator("#board-import-bericht");
+
+    public ILocator Importverweis => _seite.Locator("#board-import-verweis");
+
+    public ILocator Importzurueckweisung => _seite.Locator("#board-import-zurueckweisung");
+
+    public async Task OeffneImport()
+    {
+        await Importknopf.ClickAsync();
+        await Assertions.Expect(Importflaeche).ToBeVisibleAsync();
+    }
+
+    public async Task LegeBoarddateiAb(string dateipfad)
+    {
+        await Importdateifeld.SetInputFilesAsync(dateipfad);
+        await Assertions.Expect(Importvorschau).ToBeVisibleAsync();
+    }
+
+    public async Task BestaetigeImport()
+    {
+        await Importanlegen.ClickAsync();
+        await Assertions.Expect(Importbericht).ToBeVisibleAsync();
+    }
 }

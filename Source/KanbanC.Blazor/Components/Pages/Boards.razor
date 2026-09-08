@@ -1,8 +1,12 @@
 @page "/boards"
 @using KanbanC.Blazor.Services
+@using KanbanC.Contracts.Boardimport
 @using KanbanC.Contracts.Boards
 @using KanbanC.Contracts.Fehler
+@using KanbanC.Contracts.Karten
+@using Microsoft.AspNetCore.Components.Forms
 @inject BoardApiKlient ApiKlient
+@inject BoardimportApiKlient BoardimportKlient
 
 <PageTitle>Boards</PageTitle>
 
@@ -14,6 +18,9 @@
     <h1 class="nur-fuer-screenreader">Boards</h1>
     <span class="seitenkopf-rechts">
         <button type="button" class="btn btn-haupt" id="board-anlegen-oeffnen" @onclick="OeffneAnlegeformular">+ Board anlegen</button>
+        @* Der Einstieg steht **hier** und nicht im ⋯-Menü einer Kachel: das Menü handelt an einem
+           vorhandenen Board, der Import erzeugt eines. *@
+        <button type="button" class="btn btn-neben" id="board-importieren-oeffnen" @onclick="OeffneImport">Board importieren</button>
     </span>
 </div>
 
@@ -97,6 +104,92 @@
     </section>
 }
 
+@if (_importIstOffen)
+{
+    <section class="importflaeche card elev-md" id="board-import">
+        <div class="seitenkopf">
+            <h2>Board importieren</h2>
+            <span class="seitenkopf-rechts">
+                <button type="button" class="btn btn-schlicht" id="board-import-schliessen" aria-label="Import schließen" @onclick="SchliesseImport">✕</button>
+            </span>
+        </div>
+
+        @if (_importausfall is not null)
+        {
+            <div class="meldung" role="alert" id="board-import-fehlermeldung">@_importausfall</div>
+        }
+
+        @if (_importzurueckweisung is not null)
+        {
+            <div class="meldung meldung-abweisung" role="alert" id="board-import-zurueckweisung">
+                <p>Die Datei wurde nicht eingelesen:</p>
+                <ul>
+                    @foreach (var befund in _importzurueckweisung.Befunde)
+                    {
+                        <li>@befund.Meldung <span class="importkompensation">@befund.Kompensation</span></li>
+                    }
+                </ul>
+            </div>
+        }
+
+        @if (_angelegtesBoard is null)
+        {
+            <p class="importbeschreibung">
+                Eine exportierte Boarddatei wird eingelesen; daraus entsteht ein <strong>neues</strong> Board.
+                Bestehende Boards bleiben unberührt.
+            </p>
+
+            @* Dieselbe Fläche wie an der Karte, mit ihrem einen Sperrgrund: während ein Lauf läuft,
+               verlöre eine zweite Ablage den ersten still. *@
+            <label class="ablegeflaeche @Ablegelauf" id="board-import-ablegeflaeche">
+                <span class="ablegetext">@Ablegetext</span>
+                <InputFile class="ablegefeld" id="board-import-datei" OnChange="NimmBoarddatei" disabled="@AblegeflaecheIstGesperrt" />
+            </label>
+        }
+
+        @if (_importbericht is not null && _angelegtesBoard is null)
+        {
+            <div class="importvorschau" id="board-import-vorschau">
+                <p class="importvorschau-name" id="board-import-boardname">@_importbericht.Boardname</p>
+                <dl class="importzahlen" id="board-import-zahlen">
+                    @foreach (var zeile in Zahlenzeilen(_importbericht.Zahlen))
+                    {
+                        <div class="importzahl">
+                            <dt>@zeile.Bezeichnung</dt>
+                            <dd>@zeile.Zahl</dd>
+                        </div>
+                    }
+                </dl>
+
+                @* **Die beiden Preise stehen vor dem Knopf, nicht danach.** *@
+                @if (_importbericht.DoppelteNamen.Count > 0)
+                {
+                    <p class="importpreis" id="board-import-doppelte-namen">
+                        Diese Namen entstehen ein zweites Mal in der Personenliste: @string.Join(", ", _importbericht.DoppelteNamen).
+                        Zusammengeführt wird niemand.
+                    </p>
+                }
+                <p class="importpreis" id="board-import-anhanghinweis">@_importbericht.Anhanghinweis</p>
+
+                <div class="formular-knoepfe">
+                    <button type="button" class="btn btn-haupt" id="board-import-anlegen" disabled="@_importLaeuft" @onclick="LegeImportiertesBoardAn">Board anlegen</button>
+                </div>
+            </div>
+        }
+
+        @if (_angelegtesBoard is not null)
+        {
+            <div class="importbericht" id="board-import-bericht">
+                <p>
+                    „@_importbericht!.Boardname“ ist als Board @_angelegtesBoard entstanden.
+                    <a href="@($"/boards/{_angelegtesBoard}")" id="board-import-verweis">Zum neuen Board</a>
+                </p>
+                <p class="importpreis">@_importbericht.Anhanghinweis</p>
+            </div>
+        }
+    </section>
+}
+
 @if (_boards is null)
 {
     <p>Boards werden geladen …</p>
@@ -151,6 +244,16 @@ else
     private string? _fehlermeldung;
     private bool _formularIstOffen;
 
+    private bool _importIstOffen;
+    private byte[] _boarddatei = [];
+    private string? _boarddateiname;
+    private string? _laufendeDatei;
+    private bool _importLaeuft;
+    private Boardimportbericht? _importbericht;
+    private Zurueckweisung? _importzurueckweisung;
+    private string? _importausfall;
+    private long? _angelegtesBoard;
+
     // Der Filter ist eine Ansicht, kein gespeicherter Zustand: nach einem Reload steht er wieder
     // auf „aktive“.
     private Archivierung _archivstand = Aktive;
@@ -170,6 +273,150 @@ else
     {
         _formularIstOffen = true;
     }
+
+    private void OeffneImport()
+    {
+        _importIstOffen = true;
+    }
+
+    private void SchliesseImport()
+    {
+        _importIstOffen = false;
+        _importbericht = null;
+        _importzurueckweisung = null;
+        _importausfall = null;
+        _angelegtesBoard = null;
+        _boarddatei = [];
+        _boarddateiname = null;
+    }
+
+    private bool AblegeflaecheIstGesperrt => Boardablegeflaeche.IstGesperrt(_laufendeDatei);
+
+    private string Ablegetext => Boardablegeflaeche.Text(_laufendeDatei);
+
+    private string Ablegelauf
+    {
+        get
+        {
+            if (_laufendeDatei is null)
+            {
+                return string.Empty;
+            }
+
+            return "ablegeflaeche-laeuft";
+        }
+    }
+
+    // Die Datei wird **gelesen und nicht gespeichert**: die Bytes bleiben im Kreislauf dieses
+    // Schirms, damit Vorschau und Schreiblauf dieselbe Fassung schicken. Ein zweites Öffnen
+    // desselben Browserstroms gäbe es nicht.
+    private async Task NimmBoarddatei(InputFileChangeEventArgs ereignis)
+    {
+        var einLaufLaeuftSchon = _laufendeDatei is not null;
+        if (einLaufLaeuftSchon)
+        {
+            return;
+        }
+
+        var datei = ereignis.File;
+        _importzurueckweisung = null;
+        _importausfall = null;
+        _angelegtesBoard = null;
+        _laufendeDatei = datei.Name;
+        StateHasChanged();
+        try
+        {
+            await LiesBoarddateiEin(datei);
+            await ZeigeImportvorschau();
+        }
+        catch (JSException)
+        {
+            // Der abgerissene Dateistrom ist keine HttpRequestException, sondern die Antwort des
+            // Browsers auf eine Datei-Nummer, die er nicht mehr kennt. Ohne diesen Fangpunkt
+            // stürbe der Vorgang lautlos.
+            _importausfall = WebApiAusfall.Meldung;
+        }
+        finally
+        {
+            _laufendeDatei = null;
+        }
+    }
+
+    private async Task LiesBoarddateiEin(IBrowserFile datei)
+    {
+        using var quelle = datei.OpenReadStream(Anhangsgrenze.HoechsteDateigroesse);
+        using var speicher = new MemoryStream();
+        await quelle.CopyToAsync(speicher);
+        _boarddatei = speicher.ToArray();
+        _boarddateiname = datei.Name;
+    }
+
+    // **Schritt 1 schreibt nichts**: derselbe Aufruf, den ein Agent mit trocken=true schickt.
+    private async Task ZeigeImportvorschau()
+    {
+        await RufeBoardimport(trocken: true);
+    }
+
+    // Erst dieser Klick schreibt — und danach ist die Boardliste die eine Quelle und wird neu
+    // geholt.
+    private async Task LegeImportiertesBoardAn()
+    {
+        await RufeBoardimport(trocken: false);
+        if (_angelegtesBoard is not null)
+        {
+            await LadeListeNeu();
+        }
+    }
+
+    private async Task RufeBoardimport(bool trocken)
+    {
+        _importLaeuft = true;
+        _importzurueckweisung = null;
+        _importausfall = await WebApiAufruf.MitAusfallmeldung(() => RufeImportroute(trocken));
+        _importLaeuft = false;
+    }
+
+    private async Task RufeImportroute(bool trocken)
+    {
+        if (_boarddateiname is null)
+        {
+            return;
+        }
+
+        var auftrag = new Boardimportauftrag(_boarddateiname, trocken);
+        using var inhalt = new MemoryStream(_boarddatei);
+        var ergebnis = await BoardimportKlient.Importiere(auftrag, inhalt);
+        if (ergebnis.WurdeZurueckgewiesen)
+        {
+            _importzurueckweisung = ergebnis.Zurueckweisung;
+            _importbericht = null;
+            return;
+        }
+
+        _importbericht = ergebnis.Wert;
+        _angelegtesBoard = ergebnis.Wert.BoardId;
+    }
+
+    // Die zehn Zahlen in der Reihenfolge, in der der Bericht sie führt — dieselbe, die ein Agent
+    // in der Antwort liest.
+    private static IReadOnlyList<Zahlenzeile> Zahlenzeilen(Boardimportzahlen zahlen)
+    {
+        return
+        [
+            new Zahlenzeile("Spalten", zahlen.Spalten),
+            new Zahlenzeile("Kartenklassen", zahlen.Kartenklassen),
+            new Zahlenzeile("Kontributoren", zahlen.Kontributoren),
+            new Zahlenzeile("Karten", zahlen.Karten),
+            new Zahlenzeile("Etiketten", zahlen.Etiketten),
+            new Zahlenzeile("Teilaufgaben", zahlen.Teilaufgaben),
+            new Zahlenzeile("Kommentare", zahlen.Kommentare),
+            new Zahlenzeile("Anhänge", zahlen.Anhaenge),
+            new Zahlenzeile("Dateiverweise", zahlen.Dateiverweise),
+            new Zahlenzeile("Zeiteinträge", zahlen.Zeiteintraege),
+        ];
+    }
+
+    private sealed record Zahlenzeile(string Bezeichnung, int Zahl);
 
     private void SchliesseAnlegeformular()
     {

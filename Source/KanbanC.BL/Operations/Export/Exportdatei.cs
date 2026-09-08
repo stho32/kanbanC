@@ -11,7 +11,10 @@ namespace KanbanC.BL.Operations.Export;
 // als Download heraus und nie in eine HTML-Seite — der entspanntere Encoder kostet hier nichts.
 public static class Exportdatei
 {
-    private static readonly JsonSerializerOptions Schreibweise = new(JsonSerializerDefaults.Web)
+    // Dieselben Optionen liest der Boardimport wieder: Ausleitung und Einlesung meinen dasselbe
+    // Format, und zwei Optionssätze wären zwei Formate — die Anwendung läse ihre eigene Datei
+    // nicht mehr.
+    internal static readonly JsonSerializerOptions Dateiform = new(JsonSerializerDefaults.Web)
     {
         WriteIndented = true,
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
@@ -19,6 +22,6 @@ public static class Exportdatei
 
     public static byte[] AlsJson(Boardexport boardexport)
     {
-        return JsonSerializer.SerializeToUtf8Bytes(boardexport, Schreibweise);
+        return JsonSerializer.SerializeToUtf8Bytes(boardexport, Dateiform);
     }
 }

@@ -1,4 +1,5 @@
 using KanbanC.BL.Integrations.Auswertungen;
+using KanbanC.BL.Integrations.Boardimport;
 using KanbanC.BL.Integrations.Boards;
 using KanbanC.BL.Integrations.Export;
 using KanbanC.BL.Integrations.Import;
@@ -8,6 +9,7 @@ using KanbanC.BL.Integrations.Kontributoren;
 using KanbanC.BL.Integrations.Rohdaten;
 using KanbanC.BL.Integrations.Zeiten;
 using KanbanC.BL.Interfaces.Auswertungen;
+using KanbanC.BL.Interfaces.Boardimport;
 using KanbanC.BL.Interfaces.Boards;
 using KanbanC.BL.Interfaces.Export;
 using KanbanC.BL.Interfaces.Import;
@@ -19,6 +21,7 @@ using KanbanC.BL.Interfaces.Rohdaten;
 using KanbanC.BL.Interfaces.Zeiten;
 using KanbanC.BL.Persistenz;
 using KanbanC.BL.Persistenz.Auswertungen;
+using KanbanC.BL.Persistenz.Boardimport;
 using KanbanC.BL.Persistenz.Boards;
 using KanbanC.BL.Persistenz.Export;
 using KanbanC.BL.Persistenz.Import;
@@ -65,6 +68,7 @@ builder.Services.AddSingleton<IWbsImportRepository, WbsImportRepository>();
 builder.Services.AddSingleton<IAuswertungsrepository, Auswertungsrepository>();
 builder.Services.AddSingleton<IRohdatenRepository, RohdatenRepository>();
 builder.Services.AddSingleton<IBoardexportRepository, BoardexportRepository>();
+builder.Services.AddSingleton<IBoardimportRepository, BoardimportRepository>();
 builder.Services.AddSingleton<BoardService>();
 builder.Services.AddSingleton<SpaltenService>();
 builder.Services.AddSingleton<KartenService>();
@@ -75,6 +79,7 @@ builder.Services.AddSingleton<WbsImportService>();
 builder.Services.AddSingleton<AuswertungsService>();
 builder.Services.AddSingleton<RohdatenService>();
 builder.Services.AddSingleton<BoardexportService>();
+builder.Services.AddSingleton<BoardimportService>();
 
 // Eine Drehscheibe je Prozess: sie nimmt die Meldungen der Endpunkte an und gibt jedem Abonnenten
 // von GET /api/ereignisse seinen eigenen Strom.
@@ -104,6 +109,7 @@ WbsImportEndpunkte.Registriere(app);
 AuswertungsEndpunkte.Registriere(app);
 RohdatenEndpunkte.Registriere(app);
 ExportEndpunkte.Registriere(app);
+BoardimportEndpunkte.Registriere(app);
 EreignisEndpunkte.Registriere(app);
 
 app.Run();

@@ -17,6 +17,7 @@ namespace KanbanC.WebApi.IntegrationTests.Api;
 public class FehlervertragTests
 {
     private const string BoardsRoute = "/api/boards";
+    private const string Boardimportroute = "/api/boards/import";
     private const string KontributorenRoute = "/api/kontributoren";
     private static readonly DateTimeOffset GesternZwoelfUhr = new(2026, 9, 5, 12, 0, 0, TimeSpan.Zero);
     private static readonly DateTimeOffset GesternHalbZwei = new(2026, 9, 5, 13, 30, 0, TimeSpan.Zero);
@@ -576,7 +577,27 @@ public class FehlervertragTests
             "WBS-Import ohne Urheber",
             await webApi.Klient.PostAsync($"{BoardsRoute}/{board.BoardId}/wbs-import", Importrumpf(Wbsdatei(), aufbau.FremdeKartenklasse.KartenklasseId, aufbau.Kontributor.KontributorId, mitKontributor: false))));
 
+        faelle.Add(new Fehlerfall(
+            "POST /api/boards/import",
+            "Boardimport mit einer Datei, die kein Board ist",
+            await webApi.Klient.PostAsync(Boardimportroute, Boardimportrumpf("Das ist ein Protokoll."))));
+
+        faelle.Add(new Fehlerfall(
+            "POST /api/boards/import",
+            "Boardimport mit gueltigem JSON ohne Exportkopf",
+            await webApi.Klient.PostAsync(Boardimportroute, Boardimportrumpf("{\"titel\":\"Eine ganz andere Datei\"}"))));
+
         return faelle;
+    }
+
+    private static MultipartFormDataContent Boardimportrumpf(string dateitext)
+    {
+        var rumpf = new MultipartFormDataContent();
+        var datei = new ByteArrayContent(Encoding.UTF8.GetBytes(dateitext));
+        datei.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+        rumpf.Add(datei, "datei", "probe.kanbanc.json");
+        rumpf.Add(new StringContent("true"), "trocken");
+        return rumpf;
     }
 
     private static async Task<Aufbau> LegeAufbauAn(TestWebApi webApi)
