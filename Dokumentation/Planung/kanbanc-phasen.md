@@ -6,15 +6,15 @@ zuletzt: 2026-09-08
 
 # Phasen — KanbanC
 
-Welche Phasen ein Arbeitspaket (Blatt der Steuerungsebene der WBS) nach dem Bau durchläuft, und je Arbeitspaket die Durchläufe. Standardmodell nach Skill `work-breakdown-structure`, „Phasen je Arbeitspaket"; Datenmodell in `commands/planung.md`. Durchläufe schreibt `/anwendung phase <AP> <Phase> bestanden | befund "…" | entfaellt "<Grund>"`; weitere Phasen (Beta, Produktion je Kunde) sind Zeilen in `## Phasen` — Entscheidung des Auftraggebers.
+Welche Phasen ein Arbeitspaket (eine Interaction der WBS) nach dem Bau durchläuft, und je Arbeitspaket die Durchläufe. Standardmodell nach Skill `work-breakdown-structure`, „Phasen je Arbeitspaket"; Datenmodell in `commands/planung.md`. Gefahren wird eine Phase mit `/testen <phase> [<AP>]`, Durchläufe schreibt `/testen eintragen <AP> <Phase> bestanden | befund "…" | entfaellt "<Grund>"`; weitere Phasen (Beta, Produktion je Kunde) legt `/planung phase anlegen` an — Entscheidung des Auftraggebers.
 
 ## Phasen
 
-| Nr | Phase | Abschließt | Nachweis | Eingebettet in | Gleich wie |
-|---|---|---|---|---|---|
-| 1 | Entwicklung | Subagent oder Entwickler | Bubbles grün, Gate bestanden | | |
-| 2 | Entwicklertest | Entwickler | gegen die User Story | | |
-| 3 | Abnahme | Auftraggeber | gegen die Akzeptanzkriterien | | |
+| Nr | Phase | Abschließt | Nachweis | Eingebettet in | Gleich wie | Status |
+|---|---|---|---|---|---|---|
+| 1 | Entwicklung | Subagent oder Entwickler | — | | | |
+| 2 | Entwicklertest | Entwickler | user-story | | | |
+| 3 | Abnahme | Auftraggeber | akzeptanzkriterien | | | |
 
 ## Durchläufe
 
