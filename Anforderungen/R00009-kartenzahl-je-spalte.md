@@ -1,6 +1,6 @@
 ---
 id: R00009
-status: Neu
+status: In Arbeit
 datum: 2026-09-04
 ---
 
@@ -35,34 +35,34 @@ Die Kartenzahl je Bahn ist die kleinste Auswertung, die ein Kanban-Board kennt: 
 
 ### Die Einstellung am Board
 
-- [ ] Ein neu angelegtes Board zeigt die Kartenzahl **nicht**; `GET /api/boards/{boardId}` liefert `zeigtKartenzahl: false`.
-- [ ] Ein Board, das vor dieser Anforderung angelegt wurde, liefert nach der Migration ebenfalls `false` — es gibt keine Zeile für es, und „keine Zeile" heißt `aus`.
-- [ ] `PUT /api/boards/{boardId}/kartenzahl` mit `{ "zeigtKartenzahl": true }` antwortet mit HTTP 200 und dem Board, dessen `zeigtKartenzahl` `true` ist.
-- [ ] Ein anschließendes `GET /api/boards/{boardId}` liefert denselben Wert; ein zweites Einschalten ändert nichts, ein Ausschalten setzt zurück.
-- [ ] Nach einem Neustart der WebApi auf derselben Datei steht die Einstellung unverändert da.
-- [ ] Ein zweiter Lauf der Migration auf einer bestehenden Datei lässt Schema **und** Daten unverändert — eine eingeschaltete Einstellung bleibt eingeschaltet.
+- [x] Ein neu angelegtes Board zeigt die Kartenzahl **nicht**; `GET /api/boards/{boardId}` liefert `zeigtKartenzahl: false`.
+- [x] Ein Board, das vor dieser Anforderung angelegt wurde, liefert nach der Migration ebenfalls `false` — es gibt keine Zeile für es, und „keine Zeile" heißt `aus`.
+- [x] `PUT /api/boards/{boardId}/kartenzahl` mit `{ "zeigtKartenzahl": true }` antwortet mit HTTP 200 und dem Board, dessen `zeigtKartenzahl` `true` ist.
+- [x] Ein anschließendes `GET /api/boards/{boardId}` liefert denselben Wert; ein zweites Einschalten ändert nichts, ein Ausschalten setzt zurück.
+- [x] Nach einem Neustart der WebApi auf derselben Datei steht die Einstellung unverändert da.
+- [x] Ein zweiter Lauf der Migration auf einer bestehenden Datei lässt Schema **und** Daten unverändert — eine eingeschaltete Einstellung bleibt eingeschaltet.
 
 ### Zurückweisung und Fehlerpfade
 
-- [ ] `PUT /api/boards/{boardId}/kartenzahl` auf eine unbekannte `boardId` antwortet mit HTTP 404 **und einem Rumpf**: mindestens ein Befund mit nichtleerem `Code`, einer `Meldung`, welche die aufgerufene Nummer nennt, und einer `Kompensation`, die einen ausführbaren nächsten Aufruf enthält.
-- [ ] Nach einer solchen Zurückweisung ist nichts geschrieben: die Tabelle der Boardeinstellungen trägt keine Zeile für die unbekannte Nummer.
-- [ ] Ist die WebApi beim Umschalten nicht erreichbar, erscheint an der Board-Seite die Ausfallmeldung statt einer Ausnahmeseite; das Board bleibt bedienbar.
+- [x] `PUT /api/boards/{boardId}/kartenzahl` auf eine unbekannte `boardId` antwortet mit HTTP 404 **und einem Rumpf**: mindestens ein Befund mit nichtleerem `Code`, einer `Meldung`, welche die aufgerufene Nummer nennt, und einer `Kompensation`, die einen ausführbaren nächsten Aufruf enthält.
+- [x] Nach einer solchen Zurückweisung ist nichts geschrieben: die Tabelle der Boardeinstellungen trägt keine Zeile für die unbekannte Nummer.
+- [x] Ist die WebApi beim Umschalten nicht erreichbar, erscheint an der Board-Seite die Ausfallmeldung statt einer Ausnahmeseite; das Board bleibt bedienbar.
 
 ### Der Schalter in der Oberfläche
 
-- [ ] Auf der Board-Seite steht in der Navigationszeile ein beschriftetes Kontrollfeld `Kartenzahl`; sein Zustand entspricht beim Öffnen dem, was die API für dieses Board liefert.
-- [ ] Ein Klick darauf schaltet die Einstellung um; das Board zeigt den neuen Zustand, ohne dass der Betrachter die Seite neu lädt.
-- [ ] Nach einem Reload steht der Schalter unverändert — sein Zustand kommt vom Board, nicht aus dem Browser.
-- [ ] Eine zweite, unabhängig geöffnete Sitzung (eigener Browser-Kontext) sieht beim Öffnen desselben Boards denselben Zustand, ohne dort etwas geschaltet zu haben.
-- [ ] Wird die Einstellung über die API umgeschaltet, zeigt eine danach geöffnete Oberfläche den neuen Zustand.
+- [x] Auf der Board-Seite steht in der Navigationszeile ein beschriftetes Kontrollfeld `Kartenzahl`; sein Zustand entspricht beim Öffnen dem, was die API für dieses Board liefert.
+- [x] Ein Klick darauf schaltet die Einstellung um; das Board zeigt den neuen Zustand, ohne dass der Betrachter die Seite neu lädt.
+- [x] Nach einem Reload steht der Schalter unverändert — sein Zustand kommt vom Board, nicht aus dem Browser.
+- [x] Eine zweite, unabhängig geöffnete Sitzung (eigener Browser-Kontext) sieht beim Öffnen desselben Boards denselben Zustand, ohne dort etwas geschaltet zu haben.
+- [x] Wird die Einstellung über die API umgeschaltet, zeigt eine danach geöffnete Oberfläche den neuen Zustand.
 
 ### Die Zahl im Bahnenkopf
 
-- [ ] Bei eingeschaltetem Board trägt jede Bahnenkopfzeile die Zahl der in dieser Bahn liegenden Karten. Rechenbeispiel: `Rückstand` mit drei Karten zeigt `3`, eine leere Bahn zeigt `0`.
-- [ ] Bei ausgeschaltetem Board bleibt die Stelle **leer** — keine `0`, keine Klammer, kein Platzhalter.
-- [ ] Wird eine Karte angelegt, steht in ihrer Bahn unmittelbar danach eine um eins höhere Zahl, ohne Reload.
-- [ ] Wird eine Karte in eine andere Bahn abgelegt, sinkt die Zahl der Quellbahn um eins und steigt die der Zielbahn um eins, ohne Reload. Rechenbeispiel: `Rückstand` 3 / `In Arbeit` 1 → nach dem Zug 2 / 2; die Summe bleibt 4.
-- [ ] Wird eine Karte innerhalb ihrer Bahn verschoben, ändert sich keine Zahl.
+- [x] Bei eingeschaltetem Board trägt jede Bahnenkopfzeile die Zahl der in dieser Bahn liegenden Karten. Rechenbeispiel: `Rückstand` mit drei Karten zeigt `3`, eine leere Bahn zeigt `0`.
+- [x] Bei ausgeschaltetem Board bleibt die Stelle **leer** — keine `0`, keine Klammer, kein Platzhalter.
+- [x] Wird eine Karte angelegt, steht in ihrer Bahn unmittelbar danach eine um eins höhere Zahl, ohne Reload.
+- [x] Wird eine Karte in eine andere Bahn abgelegt, sinkt die Zahl der Quellbahn um eins und steigt die der Zielbahn um eins, ohne Reload. Rechenbeispiel: `Rückstand` 3 / `In Arbeit` 1 → nach dem Zug 2 / 2; die Summe bleibt 4.
+- [x] Wird eine Karte innerhalb ihrer Bahn verschoben, ändert sich keine Zahl.
 - [ ] Die API liefert **keine** zweite Zahl neben den Karten einer Spalte: die angezeigte Zahl ist die Länge der Kartenliste, die `GET /api/boards/{boardId}` für diese Spalte ausgibt. Es entsteht kein zweiter Ort, der gepflegt werden müsste.
 
 ## Betroffene Verzeichnisstruktur

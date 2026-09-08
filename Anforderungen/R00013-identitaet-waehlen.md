@@ -1,6 +1,6 @@
 ---
 id: R00013
-status: Neu
+status: Erledigt
 datum: 2026-09-04
 ---
 
@@ -45,41 +45,41 @@ Die Anwendung kennt heute keinen Handelnden. Kontributoren gibt es seit `R00011`
 
 ### Wählen am Identitätsplatz
 
-- [ ] Ein Klick auf den Identitätsplatz der Kopfzeile öffnet ein Popover mit der Überschrift „Ich bin …"; ein zweiter Klick schließt es, ebenso `Escape` und ein Klick daneben.
-- [ ] Das Popover zeigt **je Kontributor der Art `Mensch` eine wählbare Zeile** mit Kürzel und Name. Rechenbeispiel: `Stefan` (Mensch), `Nina Barth` (Mensch), `Claude-Agent` (Agent), `Maria Lenz` (abgebildet) angelegt → zwei wählbare Zeilen, zwei gesperrte.
-- [ ] Ein Klick auf eine wählbare Zeile schließt das Popover, und der Identitätsplatz trägt danach den Namen des Gewählten statt „nicht gewählt".
-- [ ] Beim erneuten Öffnen trägt genau die gewählte Zeile den Haken; eine zweite Wahl ersetzt die erste.
-- [ ] Eine Fußzeile „Kontributor anlegen" führt auf `/kontributoren`.
-- [ ] Gibt es keinen Kontributor der Art `Mensch`, zeigt das Popover keine leere Fläche, sondern die Fußzeile als den Weg, der weiterhilft.
+- [x] Ein Klick auf den Identitätsplatz der Kopfzeile öffnet ein Popover mit der Überschrift „Ich bin …"; ein zweiter Klick schließt es, ebenso `Escape` und ein Klick daneben.
+- [x] Das Popover zeigt **je Kontributor der Art `Mensch` eine wählbare Zeile** mit Kürzel und Name. Rechenbeispiel: `Stefan` (Mensch), `Nina Barth` (Mensch), `Claude-Agent` (Agent), `Maria Lenz` (abgebildet) angelegt → zwei wählbare Zeilen, zwei gesperrte.
+- [x] Ein Klick auf eine wählbare Zeile schließt das Popover, und der Identitätsplatz trägt danach den Namen des Gewählten statt „nicht gewählt".
+- [x] Beim erneuten Öffnen trägt genau die gewählte Zeile den Haken; eine zweite Wahl ersetzt die erste.
+- [x] Eine Fußzeile „Kontributor anlegen" führt auf `/kontributoren`.
+- [x] Gibt es keinen Kontributor der Art `Mensch`, zeigt das Popover keine leere Fläche, sondern die Fußzeile als den Weg, der weiterhilft.
 
 ### Die Wahl überlebt den Reload — je Tab
 
-- [ ] Nach einem Reload desselben Tabs trägt der Identitätsplatz weiterhin den gewählten Namen; es ist keine erneute Wahl nötig.
-- [ ] Ein **unabhängig geöffneter** zweiter Tab beginnt bei „nicht gewählt" — er erbt die Wahl des ersten nicht.
-- [ ] Gespeichert ist ausschließlich die `KontributorId` unter dem Schlüssel `kanbanc.identitaet`; Name und Art stehen nicht im Browser-Speicher.
-- [ ] Wird der gewählte Kontributor über `/kontributoren` oder `PUT /api/kontributoren/{kontributorId}` umbenannt, zeigt der Identitätsplatz nach dem nächsten Laden **den neuen Namen** — ohne erneute Wahl.
-- [ ] Steht im Speicher eine `KontributorId`, die die WebApi nicht mehr liefert, zeigt der Identitätsplatz „nicht gewählt" — keine Fehlermeldung, keine Ausnahmeseite.
-- [ ] Ist die WebApi beim Laden der Kontributoren nicht erreichbar, bleibt der Identitätsplatz bei „nicht gewählt" stehen und bleibt bedienbar; die übrige Seite erscheint wie bisher.
+- [x] Nach einem Reload desselben Tabs trägt der Identitätsplatz weiterhin den gewählten Namen; es ist keine erneute Wahl nötig.
+- [x] Ein **unabhängig geöffneter** zweiter Tab beginnt bei „nicht gewählt" — er erbt die Wahl des ersten nicht.
+- [x] Gespeichert ist ausschließlich die `KontributorId` unter dem Schlüssel `kanbanc.identitaet`; Name und Art stehen nicht im Browser-Speicher.
+- [x] Wird der gewählte Kontributor über `/kontributoren` oder `PUT /api/kontributoren/{kontributorId}` umbenannt, zeigt der Identitätsplatz nach dem nächsten Laden **den neuen Namen** — ohne erneute Wahl.
+- [x] Steht im Speicher eine `KontributorId`, die die WebApi nicht mehr liefert, zeigt der Identitätsplatz „nicht gewählt" — keine Fehlermeldung, keine Ausnahmeseite.
+- [x] Ist die WebApi beim Laden der Kontributoren nicht erreichbar, bleibt der Identitätsplatz bei „nicht gewählt" stehen und bleibt bedienbar; die übrige Seite erscheint wie bisher.
 
 ### Nicht wählbare Kontributoren sind sichtbar gesperrt
 
-- [ ] Kontributoren der Art `Agent` und `Abgebildet` stehen **unter einer Trennlinie** im selben Popover — sichtbar, nicht ausgeblendet.
-- [ ] Eine Agenten-Zeile trägt die Plakette „nur API", eine abgebildete die Plakette „abgebildet".
-- [ ] Ein Klick auf eine gesperrte Zeile ändert den Identitätsplatz nicht und schließt das Popover nicht.
-- [ ] Gesperrte Zeilen tragen `aria-disabled="true"` und sind mit der Tabulatortaste nicht erreichbar: wer sich vom letzten wählbaren Eintrag weiterbewegt, landet auf der Fußzeile, nicht auf einem Agenten.
-- [ ] Rechenbeispiel: `Stefan` (Mensch), `Claude-Agent` (Agent), `Maria Lenz` (abgebildet) angelegt, `Stefan` gewählt; danach Klick auf `Claude-Agent` und Tabulatorlauf über das Popover → der Identitätsplatz trägt weiterhin `Stefan`.
+- [x] Kontributoren der Art `Agent` und `Abgebildet` stehen **unter einer Trennlinie** im selben Popover — sichtbar, nicht ausgeblendet.
+- [x] Eine Agenten-Zeile trägt die Plakette „nur API", eine abgebildete die Plakette „abgebildet".
+- [x] Ein Klick auf eine gesperrte Zeile ändert den Identitätsplatz nicht und schließt das Popover nicht.
+- [x] Gesperrte Zeilen tragen `aria-disabled="true"` und sind mit der Tabulatortaste nicht erreichbar: wer sich vom letzten wählbaren Eintrag weiterbewegt, landet auf der Fußzeile, nicht auf einem Agenten.
+- [x] Rechenbeispiel: `Stefan` (Mensch), `Claude-Agent` (Agent), `Maria Lenz` (abgebildet) angelegt, `Stefan` gewählt; danach Klick auf `Claude-Agent` und Tabulatorlauf über das Popover → der Identitätsplatz trägt weiterhin `Stefan`.
 
 ### Der grüne Bestand bleibt grün
 
-- [ ] Der Identitätsplatz behält die id `identitaet` und — solange nichts gewählt ist — den Wortlaut „nicht gewählt"; `RahmenE2ETests.cs:70` und `:102` bleiben **unverändert** grün.
-- [ ] Das Chevron des Schalters ist ein SVG ohne Textinhalt, damit `ToHaveTextAsync("nicht gewählt")` weiterhin genau greift.
-- [ ] Die Lageprüfung `RahmenE2ETests.cs:23-29` (Seitentitel und Identitätsplatz auf einer waagerechten Zeile, Titel links davon) bleibt unverändert grün. Sprengen die Randabstände des Bedienelements sie doch, ist das eine **benannte Änderung an grünem Bestand** und wird als solche entschieden — nicht als Testanpassung nebenbei.
-- [ ] Alle E2E-Tests aus `R00001`–`R00012` laufen weiter; kein Test wird gelöscht oder abgeschwächt.
+- [x] Der Identitätsplatz behält die id `identitaet` und — solange nichts gewählt ist — den Wortlaut „nicht gewählt"; `RahmenE2ETests.cs:70` und `:102` bleiben **unverändert** grün.
+- [x] Das Chevron des Schalters ist ein SVG ohne Textinhalt, damit `ToHaveTextAsync("nicht gewählt")` weiterhin genau greift.
+- [x] Die Lageprüfung `RahmenE2ETests.cs:23-29` (Seitentitel und Identitätsplatz auf einer waagerechten Zeile, Titel links davon) bleibt unverändert grün. Sprengen die Randabstände des Bedienelements sie doch, ist das eine **benannte Änderung an grünem Bestand** und wird als solche entschieden — nicht als Testanpassung nebenbei.
+- [x] Alle E2E-Tests aus `R00001`–`R00012` laufen weiter; kein Test wird gelöscht oder abgeschwächt.
 
 ### Probe vor dem produktiven Einsatz
 
-- [ ] Ein eigener Probe-Test belegt vor der ersten produktiven Nutzung: (1) zu welchem Zeitpunkt im Lebenszyklus ein `IJSRuntime`-Aufruf trägt (Annahme: schon in `OnInitializedAsync`, weil `App.razor:19` mit `prerender: false` rendert), (2) dass ein unabhängig geöffneter Tab den `sessionStorage` des ersten nicht erbt und wie er dafür geöffnet werden muss, (3) dass ein werfender Interop-Aufruf in einer stehenden Seite endet, nicht in der Ausnahmeseite.
-- [ ] Der Probe-Test bleibt als Regressionsschutz stehen, wie `ZiehenUndAblegenProbeE2ETests` und `ZweiterBrowserkontextProbeE2ETests`.
+- [x] Ein eigener Probe-Test belegt vor der ersten produktiven Nutzung: (1) zu welchem Zeitpunkt im Lebenszyklus ein `IJSRuntime`-Aufruf trägt (Annahme: schon in `OnInitializedAsync`, weil `App.razor:19` mit `prerender: false` rendert), (2) dass ein unabhängig geöffneter Tab den `sessionStorage` des ersten nicht erbt und wie er dafür geöffnet werden muss, (3) dass ein werfender Interop-Aufruf in einer stehenden Seite endet, nicht in der Ausnahmeseite.
+- [x] Der Probe-Test bleibt als Regressionsschutz stehen, wie `ZiehenUndAblegenProbeE2ETests` und `ZweiterBrowserkontextProbeE2ETests`.
 
 ## Betroffene Verzeichnisstruktur
 

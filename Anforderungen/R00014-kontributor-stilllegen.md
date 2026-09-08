@@ -1,6 +1,6 @@
 ---
 id: R00014
-status: Neu
+status: Erledigt
 datum: 2026-09-04
 ---
 
@@ -45,42 +45,42 @@ Die Kontributorenliste wächst und schrumpft nie. Wer das Projekt verlässt, ste
 
 ### Stilllegen und Zurückholen über die API
 
-- [ ] `PUT /api/kontributoren/{kontributorId}/stilllegung` mit `{"istStillgelegt": true}` antwortet `200` und liefert den Kontributor mit gesetztem `stillgelegtAm`.
-- [ ] Derselbe Aufruf mit `{"istStillgelegt": false}` antwortet `200` und liefert den Kontributor mit `stillgelegtAm: null`.
-- [ ] Beide Richtungen sind beliebig oft wiederholbar, ohne dass sich nach dem ersten Aufruf etwas ändert. Rechenbeispiel: zweimal `true`, dann zweimal `false`, dann einmal `true` → ein Kontributor, `stillgelegtAm` gesetzt, in der Tabelle genau eine Zeile.
-- [ ] `GET /api/kontributoren` liefert `stillgelegtAm` in **jeder** Zeile — bei aktiven `null`, bei stillgelegten das Datum. Es gibt keinen Abfrageparameter, der die Liste filtert.
-- [ ] `PUT /api/kontributoren/4711/stilllegung` auf eine nicht vergebene Nummer antwortet `404` mit einem Befund, der den Code `kontributor-unbekannt`, die Nummer `4711` in der Meldung und `GET /api/kontributoren` als Kompensationsaktion nennt.
-- [ ] Nach einem Neustart der WebApi auf derselben Datei ist der Stilllegungsstand unverändert, inklusive Datum.
-- [ ] Ein zweiter Lauf der Migration auf einer bestehenden Datei ändert weder Schema noch Daten.
-- [ ] `PUT /api/kontributoren/{kontributorId}` (Name und Art ändern, `R00012`) funktioniert an einem stillgelegten Kontributor unverändert und lässt seinen Stilllegungsstand unangetastet.
+- [x] `PUT /api/kontributoren/{kontributorId}/stilllegung` mit `{"istStillgelegt": true}` antwortet `200` und liefert den Kontributor mit gesetztem `stillgelegtAm`.
+- [x] Derselbe Aufruf mit `{"istStillgelegt": false}` antwortet `200` und liefert den Kontributor mit `stillgelegtAm: null`.
+- [x] Beide Richtungen sind beliebig oft wiederholbar, ohne dass sich nach dem ersten Aufruf etwas ändert. Rechenbeispiel: zweimal `true`, dann zweimal `false`, dann einmal `true` → ein Kontributor, `stillgelegtAm` gesetzt, in der Tabelle genau eine Zeile.
+- [x] `GET /api/kontributoren` liefert `stillgelegtAm` in **jeder** Zeile — bei aktiven `null`, bei stillgelegten das Datum. Es gibt keinen Abfrageparameter, der die Liste filtert.
+- [x] `PUT /api/kontributoren/4711/stilllegung` auf eine nicht vergebene Nummer antwortet `404` mit einem Befund, der den Code `kontributor-unbekannt`, die Nummer `4711` in der Meldung und `GET /api/kontributoren` als Kompensationsaktion nennt.
+- [x] Nach einem Neustart der WebApi auf derselben Datei ist der Stilllegungsstand unverändert, inklusive Datum.
+- [x] Ein zweiter Lauf der Migration auf einer bestehenden Datei ändert weder Schema noch Daten.
+- [x] `PUT /api/kontributoren/{kontributorId}` (Name und Art ändern, `R00012`) funktioniert an einem stillgelegten Kontributor unverändert und lässt seinen Stilllegungsstand unangetastet.
 
 ### Die Liste auf `/kontributoren`
 
-- [ ] Jede **aktive** Zeile trägt rechts neben dem Stift ein zweites Symbol „stilllegen"; ein Klick legt still und lädt die Liste neu.
-- [ ] Stillgelegte stehen **am Ende** der Liste, unter einer Gruppenzeile „stillgelegt · n". Rechenbeispiel: `Anna`, `Bert`, `Cem` angelegt, `Anna` stillgelegt → Reihenfolge `Bert`, `Cem`, Gruppenzeile „stillgelegt · 1", `Anna`.
-- [ ] Die Sortierung kommt aus `GET /api/kontributoren`; die Oberfläche sortiert nicht ein zweites Mal. Prüfbar an der API allein: aktive alphabetisch (Groß-/Kleinschreibung ohne Einfluss, `KontributorId` als Zweitschlüssel), danach stillgelegte nach derselben Regel.
-- [ ] Die Gruppenzeile erscheint **nur**, wenn es mindestens einen Stillgelegten gibt — bei null Stillgelegten steht sie nicht da.
-- [ ] Eine stillgelegte Zeile zeigt den Namen durchgestrichen, das Datum als „stillgelegt seit &lt;Datum&gt;" und einen Textknopf „zurückholen"; ein Klick darauf bringt sie zurück über die Gruppenzeile.
-- [ ] Der Seitenkopf zeigt rechtsbündig „n aktiv · n stillgelegt". Rechenbeispiel: `Anna` (Mensch), `Bert` (Agent), `Cem` (abgebildet), `Dora` (Mensch) angelegt, `Dora` stillgelegt → „3 aktiv · 1 stillgelegt". **Nicht** „wählbar": das wären unter der Regel von `F0032` nur `Anna` — siehe „Offene Fragen".
-- [ ] Ist die WebApi beim Stilllegen oder Zurückholen nicht erreichbar, erscheint die Ausfallmeldung über `WebApiAufruf.MitAusfallmeldung`; die Seite bleibt stehen.
-- [ ] Der Stand überlebt einen Reload der Seite.
+- [x] Jede **aktive** Zeile trägt rechts neben dem Stift ein zweites Symbol „stilllegen"; ein Klick legt still und lädt die Liste neu.
+- [x] Stillgelegte stehen **am Ende** der Liste, unter einer Gruppenzeile „stillgelegt · n". Rechenbeispiel: `Anna`, `Bert`, `Cem` angelegt, `Anna` stillgelegt → Reihenfolge `Bert`, `Cem`, Gruppenzeile „stillgelegt · 1", `Anna`.
+- [x] Die Sortierung kommt aus `GET /api/kontributoren`; die Oberfläche sortiert nicht ein zweites Mal. Prüfbar an der API allein: aktive alphabetisch (Groß-/Kleinschreibung ohne Einfluss, `KontributorId` als Zweitschlüssel), danach stillgelegte nach derselben Regel.
+- [x] Die Gruppenzeile erscheint **nur**, wenn es mindestens einen Stillgelegten gibt — bei null Stillgelegten steht sie nicht da.
+- [x] Eine stillgelegte Zeile zeigt den Namen durchgestrichen, das Datum als „stillgelegt seit &lt;Datum&gt;" und einen Textknopf „zurückholen"; ein Klick darauf bringt sie zurück über die Gruppenzeile.
+- [x] Der Seitenkopf zeigt rechtsbündig „n aktiv · n stillgelegt". Rechenbeispiel: `Anna` (Mensch), `Bert` (Agent), `Cem` (abgebildet), `Dora` (Mensch) angelegt, `Dora` stillgelegt → „3 aktiv · 1 stillgelegt". **Nicht** „wählbar": das wären unter der Regel von `F0032` nur `Anna` — siehe „Offene Fragen".
+- [x] Ist die WebApi beim Stilllegen oder Zurückholen nicht erreichbar, erscheint die Ausfallmeldung über `WebApiAufruf.MitAusfallmeldung`; die Seite bleibt stehen.
+- [x] Der Stand überlebt einen Reload der Seite.
 
 ### Stillgelegte verschwinden aus der Identitätswahl
 
-- [ ] Ein stillgelegter Kontributor steht im Popover „Ich bin …" **weder** als wählbare Zeile über der Trennlinie **noch** als gesperrte darunter. Rechenbeispiel: `Anna` (Mensch), `Bert` (Agent), `Cem` (abgebildet), `Dora` (Mensch) angelegt, `Dora` und `Bert` stillgelegt → eine wählbare Zeile (`Anna`), eine gesperrte (`Cem`).
-- [ ] Wer `Dora` gewählt hatte und dann wird `Dora` stillgelegt: nach dem nächsten Laden steht am Identitätsplatz „nicht gewählt" — keine Fehlermeldung, keine Ausnahmeseite.
-- [ ] Wird `Dora` zurückgeholt, trägt der Identitätsplatz **ohne erneute Wahl** wieder `Dora`: die gemerkte `KontributorId` wird nicht gelöscht.
-- [ ] Nach dem Zurückholen steht `Dora` wieder als wählbare Zeile im Popover.
+- [x] Ein stillgelegter Kontributor steht im Popover „Ich bin …" **weder** als wählbare Zeile über der Trennlinie **noch** als gesperrte darunter. Rechenbeispiel: `Anna` (Mensch), `Bert` (Agent), `Cem` (abgebildet), `Dora` (Mensch) angelegt, `Dora` und `Bert` stillgelegt → eine wählbare Zeile (`Anna`), eine gesperrte (`Cem`).
+- [x] Wer `Dora` gewählt hatte und dann wird `Dora` stillgelegt: nach dem nächsten Laden steht am Identitätsplatz „nicht gewählt" — keine Fehlermeldung, keine Ausnahmeseite.
+- [x] Wird `Dora` zurückgeholt, trägt der Identitätsplatz **ohne erneute Wahl** wieder `Dora`: die gemerkte `KontributorId` wird nicht gelöscht.
+- [x] Nach dem Zurückholen steht `Dora` wieder als wählbare Zeile im Popover.
 
 ### Der grüne Bestand bleibt grün
 
-- [ ] `Kontributor` bekommt genau ein Feld hinzu (`DateOnly? StillgelegtAm`). Die **52 positionalen `new Kontributor(…)` in 10 Dateien** ziehen mit; kein Test wird dabei gelöscht oder abgeschwächt. Betroffen sind u. a. `WebApiNeustartTests.cs:152-159`, `IdentitaetslisteTests.cs` (16 Vorkommen), `KontributorenEndpunkteTests.cs` (9), `KontributorenRepositoryTests.cs` (5).
-- [ ] `IdentitaetslisteTests.cs` prüft heute in sechs Tests den Filter nach `Kontributorart` allein (`Identitaetsliste.cs:5-28`). Diese sechs bleiben gültig — sie legen niemanden still; die neue Regel kommt als zusätzliche Tests hinzu.
-- [ ] `KontributorAendernE2ETests.cs:25` (`Stifte == 3`) und `KontributorenlisteE2ETests.cs:43-45` (drei Zeilen, alphabetisch, Plaketten) bleiben **unverändert** grün — dort wird niemand stillgelegt.
-- [ ] `IdentitaetGesperrtE2ETests.cs:31-32` und `:128-139` (Zeilenzahlen im Popover) bleiben **unverändert** grün — auch dort wird niemand stillgelegt.
-- [ ] Der Vertragstest `FehlervertragTests` nimmt die neue Route mit ihrem `404`-Fall auf — **in derselben Bubble, in der die Route entsteht** (`B0175`). Sonst ist die Suite rot, weil `Wenn_ein_Endpunkt_hinzukommt_…` jede ungeprüfte Route meldet (Lehre aus `B0152`/`B0159`).
-- [ ] `GET /api/kontributoren` bleibt in `RoutenOhneFehlerantwort` (`FehlervertragTests.cs:20`) — es kommt kein Abfrageparameter hinzu, der zurückweisen könnte.
-- [ ] Alle Tests aus `R00001`–`R00013` laufen weiter; `TreatWarningsAsErrors` bleibt erfüllt.
+- [x] `Kontributor` bekommt genau ein Feld hinzu (`DateOnly? StillgelegtAm`). Die **52 positionalen `new Kontributor(…)` in 10 Dateien** ziehen mit; kein Test wird dabei gelöscht oder abgeschwächt. Betroffen sind u. a. `WebApiNeustartTests.cs:152-159`, `IdentitaetslisteTests.cs` (16 Vorkommen), `KontributorenEndpunkteTests.cs` (9), `KontributorenRepositoryTests.cs` (5).
+- [x] `IdentitaetslisteTests.cs` prüft heute in sechs Tests den Filter nach `Kontributorart` allein (`Identitaetsliste.cs:5-28`). Diese sechs bleiben gültig — sie legen niemanden still; die neue Regel kommt als zusätzliche Tests hinzu.
+- [x] `KontributorAendernE2ETests.cs:25` (`Stifte == 3`) und `KontributorenlisteE2ETests.cs:43-45` (drei Zeilen, alphabetisch, Plaketten) bleiben **unverändert** grün — dort wird niemand stillgelegt.
+- [x] `IdentitaetGesperrtE2ETests.cs:31-32` und `:128-139` (Zeilenzahlen im Popover) bleiben **unverändert** grün — auch dort wird niemand stillgelegt.
+- [x] Der Vertragstest `FehlervertragTests` nimmt die neue Route mit ihrem `404`-Fall auf — **in derselben Bubble, in der die Route entsteht** (`B0175`). Sonst ist die Suite rot, weil `Wenn_ein_Endpunkt_hinzukommt_…` jede ungeprüfte Route meldet (Lehre aus `B0152`/`B0159`).
+- [x] `GET /api/kontributoren` bleibt in `RoutenOhneFehlerantwort` (`FehlervertragTests.cs:20`) — es kommt kein Abfrageparameter hinzu, der zurückweisen könnte.
+- [x] Alle Tests aus `R00001`–`R00013` laufen weiter; `TreatWarningsAsErrors` bleibt erfüllt.
 
 ## Betroffene Verzeichnisstruktur
 

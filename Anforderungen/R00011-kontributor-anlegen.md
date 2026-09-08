@@ -1,6 +1,6 @@
 ---
 id: R00011
-status: Neu
+status: In Arbeit
 datum: 2026-09-04
 ---
 
@@ -40,37 +40,37 @@ Ohne Kontributoren ist das Board anonym: an keiner Karte und keiner Zeit ist abl
 ### Anlegen und Abrufen über die API
 
 - [ ] `POST /api/kontributoren` mit `{ "name": "Stefan", "art": "Mensch" }` antwortet mit HTTP 201, einem `Location`-Kopf auf die Wurzelressource und dem angelegten Kontributor samt vergebener `kontributorId`.
-- [ ] Dieselbe Route nimmt `"Agent"` und `"Abgebildet"` entgegen und legt sie genauso an; andere Werte gibt es nicht.
-- [ ] `GET /api/kontributoren` liefert HTTP 200 und **alle** Kontributoren mit Name und Art — auch die abgebildeten, ohne Filter und ohne Abfrageparameter.
-- [ ] Die Liste ist alphabetisch nach Name sortiert, Groß-/Kleinschreibung ohne Einfluss, `KontributorId` als Zweitschlüssel. Rechenbeispiel: `stefan`, `Codex-Agent`, `Nina Barth` angelegt in dieser Reihenfolge → geliefert werden `Codex-Agent`, `Nina Barth`, `stefan`.
-- [ ] Zwei Kontributoren dürfen denselben Namen tragen; ein zweiter „Stefan" wird **nicht** zurückgewiesen und bekommt eine eigene `KontributorId`.
-- [ ] Nach einem Neustart der WebApi auf derselben Datei liefert `GET /api/kontributoren` dieselben Kontributoren; die nächste vergebene `KontributorId` schließt an die bestehenden an.
-- [ ] Ein zweiter Lauf der Migration auf einer Datei mit Kontributoren lässt Schema **und** Daten unverändert.
+- [x] Dieselbe Route nimmt `"Agent"` und `"Abgebildet"` entgegen und legt sie genauso an; andere Werte gibt es nicht.
+- [x] `GET /api/kontributoren` liefert HTTP 200 und **alle** Kontributoren mit Name und Art — auch die abgebildeten, ohne Filter und ohne Abfrageparameter.
+- [x] Die Liste ist alphabetisch nach Name sortiert, Groß-/Kleinschreibung ohne Einfluss, `KontributorId` als Zweitschlüssel. Rechenbeispiel: `stefan`, `Codex-Agent`, `Nina Barth` angelegt in dieser Reihenfolge → geliefert werden `Codex-Agent`, `Nina Barth`, `stefan`.
+- [x] Zwei Kontributoren dürfen denselben Namen tragen; ein zweiter „Stefan" wird **nicht** zurückgewiesen und bekommt eine eigene `KontributorId`.
+- [x] Nach einem Neustart der WebApi auf derselben Datei liefert `GET /api/kontributoren` dieselben Kontributoren; die nächste vergebene `KontributorId` schließt an die bestehenden an.
+- [x] Ein zweiter Lauf der Migration auf einer Datei mit Kontributoren lässt Schema **und** Daten unverändert.
 
 ### Kontributorenliste in der Oberfläche
 
-- [ ] `/kontributoren` zeigt eine Liste mit den Spalten Name und Art; ohne angelegte Kontributoren ist sie leer und die Anlegezeile trotzdem bedienbar.
-- [ ] Jede Zeile trägt eine Plakette, an der die Art zu erkennen ist; die drei Arten sind voneinander unterscheidbar dargestellt.
-- [ ] Am Ende der Liste steht eine Anlegezeile mit Namensfeld, einer Wahl zwischen Mensch, Agent und abgebildet — Mensch vorgewählt — und dem Schalter „anlegen". Es gibt keinen zweiten Schirm und kein Dialogfenster.
-- [ ] „anlegen" erzeugt den Kontributor; er erscheint danach an seiner alphabetischen Stelle in der Liste, ohne dass die Seite neu geladen wird.
-- [ ] Nach einem Reload der Seite steht er weiterhin da.
-- [ ] Was über die API angelegt wurde, steht in der danach geöffneten Liste der Oberfläche — und umgekehrt liefert `GET /api/kontributoren` den in der Oberfläche angelegten Kontributor.
-- [ ] Ist die WebApi beim Anlegen nicht erreichbar, erscheint die Ausfallmeldung statt einer Ausnahmeseite; die Liste bleibt bedienbar.
+- [x] `/kontributoren` zeigt eine Liste mit den Spalten Name und Art; ohne angelegte Kontributoren ist sie leer und die Anlegezeile trotzdem bedienbar.
+- [x] Jede Zeile trägt eine Plakette, an der die Art zu erkennen ist; die drei Arten sind voneinander unterscheidbar dargestellt.
+- [x] Am Ende der Liste steht eine Anlegezeile mit Namensfeld, einer Wahl zwischen Mensch, Agent und abgebildet — Mensch vorgewählt — und dem Schalter „anlegen". Es gibt keinen zweiten Schirm und kein Dialogfenster.
+- [x] „anlegen" erzeugt den Kontributor; er erscheint danach an seiner alphabetischen Stelle in der Liste, ohne dass die Seite neu geladen wird.
+- [x] Nach einem Reload der Seite steht er weiterhin da.
+- [x] Was über die API angelegt wurde, steht in der danach geöffneten Liste der Oberfläche — und umgekehrt liefert `GET /api/kontributoren` den in der Oberfläche angelegten Kontributor.
+- [x] Ist die WebApi beim Anlegen nicht erreichbar, erscheint die Ausfallmeldung statt einer Ausnahmeseite; die Liste bleibt bedienbar.
 
 ### Zurückweisung ohne Namen
 
-- [ ] `POST /api/kontributoren` mit leerem oder nur aus Leerzeichen bestehendem `name` antwortet mit HTTP 400 — nicht 500 — und einem Befund mit nichtleerem `Code`, einer `Meldung`, die den Grund nennt, und einer `Kompensation`, die genau diese Route mit einem nichtleeren `name` als nächsten Schritt nennt.
-- [ ] Nach einer solchen Zurückweisung ist nichts geschrieben: `GET /api/kontributoren` liefert unverändert die Kontributoren von vorher.
-- [ ] In der Oberfläche erscheint bei leerem Namen der Satz **„Ohne Namen entsteht kein Kontributor."**; die Anlegezeile bleibt bedienbar, der eingestellte Artwert bleibt stehen, und es entsteht kein Kontributor.
-- [ ] `FehlervertragTests` nimmt die Fehlerantwort von `POST /api/kontributoren` in die Prüfung auf; keine Route der WebApi bleibt ungeprüft (der zweite Test der Klasse würde sonst rot).
+- [x] `POST /api/kontributoren` mit leerem oder nur aus Leerzeichen bestehendem `name` antwortet mit HTTP 400 — nicht 500 — und einem Befund mit nichtleerem `Code`, einer `Meldung`, die den Grund nennt, und einer `Kompensation`, die genau diese Route mit einem nichtleeren `name` als nächsten Schritt nennt.
+- [x] Nach einer solchen Zurückweisung ist nichts geschrieben: `GET /api/kontributoren` liefert unverändert die Kontributoren von vorher.
+- [x] In der Oberfläche erscheint bei leerem Namen der Satz **„Ohne Namen entsteht kein Kontributor."**; die Anlegezeile bleibt bedienbar, der eingestellte Artwert bleibt stehen, und es entsteht kein Kontributor.
+- [x] `FehlervertragTests` nimmt die Fehlerantwort von `POST /api/kontributoren` in die Prüfung auf; keine Route der WebApi bleibt ungeprüft (der zweite Test der Klasse würde sonst rot).
 
 ### Navigationspunkt und Rahmen
 
-- [ ] Der Punkt „Kontributoren" in der Kopfzeile ist ein Verweis auf `/kontributoren` und trägt kein `aria-disabled` mehr; ein Klick darauf öffnet die Seite.
-- [ ] Auf der offenen Kontributoren-Seite ist der Punkt als aktiv erkennbar, so wie „Boards" auf der Board-Übersicht.
-- [ ] Die Kopfzeile trägt auf dieser Seite den Titel „Kontributoren"; Titel, Navigation und Identitätsplatz stehen wie bisher.
+- [x] Der Punkt „Kontributoren" in der Kopfzeile ist ein Verweis auf `/kontributoren` und trägt kein `aria-disabled` mehr; ein Klick darauf öffnet die Seite.
+- [x] Auf der offenen Kontributoren-Seite ist der Punkt als aktiv erkennbar, so wie „Boards" auf der Board-Übersicht.
+- [x] Die Kopfzeile trägt auf dieser Seite den Titel „Kontributoren"; Titel, Navigation und Identitätsplatz stehen wie bisher.
 - [ ] `RahmenE2ETests` zieht mit: die beiden Zusicherungen `aria-disabled=true` für „Kontributoren" und `NavigationsVerweise` = 1 (`Source/KanbanC.PlaywrightTests/Tests/RahmenE2ETests.cs:56-57`) beschreiben danach den neuen Stand — „Auswertungen" bleibt gesperrt, „Kontributoren" nicht mehr, und die Board-Übersicht trägt zwei Verweise statt einem.
-- [ ] Die gesamte `R00005`-Suite (Rahmen, Gestaltungsfundament, Board-Übersicht) ist nach der Änderung grün; kein Test wird gelöscht, um das zu erreichen.
+- [x] Die gesamte `R00005`-Suite (Rahmen, Gestaltungsfundament, Board-Übersicht) ist nach der Änderung grün; kein Test wird gelöscht, um das zu erreichen.
 
 ## Betroffene Verzeichnisstruktur
 

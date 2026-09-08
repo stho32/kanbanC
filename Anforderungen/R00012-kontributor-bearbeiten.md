@@ -1,6 +1,6 @@
 ---
 id: R00012
-status: Neu
+status: Erledigt
 datum: 2026-09-04
 ---
 
@@ -40,39 +40,39 @@ Mit `R00011` entsteht ein Kontributor, aber er ist danach unveränderlich: ein T
 
 ### Ändern über die API
 
-- [ ] `PUT /api/kontributoren/{kontributorId}` mit `{ "name": "Codex-Agent", "art": "Agent" }` antwortet mit HTTP 200 und dem geänderten Kontributor — dieselbe `kontributorId`, der neue Name, die neue Art.
-- [ ] Name und Art ändern sich in **einem** Aufruf; es gibt keine Unterressource `/name` und keine `/art`.
-- [ ] Alle drei Arten sind Ziel und Ausgangspunkt: Mensch → Agent, Agent → abgebildet und abgebildet → Mensch werden gleichermaßen übernommen.
-- [ ] Nur der genannte Kontributor ändert sich. Rechenbeispiel: `Anna` (Mensch), `Bert` (Agent), `Cara` (abgebildet) angelegt; `Bert` wird zu `Zora` (Mensch) geändert → `GET /api/kontributoren` liefert `Anna`, `Cara`, `Zora` — drei Einträge, `Anna` und `Cara` unverändert, `Zora` an der neuen alphabetischen Stelle.
-- [ ] Nach einem Neustart der WebApi auf derselben Datei liefert `GET /api/kontributoren` den geänderten Stand, nicht den alten.
-- [ ] Der `Location`-Kopf von `POST /api/kontributoren` zeigt danach auf `/api/kontributoren/{kontributorId}` statt auf die Wurzelressource; `KontributorenEndpunkteTests.cs:25` zieht mit. Damit ist die Hälfte eines `R00011`-Kriteriums abgelöst — bewusst, siehe „Änderungen an bestehenden Klassen".
+- [x] `PUT /api/kontributoren/{kontributorId}` mit `{ "name": "Codex-Agent", "art": "Agent" }` antwortet mit HTTP 200 und dem geänderten Kontributor — dieselbe `kontributorId`, der neue Name, die neue Art.
+- [x] Name und Art ändern sich in **einem** Aufruf; es gibt keine Unterressource `/name` und keine `/art`.
+- [x] Alle drei Arten sind Ziel und Ausgangspunkt: Mensch → Agent, Agent → abgebildet und abgebildet → Mensch werden gleichermaßen übernommen.
+- [x] Nur der genannte Kontributor ändert sich. Rechenbeispiel: `Anna` (Mensch), `Bert` (Agent), `Cara` (abgebildet) angelegt; `Bert` wird zu `Zora` (Mensch) geändert → `GET /api/kontributoren` liefert `Anna`, `Cara`, `Zora` — drei Einträge, `Anna` und `Cara` unverändert, `Zora` an der neuen alphabetischen Stelle.
+- [x] Nach einem Neustart der WebApi auf derselben Datei liefert `GET /api/kontributoren` den geänderten Stand, nicht den alten.
+- [x] Der `Location`-Kopf von `POST /api/kontributoren` zeigt danach auf `/api/kontributoren/{kontributorId}` statt auf die Wurzelressource; `KontributorenEndpunkteTests.cs:25` zieht mit. Damit ist die Hälfte eines `R00011`-Kriteriums abgelöst — bewusst, siehe „Änderungen an bestehenden Klassen".
 
 ### Bearbeiten in der Zeile
 
-- [ ] Die Liste auf `/kontributoren` trägt eine Kopfzelle „Pflege" und je Zeile ein Stiftsymbol; die Spalten „offen", „Zeit" und „letzte Handlung" der gezeichneten Zielform entstehen hier **nicht**.
-- [ ] Ein Klick auf den Stift öffnet **genau eine** Bearbeitungszeile; ein Klick auf einen zweiten Stift schließt die erste.
-- [ ] Die Bearbeitungszeile zeigt Name und Art des Kontributors vorbelegt — nicht leer und nicht auf „Mensch" zurückgesetzt.
-- [ ] „sichern" übernimmt den Stand; die Liste zeigt ihn danach an seiner alphabetischen Stelle, ohne dass die Seite neu geladen wird, und nach einem Reload weiterhin.
-- [ ] „verwerfen" schließt die Zeile; der Kontributor steht unverändert da, und `GET /api/kontributoren` bestätigt das.
-- [ ] Solange eine Zeile aufgeklappt ist, sind **alle** übrigen Kontributoren mit Name und Art weiterhin in der Liste zu sehen — die aufgeklappte Zeile verdrängt keine andere.
-- [ ] Was über die API geändert wurde, steht in der danach geöffneten Liste der Oberfläche — und umgekehrt liefert `GET /api/kontributoren` den in der Oberfläche geänderten Stand.
-- [ ] Ist die WebApi beim Sichern nicht erreichbar, erscheint die Ausfallmeldung statt einer Ausnahmeseite; die Seite bleibt bedienbar.
-- [ ] Die drei bestehenden Tests aus `KontributorenlisteE2ETests` sind nach der Änderung unverändert grün; kein Test wird gelöscht oder abgeschwächt, um das zu erreichen.
+- [x] Die Liste auf `/kontributoren` trägt eine Kopfzelle „Pflege" und je Zeile ein Stiftsymbol; die Spalten „offen", „Zeit" und „letzte Handlung" der gezeichneten Zielform entstehen hier **nicht**.
+- [x] Ein Klick auf den Stift öffnet **genau eine** Bearbeitungszeile; ein Klick auf einen zweiten Stift schließt die erste.
+- [x] Die Bearbeitungszeile zeigt Name und Art des Kontributors vorbelegt — nicht leer und nicht auf „Mensch" zurückgesetzt.
+- [x] „sichern" übernimmt den Stand; die Liste zeigt ihn danach an seiner alphabetischen Stelle, ohne dass die Seite neu geladen wird, und nach einem Reload weiterhin.
+- [x] „verwerfen" schließt die Zeile; der Kontributor steht unverändert da, und `GET /api/kontributoren` bestätigt das.
+- [x] Solange eine Zeile aufgeklappt ist, sind **alle** übrigen Kontributoren mit Name und Art weiterhin in der Liste zu sehen — die aufgeklappte Zeile verdrängt keine andere.
+- [x] Was über die API geändert wurde, steht in der danach geöffneten Liste der Oberfläche — und umgekehrt liefert `GET /api/kontributoren` den in der Oberfläche geänderten Stand.
+- [x] Ist die WebApi beim Sichern nicht erreichbar, erscheint die Ausfallmeldung statt einer Ausnahmeseite; die Seite bleibt bedienbar.
+- [x] Die drei bestehenden Tests aus `KontributorenlisteE2ETests` sind nach der Änderung unverändert grün; kein Test wird gelöscht oder abgeschwächt, um das zu erreichen.
 
 ### Zurückweisung einer ungültigen Änderung
 
-- [ ] `PUT /api/kontributoren/{kontributorId}` mit leerem oder nur aus Leerzeichen bestehendem `name` antwortet mit HTTP 400 — nicht 500 — und einem Befund mit nichtleerem `Code`, einer `Meldung`, die den Grund nennt, und einer `Kompensation`, die **diese** Route (`PUT /api/kontributoren/{kontributorId}`) mit einem nichtleeren `name` als nächsten Schritt nennt, nicht die Anlegeroute.
-- [ ] Nach einer solchen Zurückweisung ist nichts geschrieben: `GET /api/kontributoren` liefert den Kontributor unverändert.
-- [ ] Der Befund des leeren Namens beim **Anlegen** nennt weiterhin `POST /api/kontributoren`; `KontributorenValidatorTests.cs:59-66` bleibt in der Sache gültig und prüft danach beide Routen an ihrem jeweiligen Fall.
-- [ ] In der Oberfläche erscheint bei leerem Namen der Satz **„Ohne Namen bleibt der Kontributor, wie er war."**; die Bearbeitungszeile bleibt offen und bedienbar, der eingestellte Artwert bleibt stehen, und der Kontributor bleibt unverändert.
-- [ ] Der Satz der Anlegezeile — „Ohne Namen entsteht kein Kontributor." — bleibt unverändert; die beiden Zeilen sagen nicht dasselbe.
+- [x] `PUT /api/kontributoren/{kontributorId}` mit leerem oder nur aus Leerzeichen bestehendem `name` antwortet mit HTTP 400 — nicht 500 — und einem Befund mit nichtleerem `Code`, einer `Meldung`, die den Grund nennt, und einer `Kompensation`, die **diese** Route (`PUT /api/kontributoren/{kontributorId}`) mit einem nichtleeren `name` als nächsten Schritt nennt, nicht die Anlegeroute.
+- [x] Nach einer solchen Zurückweisung ist nichts geschrieben: `GET /api/kontributoren` liefert den Kontributor unverändert.
+- [x] Der Befund des leeren Namens beim **Anlegen** nennt weiterhin `POST /api/kontributoren`; `KontributorenValidatorTests.cs:59-66` bleibt in der Sache gültig und prüft danach beide Routen an ihrem jeweiligen Fall.
+- [x] In der Oberfläche erscheint bei leerem Namen der Satz **„Ohne Namen bleibt der Kontributor, wie er war."**; die Bearbeitungszeile bleibt offen und bedienbar, der eingestellte Artwert bleibt stehen, und der Kontributor bleibt unverändert.
+- [x] Der Satz der Anlegezeile — „Ohne Namen entsteht kein Kontributor." — bleibt unverändert; die beiden Zeilen sagen nicht dasselbe.
 
 ### Zurückweisung einer unbekannten KontributorId
 
-- [ ] `PUT /api/kontributoren/999` auf eine `KontributorId`, die es nicht gibt, antwortet mit HTTP 404 — nicht 400 und nicht mit leerem Rumpf — und einem Befund, dessen `Meldung` die angefragte Nummer nennt und dessen `Kompensation` `GET /api/kontributoren` abzurufen und den Aufruf mit einer gelieferten `KontributorId` zu wiederholen verlangt.
-- [ ] Der Befund entsteht in `Nichtgefunden`; `Nichtgefunden.MeldetEinFehlendesDing` kennt seinen Code, so dass `Zurueckweisungen.AlsFehlerantwort` ihn ohne Sonderweg im Endpunkt auf 404 statt 400 abbildet.
-- [ ] Ein Aufruf mit unbekannter `KontributorId` **und** leerem Namen liefert eine Antwort mit Befunden, nicht einen Serverfehler; welcher der beiden Statuscodes gilt, ist im Ablauf festgelegt (Prüfung vor Datenzugriff → 400).
-- [ ] `FehlervertragTests` nimmt beide Fehlerantworten von `PUT /api/kontributoren/{kontributorId}` in die Prüfung auf (leerer Name, unbekannte `KontributorId`); die Prüfung „keine Route ungeprüft" (`FehlervertragTests.cs:53-56`) ist danach grün.
+- [x] `PUT /api/kontributoren/999` auf eine `KontributorId`, die es nicht gibt, antwortet mit HTTP 404 — nicht 400 und nicht mit leerem Rumpf — und einem Befund, dessen `Meldung` die angefragte Nummer nennt und dessen `Kompensation` `GET /api/kontributoren` abzurufen und den Aufruf mit einer gelieferten `KontributorId` zu wiederholen verlangt.
+- [x] Der Befund entsteht in `Nichtgefunden`; `Nichtgefunden.MeldetEinFehlendesDing` kennt seinen Code, so dass `Zurueckweisungen.AlsFehlerantwort` ihn ohne Sonderweg im Endpunkt auf 404 statt 400 abbildet.
+- [x] Ein Aufruf mit unbekannter `KontributorId` **und** leerem Namen liefert eine Antwort mit Befunden, nicht einen Serverfehler; welcher der beiden Statuscodes gilt, ist im Ablauf festgelegt (Prüfung vor Datenzugriff → 400).
+- [x] `FehlervertragTests` nimmt beide Fehlerantworten von `PUT /api/kontributoren/{kontributorId}` in die Prüfung auf (leerer Name, unbekannte `KontributorId`); die Prüfung „keine Route ungeprüft" (`FehlervertragTests.cs:53-56`) ist danach grün.
 
 ## Betroffene Verzeichnisstruktur
 

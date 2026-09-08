@@ -1,6 +1,6 @@
 ---
 id: R00010
-status: Neu
+status: Erledigt
 datum: 2026-09-04
 ---
 
@@ -37,50 +37,50 @@ Ein Board wird beim Anlegen benannt, bevor jemand weiß, wie das Vorhaben am End
 
 ### Umbenennen über die API
 
-- [ ] `PUT /api/boards/{boardId}` mit `{ "name": "KanbanC — Release 2" }` antwortet mit HTTP 200 und dem Board, dessen `name` der neue ist.
-- [ ] Ein anschließendes `GET /api/boards/{boardId}` liefert denselben Namen; `GET /api/boards` zeigt das Board mit dem neuen Namen an der Stelle, an die es alphabetisch gehört.
-- [ ] `art`, `starttermin`, `zieltermin`, die Spalten und deren Karten sind nach dem Umbenennen unverändert — der Rumpf trägt nur den Namen, und was er nicht trägt, wird nicht geändert.
-- [ ] Nach einem Neustart der WebApi auf derselben Datei steht der neue Name unverändert da.
-- [ ] Zwei Boards dürfen denselben Namen tragen; Umbenennen auf einen schon vergebenen Namen wird **nicht** zurückgewiesen (die Eindeutigkeitsregel aus `R00004` gilt für Spaltenbezeichnungen je Board, nicht für Boardnamen).
+- [x] `PUT /api/boards/{boardId}` mit `{ "name": "KanbanC — Release 2" }` antwortet mit HTTP 200 und dem Board, dessen `name` der neue ist.
+- [x] Ein anschließendes `GET /api/boards/{boardId}` liefert denselben Namen; `GET /api/boards` zeigt das Board mit dem neuen Namen an der Stelle, an die es alphabetisch gehört.
+- [x] `art`, `starttermin`, `zieltermin`, die Spalten und deren Karten sind nach dem Umbenennen unverändert — der Rumpf trägt nur den Namen, und was er nicht trägt, wird nicht geändert.
+- [x] Nach einem Neustart der WebApi auf derselben Datei steht der neue Name unverändert da.
+- [x] Zwei Boards dürfen denselben Namen tragen; Umbenennen auf einen schon vergebenen Namen wird **nicht** zurückgewiesen (die Eindeutigkeitsregel aus `R00004` gilt für Spaltenbezeichnungen je Board, nicht für Boardnamen).
 
 ### Umbenennen in der Oberfläche
 
-- [ ] Jede Board-Kachel trägt ein ⋯-Bedienelement; ein Klick öffnet ein Menü mit „Umbenennen" und „Archivieren", ein zweiter Klick auf ⋯ schließt es wieder.
-- [ ] Das offene Menü liegt über der Verweisfläche der Kachel: ein Klick auf einen Menüpunkt öffnet **nicht** das Board. Ein Klick auf die übrige Kachelfläche führt weiterhin ins Board.
-- [ ] „Umbenennen" ersetzt den Namen in der Kachel durch ein Namensfeld mit „Speichern" und „Abbrechen"; kein zweiter Schirm, kein Dialogfenster.
-- [ ] „Speichern" schreibt den Namen und zeigt die Liste mit dem neuen Namen; „Abbrechen" lässt den alten Namen stehen und schreibt nichts.
-- [ ] Nach einem Reload der Board-Übersicht steht der neue Name da.
-- [ ] Ein leerer Name führt zu einer lesbaren Meldung an der Kachel; das Namensfeld bleibt offen, und der alte Name ist unverändert gespeichert.
-- [ ] Ist die WebApi beim Speichern nicht erreichbar, erscheint die Ausfallmeldung statt einer Ausnahmeseite; die Liste bleibt bedienbar.
+- [x] Jede Board-Kachel trägt ein ⋯-Bedienelement; ein Klick öffnet ein Menü mit „Umbenennen" und „Archivieren", ein zweiter Klick auf ⋯ schließt es wieder.
+- [x] Das offene Menü liegt über der Verweisfläche der Kachel: ein Klick auf einen Menüpunkt öffnet **nicht** das Board. Ein Klick auf die übrige Kachelfläche führt weiterhin ins Board.
+- [x] „Umbenennen" ersetzt den Namen in der Kachel durch ein Namensfeld mit „Speichern" und „Abbrechen"; kein zweiter Schirm, kein Dialogfenster.
+- [x] „Speichern" schreibt den Namen und zeigt die Liste mit dem neuen Namen; „Abbrechen" lässt den alten Namen stehen und schreibt nichts.
+- [x] Nach einem Reload der Board-Übersicht steht der neue Name da.
+- [x] Ein leerer Name führt zu einer lesbaren Meldung an der Kachel; das Namensfeld bleibt offen, und der alte Name ist unverändert gespeichert.
+- [x] Ist die WebApi beim Speichern nicht erreichbar, erscheint die Ausfallmeldung statt einer Ausnahmeseite; die Liste bleibt bedienbar.
 
 ### Archivieren und Zurückholen über die API
 
-- [ ] `PUT /api/boards/{boardId}/archivierung` mit `{ "istArchiviert": true }` antwortet mit HTTP 200 und dem Board, dessen `istArchiviert` `true` ist.
-- [ ] `GET /api/boards` liefert dieses Board danach **nicht** mehr; `GET /api/boards?archiviert=true` liefert es. Rechenbeispiel: drei Boards, eines archiviert → die Standardliste hat zwei Einträge, die archivierte Liste einen, zusammen drei.
-- [ ] `GET /api/boards/{boardId}` liefert das archivierte Board unverändert — mit Spalten, Karten und allen Feldern; es trägt zusätzlich `istArchiviert: true`.
-- [ ] Derselbe Aufruf mit `{ "istArchiviert": false }` holt es zurück: es steht wieder in `GET /api/boards` und fehlt in der archivierten Liste.
-- [ ] Ein zweites `true` auf dasselbe Board ändert nichts und antwortet wie das erste; ein `false` auf ein nie archiviertes Board ebenso.
-- [ ] `GET /api/boards` ohne Parameter und `GET /api/boards?archiviert=false` liefern dieselbe Liste — die Voreinstellung ist die Standardliste.
-- [ ] Die Reihenfolge beider Listen ist unverändert alphabetisch nach Name (`COLLATE NOCASE`), `BoardId` als Zweitschlüssel.
-- [ ] Nach einem Neustart der WebApi auf derselben Datei ist der Archivstand unverändert; ein zweiter Lauf der Migration lässt Schema **und** Daten unberührt.
-- [ ] Ein archiviertes Board bleibt über die API bedienbar: Spalten- und Kartenaufrufe darauf verhalten sich wie zuvor (Archivieren sperrt nichts).
+- [x] `PUT /api/boards/{boardId}/archivierung` mit `{ "istArchiviert": true }` antwortet mit HTTP 200 und dem Board, dessen `istArchiviert` `true` ist.
+- [x] `GET /api/boards` liefert dieses Board danach **nicht** mehr; `GET /api/boards?archiviert=true` liefert es. Rechenbeispiel: drei Boards, eines archiviert → die Standardliste hat zwei Einträge, die archivierte Liste einen, zusammen drei.
+- [x] `GET /api/boards/{boardId}` liefert das archivierte Board unverändert — mit Spalten, Karten und allen Feldern; es trägt zusätzlich `istArchiviert: true`.
+- [x] Derselbe Aufruf mit `{ "istArchiviert": false }` holt es zurück: es steht wieder in `GET /api/boards` und fehlt in der archivierten Liste.
+- [x] Ein zweites `true` auf dasselbe Board ändert nichts und antwortet wie das erste; ein `false` auf ein nie archiviertes Board ebenso.
+- [x] `GET /api/boards` ohne Parameter und `GET /api/boards?archiviert=false` liefern dieselbe Liste — die Voreinstellung ist die Standardliste.
+- [x] Die Reihenfolge beider Listen ist unverändert alphabetisch nach Name (`COLLATE NOCASE`), `BoardId` als Zweitschlüssel.
+- [x] Nach einem Neustart der WebApi auf derselben Datei ist der Archivstand unverändert; ein zweiter Lauf der Migration lässt Schema **und** Daten unberührt.
+- [x] Ein archiviertes Board bleibt über die API bedienbar: Spalten- und Kartenaufrufe darauf verhalten sich wie zuvor (Archivieren sperrt nichts).
 
 ### Archivierte in der Oberfläche
 
-- [ ] Im Fuß der Board-Übersicht steht die Wahl „aktive" / „archivierte"; beim Öffnen der Seite ist „aktive" gewählt.
-- [ ] „Archivieren" im ⋯-Menü lässt das Board aus der angezeigten Standardliste verschwinden, ohne dass die Seite neu geladen wird.
-- [ ] Ein Klick auf „archivierte" zeigt die archivierten Boards; ihre Kacheln sind als archiviert erkennbar und tragen „zurückholen".
-- [ ] „zurückholen" lässt das Board aus der archivierten Ansicht verschwinden; unter „aktive" steht es wieder.
-- [ ] Nach einem Reload steht die Wahl wieder auf „aktive" — der Filter ist eine Ansicht, kein gespeicherter Zustand.
-- [ ] Was über die API archiviert wurde, fehlt in der danach geöffneten Standardliste der Oberfläche und steht unter „archivierte".
+- [x] Im Fuß der Board-Übersicht steht die Wahl „aktive" / „archivierte"; beim Öffnen der Seite ist „aktive" gewählt.
+- [x] „Archivieren" im ⋯-Menü lässt das Board aus der angezeigten Standardliste verschwinden, ohne dass die Seite neu geladen wird.
+- [x] Ein Klick auf „archivierte" zeigt die archivierten Boards; ihre Kacheln sind als archiviert erkennbar und tragen „zurückholen".
+- [x] „zurückholen" lässt das Board aus der archivierten Ansicht verschwinden; unter „aktive" steht es wieder.
+- [x] Nach einem Reload steht die Wahl wieder auf „aktive" — der Filter ist eine Ansicht, kein gespeicherter Zustand.
+- [x] Was über die API archiviert wurde, fehlt in der danach geöffneten Standardliste der Oberfläche und steht unter „archivierte".
 
 ### Zurückweisung und Fehlerpfade
 
-- [ ] `PUT /api/boards/{boardId}` mit leerem oder nur aus Leerzeichen bestehendem `name` antwortet mit HTTP 400 und einem Befund, dessen `Code` `board-name-leer` ist und dessen `Kompensation` **diese** Route nennt, nicht `POST /api/boards`.
-- [ ] Nach einer solchen Zurückweisung ist nichts geschrieben: das Board trägt weiterhin seinen alten Namen.
-- [ ] `PUT /api/boards/{boardId}` und `PUT /api/boards/{boardId}/archivierung` auf eine unbekannte `boardId` antworten mit HTTP 404 **und einem Rumpf**: ein Befund mit nichtleerem `Code`, einer `Meldung`, welche die aufgerufene Nummer nennt, und einer ausführbaren `Kompensation`.
-- [ ] Nach einer solchen Zurückweisung ist nichts geschrieben: die Tabelle `Boardarchivierung` trägt keine Zeile für die unbekannte Nummer.
-- [ ] `GET /api/boards?archiviert=<unlesbarer Wert>` antwortet mit HTTP 400 **und einem Befund** samt Kompensation — keine Fehlerantwort ohne Rumpf und kein stilles Ausweichen auf die Standardliste.
+- [x] `PUT /api/boards/{boardId}` mit leerem oder nur aus Leerzeichen bestehendem `name` antwortet mit HTTP 400 und einem Befund, dessen `Code` `board-name-leer` ist und dessen `Kompensation` **diese** Route nennt, nicht `POST /api/boards`.
+- [x] Nach einer solchen Zurückweisung ist nichts geschrieben: das Board trägt weiterhin seinen alten Namen.
+- [x] `PUT /api/boards/{boardId}` und `PUT /api/boards/{boardId}/archivierung` auf eine unbekannte `boardId` antworten mit HTTP 404 **und einem Rumpf**: ein Befund mit nichtleerem `Code`, einer `Meldung`, welche die aufgerufene Nummer nennt, und einer ausführbaren `Kompensation`.
+- [x] Nach einer solchen Zurückweisung ist nichts geschrieben: die Tabelle `Boardarchivierung` trägt keine Zeile für die unbekannte Nummer.
+- [x] `GET /api/boards?archiviert=<unlesbarer Wert>` antwortet mit HTTP 400 **und einem Befund** samt Kompensation — keine Fehlerantwort ohne Rumpf und kein stilles Ausweichen auf die Standardliste.
 
 ## Betroffene Verzeichnisstruktur
 

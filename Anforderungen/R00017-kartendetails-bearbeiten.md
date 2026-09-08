@@ -1,6 +1,6 @@
 ---
 id: R00017
-status: Neu
+status: Erledigt
 datum: 2026-09-05
 ---
 
@@ -53,75 +53,75 @@ Der zweite Nutzen ist die **Adresse**. `/karten/14` ist teilbar, sie überlebt e
 
 ### Die Kartenseite und ihre Adresse (F0040)
 
-- [ ] `GET /api/karten/{karteId}` antwortet mit HTTP 200 und einem Kartendetail, das Karte, Board mit Namen, Spalte mit Bezeichnung, Etiketten und Etikettvorschläge trägt — **ohne** `boardId` in der Adresse.
-- [ ] Die bestehenden Kartenrouten unter `/api/boards/{boardId}/…` bleiben unverändert: Adresse, Verb und Antwortgestalt von Anlegen, Zug, Archivierung und Kartenliste ändern sich nicht.
-- [ ] Eine **unbekannte** `karteId` beantwortet die Route mit HTTP 404 **und einem Rumpf**: ein Befund mit nichtleerem `code`, einer `meldung`, welche die aufgerufene Nummer nennt, und einer `kompensation` mit einem ausführbaren nächsten Aufruf. Der Befund nennt **kein** Board — die Route kennt keins, und eine erfundene Nummer wäre eine Falschaussage.
-- [ ] Eine **archivierte** Karte liefert unter derselben Adresse dasselbe Kartendetail wie zuvor. Rechenbeispiel: Karte `B` archivieren → `GET /api/boards/{boardId}` zeigt sie nicht, `GET /api/karten/{karteIdVonB}` antwortet weiterhin mit 200.
-- [ ] `/karten/{karteId}` in der Oberfläche zeigt Rückpfeil, Boardnamen, die Plakette „Karte n", Brotkrumen und den Titel als Überschrift.
-- [ ] Der Rückpfeil führt auf `/boards/{boardId}` des Boards, zu dem die Karte gehört.
-- [ ] Ein Direktaufruf von `/karten/{karteId}` und ein Reload zeigen dieselbe Karte — die Seite lädt aus der Adresse, nicht aus einem übergebenen Zustand.
-- [ ] `/karten/9999` zeigt eine lesbare Meldung mit der Nummer und einen Rückweg, keine Ausnahmeseite. Wortlaut analog `Board.razor` („Eine Karte mit der Nummer 9999 gibt es nicht.").
-- [ ] Ist die WebApi nicht erreichbar, erscheint die Ausfallmeldung statt einer Ausnahmeseite (`WebApiAufruf.MitAusfallmeldung`).
-- [ ] Auf dem Board ist der Kartentitel ein Verweis auf `/karten/{karteId}`; ein Klick darauf **löst keinen Ziehvorgang aus**.
-- [ ] Das `⋯`-Menü der Karte trägt danach **zwei** Einträge: „Details öffnen" und „Archivieren". Beide führen dieselbe Wirkung aus wie zuvor bzw. wie der Titelverweis.
-- [ ] Die Karte bleibt ziehbar wie zuvor: Kartenhälften, Einfügelinie und Zielposition verhalten sich unverändert (`R00008`).
+- [x] `GET /api/karten/{karteId}` antwortet mit HTTP 200 und einem Kartendetail, das Karte, Board mit Namen, Spalte mit Bezeichnung, Etiketten und Etikettvorschläge trägt — **ohne** `boardId` in der Adresse.
+- [x] Die bestehenden Kartenrouten unter `/api/boards/{boardId}/…` bleiben unverändert: Adresse, Verb und Antwortgestalt von Anlegen, Zug, Archivierung und Kartenliste ändern sich nicht.
+- [x] Eine **unbekannte** `karteId` beantwortet die Route mit HTTP 404 **und einem Rumpf**: ein Befund mit nichtleerem `code`, einer `meldung`, welche die aufgerufene Nummer nennt, und einer `kompensation` mit einem ausführbaren nächsten Aufruf. Der Befund nennt **kein** Board — die Route kennt keins, und eine erfundene Nummer wäre eine Falschaussage.
+- [x] Eine **archivierte** Karte liefert unter derselben Adresse dasselbe Kartendetail wie zuvor. Rechenbeispiel: Karte `B` archivieren → `GET /api/boards/{boardId}` zeigt sie nicht, `GET /api/karten/{karteIdVonB}` antwortet weiterhin mit 200.
+- [x] `/karten/{karteId}` in der Oberfläche zeigt Rückpfeil, Boardnamen, die Plakette „Karte n", Brotkrumen und den Titel als Überschrift.
+- [x] Der Rückpfeil führt auf `/boards/{boardId}` des Boards, zu dem die Karte gehört.
+- [x] Ein Direktaufruf von `/karten/{karteId}` und ein Reload zeigen dieselbe Karte — die Seite lädt aus der Adresse, nicht aus einem übergebenen Zustand.
+- [x] `/karten/9999` zeigt eine lesbare Meldung mit der Nummer und einen Rückweg, keine Ausnahmeseite. Wortlaut analog `Board.razor` („Eine Karte mit der Nummer 9999 gibt es nicht.").
+- [x] Ist die WebApi nicht erreichbar, erscheint die Ausfallmeldung statt einer Ausnahmeseite (`WebApiAufruf.MitAusfallmeldung`).
+- [x] Auf dem Board ist der Kartentitel ein Verweis auf `/karten/{karteId}`; ein Klick darauf **löst keinen Ziehvorgang aus**.
+- [x] Das `⋯`-Menü der Karte trägt danach **zwei** Einträge: „Details öffnen" und „Archivieren". Beide führen dieselbe Wirkung aus wie zuvor bzw. wie der Titelverweis.
+- [x] Die Karte bleibt ziehbar wie zuvor: Kartenhälften, Einfügelinie und Zielposition verhalten sich unverändert (`R00008`).
 
 ### Titel, Beschreibung, Fälligkeit und Farbe (F0041)
 
-- [ ] `PUT /api/karten/{karteId}` mit Titel, Beschreibung, Fälligkeit und Farbe antwortet mit HTTP 200 und dem **vollständigen Kartendetail** — nicht nur mit der Karte; dieselbe Überlegung wie bei `PUT …/lage`, das die Spalten zurückgibt (`KartenService.cs:101-103`).
-- [ ] Nach einem erneuten `GET /api/karten/{karteId}` stehen alle vier Werte unverändert da; nach einem Neustart der WebApi auf derselben Datei ebenso.
-- [ ] Beschreibung, Fälligkeit und Farbe reisen an `Karte` mit und stehen damit auch in `GET /api/boards/{boardId}`, in `GET …/spalten/{spalteId}/karten` und in der Antwort von `PUT …/lage`.
-- [ ] Ein **geleerter Titel** wird mit HTTP 400 und dem Befund `kartentitel-leer` zurückgewiesen; die Meldung lautet wörtlich „Der Titel darf nicht leer sein." — derselbe Satz wie beim Anlegen. **Gespeichert wird nichts:** nach der Zurückweisung sind alle vier Werte unverändert.
-- [ ] Die **Kompensationsaktion nennt die Route, die der Aufrufer wirklich gerufen hat**: `POST /api/boards/{boardId}/spalten/{spalteId}/karten` beim Anlegen, `PUT /api/karten/{karteId}` beim Ändern. Beide Wortlaute stammen aus **einer** Quelle, dem `KartenValidator`.
-- [ ] Ein zu langer Titel (> 1000 Zeichen) wird mit `kartentitel-zu-lang` zurückgewiesen, ebenfalls mit der Route des Aufrufers in der Kompensation.
-- [ ] Die Kartenfarbe kennt genau fünf Werte; ein anderer Wert wird mit Befund zurückgewiesen. Voreinstellung einer Karte ohne gesetzte Farbe ist „ohne".
-- [ ] Eine **frisch angelegte Karte** liefert `beschreibung: null`, `faelligAm: null` und `farbe: "Ohne"` — ohne dass jemand vorher eine Eigenschaftszeile angelegt hat.
-- [ ] Auf der Kartenseite zeigen leere Felder eine **Handlung statt einer Null**: „Beschreibung hinzufügen" statt eines leeren Kastens, `—` bei Fällig.
-- [ ] Titel, Beschreibung, Fälligkeit und Farbe lassen sich auf der Kartenseite ändern; nach einem Reload stehen alle vier so da, wie sie gesetzt wurden.
-- [ ] Wird der Titel auf der Seite geleert, erscheint die Zurückweisung als Meldung und **die vorige Fassung bleibt stehen**.
-- [ ] Ein zweiter Lauf der Migration `010` auf einer bestehenden Datei lässt Schema **und** Daten unverändert; gesetzte Eigenschaften bleiben stehen.
+- [x] `PUT /api/karten/{karteId}` mit Titel, Beschreibung, Fälligkeit und Farbe antwortet mit HTTP 200 und dem **vollständigen Kartendetail** — nicht nur mit der Karte; dieselbe Überlegung wie bei `PUT …/lage`, das die Spalten zurückgibt (`KartenService.cs:101-103`).
+- [x] Nach einem erneuten `GET /api/karten/{karteId}` stehen alle vier Werte unverändert da; nach einem Neustart der WebApi auf derselben Datei ebenso.
+- [x] Beschreibung, Fälligkeit und Farbe reisen an `Karte` mit und stehen damit auch in `GET /api/boards/{boardId}`, in `GET …/spalten/{spalteId}/karten` und in der Antwort von `PUT …/lage`.
+- [x] Ein **geleerter Titel** wird mit HTTP 400 und dem Befund `kartentitel-leer` zurückgewiesen; die Meldung lautet wörtlich „Der Titel darf nicht leer sein." — derselbe Satz wie beim Anlegen. **Gespeichert wird nichts:** nach der Zurückweisung sind alle vier Werte unverändert.
+- [x] Die **Kompensationsaktion nennt die Route, die der Aufrufer wirklich gerufen hat**: `POST /api/boards/{boardId}/spalten/{spalteId}/karten` beim Anlegen, `PUT /api/karten/{karteId}` beim Ändern. Beide Wortlaute stammen aus **einer** Quelle, dem `KartenValidator`.
+- [x] Ein zu langer Titel (> 1000 Zeichen) wird mit `kartentitel-zu-lang` zurückgewiesen, ebenfalls mit der Route des Aufrufers in der Kompensation.
+- [x] Die Kartenfarbe kennt genau fünf Werte; ein anderer Wert wird mit Befund zurückgewiesen. Voreinstellung einer Karte ohne gesetzte Farbe ist „ohne".
+- [x] Eine **frisch angelegte Karte** liefert `beschreibung: null`, `faelligAm: null` und `farbe: "Ohne"` — ohne dass jemand vorher eine Eigenschaftszeile angelegt hat.
+- [x] Auf der Kartenseite zeigen leere Felder eine **Handlung statt einer Null**: „Beschreibung hinzufügen" statt eines leeren Kastens, `—` bei Fällig.
+- [x] Titel, Beschreibung, Fälligkeit und Farbe lassen sich auf der Kartenseite ändern; nach einem Reload stehen alle vier so da, wie sie gesetzt wurden.
+- [x] Wird der Titel auf der Seite geleert, erscheint die Zurückweisung als Meldung und **die vorige Fassung bleibt stehen**.
+- [x] Ein zweiter Lauf der Migration `010` auf einer bestehenden Datei lässt Schema **und** Daten unverändert; gesetzte Eigenschaften bleiben stehen.
 
 ### Der Verantwortliche (F0042)
 
-- [ ] `PUT /api/karten/{karteId}` setzt den Verantwortlichen über den Fremdschlüssel `kontributor`; `null` bedeutet „niemand" und ist ein gültiger Wert, kein Fehler.
-- [ ] Das Kartendetail trägt den Verantwortlichen mit **Name und Art**, nicht nur mit seiner Nummer; `Karte` selbst trägt die Nummer.
-- [ ] Nach einem Reload und nach einem Neustart der WebApi steht derselbe Verantwortliche da.
-- [ ] Eine **unbekannte** Kontributornummer wird mit Befund zurückgewiesen (Grund, Nummer, Kompensationsaktion); nichts wird gespeichert.
-- [ ] Eine **stillgelegte** Kontributornummer wird ebenso mit Befund zurückgewiesen — ein eigener Code, weil es eine andere Lage ist als „gibt es nicht"; nichts wird gespeichert.
-- [ ] **Abgebildete Kontributoren sind wählbar.** Rechenbeispiel: Bestand mit 1 Mensch (aktiv), 1 Agent (aktiv), 1 Abgebildetem (aktiv), 1 Menschen (stillgelegt) → die Auswahl zeigt „niemand" plus 3 Einträge, nicht 1 und nicht 4.
-- [ ] **Ein stillgelegter Verantwortlicher bleibt an der Karte sichtbar** — gedämpft und mit dem Zusatz „stillgelegt" — und ist gleichzeitig **nicht mehr wählbar**. Rechenbeispiel: Karte mit Verantwortlichem `Jan R.`, `Jan R.` wird stillgelegt → die Karte zeigt weiter `Jan R.`, die Auswahlliste enthält ihn nicht mehr. **Das ist die Einlösung der zweiten Hälfte des Fertig-Kriteriums von `I0009`** und wird durch einen E2E-Test belegt, nicht behauptet.
-- [ ] Die Auswahl auf der Kartenseite trägt ein Suchfeld, je Eintrag eine Art-Plakette und den Eintrag „niemand".
-- [ ] Wird „niemand" gewählt, hat die Karte danach keinen Verantwortlichen mehr, und das übersteht einen Reload.
+- [x] `PUT /api/karten/{karteId}` setzt den Verantwortlichen über den Fremdschlüssel `kontributor`; `null` bedeutet „niemand" und ist ein gültiger Wert, kein Fehler.
+- [x] Das Kartendetail trägt den Verantwortlichen mit **Name und Art**, nicht nur mit seiner Nummer; `Karte` selbst trägt die Nummer.
+- [x] Nach einem Reload und nach einem Neustart der WebApi steht derselbe Verantwortliche da.
+- [x] Eine **unbekannte** Kontributornummer wird mit Befund zurückgewiesen (Grund, Nummer, Kompensationsaktion); nichts wird gespeichert.
+- [x] Eine **stillgelegte** Kontributornummer wird ebenso mit Befund zurückgewiesen — ein eigener Code, weil es eine andere Lage ist als „gibt es nicht"; nichts wird gespeichert.
+- [x] **Abgebildete Kontributoren sind wählbar.** Rechenbeispiel: Bestand mit 1 Mensch (aktiv), 1 Agent (aktiv), 1 Abgebildetem (aktiv), 1 Menschen (stillgelegt) → die Auswahl zeigt „niemand" plus 3 Einträge, nicht 1 und nicht 4.
+- [x] **Ein stillgelegter Verantwortlicher bleibt an der Karte sichtbar** — gedämpft und mit dem Zusatz „stillgelegt" — und ist gleichzeitig **nicht mehr wählbar**. Rechenbeispiel: Karte mit Verantwortlichem `Jan R.`, `Jan R.` wird stillgelegt → die Karte zeigt weiter `Jan R.`, die Auswahlliste enthält ihn nicht mehr. **Das ist die Einlösung der zweiten Hälfte des Fertig-Kriteriums von `I0009`** und wird durch einen E2E-Test belegt, nicht behauptet.
+- [x] Die Auswahl auf der Kartenseite trägt ein Suchfeld, je Eintrag eine Art-Plakette und den Eintrag „niemand".
+- [x] Wird „niemand" gewählt, hat die Karte danach keinen Verantwortlichen mehr, und das übersteht einen Reload.
 
 ### Etiketten (F0043)
 
-- [ ] `PUT /api/karten/{karteId}/etiketten` setzt die **ganze** Liste: die übergebene Liste ist danach exakt die Liste der Karte, gleichgültig wie sie vorher aussah. Rechenbeispiel: Karte mit `Import`, `Doku` → `PUT` mit `["Doku", "Refactoring"]` → die Karte trägt `Doku` und `Refactoring`, nicht drei Etiketten.
-- [ ] Eine leere Liste ist gültig und nimmt der Karte alle Etiketten.
-- [ ] Die Etiketten stehen nach einem Reload und nach einem Neustart der WebApi unverändert da.
-- [ ] Die Etiketten reisen **im Kartendetail**, nicht an `Karte`: `GET /api/boards/{boardId}` bleibt unverändert und bekommt keine Etikettenliste je Karte.
-- [ ] Das Kartendetail trägt die **Etikettvorschläge des Boards** mit der Zahl der Karten je Text. Rechenbeispiel: auf dem Board tragen 7 Karten das Etikett `Refactoring` und 1 Karte `Refaktorierung` → die Vorschläge nennen `Refactoring · 7` und `Refaktorierung · 1`.
-- [ ] Vorschläge stammen **nur** aus dem Board der Karte; Etiketten anderer Boards erscheinen nicht.
-- [ ] **Ein Etikett, das keine Karte mehr trägt, ist aus dem Bestand fort.** Rechenbeispiel: zwei Karten desselben Boards, nur Karte `A` trägt `Import` → `Import` von `A` entfernen → die Vorschläge an Karte `B` enthalten `Import` nicht mehr. Kein Aufräumschritt und kein Pflegeschirm.
-- [ ] Ein **leerer** Etikettentext, ein **zu langer** und ein **doppelter** Text (nach Normalisierung der Randleerzeichen) werden mit Befund zurückgewiesen; nichts wird gespeichert.
-- [ ] Zwei Texte, die sich nur in ihrer Schreibweise unterscheiden (`Refactoring`, `Refaktorierung`), sind **zwei** Etiketten und kein Befund — die Vervollständigung macht abweichende Schreibweisen sichtbar, sie verhindert sie nicht.
-- [ ] Auf der Kartenseite lässt sich ein Etikett tippen und anlegen, eines aus der Vorschlagsliste übernehmen und eines über `✕` entfernen; die Vorschlagsliste zeigt die Kartenzahl je Text und den Eintrag „… neu anlegen".
-- [ ] Ein zweiter Lauf der Migration `011` auf einer bestehenden Datei lässt Schema **und** Daten unverändert.
+- [x] `PUT /api/karten/{karteId}/etiketten` setzt die **ganze** Liste: die übergebene Liste ist danach exakt die Liste der Karte, gleichgültig wie sie vorher aussah. Rechenbeispiel: Karte mit `Import`, `Doku` → `PUT` mit `["Doku", "Refactoring"]` → die Karte trägt `Doku` und `Refactoring`, nicht drei Etiketten.
+- [x] Eine leere Liste ist gültig und nimmt der Karte alle Etiketten.
+- [x] Die Etiketten stehen nach einem Reload und nach einem Neustart der WebApi unverändert da.
+- [x] Die Etiketten reisen **im Kartendetail**, nicht an `Karte`: `GET /api/boards/{boardId}` bleibt unverändert und bekommt keine Etikettenliste je Karte.
+- [x] Das Kartendetail trägt die **Etikettvorschläge des Boards** mit der Zahl der Karten je Text. Rechenbeispiel: auf dem Board tragen 7 Karten das Etikett `Refactoring` und 1 Karte `Refaktorierung` → die Vorschläge nennen `Refactoring · 7` und `Refaktorierung · 1`.
+- [x] Vorschläge stammen **nur** aus dem Board der Karte; Etiketten anderer Boards erscheinen nicht.
+- [x] **Ein Etikett, das keine Karte mehr trägt, ist aus dem Bestand fort.** Rechenbeispiel: zwei Karten desselben Boards, nur Karte `A` trägt `Import` → `Import` von `A` entfernen → die Vorschläge an Karte `B` enthalten `Import` nicht mehr. Kein Aufräumschritt und kein Pflegeschirm.
+- [x] Ein **leerer** Etikettentext, ein **zu langer** und ein **doppelter** Text (nach Normalisierung der Randleerzeichen) werden mit Befund zurückgewiesen; nichts wird gespeichert.
+- [x] Zwei Texte, die sich nur in ihrer Schreibweise unterscheiden (`Refactoring`, `Refaktorierung`), sind **zwei** Etiketten und kein Befund — die Vervollständigung macht abweichende Schreibweisen sichtbar, sie verhindert sie nicht.
+- [x] Auf der Kartenseite lässt sich ein Etikett tippen und anlegen, eines aus der Vorschlagsliste übernehmen und eines über `✕` entfernen; die Vorschlagsliste zeigt die Kartenzahl je Text und den Eintrag „… neu anlegen".
+- [x] Ein zweiter Lauf der Migration `011` auf einer bestehenden Datei lässt Schema **und** Daten unverändert.
 
 ### Fehlerantworten für Agenten (F0040–F0043)
 
-- [ ] Alle drei neuen Routen antworten bei unbekannter `karteId` mit HTTP 404 **und Rumpf**; keine liefert einen leeren Körper.
-- [ ] `PUT /api/karten/{karteId}` und `PUT …/etiketten` antworten bei ungültiger Eingabe mit HTTP 400 **und Rumpf**.
-- [ ] Der Vertragstest über alle registrierten Routen bleibt grün: alle drei neuen Routen werden von ihm abgerufen und sind nicht als ungeprüft übrig (`FehlervertragTests.cs:53-56`).
-- [ ] Jede Kompensation nennt einen Aufruf, den ein Agent ohne weitere Auskunft absetzen kann — bei der boardlosen Kartenroute also einen Weg, der bei `GET /api/boards` beginnt.
+- [x] Alle drei neuen Routen antworten bei unbekannter `karteId` mit HTTP 404 **und Rumpf**; keine liefert einen leeren Körper.
+- [x] `PUT /api/karten/{karteId}` und `PUT …/etiketten` antworten bei ungültiger Eingabe mit HTTP 400 **und Rumpf**.
+- [x] Der Vertragstest über alle registrierten Routen bleibt grün: alle drei neuen Routen werden von ihm abgerufen und sind nicht als ungeprüft übrig (`FehlervertragTests.cs:53-56`).
+- [x] Jede Kompensation nennt einen Aufruf, den ein Agent ohne weitere Auskunft absetzen kann — bei der boardlosen Kartenroute also einen Weg, der bei `GET /api/boards` beginnt.
 
 ### Der grüne Bestand bleibt grün — mit einer benannten Ausnahme
 
-- [ ] **Benannte Ausnahme:** Drei grüne Zusicherungen nageln das `⋯`-Menü auf **genau einen** Eintrag fest und ziehen mit dem zweiten Eintrag mit — `KartenmenueE2ETests.cs:30`, `KarteArchivierenE2ETests.cs:60` und `:104`. Sie erwarten danach **zwei** Einträge in der gezeichneten Reihenfolge („Details öffnen", „Archivieren"). Das ist eine Änderung an grünem Bestand, keine Nebensache; sie steht hier, damit sie nicht als Beifang durchgeht.
-- [ ] `KartenmenueE2ETests` bleibt im Übrigen unverändert grün: Öffnen und Schließen des Menüs, kein Ziehvorgang beim Öffnen, das Menü über den Kartenhälften.
-- [ ] `KarteVerschiebenE2ETests`, `EinfuegelinieE2ETests`, `AbschlussbahnAblageE2ETests` und `KartenzahlImBahnenkopfE2ETests` bleiben **ohne Änderung** grün: sie zählen Karten, Kartenhälften und ziehbare Karten, und weder der Titelverweis noch der zweite Menüeintrag dürfen eine dieser Zählungen verschieben.
-- [ ] `KarteAnlegenE2ETests` bleibt ohne Änderung grün — insbesondere die Zurückweisung „Der Titel darf nicht leer sein." beim Anlegen.
-- [ ] `GekuerzteAbschlussspalteTests`, `BahnenkopfzahlTests`, `AbschlussbahnTests` und `DatumsgruppenTests` bleiben grün, obwohl `Karte` um Felder wächst; die 16 positionalen `new Karte(…)` werden angepasst, ihre Zusicherungen nicht.
-- [ ] Der Fehlervertrag der bestehenden Routen bleibt unverändert: `Nichtgefunden.Karte(boardId, karteId)` behält Wortlaut und Kompensation für die Routen unter dem Board.
+- [x] **Benannte Ausnahme:** Drei grüne Zusicherungen nageln das `⋯`-Menü auf **genau einen** Eintrag fest und ziehen mit dem zweiten Eintrag mit — `KartenmenueE2ETests.cs:30`, `KarteArchivierenE2ETests.cs:60` und `:104`. Sie erwarten danach **zwei** Einträge in der gezeichneten Reihenfolge („Details öffnen", „Archivieren"). Das ist eine Änderung an grünem Bestand, keine Nebensache; sie steht hier, damit sie nicht als Beifang durchgeht.
+- [x] `KartenmenueE2ETests` bleibt im Übrigen unverändert grün: Öffnen und Schließen des Menüs, kein Ziehvorgang beim Öffnen, das Menü über den Kartenhälften.
+- [x] `KarteVerschiebenE2ETests`, `EinfuegelinieE2ETests`, `AbschlussbahnAblageE2ETests` und `KartenzahlImBahnenkopfE2ETests` bleiben **ohne Änderung** grün: sie zählen Karten, Kartenhälften und ziehbare Karten, und weder der Titelverweis noch der zweite Menüeintrag dürfen eine dieser Zählungen verschieben.
+- [x] `KarteAnlegenE2ETests` bleibt ohne Änderung grün — insbesondere die Zurückweisung „Der Titel darf nicht leer sein." beim Anlegen.
+- [x] `GekuerzteAbschlussspalteTests`, `BahnenkopfzahlTests`, `AbschlussbahnTests` und `DatumsgruppenTests` bleiben grün, obwohl `Karte` um Felder wächst; die 16 positionalen `new Karte(…)` werden angepasst, ihre Zusicherungen nicht.
+- [x] Der Fehlervertrag der bestehenden Routen bleibt unverändert: `Nichtgefunden.Karte(boardId, karteId)` behält Wortlaut und Kompensation für die Routen unter dem Board.
 
 ## Betroffene Verzeichnisstruktur
 

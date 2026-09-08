@@ -1,6 +1,6 @@
 ---
 id: R00015
-status: Neu
+status: In Arbeit
 datum: 2026-09-05
 ---
 
@@ -39,47 +39,47 @@ Eine Abschlussspalte wächst monoton: alles, was je fertig wurde, sammelt sich d
 
 ### Das Erledigungsdatum (F0035)
 
-- [ ] `GET /api/boards/{boardId}` liefert je Karte ein Feld `erledigtAm`. Für eine Karte außerhalb der Abschlussspalte ist es `null`.
-- [ ] `PUT /api/boards/{boardId}/karten/{karteId}/lage` mit der `SpalteId` der Abschlussspalte setzt `erledigtAm` auf das heutige Datum im Format `JJJJ-MM-TT`.
-- [ ] Ein zweiter Zug **innerhalb** der Abschlussspalte lässt `erledigtAm` unverändert. Rechenbeispiel: Karte am 1.9. abgelegt, am 3.9. innerhalb der Bahn von Position 4 auf Position 1 gezogen → `erledigtAm` ist weiterhin der 1.9.
-- [ ] Ein Zug **aus** der Abschlussspalte heraus setzt `erledigtAm` auf `null`; in der Tabelle `Karteerledigung` steht danach keine Zeile mehr für diese Karte.
-- [ ] Ein erneuter Eintritt setzt das **heutige** Datum, nicht das frühere. Rechenbeispiel: am 1.9. erledigt, am 2.9. zurück nach „In Arbeit", am 3.9. wieder abgelegt → `erledigtAm` ist der 3.9.
-- [ ] Eine Karte, die über `POST /api/boards/{boardId}/spalten/{spalteId}/karten` direkt in der Abschlussspalte angelegt wird, trägt sofort das heutige Datum.
-- [ ] Karten, die vor dieser Anforderung in einer Abschlussspalte lagen, tragen `erledigtAm: null` — die Migration trägt kein Datum nach.
+- [x] `GET /api/boards/{boardId}` liefert je Karte ein Feld `erledigtAm`. Für eine Karte außerhalb der Abschlussspalte ist es `null`.
+- [x] `PUT /api/boards/{boardId}/karten/{karteId}/lage` mit der `SpalteId` der Abschlussspalte setzt `erledigtAm` auf das heutige Datum im Format `JJJJ-MM-TT`.
+- [x] Ein zweiter Zug **innerhalb** der Abschlussspalte lässt `erledigtAm` unverändert. Rechenbeispiel: Karte am 1.9. abgelegt, am 3.9. innerhalb der Bahn von Position 4 auf Position 1 gezogen → `erledigtAm` ist weiterhin der 1.9.
+- [x] Ein Zug **aus** der Abschlussspalte heraus setzt `erledigtAm` auf `null`; in der Tabelle `Karteerledigung` steht danach keine Zeile mehr für diese Karte.
+- [x] Ein erneuter Eintritt setzt das **heutige** Datum, nicht das frühere. Rechenbeispiel: am 1.9. erledigt, am 2.9. zurück nach „In Arbeit", am 3.9. wieder abgelegt → `erledigtAm` ist der 3.9.
+- [x] Eine Karte, die über `POST /api/boards/{boardId}/spalten/{spalteId}/karten` direkt in der Abschlussspalte angelegt wird, trägt sofort das heutige Datum.
+- [x] Karten, die vor dieser Anforderung in einer Abschlussspalte lagen, tragen `erledigtAm: null` — die Migration trägt kein Datum nach.
 - [ ] Wird ein Zug zurückgewiesen (unmögliche Position, unbekannte Karte, fremde Spalte), ist danach kein Erledigungsdatum geschrieben, gelöscht oder geändert.
-- [ ] Ein zweiter Lauf der Migration auf einer bestehenden Datei lässt Schema **und** Daten unverändert; ein gesetztes Erledigungsdatum bleibt stehen.
-- [ ] Nach einem Neustart der WebApi auf derselben Datei stehen die Erledigungsdaten unverändert da.
+- [x] Ein zweiter Lauf der Migration auf einer bestehenden Datei lässt Schema **und** Daten unverändert; ein gesetztes Erledigungsdatum bleibt stehen.
+- [x] Nach einem Neustart der WebApi auf derselben Datei stehen die Erledigungsdaten unverändert da.
 
 ### Gruppierung und Kürzung der Abschlussspalte (F0036)
 
-- [ ] `GET /api/boards/{boardId}` liefert für eine Abschlussspalte höchstens so viele Karten, wie ihre Anzeigegrenze `N` erlaubt. Rechenbeispiel: `N` = 20 bei 23 erledigten Karten → `karten` enthält 20 Einträge.
-- [ ] Jede Spalte trägt ein Feld `kartenzahl` mit der Zahl **aller** Karten der Spalte. Rechenbeispiel: bei 23 Karten und `N` = 20 ist `kartenzahl` = 23 und `karten.length` = 20; bei einer ungekürzten Spalte sind beide gleich.
-- [ ] Die gelieferten Karten der Abschlussspalte sind die `N` **neuesten**: geordnet nach `erledigtAm` absteigend, Karten ohne Datum zuletzt, innerhalb desselben Datums nach der Position der Spalte. Rechenbeispiel: `N` = 3 und die Karten 3.9., 2.9., 2.9., ohne Datum → geliefert werden die drei mit Datum; die Bestandskarte fällt als Erste heraus.
-- [ ] Randwerte: 0 Karten → leere Liste, `kartenzahl` 0; `N-1` Karten → ungekürzt; genau `N` → ungekürzt, `kartenzahl` = `N`; `N+1` → gekürzt auf `N`, `kartenzahl` = `N+1`.
-- [ ] `PUT /api/boards/{boardId}/karten/{karteId}/lage` liefert die Spalten in derselben gekürzten Gestalt wie `GET /api/boards/{boardId}` — es gibt nicht zwei Antwortgestalten für dieselbe Sache.
-- [ ] Eine Spalte **ohne** Abschlussmarkierung wird nie gekürzt, gleich wie viele Karten sie trägt.
-- [ ] Ein Zug bleibt gegen den **ganzen** Bestand geprüft: eine Position, die innerhalb der ungekürzten Zielspalte liegt, wird nicht deshalb zurückgewiesen, weil die gekürzte Liste kürzer ist. Rechenbeispiel: 23 Karten in „Erledigt", Zug auf Position 22 → keine Zurückweisung.
-- [ ] In der Oberfläche steht über jeder Datumsgruppe der Abschlussbahn eine Überschrift mit der Zahl der Karten dieser Gruppe; die Summe der Gruppenzahlen ist die Zahl der gezeigten Karten. Rechenbeispiel: „Heute · 3" und „Gestern · 5" → acht Karten in der Bahn.
-- [ ] Karten ohne Erledigungsdatum stehen unter einer eigenen, **letzten** Gruppe.
-- [ ] Bei eingeschalteter Kartenzahl zeigt der Kopf der Abschlussbahn `N+`, solange gekürzt wird, sonst die genaue Zahl. Rechenbeispiel: 23 Karten bei `N` = 20 → `20+`; 20 Karten bei `N` = 20 → `20`; 7 Karten → `7`.
-- [ ] Bei ausgeschalteter Kartenzahl bleibt die Stelle im Bahnenkopf leer — auch bei gekürzter Bahn; kein `+`, kein Platzhalter.
-- [ ] Andere Bahnen bekommen weder Datumsüberschriften noch die Form `N+`; ihre Karten stehen unverändert in Positionsreihenfolge. Die bestehenden Zusagen aus `R00009` gelten unverändert — auf einem Board mit drei ungekürzten Bahnen und vier Karten stehen weiterhin die exakten Zahlen `3`, `1`, `0`.
-- [ ] Ein laufender Zug über der Abschlussbahn zeigt **keine** Kartenhälften und **keine** Einfügelinie; die Bahn nimmt ganzflächig an, und das Ablegen bringt die Karte an Position 1.
-- [ ] In allen anderen Bahnen bleiben Kartenhälften, Einfügelinie und Zielposition unverändert (`R00008`).
+- [x] `GET /api/boards/{boardId}` liefert für eine Abschlussspalte höchstens so viele Karten, wie ihre Anzeigegrenze `N` erlaubt. Rechenbeispiel: `N` = 20 bei 23 erledigten Karten → `karten` enthält 20 Einträge.
+- [x] Jede Spalte trägt ein Feld `kartenzahl` mit der Zahl **aller** Karten der Spalte. Rechenbeispiel: bei 23 Karten und `N` = 20 ist `kartenzahl` = 23 und `karten.length` = 20; bei einer ungekürzten Spalte sind beide gleich.
+- [x] Die gelieferten Karten der Abschlussspalte sind die `N` **neuesten**: geordnet nach `erledigtAm` absteigend, Karten ohne Datum zuletzt, innerhalb desselben Datums nach der Position der Spalte. Rechenbeispiel: `N` = 3 und die Karten 3.9., 2.9., 2.9., ohne Datum → geliefert werden die drei mit Datum; die Bestandskarte fällt als Erste heraus.
+- [x] Randwerte: 0 Karten → leere Liste, `kartenzahl` 0; `N-1` Karten → ungekürzt; genau `N` → ungekürzt, `kartenzahl` = `N`; `N+1` → gekürzt auf `N`, `kartenzahl` = `N+1`.
+- [x] `PUT /api/boards/{boardId}/karten/{karteId}/lage` liefert die Spalten in derselben gekürzten Gestalt wie `GET /api/boards/{boardId}` — es gibt nicht zwei Antwortgestalten für dieselbe Sache.
+- [x] Eine Spalte **ohne** Abschlussmarkierung wird nie gekürzt, gleich wie viele Karten sie trägt.
+- [x] Ein Zug bleibt gegen den **ganzen** Bestand geprüft: eine Position, die innerhalb der ungekürzten Zielspalte liegt, wird nicht deshalb zurückgewiesen, weil die gekürzte Liste kürzer ist. Rechenbeispiel: 23 Karten in „Erledigt", Zug auf Position 22 → keine Zurückweisung.
+- [x] In der Oberfläche steht über jeder Datumsgruppe der Abschlussbahn eine Überschrift mit der Zahl der Karten dieser Gruppe; die Summe der Gruppenzahlen ist die Zahl der gezeigten Karten. Rechenbeispiel: „Heute · 3" und „Gestern · 5" → acht Karten in der Bahn.
+- [x] Karten ohne Erledigungsdatum stehen unter einer eigenen, **letzten** Gruppe.
+- [x] Bei eingeschalteter Kartenzahl zeigt der Kopf der Abschlussbahn `N+`, solange gekürzt wird, sonst die genaue Zahl. Rechenbeispiel: 23 Karten bei `N` = 20 → `20+`; 20 Karten bei `N` = 20 → `20`; 7 Karten → `7`.
+- [x] Bei ausgeschalteter Kartenzahl bleibt die Stelle im Bahnenkopf leer — auch bei gekürzter Bahn; kein `+`, kein Platzhalter.
+- [x] Andere Bahnen bekommen weder Datumsüberschriften noch die Form `N+`; ihre Karten stehen unverändert in Positionsreihenfolge. Die bestehenden Zusagen aus `R00009` gelten unverändert — auf einem Board mit drei ungekürzten Bahnen und vier Karten stehen weiterhin die exakten Zahlen `3`, `1`, `0`.
+- [x] Ein laufender Zug über der Abschlussbahn zeigt **keine** Kartenhälften und **keine** Einfügelinie; die Bahn nimmt ganzflächig an, und das Ablegen bringt die Karte an Position 1.
+- [x] In allen anderen Bahnen bleiben Kartenhälften, Einfügelinie und Zielposition unverändert (`R00008`).
 
 ### Ältere Karten erreichbar (F0037)
 
-- [ ] `GET /api/boards/{boardId}/spalten/{spalteId}/karten` antwortet mit HTTP 200 und **allen** Karten der Spalte in Anzeigereihenfolge — auch dann, wenn `GET /api/boards/{boardId}` dieselbe Spalte gekürzt liefert. Rechenbeispiel: 23 erledigte Karten bei `N` = 20 → 23 Karten.
-- [ ] Jede so gelieferte Karte trägt ihr `erledigtAm`.
-- [ ] Die Adresse gilt für **jede** Spalte, nicht nur für Abschlussspalten.
-- [ ] Auf eine unbekannte `boardId` oder eine unbekannte bzw. fremde `spalteId` antwortet die Adresse mit HTTP 404 **und einem Rumpf**: mindestens ein Befund mit nichtleerem `code`, einer `meldung`, welche die aufgerufenen Nummern nennt, und einer `kompensation`, die einen ausführbaren nächsten Aufruf enthält.
-- [ ] Der Vertragstest über alle registrierten Routen bleibt grün: die neue Route wird von ihm abgerufen und ist nicht als ungeprüft übrig.
-- [ ] Ist die Abschlussbahn gekürzt, steht in der **Bahnenfläche** ein Hinweis, dass nur die neuesten gezeigt werden, und darunter das Bedienelement „Ältere nachladen".
-- [ ] Ein Klick darauf zeigt alle Karten der Bahn, ohne dass die Seite neu geladen wird; danach sind Hinweis und Bedienelement fort, und der Bahnenkopf zeigt die genaue Zahl statt `N+`. Rechenbeispiel: `20+` und 20 sichtbare Karten → nach dem Klick `23` und 23 sichtbare Karten.
-- [ ] Ist die Bahn nicht gekürzt, gibt es weder Hinweis noch Bedienelement.
-- [ ] Der Fuß der Abschlussbahn trägt weiterhin „+ Karte" — das Nachladen sitzt in der Bahnenfläche und verdrängt das Anlegen nicht.
-- [ ] Nach einem Reload ist die Bahn wieder gekürzt: das Nachladen ist eine Handlung, kein gespeicherter Zustand.
-- [ ] Ist die WebApi beim Nachladen nicht erreichbar, erscheint eine lesbare Ausfallmeldung statt einer Ausnahmeseite; das Board bleibt bedienbar.
+- [x] `GET /api/boards/{boardId}/spalten/{spalteId}/karten` antwortet mit HTTP 200 und **allen** Karten der Spalte in Anzeigereihenfolge — auch dann, wenn `GET /api/boards/{boardId}` dieselbe Spalte gekürzt liefert. Rechenbeispiel: 23 erledigte Karten bei `N` = 20 → 23 Karten.
+- [x] Jede so gelieferte Karte trägt ihr `erledigtAm`.
+- [x] Die Adresse gilt für **jede** Spalte, nicht nur für Abschlussspalten.
+- [x] Auf eine unbekannte `boardId` oder eine unbekannte bzw. fremde `spalteId` antwortet die Adresse mit HTTP 404 **und einem Rumpf**: mindestens ein Befund mit nichtleerem `code`, einer `meldung`, welche die aufgerufenen Nummern nennt, und einer `kompensation`, die einen ausführbaren nächsten Aufruf enthält.
+- [x] Der Vertragstest über alle registrierten Routen bleibt grün: die neue Route wird von ihm abgerufen und ist nicht als ungeprüft übrig.
+- [x] Ist die Abschlussbahn gekürzt, steht in der **Bahnenfläche** ein Hinweis, dass nur die neuesten gezeigt werden, und darunter das Bedienelement „Ältere nachladen".
+- [x] Ein Klick darauf zeigt alle Karten der Bahn, ohne dass die Seite neu geladen wird; danach sind Hinweis und Bedienelement fort, und der Bahnenkopf zeigt die genaue Zahl statt `N+`. Rechenbeispiel: `20+` und 20 sichtbare Karten → nach dem Klick `23` und 23 sichtbare Karten.
+- [x] Ist die Bahn nicht gekürzt, gibt es weder Hinweis noch Bedienelement.
+- [x] Der Fuß der Abschlussbahn trägt weiterhin „+ Karte" — das Nachladen sitzt in der Bahnenfläche und verdrängt das Anlegen nicht.
+- [x] Nach einem Reload ist die Bahn wieder gekürzt: das Nachladen ist eine Handlung, kein gespeicherter Zustand.
+- [x] Ist die WebApi beim Nachladen nicht erreichbar, erscheint eine lesbare Ausfallmeldung statt einer Ausnahmeseite; das Board bleibt bedienbar.
 
 ## Betroffene Verzeichnisstruktur
 

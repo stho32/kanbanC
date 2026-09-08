@@ -1,6 +1,6 @@
 ---
 id: R00016
-status: Neu
+status: In Arbeit
 datum: 2026-09-05
 ---
 
@@ -43,60 +43,60 @@ Bis heute kann eine Karte das Board nur verlassen, indem sie in die Abschlussspa
 
 ### Archivieren und Zurückholen über die API (F0038)
 
-- [ ] `PUT /api/boards/{boardId}/karten/{karteId}/archivierung` mit dem Rumpf `{"istArchiviert": true}` antwortet mit HTTP 200 und **den Spalten des Boards** — dieselbe Antwortgestalt wie `PUT …/lage`, weil dieselbe Wirkung eintritt.
-- [ ] Nach dem Archivieren fehlt die Karte in `GET /api/boards/{boardId}`. Rechenbeispiel: Spalte mit den Karten `A`(1), `B`(2), `C`(3) → nach dem Archivieren von `B` liefert die Spalte zwei Karten.
-- [ ] Die verbleibenden Karten der Spalte tragen lückenlose Positionen `1..n`. Rechenbeispiel: `A`(1), `B`(2), `C`(3), `B` archiviert → `A` hat Position 1, `C` hat Position 2 (nicht 3).
-- [ ] Die Karten anderer Spalten bleiben in Spalte und Position unverändert.
-- [ ] `PUT …/archivierung` mit `{"istArchiviert": false}` holt die Karte zurück; sie steht danach wieder in ihrer **alten** Spalte, und die Positionen der Spalte sind erneut lückenlos.
-- [ ] Ein zweites Archivieren derselben, bereits archivierten Karte ist kein Fehler und ändert nichts; ein Zurückholen einer nicht archivierten Karte ebenso. Die Route ist ein Umschalter auf einen Zielzustand, kein Ereignis.
-- [ ] Eine **unbekannte** `karteId` beantwortet die Route mit HTTP 404 **und einem Rumpf**: mindestens ein Befund mit nichtleerem `code`, einer `meldung`, welche die aufgerufenen Nummern nennt, und einer `kompensation` mit einem ausführbaren nächsten Aufruf.
-- [ ] Eine Karte, die es gibt, aber zu einem **anderen** Board gehört, beantwortet die Route ebenso mit HTTP 404 und einem Befund, der das tatsächliche Board der Karte nennt.
-- [ ] Der Vertragstest über alle registrierten Routen bleibt grün: die neue Route wird von ihm abgerufen und ist nicht als ungeprüft übrig.
-- [ ] Eine zurückgewiesene Archivierung schreibt nichts: nach einem 404 sind Positionen, Spaltenzugehörigkeit und Archivstand aller Karten unverändert.
-- [ ] Das Erledigungsdatum bleibt unberührt: eine Karte in der Abschlussspalte behält `erledigtAm` beim Archivieren und beim Zurückholen. Archivieren ist kein Austritt aus der Abschlussspalte.
-- [ ] Ein zweiter Lauf der Migration auf einer bestehenden Datei lässt Schema **und** Daten unverändert; ein gesetzter Archivstand bleibt stehen.
-- [ ] Nach einem Neustart der WebApi auf derselben Datei ist die archivierte Karte weiterhin archiviert.
+- [x] `PUT /api/boards/{boardId}/karten/{karteId}/archivierung` mit dem Rumpf `{"istArchiviert": true}` antwortet mit HTTP 200 und **den Spalten des Boards** — dieselbe Antwortgestalt wie `PUT …/lage`, weil dieselbe Wirkung eintritt.
+- [x] Nach dem Archivieren fehlt die Karte in `GET /api/boards/{boardId}`. Rechenbeispiel: Spalte mit den Karten `A`(1), `B`(2), `C`(3) → nach dem Archivieren von `B` liefert die Spalte zwei Karten.
+- [x] Die verbleibenden Karten der Spalte tragen lückenlose Positionen `1..n`. Rechenbeispiel: `A`(1), `B`(2), `C`(3), `B` archiviert → `A` hat Position 1, `C` hat Position 2 (nicht 3).
+- [x] Die Karten anderer Spalten bleiben in Spalte und Position unverändert.
+- [x] `PUT …/archivierung` mit `{"istArchiviert": false}` holt die Karte zurück; sie steht danach wieder in ihrer **alten** Spalte, und die Positionen der Spalte sind erneut lückenlos.
+- [x] Ein zweites Archivieren derselben, bereits archivierten Karte ist kein Fehler und ändert nichts; ein Zurückholen einer nicht archivierten Karte ebenso. Die Route ist ein Umschalter auf einen Zielzustand, kein Ereignis.
+- [x] Eine **unbekannte** `karteId` beantwortet die Route mit HTTP 404 **und einem Rumpf**: mindestens ein Befund mit nichtleerem `code`, einer `meldung`, welche die aufgerufenen Nummern nennt, und einer `kompensation` mit einem ausführbaren nächsten Aufruf.
+- [x] Eine Karte, die es gibt, aber zu einem **anderen** Board gehört, beantwortet die Route ebenso mit HTTP 404 und einem Befund, der das tatsächliche Board der Karte nennt.
+- [x] Der Vertragstest über alle registrierten Routen bleibt grün: die neue Route wird von ihm abgerufen und ist nicht als ungeprüft übrig.
+- [x] Eine zurückgewiesene Archivierung schreibt nichts: nach einem 404 sind Positionen, Spaltenzugehörigkeit und Archivstand aller Karten unverändert.
+- [x] Das Erledigungsdatum bleibt unberührt: eine Karte in der Abschlussspalte behält `erledigtAm` beim Archivieren und beim Zurückholen. Archivieren ist kein Austritt aus der Abschlussspalte.
+- [x] Ein zweiter Lauf der Migration auf einer bestehenden Datei lässt Schema **und** Daten unverändert; ein gesetzter Archivstand bleibt stehen.
+- [x] Nach einem Neustart der WebApi auf derselben Datei ist die archivierte Karte weiterhin archiviert.
 
 ### Die archivierte Karte ist kein Bestand mehr (F0038)
 
 - [ ] Die Antwort von `PUT /api/boards/{boardId}/karten/{karteId}/lage` enthält die archivierte Karte nicht.
-- [ ] `GET /api/boards/{boardId}/spalten/{spalteId}/karten` **ohne** Parameter enthält die archivierte Karte nicht.
-- [ ] Das Feld `kartenzahl` einer Spalte zählt nur die aktiven Karten. Rechenbeispiel: Spalte mit 3 Karten, eine archiviert → `kartenzahl` ist 2.
-- [ ] Bei eingeschalteter Kartenzahl zeigt der Bahnenkopf die Zahl der aktiven Karten. Rechenbeispiel: Bahn mit 3 Karten zeigt `3`; nach dem Archivieren einer Karte zeigt sie `2`.
-- [ ] Eine Zielposition wird gegen die **aktiven** Karten der Zielspalte geprüft. Rechenbeispiel: Zielspalte mit 3 Karten, eine davon archiviert → ein Zug auf Position 3 wird angenommen, ein Zug auf Position 4 zurückgewiesen.
-- [ ] Eine neu angelegte Karte bekommt die nächste Position **nach der letzten aktiven** Karte. Rechenbeispiel: Spalte mit `A`(1), `B`(2), `B` archiviert und die Spalte auf `A`(1) verdichtet → die neue Karte bekommt Position 2.
-- [ ] Eine archivierte Karte ist kein gültiges Zugziel und kein Zugobjekt: `PUT …/lage` auf eine archivierte Karte oder mit ihr als Bezugspunkt verhält sich wie bei einer nicht vorhandenen Karte.
-- [ ] Die Kürzung der Abschlussspalte rechnet auf den aktiven Karten. Rechenbeispiel: 21 erledigte Karten bei Anzeigegrenze 20, eine archiviert → die Bahn ist nicht mehr gekürzt und der Kopf zeigt `20` statt `20+`.
+- [x] `GET /api/boards/{boardId}/spalten/{spalteId}/karten` **ohne** Parameter enthält die archivierte Karte nicht.
+- [x] Das Feld `kartenzahl` einer Spalte zählt nur die aktiven Karten. Rechenbeispiel: Spalte mit 3 Karten, eine archiviert → `kartenzahl` ist 2.
+- [x] Bei eingeschalteter Kartenzahl zeigt der Bahnenkopf die Zahl der aktiven Karten. Rechenbeispiel: Bahn mit 3 Karten zeigt `3`; nach dem Archivieren einer Karte zeigt sie `2`.
+- [x] Eine Zielposition wird gegen die **aktiven** Karten der Zielspalte geprüft. Rechenbeispiel: Zielspalte mit 3 Karten, eine davon archiviert → ein Zug auf Position 3 wird angenommen, ein Zug auf Position 4 zurückgewiesen.
+- [x] Eine neu angelegte Karte bekommt die nächste Position **nach der letzten aktiven** Karte. Rechenbeispiel: Spalte mit `A`(1), `B`(2), `B` archiviert und die Spalte auf `A`(1) verdichtet → die neue Karte bekommt Position 2.
+- [x] Eine archivierte Karte ist kein gültiges Zugziel und kein Zugobjekt: `PUT …/lage` auf eine archivierte Karte oder mit ihr als Bezugspunkt verhält sich wie bei einer nicht vorhandenen Karte.
+- [x] Die Kürzung der Abschlussspalte rechnet auf den aktiven Karten. Rechenbeispiel: 21 erledigte Karten bei Anzeigegrenze 20, eine archiviert → die Bahn ist nicht mehr gekürzt und der Kopf zeigt `20` statt `20+`.
 
 ### Archivieren in der Oberfläche (F0038)
 
-- [ ] Jede Karte auf dem Board trägt in ihrer Kopfzeile einen `⋯`-Schalter.
+- [x] Jede Karte auf dem Board trägt in ihrer Kopfzeile einen `⋯`-Schalter.
 - [ ] Ein Klick darauf öffnet ein Menü mit genau einem Eintrag „Archivieren" und einer Erläuterung darunter; ein zweiter Klick auf den Schalter schließt es.
-- [ ] Der Klick auf den `⋯`-Schalter löst **keinen** Ziehvorgang der Karte aus; das Menü liegt sichtbar über der Karte und über den beiden Ablagezonen, nicht dahinter.
+- [x] Der Klick auf den `⋯`-Schalter löst **keinen** Ziehvorgang der Karte aus; das Menü liegt sichtbar über der Karte und über den beiden Ablagezonen, nicht dahinter.
 - [ ] Ein Klick auf „Archivieren" nimmt die Karte aus ihrer Bahn, ohne dass die Seite neu geladen wird; die übrigen Bahnen werden aus derselben Antwort neu gezeichnet, ein zweiter Abruf findet nicht statt.
-- [ ] Nach einem Reload ist die Karte weiterhin fort.
-- [ ] Ist die WebApi beim Archivieren nicht erreichbar, erscheint eine lesbare Ausfallmeldung statt einer Ausnahmeseite; das Board bleibt bedienbar und die Karte steht sichtbar an ihrer alten Stelle.
-- [ ] Die Karte bleibt ziehbar wie zuvor: Kartenhälften, Einfügelinie und Zielposition verhalten sich unverändert (`R00008`).
+- [x] Nach einem Reload ist die Karte weiterhin fort.
+- [x] Ist die WebApi beim Archivieren nicht erreichbar, erscheint eine lesbare Ausfallmeldung statt einer Ausnahmeseite; das Board bleibt bedienbar und die Karte steht sichtbar an ihrer alten Stelle.
+- [x] Die Karte bleibt ziehbar wie zuvor: Kartenhälften, Einfügelinie und Zielposition verhalten sich unverändert (`R00008`).
 
 ### Das Archiv der Spalte (F0039)
 
-- [ ] `GET /api/boards/{boardId}/spalten/{spalteId}/karten?archiviert=true` antwortet mit HTTP 200 und **genau** den archivierten Karten dieser Spalte, in Anzeigereihenfolge.
-- [ ] Dieselbe Adresse **ohne** Parameter liefert unverändert nur die aktiven Karten — vollständig und ungekürzt, wie seit `R00015`.
-- [ ] `?archiviert=false` ist gleichbedeutend mit dem Weglassen des Parameters.
-- [ ] Hat eine Spalte keine archivierten Karten, antwortet die Adresse mit HTTP 200 und einer leeren Liste — nicht mit 404.
-- [ ] Ein unlesbarer Wert (`?archiviert=vielleicht`) wird mit HTTP 400 **und einem Rumpf** zurückgewiesen: Code, Meldung mit dem aufgerufenen Wert, und eine Kompensation, die **diese** Adresse nennt — nicht `GET /api/boards`.
-- [ ] Der bestehende 400-Fall an `GET /api/boards?archiviert=…` nennt weiterhin `GET /api/boards` in seiner Kompensation. Jede der beiden Adressen erklärt sich selbst.
-- [ ] Eine unbekannte `boardId` oder eine unbekannte bzw. fremde `spalteId` beantwortet die Adresse weiterhin mit HTTP 404 und Rumpf — mit und ohne Parameter.
-- [ ] Die archivierten Karten tragen ihr `erledigtAm` wie die aktiven.
-- [ ] Rundlauf: archivieren → die Karte steht im Archiv der Spalte und nicht im Board → zurückholen → sie steht wieder im Board an lückenloser Position und nicht mehr im Archiv.
+- [x] `GET /api/boards/{boardId}/spalten/{spalteId}/karten?archiviert=true` antwortet mit HTTP 200 und **genau** den archivierten Karten dieser Spalte, in Anzeigereihenfolge.
+- [x] Dieselbe Adresse **ohne** Parameter liefert unverändert nur die aktiven Karten — vollständig und ungekürzt, wie seit `R00015`.
+- [x] `?archiviert=false` ist gleichbedeutend mit dem Weglassen des Parameters.
+- [x] Hat eine Spalte keine archivierten Karten, antwortet die Adresse mit HTTP 200 und einer leeren Liste — nicht mit 404.
+- [x] Ein unlesbarer Wert (`?archiviert=vielleicht`) wird mit HTTP 400 **und einem Rumpf** zurückgewiesen: Code, Meldung mit dem aufgerufenen Wert, und eine Kompensation, die **diese** Adresse nennt — nicht `GET /api/boards`.
+- [x] Der bestehende 400-Fall an `GET /api/boards?archiviert=…` nennt weiterhin `GET /api/boards` in seiner Kompensation. Jede der beiden Adressen erklärt sich selbst.
+- [x] Eine unbekannte `boardId` oder eine unbekannte bzw. fremde `spalteId` beantwortet die Adresse weiterhin mit HTTP 404 und Rumpf — mit und ohne Parameter.
+- [x] Die archivierten Karten tragen ihr `erledigtAm` wie die aktiven.
+- [x] Rundlauf: archivieren → die Karte steht im Archiv der Spalte und nicht im Board → zurückholen → sie steht wieder im Board an lückenloser Position und nicht mehr im Archiv.
 
 ### Der grüne Bestand bleibt grün
 
-- [ ] `GekuerzteAbschlussspalteTests` bleibt **ohne Änderung** grün — alle acht Zusicherungen auf `Kartenzahl` und `Karten.Count`.
-- [ ] `KartenzahlImBahnenkopfE2ETests` und `BahnenkopfzahlTests` bleiben ohne Änderung grün; die exakten Zahlen (`3`, `1`, `0`) stehen weiterhin.
-- [ ] `KarteVerschiebenE2ETests`, `EinfuegelinieE2ETests` und `AbschlussbahnAblageE2ETests` bleiben ohne Änderung grün: sie zählen Karten, Kartenhälften und ziehbare Karten, und die neue Kopfzeile darf keine dieser Zählungen verschieben.
-- [ ] `Abschlussbahn.Gekuerzt` bleibt unverändert: es gibt keinen Archivbegriff in der Kürzung.
-- [ ] Die Aufrufstelle `BoardEndpunkte.LadeAlleBoards` verhält sich unverändert, obwohl `Archivfilter` die Route nun als Parameter bekommt.
+- [x] `GekuerzteAbschlussspalteTests` bleibt **ohne Änderung** grün — alle acht Zusicherungen auf `Kartenzahl` und `Karten.Count`.
+- [x] `KartenzahlImBahnenkopfE2ETests` und `BahnenkopfzahlTests` bleiben ohne Änderung grün; die exakten Zahlen (`3`, `1`, `0`) stehen weiterhin.
+- [x] `KarteVerschiebenE2ETests`, `EinfuegelinieE2ETests` und `AbschlussbahnAblageE2ETests` bleiben ohne Änderung grün: sie zählen Karten, Kartenhälften und ziehbare Karten, und die neue Kopfzeile darf keine dieser Zählungen verschieben.
+- [x] `Abschlussbahn.Gekuerzt` bleibt unverändert: es gibt keinen Archivbegriff in der Kürzung.
+- [x] Die Aufrufstelle `BoardEndpunkte.LadeAlleBoards` verhält sich unverändert, obwohl `Archivfilter` die Route nun als Parameter bekommt.
 
 ## Betroffene Verzeichnisstruktur
 
