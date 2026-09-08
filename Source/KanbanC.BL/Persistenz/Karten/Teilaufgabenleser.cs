@@ -20,6 +20,34 @@ internal static class Teilaufgabenleser
         return zeilen.Select(AlsTeilaufgabe).ToList();
     }
 
+    // Alle Teilaufgaben des Boards in **einer** Abfrage, je KarteId ihre Liste: 431 Karten kosten
+    // eine Abfrage und nicht 431. Die Ordnung innerhalb einer Karte bleibt dieselbe wie oben.
+    public static IReadOnlyDictionary<long, IReadOnlyList<Teilaufgabe>> LiesTeilaufgabenDesBoards(IDbConnection verbindung, IDbTransaction? transaktion, long boardId)
+    {
+        var zeilen = verbindung.Query<Boardteilaufgabenzeile>(@"
+            SELECT t.Karte, t.TeilaufgabeId, t.Text, t.Position, t.Abgehakt
+              FROM Teilaufgabe t
+              JOIN Karte k ON k.KarteId = t.Karte
+              JOIN Spalte s ON s.SpalteId = k.Spalte
+             WHERE s.Board = @BoardId
+             ORDER BY t.Karte, t.Position, t.TeilaufgabeId", new { BoardId = boardId }, transaktion);
+
+        var teilaufgabenJeKarte = new Dictionary<long, IReadOnlyList<Teilaufgabe>>(); // stil-check: C11 Zuordnung von KarteId zu Liste, kein Domaenenbestand
+        foreach (var gruppe in zeilen.GroupBy(zeile => zeile.Karte))
+        {
+            teilaufgabenJeKarte[gruppe.Key] = gruppe.Select(AlsBoardteilaufgabe).ToList();
+        }
+
+        return teilaufgabenJeKarte;
+    }
+
+    private static Teilaufgabe AlsBoardteilaufgabe(Boardteilaufgabenzeile zeile)
+    {
+        return AlsTeilaufgabe(new Teilaufgabenzeile(zeile.TeilaufgabeId, zeile.Text, zeile.Position, zeile.Abgehakt));
+    }
+
+    private sealed record Boardteilaufgabenzeile(long Karte, long TeilaufgabeId, string Text, long Position, long Abgehakt);
+
     // Die Zeile führt Abgehakt als long und nicht als bool: Microsoft.Data.Sqlite meldet für die
     // INTEGER-Spalte den Typ Int64, und Dapper findet dann keinen passenden Konstruktor (belegt
     // in SqliteWahrheitswertProbeTests). Die Wandlung steht deshalb sichtbar hier.

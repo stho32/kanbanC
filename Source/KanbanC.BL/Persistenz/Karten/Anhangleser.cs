@@ -32,6 +32,56 @@ internal static class Anhangleser
         return zeilen.Select(AlsAnhang).ToList();
     }
 
+    // Alle Anhänge des Boards in **einer** Abfrage, je KarteId ihre Liste: 431 Karten kosten eine
+    // Abfrage und nicht 431. **Nur die Metadaten** — die Bytes liegen auf der Platte und holt der
+    // Aufrufer über die bestehende Anhangroute; sonst würde die Antwort beliebig groß.
+    public static IReadOnlyDictionary<long, IReadOnlyList<Anhang>> LiesAnhaengeDesBoards(IDbConnection verbindung, IDbTransaction? transaktion, long boardId)
+    {
+        var zeilen = verbindung.Query<Boardanhangzeile>(@"
+            SELECT a.Karte, a.AnhangId, a.Dateiname, a.Dateigroesse, a.Zeitpunkt,
+                   u.KontributorId AS Urheber, u.Name AS Urhebername, u.Kontributorart AS Urheberart,
+                   t.StillgelegtAm AS UrheberStillgelegtAm
+              FROM Anhang a
+              JOIN Karte k ON k.KarteId = a.Karte
+              JOIN Spalte s ON s.SpalteId = k.Spalte
+              JOIN Kontributor u ON u.KontributorId = a.Kontributor
+              LEFT JOIN Kontributorstilllegung t ON t.Kontributor = u.KontributorId
+             WHERE s.Board = @BoardId
+             ORDER BY a.Karte, a.Zeitpunkt, a.AnhangId", new { BoardId = boardId }, transaktion);
+
+        var anhaengeJeKarte = new Dictionary<long, IReadOnlyList<Anhang>>(); // stil-check: C11 Zuordnung von KarteId zu Liste, kein Domaenenbestand
+        foreach (var gruppe in zeilen.GroupBy(zeile => zeile.Karte))
+        {
+            anhaengeJeKarte[gruppe.Key] = gruppe.Select(AlsBoardanhang).ToList();
+        }
+
+        return anhaengeJeKarte;
+    }
+
+    private static Anhang AlsBoardanhang(Boardanhangzeile zeile)
+    {
+        return AlsAnhang(new Anhangzeile(
+            zeile.AnhangId,
+            zeile.Dateiname,
+            zeile.Dateigroesse,
+            zeile.Zeitpunkt,
+            zeile.Urheber,
+            zeile.Urhebername,
+            zeile.Urheberart,
+            zeile.UrheberStillgelegtAm));
+    }
+
+    private sealed record Boardanhangzeile(
+        long Karte,
+        long AnhangId,
+        string Dateiname,
+        long Dateigroesse,
+        string Zeitpunkt,
+        long Urheber,
+        string Urhebername,
+        string Urheberart,
+        string? UrheberStillgelegtAm);
+
     // Die Zeile führt den Zeitpunkt als Text und nicht als DateTimeOffset: Microsoft.Data.Sqlite
     // meldet für die TEXT-Spalte den Typ String, und Dapper findet dann keinen passenden
     // Konstruktor (belegt in SqliteEigenschaftenTests). Derselbe Weg wie im Kommentarleser.

@@ -1,6 +1,7 @@
 using System.Data;
 using System.Globalization;
 using Dapper;
+using KanbanC.BL.Models.Karten;
 using KanbanC.BL.Persistenz.Zeiten;
 using KanbanC.Contracts.Boards;
 using KanbanC.Contracts.Karten;
@@ -39,6 +40,55 @@ internal static class Kartenleser
         }
 
         return kartenJeSpalte;
+    }
+
+    // Die Rohdaten des Boards: derselbe Schnitt wie oben, aber **ohne** `AND a.Karte IS NULL` —
+    // die archivierten Karten gehören zum gespeicherten Bestand, und die Kartenarchivierung
+    // liefert hier statt des Filters die Marke. Geordnet nach der Lage im Board und nicht nach der
+    // Anzeigeordnung einer Abschlussbahn: gekürzt wird nichts, also gibt es auch nichts zu
+    // sortieren, was zuerst herausfiele.
+    public static IReadOnlyList<Rohdatenkartenlage> LiesRohdatenkartenDesBoards(IDbConnection verbindung, IDbTransaction? transaktion, long boardId)
+    {
+        var zeilen = verbindung.Query<Rohdatenkartenzeile>(@"
+            SELECT k.KarteId, k.Spalte, k.Titel, k.Position, e.ErledigtAm,
+                   p.Beschreibung, p.FaelligAm, p.Farbe, p.Kontributor,
+                   n.Praefix AS Kartenklassenpraefix, z.Zaehlerstand AS VergebenerZaehlerstand,
+                   s.Bezeichnung AS Spaltenbezeichnung, a.Karte AS ArchivierteKarte,
+                   n.KartenklasseId, n.Name AS Kartenklassenname, n.Zaehlerstand AS Kartenklassenstand
+              FROM Karte k
+              JOIN Spalte s ON s.SpalteId = k.Spalte
+              LEFT JOIN Karteerledigung e ON e.Karte = k.KarteId
+              LEFT JOIN Kartenarchivierung a ON a.Karte = k.KarteId
+              LEFT JOIN Karteneigenschaft p ON p.Karte = k.KarteId
+              LEFT JOIN Kartenklassenzuordnung z ON z.Karte = k.KarteId
+              LEFT JOIN Kartenklasse n ON n.KartenklasseId = z.Kartenklasse
+             WHERE s.Board = @BoardId
+             ORDER BY s.Position, k.Position", new { BoardId = boardId }, transaktion);
+        return zeilen.Select(AlsRohdatenkartenlage).ToList();
+    }
+
+    // Die Karte bleibt dieselbe Gestalt wie überall; der Umschlag legt Ort, Marke und Klasse dazu.
+    private static Rohdatenkartenlage AlsRohdatenkartenlage(Rohdatenkartenzeile zeile)
+    {
+        var karte = AlsKarte(new Kartenzeile(
+            zeile.KarteId,
+            zeile.Spalte,
+            zeile.Titel,
+            zeile.Position,
+            zeile.ErledigtAm,
+            zeile.Beschreibung,
+            zeile.FaelligAm,
+            zeile.Farbe,
+            zeile.Kontributor,
+            zeile.Kartenklassenpraefix,
+            zeile.VergebenerZaehlerstand));
+        var dieKarteIstArchiviert = zeile.ArchivierteKarte is not null;
+        return new Rohdatenkartenlage(
+            karte,
+            zeile.Spalte,
+            zeile.Spaltenbezeichnung,
+            new Archivierung(dieKarteIstArchiviert),
+            AlsKartenklasse(zeile.KartenklasseId, zeile.Kartenklassenname, zeile.Kartenklassenpraefix, zeile.Kartenklassenstand));
     }
 
     // Die Spalte zeigt entweder ihre aktiven oder ihre archivierten Karten, nie beide; die
@@ -199,16 +249,17 @@ internal static class Kartenleser
     // der Karte: die Seite zeigt daneben, welche Nummer die Klasse als nächste vergibt.
     private static Kartenklasse? AlsKartenklasse(Kartendetailzeile zeile)
     {
-        if (zeile.KartenklasseId is null)
+        return AlsKartenklasse(zeile.KartenklasseId, zeile.Kartenklassenname, zeile.Kartenklassenpraefix, zeile.Kartenklassenstand);
+    }
+
+    private static Kartenklasse? AlsKartenklasse(long? kartenklasseId, string? name, string? praefix, long? zaehlerstand)
+    {
+        if (kartenklasseId is null)
         {
             return null;
         }
 
-        return new Kartenklasse(
-            zeile.KartenklasseId.Value,
-            zeile.Kartenklassenname!,
-            zeile.Kartenklassenpraefix!,
-            (int)zeile.Kartenklassenstand!.Value);
+        return new Kartenklasse(kartenklasseId.Value, name!, praefix!, (int)zaehlerstand!.Value);
     }
 
     // Der Verantwortliche reist als ganzer Kontributor: die Seite zeigt Name und Art, und
@@ -261,6 +312,24 @@ internal static class Kartenleser
         long? Kontributor,
         string? Kartenklassenpraefix,
         long? VergebenerZaehlerstand);
+
+    private sealed record Rohdatenkartenzeile(
+        long KarteId,
+        long Spalte,
+        string Titel,
+        long Position,
+        string? ErledigtAm,
+        string? Beschreibung,
+        string? FaelligAm,
+        string? Farbe,
+        long? Kontributor,
+        string? Kartenklassenpraefix,
+        long? VergebenerZaehlerstand,
+        string Spaltenbezeichnung,
+        long? ArchivierteKarte,
+        long? KartenklasseId,
+        string? Kartenklassenname,
+        long? Kartenklassenstand);
 
     private sealed record Klassenkartenzeile(
         long KarteId,

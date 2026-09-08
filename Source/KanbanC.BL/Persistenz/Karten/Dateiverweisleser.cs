@@ -33,6 +33,54 @@ internal static class Dateiverweisleser
         return zeilen.Select(AlsDateiverweis).ToList();
     }
 
+    // Alle Dateiverweise des Boards in **einer** Abfrage, je KarteId ihre Liste: 431 Karten kosten
+    // eine Abfrage und nicht 431. Sie bleiben eine eigene Liste neben den Anhängen — ein Anhang
+    // bringt eine Kopie mit, ein Dateiverweis zeigt auf eine Datei, die woanders weiterlebt.
+    public static IReadOnlyDictionary<long, IReadOnlyList<Dateiverweis>> LiesDateiverweiseDesBoards(IDbConnection verbindung, IDbTransaction? transaktion, long boardId)
+    {
+        var zeilen = verbindung.Query<Boarddateiverweiszeile>(@"
+            SELECT d.Karte, d.DateiverweisId, d.Pfad, d.Zeitpunkt,
+                   u.KontributorId AS Urheber, u.Name AS Urhebername, u.Kontributorart AS Urheberart,
+                   t.StillgelegtAm AS UrheberStillgelegtAm
+              FROM Dateiverweis d
+              JOIN Karte k ON k.KarteId = d.Karte
+              JOIN Spalte s ON s.SpalteId = k.Spalte
+              JOIN Kontributor u ON u.KontributorId = d.Kontributor
+              LEFT JOIN Kontributorstilllegung t ON t.Kontributor = u.KontributorId
+             WHERE s.Board = @BoardId
+             ORDER BY d.Karte, d.Zeitpunkt, d.DateiverweisId", new { BoardId = boardId }, transaktion);
+
+        var dateiverweiseJeKarte = new Dictionary<long, IReadOnlyList<Dateiverweis>>(); // stil-check: C11 Zuordnung von KarteId zu Liste, kein Domaenenbestand
+        foreach (var gruppe in zeilen.GroupBy(zeile => zeile.Karte))
+        {
+            dateiverweiseJeKarte[gruppe.Key] = gruppe.Select(AlsBoarddateiverweis).ToList();
+        }
+
+        return dateiverweiseJeKarte;
+    }
+
+    private static Dateiverweis AlsBoarddateiverweis(Boarddateiverweiszeile zeile)
+    {
+        return AlsDateiverweis(new Dateiverweiszeile(
+            zeile.DateiverweisId,
+            zeile.Pfad,
+            zeile.Zeitpunkt,
+            zeile.Urheber,
+            zeile.Urhebername,
+            zeile.Urheberart,
+            zeile.UrheberStillgelegtAm));
+    }
+
+    private sealed record Boarddateiverweiszeile(
+        long Karte,
+        long DateiverweisId,
+        string Pfad,
+        string Zeitpunkt,
+        long Urheber,
+        string Urhebername,
+        string Urheberart,
+        string? UrheberStillgelegtAm);
+
     // Die Zeile führt den Zeitpunkt als Text und nicht als DateTimeOffset: Microsoft.Data.Sqlite
     // meldet für die TEXT-Spalte den Typ String, und Dapper findet dann keinen passenden
     // Konstruktor (belegt in SqliteEigenschaftenTests). Derselbe Weg wie im Kommentar- und im

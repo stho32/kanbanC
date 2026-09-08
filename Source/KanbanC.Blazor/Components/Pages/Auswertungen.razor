@@ -58,16 +58,21 @@
                     }
                 </select>
             </div>
-            <div class="field">
-                <label for="auswertung-kartenklasse">Kartenklasse</label>
-                <select id="auswertung-kartenklasse" class="input" @onchange="WaehleKartenklasse" value="@_gewaehlteKartenklasse" disabled="@(_kartenklassen.Count == 0)">
-                    <option value="">Kartenklasse wählen …</option>
-                    @foreach (var kartenklasse in _kartenklassen)
-                    {
-                        <option value="@kartenklasse.KartenklasseId">@kartenklasse.Name (@kartenklasse.Praefix)</option>
-                    }
-                </select>
-            </div>
+            @* Für die Rohdaten tritt die Kartenklassenwahl zurück: der Bestand ist hier das Board,
+               und ein Bedienelement ohne Wirkung wäre eine stille Lüge. *@
+            @if (_gewaehlteAuswertung != Auswertungswahl.Rohdaten)
+            {
+                <div class="field">
+                    <label for="auswertung-kartenklasse">Kartenklasse</label>
+                    <select id="auswertung-kartenklasse" class="input" @onchange="WaehleKartenklasse" value="@_gewaehlteKartenklasse" disabled="@(_kartenklassen.Count == 0)">
+                        <option value="">Kartenklasse wählen …</option>
+                        @foreach (var kartenklasse in _kartenklassen)
+                        {
+                            <option value="@kartenklasse.KartenklasseId">@kartenklasse.Name (@kartenklasse.Praefix)</option>
+                        }
+                    </select>
+                </div>
+            }
             @if (_gewaehlteAuswertung == Auswertungswahl.Burndown)
             {
                 @* Nur ein Beginn: das Ende ist immer heute, und ein zweites Feld dafür wäre eine
@@ -112,9 +117,11 @@
 
         @if (BestandIstUngewaehlt)
         {
-            <p class="auswertungshinweis" id="auswertung-ohne-bestand">
-                Board und Kartenklasse sind zusammen der Kartenbestand. Wähle beide, und die Tabelle steht.
-            </p>
+            <p class="auswertungshinweis" id="auswertung-ohne-bestand">@OhneBestandHinweis()</p>
+        }
+        else if (_gewaehlteAuswertung == Auswertungswahl.Rohdaten)
+        {
+            <Rohdatenflaeche BoardId="_gewaehltesBoard!.Value" />
         }
         else if (_boardFuehrtKeineKartenklasse)
         {
@@ -159,14 +166,14 @@
         new(Auswertungswahl.SollIst, "soll-ist", "Soll-Ist gegen die WBS"),
         new(Auswertungswahl.Burndown, "burndown", "Burndown"),
         new(Auswertungswahl.Zeitexport, "zeitexport", "Zeiten exportieren"),
+        new(Auswertungswahl.Rohdaten, "rohdaten", "Rohdaten über die API"),
     ];
 
-    // Die zwei übrigen Auswertungen des Dialogs stehen gesperrt daneben: sie sind bestellt und
-    // noch nicht gebaut, und eine Fläche, die sie verschweigt, sähe vollständig aus.
+    // Die eine übrige Auswertung des Dialogs steht gesperrt daneben: sie ist bestellt und noch
+    // nicht gebaut, und eine Fläche, die sie verschweigt, sähe vollständig aus.
     private static readonly Kuenftigeauswertung[] NochNichtGebaut =
     [
         new("puffer", "Puffer-Verbrauch"),
-        new("rohdaten", "Rohdaten über die API"),
     ];
 
     private IReadOnlyList<BoardUebersicht> _boards = [];
@@ -184,8 +191,22 @@
     private string? _ausfallmeldung;
     private bool _boardFuehrtKeineKartenklasse;
 
-    // Ohne beide Hälften gibt es keinen Kartenbestand — und ohne Bestand nichts zu rechnen.
-    private bool BestandIstUngewaehlt => _gewaehltesBoard is null || (_gewaehlteKartenklasse is null && !_boardFuehrtKeineKartenklasse);
+    // Ohne beide Hälften gibt es keinen Kartenbestand — und ohne Bestand nichts zu rechnen. Für
+    // die Rohdaten ist der Bestand das Board allein; ohne gewähltes Board zeigt die Fläche keine
+    // halben Pfade.
+    private bool BestandIstUngewaehlt
+    {
+        get
+        {
+            var keinBoardGewaehlt = _gewaehltesBoard is null;
+            if (_gewaehlteAuswertung == Auswertungswahl.Rohdaten)
+            {
+                return keinBoardGewaehlt;
+            }
+
+            return keinBoardGewaehlt || (_gewaehlteKartenklasse is null && !_boardFuehrtKeineKartenklasse);
+        }
+    }
 
     private bool BestandIstLeer => (_sollIst is not null && _sollIst.Zeilen.Count == 0) || (_burndown is not null && _burndown.Kopfzahlen.ImBestand == 0);
 
@@ -298,6 +319,14 @@
 
     private async Task LadeAuswertung()
     {
+        // Die Rohdaten rufen nichts ab: der Eintrag **zeigt** die zwei Aufrufe, er bedient sie
+        // nicht — kein Klient, kein Ladepfad, kein Fehlerpfad.
+        var dieseWahlRuftNichtsAb = _gewaehlteAuswertung == Auswertungswahl.Rohdaten;
+        if (dieseWahlRuftNichtsAb)
+        {
+            return;
+        }
+
         if (_gewaehlteAuswertung == Auswertungswahl.Burndown)
         {
             await LadeBurndown();
@@ -389,7 +418,24 @@
             return "Zeiten exportieren";
         }
 
+        if (_gewaehlteAuswertung == Auswertungswahl.Rohdaten)
+        {
+            return "Rohdaten über die API";
+        }
+
         return "Soll-Ist gegen die WBS-Zählung";
+    }
+
+    // Der Bestand ist für die Rohdaten das Board allein — der Hinweis darf nicht nach einer Wahl
+    // verlangen, die es hier nicht gibt.
+    private string OhneBestandHinweis()
+    {
+        if (_gewaehlteAuswertung == Auswertungswahl.Rohdaten)
+        {
+            return "Der Bestand ist hier das Board. Wähle eines, und die zwei Aufrufe stehen.";
+        }
+
+        return "Board und Kartenklasse sind zusammen der Kartenbestand. Wähle beide, und die Tabelle steht.";
     }
 
     // Ohne eigene Wahl zeigt das Feld den ersten Tag der gelieferten Achse — den frühesten
@@ -421,6 +467,13 @@
         if (_gewaehlteAuswertung == Auswertungswahl.Zeitexport)
         {
             return $"GET /api/boards/{boardId}/kartenklassen/{kartenklasseId}/zeitexport.csv{Zeitexportadresse.Zeitraumabfrage(_von, _bis)}";
+        }
+
+        // Erstmals **zwei** Zeilen im Fuß: die Rohdaten stehen an zwei Adressen, und eine davon zu
+        // verschweigen hieße, den halben Weg zu zeigen.
+        if (_gewaehlteAuswertung == Auswertungswahl.Rohdaten)
+        {
+            return $"GET /api/boards/{boardId}/karten\nGET /api/boards/{boardId}/zeiten";
         }
 
         return $"GET /api/boards/{boardId}/kartenklassen/{kartenklasseId}/soll-ist";
@@ -513,6 +566,7 @@
         SollIst,
         Burndown,
         Zeitexport,
+        Rohdaten,
     }
 
     private sealed record Gebauteauswertung(Auswertungswahl Wahl, string Kennung, string Beschriftung);

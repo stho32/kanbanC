@@ -1252,8 +1252,18 @@ public class ZeitenEndpunkteTests
         return alleRouten.Where(BetrifftZeiten).ToList();
     }
 
+    // Die boardweite Rohdatenroute traegt dasselbe Wort und gehoert einem anderen Endpunktsatz:
+    // sie liefert den gespeicherten Bestand des Boards, nicht die Zeiterfassung einer Karte.
+    private const string Rohdatenzeitenroute = "GET /api/boards/{boardId:long}/zeiten";
+
     private static bool BetrifftZeiten(string route)
     {
+        var dieRouteGehoertDenRohdaten = route == Rohdatenzeitenroute;
+        if (dieRouteGehoertDenRohdaten)
+        {
+            return false;
+        }
+
         return route.Contains("zeiten", StringComparison.Ordinal);
     }
 

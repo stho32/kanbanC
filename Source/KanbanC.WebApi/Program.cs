@@ -4,6 +4,7 @@ using KanbanC.BL.Integrations.Import;
 using KanbanC.BL.Integrations.Karten;
 using KanbanC.BL.Integrations.Klassen;
 using KanbanC.BL.Integrations.Kontributoren;
+using KanbanC.BL.Integrations.Rohdaten;
 using KanbanC.BL.Integrations.Zeiten;
 using KanbanC.BL.Interfaces.Auswertungen;
 using KanbanC.BL.Interfaces.Boards;
@@ -12,6 +13,7 @@ using KanbanC.BL.Interfaces.Karten;
 using KanbanC.BL.Interfaces.Klassen;
 using KanbanC.BL.Interfaces.Kontributoren;
 using KanbanC.BL.Interfaces.Persistenz;
+using KanbanC.BL.Interfaces.Rohdaten;
 using KanbanC.BL.Interfaces.Zeiten;
 using KanbanC.BL.Persistenz;
 using KanbanC.BL.Persistenz.Auswertungen;
@@ -21,6 +23,7 @@ using KanbanC.BL.Persistenz.Karten;
 using KanbanC.BL.Persistenz.Klassen;
 using KanbanC.BL.Persistenz.Kontributoren;
 using KanbanC.BL.Persistenz.Migrationen;
+using KanbanC.BL.Persistenz.Rohdaten;
 using KanbanC.BL.Persistenz.Zeiten;
 using KanbanC.Contracts.Karten;
 using KanbanC.WebApi;
@@ -57,6 +60,7 @@ builder.Services.AddSingleton<IKartenklassenRepository, KartenklassenRepository>
 builder.Services.AddSingleton<IZeitenRepository, ZeitenRepository>();
 builder.Services.AddSingleton<IWbsImportRepository, WbsImportRepository>();
 builder.Services.AddSingleton<IAuswertungsrepository, Auswertungsrepository>();
+builder.Services.AddSingleton<IRohdatenRepository, RohdatenRepository>();
 builder.Services.AddSingleton<BoardService>();
 builder.Services.AddSingleton<SpaltenService>();
 builder.Services.AddSingleton<KartenService>();
@@ -65,6 +69,7 @@ builder.Services.AddSingleton<KartenklassenService>();
 builder.Services.AddSingleton<ZeitenService>();
 builder.Services.AddSingleton<WbsImportService>();
 builder.Services.AddSingleton<AuswertungsService>();
+builder.Services.AddSingleton<RohdatenService>();
 
 // Eine Drehscheibe je Prozess: sie nimmt die Meldungen der Endpunkte an und gibt jedem Abonnenten
 // von GET /api/ereignisse seinen eigenen Strom.
@@ -92,6 +97,7 @@ KartenklassenEndpunkte.Registriere(app);
 ZeitenEndpunkte.Registriere(app);
 WbsImportEndpunkte.Registriere(app);
 AuswertungsEndpunkte.Registriere(app);
+RohdatenEndpunkte.Registriere(app);
 EreignisEndpunkte.Registriere(app);
 
 app.Run();

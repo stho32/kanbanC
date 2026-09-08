@@ -104,6 +104,30 @@ public sealed class WebApiKlient : IDisposable
         return karte;
     }
 
+    // Der Weg, den der Fuß auf `/auswertungen` nennt — genau diese Adresse, ohne Browser gerufen:
+    // der Beweis, dass der gezeigte Pfad der ist, der antwortet.
+    public async Task<IReadOnlyList<Rohdatenkarte>> LadeRohdatenkarten(long boardId)
+    {
+        var karten = await _klient.GetFromJsonAsync<List<Rohdatenkarte>>($"{BoardsRoute}/{boardId}/karten");
+        if (karten is null)
+        {
+            throw new InvalidOperationException("Die WebApi hat keine Kartenliste zurückgegeben.");
+        }
+
+        return karten;
+    }
+
+    public async Task<IReadOnlyList<Zeiteintrag>> LadeRohdatenzeiten(long boardId)
+    {
+        var zeiten = await _klient.GetFromJsonAsync<List<Zeiteintrag>>($"{BoardsRoute}/{boardId}/zeiten");
+        if (zeiten is null)
+        {
+            throw new InvalidOperationException("Die WebApi hat keine Zeitenliste zurückgegeben.");
+        }
+
+        return zeiten;
+    }
+
     // Der Weg, auf dem ein Agent die ganze Bahn liest, waehrend die Oberflaeche kuerzt.
     public async Task<IReadOnlyList<Karte>> LadeKartenDerSpalte(long boardId, long spalteId)
     {

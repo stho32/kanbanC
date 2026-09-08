@@ -527,6 +527,16 @@ public class FehlervertragTests
             await webApi.Klient.GetAsync($"{BoardsRoute}/{board.BoardId}/kartenklassen/{aufbau.FremdeKartenklasse.KartenklasseId}/zeitexport.csv?von=2026-09-07&bis=2026-09-01")));
 
         faelle.Add(new Fehlerfall(
+            "GET /api/boards/{boardId:long}/karten",
+            "Kartenrohdaten eines unbekannten Boards",
+            await webApi.Klient.GetAsync($"{BoardsRoute}/999/karten")));
+
+        faelle.Add(new Fehlerfall(
+            "GET /api/boards/{boardId:long}/zeiten",
+            "Zeitenrohdaten eines unbekannten Boards",
+            await webApi.Klient.GetAsync($"{BoardsRoute}/999/zeiten")));
+
+        faelle.Add(new Fehlerfall(
             "PUT /api/karten/{karteId:long}/kartenklasse",
             "Kartenklasse zuordnen an unbekannter Karte",
             await webApi.Klient.PutAsJsonAsync("/api/karten/999/kartenklasse", new KartenklasseZuordnenAnfrage(1))));

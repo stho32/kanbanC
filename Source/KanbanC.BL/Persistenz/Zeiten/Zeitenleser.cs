@@ -56,6 +56,26 @@ internal static class Zeitenleser
         return zeilen.Select(AlsZeiteintrag).ToList();
     }
 
+    // Dieselbe Abfrage wie oben, **ohne** `AND z.Ende IS NULL`: die Rohdaten des Boards führen
+    // laufende und abgeschlossene Einträge, und ein Zeitraumschnitt gehört in die Auswertung
+    // dessen, der schneiden will. Einträge auf archivierten Karten und von stillgelegten
+    // Kontributoren bleiben drin — ihre Zeit wurde geleistet.
+    public static IReadOnlyList<Zeiteintrag> LiesZeiteintraegeDesBoards(IDbConnection verbindung, IDbTransaction? transaktion, long boardId)
+    {
+        var zeilen = verbindung.Query<Zeiteintragszeile>(@"
+            SELECT z.ZeiteintragId, z.Karte, z.Beginn, z.Ende,
+                   k.KontributorId AS Kontributor, k.Name AS Kontributorname, k.Kontributorart AS Kontributorart,
+                   t.StillgelegtAm AS KontributorStillgelegtAm
+              FROM Zeiteintrag z
+              JOIN Karte a ON a.KarteId = z.Karte
+              JOIN Spalte s ON s.SpalteId = a.Spalte
+              JOIN Kontributor k ON k.KontributorId = z.Kontributor
+              LEFT JOIN Kontributorstilllegung t ON t.Kontributor = k.KontributorId
+             WHERE s.Board = @BoardId
+             ORDER BY z.Beginn, z.ZeiteintragId", new { BoardId = boardId }, transaktion);
+        return zeilen.Select(AlsZeiteintrag).ToList();
+    }
+
     // Über alle Boards und nur die offenen Einträge — die einzige Leseform dieses Lesers ohne
     // Karte und ohne Board im Aufruf: ein Timer hängt an einer Karte, nicht an dem Board, das
     // gerade offen ist, und die Frage „was läuft gerade?" kennt keinen Ausschnitt.

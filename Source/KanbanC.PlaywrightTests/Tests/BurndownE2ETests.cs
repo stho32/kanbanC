@@ -14,10 +14,10 @@ namespace KanbanC.PlaywrightTests.Tests;
 [TestFixture]
 public class BurndownE2ETests : PageTest
 {
-    // Der Umschalter führt fünf Auswertungen; seit dem Zeitexport sind drei davon Wege.
+    // Der Umschalter führt fünf Auswertungen; seit den Rohdaten sind vier davon Wege.
     [Test]
     [Category("US-1")]
-    public async Task Wenn_der_Schirm_offen_ist_dann_ist_Burndown_waehlbar_und_die_uebrigen_zwei_bleiben_gesperrt()
+    public async Task Wenn_der_Schirm_offen_ist_dann_ist_Burndown_waehlbar_und_nur_der_Puffer_Verbrauch_bleibt_gesperrt()
     {
         await Testumgebung.Aktuelle.StarteWebApiMitLeererDatenbank();
         var seite = new AuswertungenSeite(Page, Testumgebung.Aktuelle.BlazorAdresse);
@@ -25,7 +25,7 @@ public class BurndownE2ETests : PageTest
         await seite.Oeffne();
 
         await Expect(seite.Auswertungspunkte).ToHaveCountAsync(5);
-        await Expect(seite.GesperrteAuswertungen).ToHaveCountAsync(2);
+        await Expect(seite.GesperrteAuswertungen).ToHaveCountAsync(1);
         await Expect(seite.Auswertungstitel).ToContainTextAsync("Soll-Ist");
 
         await seite.WaehleBurndown();

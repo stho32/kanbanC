@@ -19,6 +19,30 @@ internal static class Etikettenleser
         return texte.ToList();
     }
 
+    // Alle Etiketten des Boards in **einer** Abfrage, je KarteId ihre Liste: 431 Karten kosten
+    // eine Abfrage und nicht 431. Ohne Archivfilter — die Rohdaten führen die archivierte Karte
+    // mit, also auch ihre Etiketten.
+    public static IReadOnlyDictionary<long, IReadOnlyList<string>> LiesEtikettenDesBoards(IDbConnection verbindung, IDbTransaction? transaktion, long boardId)
+    {
+        var zeilen = verbindung.Query<Boardetikettzeile>(@"
+            SELECT e.Karte, e.Text
+              FROM Etikett e
+              JOIN Karte k ON k.KarteId = e.Karte
+              JOIN Spalte s ON s.SpalteId = k.Spalte
+             WHERE s.Board = @BoardId
+             ORDER BY e.Karte, e.Text COLLATE NOCASE", new { BoardId = boardId }, transaktion);
+
+        var etikettenJeKarte = new Dictionary<long, IReadOnlyList<string>>(); // stil-check: C11 Zuordnung von KarteId zu Liste, kein Domaenenbestand
+        foreach (var gruppe in zeilen.GroupBy(zeile => zeile.Karte))
+        {
+            etikettenJeKarte[gruppe.Key] = gruppe.Select(zeile => zeile.Text).ToList();
+        }
+
+        return etikettenJeKarte;
+    }
+
+    private sealed record Boardetikettzeile(long Karte, string Text);
+
     // Die Kartenzahl ist eine COUNT-Spalte und kein gezählter Client: die Gruppierung gehört in
     // die Abfrage, die ohnehin über drei Tabellen geht. Vorschläge stammen nur aus dem Board der
     // Karte — Etiketten anderer Boards haben hier nichts zu suchen.

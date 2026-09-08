@@ -1,0 +1,34 @@
+@* Die Fläche **nennt** die zwei Aufrufe und bedient nichts: kein Knopf, kein Download, kein Abruf
+   aus dem Schirm heraus. Für einen Agenten ist der Aufruf das Bedienelement; ein Knopf, der eine
+   JSON-Datei in den Browser lädt, wäre ein zweiter Export neben dem Zeitexport. *@
+<div class="rohdatenflaeche" id="rohdaten-flaeche">
+    <p class="rohdatentitel">die Aufrufe · das Bedienelement des Agenten</p>
+    <div class="rohdatenaufrufe">
+        <p class="rohdatenaufruf" id="rohdaten-karten-aufruf">GET @Kartenpfad()</p>
+        <p class="rohdatenerlaeuterung">200 — alle Karten des Boards mit Spalte, Kartenklasse, Archivmarke und ihren fünf Listen (Etiketten, Teilaufgaben, Kommentare, Anhänge als Metadaten, Dateiverweise); keine Seitengröße, keine Anzeigekürzung, kein Archivfilter</p>
+        <p class="rohdatenaufruf" id="rohdaten-zeiten-aufruf">GET @Zeitenpfad()</p>
+        <p class="rohdatenerlaeuterung">200 — alle Zeiteinträge des Boards mit Karte, Kontributor, Beginn und Ende, in Beginn-Folge; laufende ohne Ende</p>
+    </div>
+    <p class="rohdatenregel" id="rohdaten-regel">
+        Beides sind Rohdaten, nicht die gerechneten Reihen daneben: wer eigene Auswertungen rechnen will,
+        will die Einträge und nicht deren Auslegung. Der Bestand ist hier das Board — eine Kartenklasse
+        wäre ein Ausschnitt, und die Karten ohne Klasse stünden dann in keinem Abruf.
+        Bei großem Bestand wird die Antwort groß: das ist eine Größe, keine Kürzung.
+    </p>
+</div>
+
+@code {
+    [Parameter]
+    [EditorRequired]
+    public required long BoardId { get; set; }
+
+    private string Kartenpfad()
+    {
+        return $"/api/boards/{BoardId}/karten";
+    }
+
+    private string Zeitenpfad()
+    {
+        return $"/api/boards/{BoardId}/zeiten";
+    }
+}

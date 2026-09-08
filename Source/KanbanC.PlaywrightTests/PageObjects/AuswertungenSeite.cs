@@ -103,6 +103,28 @@ public sealed class AuswertungenSeite
 
     public ILocator Zurueckweisung => _seite.Locator("#auswertung-zurueckweisung");
 
+    public ILocator PunktRohdaten => _seite.Locator("#auswertung-rohdaten");
+
+    public ILocator Rohdatenflaeche => _seite.Locator("#rohdaten-flaeche");
+
+    public ILocator Rohdatenkartenaufruf => _seite.Locator("#rohdaten-karten-aufruf");
+
+    public ILocator Rohdatenzeitenaufruf => _seite.Locator("#rohdaten-zeiten-aufruf");
+
+    public async Task WaehleRohdaten()
+    {
+        await PunktRohdaten.ClickAsync();
+        await Assertions.Expect(Auswertungstitel).ToContainTextAsync("Rohdaten über die API");
+    }
+
+    // Der Fuß nennt für diese eine Wahl **zwei** Pfade; der Test liest sie als Zeilen, damit er
+    // beide neben dem Browser wirklich rufen kann.
+    public async Task<IReadOnlyList<string>> Aufrufzeilen()
+    {
+        var text = await Agentenaufruf.Locator(".auswertungsaufruf-text").InnerTextAsync();
+        return text.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(zeile => zeile.Trim()).ToList();
+    }
+
     public async Task WaehleZeitexport()
     {
         await PunktZeitexport.ClickAsync();

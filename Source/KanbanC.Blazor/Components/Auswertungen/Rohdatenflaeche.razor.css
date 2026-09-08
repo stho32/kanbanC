@@ -1,0 +1,46 @@
+/* Die zwei Aufrufe bekommen den Platz, die Erläuterung tritt zurück. Farben, Abstände und Radien
+   kommen aus gestaltung.css; Schriftgrößen stehen als Wert, weil das Token-Sheet für sie keine
+   Variable führt. */
+.rohdatenflaeche {
+    min-width: 0;
+}
+
+.rohdatentitel {
+    margin: 0 0 var(--space-1);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.rohdatenaufrufe {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    border-left: 3px solid var(--color-accent);
+    background: var(--color-surface);
+}
+
+.rohdatenaufruf {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    overflow-wrap: anywhere;
+    color: var(--color-accent-800);
+}
+
+.rohdatenerlaeuterung {
+    margin: 0 0 var(--space-1);
+    font-size: 12px;
+    line-height: 1.5;
+    color: color-mix(in srgb, var(--color-text) 62%, transparent);
+}
+
+.rohdatenregel {
+    margin: var(--space-4) 0 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
