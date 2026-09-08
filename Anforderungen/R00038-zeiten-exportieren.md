@@ -1,6 +1,6 @@
 ---
 id: R00038
-status: Neu
+status: In Arbeit
 datum: 2026-09-07
 ---
 
@@ -76,81 +76,81 @@ Board 4 „KanbanC — Release 2", Kartenklasse `WBS` (Präfix `WBS-`), heute is
 
 `Z1` und `Z2` überlappen. `Z5` läuft über zwei Mitternachte. `WBS-12` ist **archiviert**.
 
-- [ ] Ohne `von`/`bis` enthält die Datei **fünf** Zeilen in der Reihenfolge `Z5`, `Z3`, `Z1`, `Z2`, `Z4` — sortiert nach `Beginn`, `ZeiteintragId` als Zweitschlüssel.
-- [ ] `Z4` steht mit darin, `Ende` und `Dauer` sind **leer** — zwei aufeinanderfolgende Semikolons am Zeilenende, kein `0:00` und kein Platzhalter.
-- [ ] `Z1` und `Z2` stehen **beide unverändert** darin; die Datei meldet die Überlappung nicht und rechnet sie nicht weg.
-- [ ] `Z5` steht als **eine** Zeile mit der Dauer `31:40` — nicht als drei Tageszeilen und nicht als `7:40`.
-- [ ] `WBS-12` steht trotz Archivierung darin; ein stillgelegter Kontributor ebenso.
-- [ ] Die Zählzeile lautet **5 Einträge · 3 Karten · 2 Kontributoren**, davon **1 laufend**.
-- [ ] `?von=2026-09-01` liefert **vier** Zeilen: `Z5` fällt heraus, obwohl es bis zum 02.09. lief — geschnitten wird am **Beginn**.
-- [ ] `?von=2026-09-06&bis=2026-09-06` liefert **genau `Z3`**; die gelieferten Grenzen sind `2026-09-06` und `2026-09-06`.
-- [ ] `?bis=2026-09-06` liefert `Z5` und `Z3` — `bis` gilt **bis zum Ende** seines Tages.
-- [ ] `?von=2026-09-08` liefert **200 mit der Kopfzeile allein**; die gelieferten Grenzen sind beide **heute**, und der Dateiname nennt sie.
-- [ ] `?von=2026-09-07&bis=2026-09-01` (`bis` vor `von`) → **400** mit Grund, den beiden gelesenen Werten und Kompensationsaktion.
+- [x] Ohne `von`/`bis` enthält die Datei **fünf** Zeilen in der Reihenfolge `Z5`, `Z3`, `Z1`, `Z2`, `Z4` — sortiert nach `Beginn`, `ZeiteintragId` als Zweitschlüssel.
+- [x] `Z4` steht mit darin, `Ende` und `Dauer` sind **leer** — zwei aufeinanderfolgende Semikolons am Zeilenende, kein `0:00` und kein Platzhalter.
+- [x] `Z1` und `Z2` stehen **beide unverändert** darin; die Datei meldet die Überlappung nicht und rechnet sie nicht weg.
+- [x] `Z5` steht als **eine** Zeile mit der Dauer `31:40` — nicht als drei Tageszeilen und nicht als `7:40`.
+- [x] `WBS-12` steht trotz Archivierung darin; ein stillgelegter Kontributor ebenso.
+- [x] Die Zählzeile lautet **5 Einträge · 3 Karten · 2 Kontributoren**, davon **1 laufend**.
+- [x] `?von=2026-09-01` liefert **vier** Zeilen: `Z5` fällt heraus, obwohl es bis zum 02.09. lief — geschnitten wird am **Beginn**.
+- [x] `?von=2026-09-06&bis=2026-09-06` liefert **genau `Z3`**; die gelieferten Grenzen sind `2026-09-06` und `2026-09-06`.
+- [x] `?bis=2026-09-06` liefert `Z5` und `Z3` — `bis` gilt **bis zum Ende** seines Tages.
+- [x] `?von=2026-09-08` liefert **200 mit der Kopfzeile allein**; die gelieferten Grenzen sind beide **heute**, und der Dateiname nennt sie.
+- [x] `?von=2026-09-07&bis=2026-09-01` (`bis` vor `von`) → **400** mit Grund, den beiden gelesenen Werten und Kompensationsaktion.
 
 ### Die Datei selbst (`F0065`)
 
-- [ ] Die ersten drei Bytes sind das **UTF-8-BOM** `EF BB BF`.
-- [ ] Die Kopfzeile lautet **wörtlich** `Kartennummer;Kartentitel;Kontributor;Art;Beginn;Ende;Dauer`.
-- [ ] Jede Zeile endet mit **CRLF**, auch die letzte.
-- [ ] Ein Kartentitel mit `;` steht in Anführungszeichen; ein enthaltenes `"` wird **verdoppelt**; ein enthaltener Zeilenumbruch steht **innerhalb** der Anführungszeichen (RFC 4180). Für `WBS-12` heißt das genau eine Datensatzzeile, deren Titelfeld einen Umbruch enthält.
-- [ ] `Beginn` und `Ende` stehen als **ISO 8601 mit Offset** (`2026-09-07T09:12:00.0000000+02:00`), nicht als Ortszeit ohne Zone.
-- [ ] `Art` trägt `Mensch`, `Agent` oder `Abgebildet` — dieselben Werte wie `Kontributorart`.
-- [ ] **Keine `ZeiteintragId`-Spalte**, **keine Summenzeile**, **keine zweite Dauerspalte in Dezimalstunden**. Es geht **keine Dezimalzahl** in die Datei; ein Dezimaltrennerproblem entsteht deshalb nicht.
-- [ ] Der Bytestrom ist **ohne HTTP** prüfbar: die Festlegungen stehen an genau einer Stelle und werden dort an den Bytes geprüft.
+- [x] Die ersten drei Bytes sind das **UTF-8-BOM** `EF BB BF`.
+- [x] Die Kopfzeile lautet **wörtlich** `Kartennummer;Kartentitel;Kontributor;Art;Beginn;Ende;Dauer`.
+- [x] Jede Zeile endet mit **CRLF**, auch die letzte.
+- [x] Ein Kartentitel mit `;` steht in Anführungszeichen; ein enthaltenes `"` wird **verdoppelt**; ein enthaltener Zeilenumbruch steht **innerhalb** der Anführungszeichen (RFC 4180). Für `WBS-12` heißt das genau eine Datensatzzeile, deren Titelfeld einen Umbruch enthält.
+- [x] `Beginn` und `Ende` stehen als **ISO 8601 mit Offset** (`2026-09-07T09:12:00.0000000+02:00`), nicht als Ortszeit ohne Zone.
+- [x] `Art` trägt `Mensch`, `Agent` oder `Abgebildet` — dieselben Werte wie `Kontributorart`.
+- [x] **Keine `ZeiteintragId`-Spalte**, **keine Summenzeile**, **keine zweite Dauerspalte in Dezimalstunden**. Es geht **keine Dezimalzahl** in die Datei; ein Dezimaltrennerproblem entsteht deshalb nicht.
+- [x] Der Bytestrom ist **ohne HTTP** prüfbar: die Festlegungen stehen an genau einer Stelle und werden dort an den Bytes geprüft.
 
 ### Die zwei Routen (`F0065`)
 
 Fertig-Kriterium wörtlich: *„`GET /api/boards/{boardId}/kartenklassen/{kartenklasseId}/zeitexport.csv` liefert für den Kartenbestand eine UTF-8-Datei mit BOM, CRLF und Semikolon: die Kopfzeile `Kartennummer;Kartentitel;Kontributor;Art;Beginn;Ende;Dauer` und je Zeiteintrag **eine** Zeile in Beginn-Folge — laufende ohne Ende und ohne Dauer, Dauer als `h:mm` über 24 Stunden hinaus, Felder nach RFC 4180 maskiert, der Dateiname im `Content-Disposition`; `?von=&bis=` schneidet am Beginn; `GET …/zeitexport` liefert für denselben Ausschnitt den Stand (Einträge, Karten, Kontributoren, laufende, die gelieferten Grenzen, den Dateinamen); ein leerer Ausschnitt ist 200 mit der Kopfzeile allein; unbekanntes Board, unbekannte Kartenklasse sowie unlesbares oder verdrehtes `von`/`bis` werden mit Grund, Werten und Kompensationsaktion zurückgewiesen. Ohne Schirm allein an der Antwort prüfbar."*
 
-- [ ] `GET …/zeitexport.csv` antwortet **200** mit `Content-Type: text/csv` und einem `Content-Disposition`, dessen `filename` der gerechnete Dateiname ist.
-- [ ] `GET …/zeitexport` antwortet **200** mit dem Stand als JSON: Zahl der Einträge, Karten, Kontributoren, der **laufenden**, `Von`, `Bis` und der Dateiname — **und ohne Zeilen**.
-- [ ] **Beide Routen entstehen aus einem Dienstaufruf**: Stand und Datei rechnen denselben Ausschnitt, damit der Schirm nicht etwas anderes zählt, als die Datei enthält.
-- [ ] Der **Bestand** ist Board × Kartenklasse — dasselbe Set wie `GET .../kartenklassen/{kartenklasseId}/karten` (`I0022`), **archivierte Karten eingeschlossen**.
-- [ ] Der Dateiname folgt der Form `<board-slug>-zeiten-<von>_<bis>.csv`, der Slug ohne echte Umlaute (`ae/oe/ue/ss`) und ohne Zeichen, die ein Dateisystem nicht mag. Die genannten Grenzen sind die **gelieferten**, nie die angefragten — ein Name, der eine nicht gelieferte Spanne nennt, lügt.
-- [ ] Ein Bestand **ohne jeden Zeiteintrag** antwortet **200 mit der Kopfzeile allein** — **nicht 404** und kein leerer Rumpf. Eine Datei mit Kopfzeile ist die Antwort „hier wurde nichts erfasst", wie die leere Zeilenliste bei `soll-ist`.
-- [ ] Unbekanntes Board → **404**, Code `board-unbekannt`, Meldung mit der Board-Nummer, Kompensation `GET /api/boards`.
-- [ ] Unbekannte Kartenklasse → **404**, Code `kartenklasse-unbekannt`; eine Kartenklasse eines **fremden** Boards ist der eigene Fall `kartenklasse-fremd`.
-- [ ] Unlesbares `von` oder `bis` (z. B. `?von=gestern`) → **400** mit eigenem Befund: die Meldung nennt den **gelesenen Wert**, **welche der beiden Grenzen** gemeint ist und die erwartete Form `YYYY-MM-DD`.
-- [ ] Ein **fehlendes** `von` oder `bis` ist kein Fehler — die Grenze schneidet dann nicht.
-- [ ] Der Fehlervertragstest aus `B0102` nimmt **beide** neuen Routen auf.
-- [ ] **Ohne Schirm prüfbar**: alle Kriterien dieser Gruppe sind an der Antwort allein zu zeigen.
+- [x] `GET …/zeitexport.csv` antwortet **200** mit `Content-Type: text/csv` und einem `Content-Disposition`, dessen `filename` der gerechnete Dateiname ist.
+- [x] `GET …/zeitexport` antwortet **200** mit dem Stand als JSON: Zahl der Einträge, Karten, Kontributoren, der **laufenden**, `Von`, `Bis` und der Dateiname — **und ohne Zeilen**.
+- [x] **Beide Routen entstehen aus einem Dienstaufruf**: Stand und Datei rechnen denselben Ausschnitt, damit der Schirm nicht etwas anderes zählt, als die Datei enthält.
+- [x] Der **Bestand** ist Board × Kartenklasse — dasselbe Set wie `GET .../kartenklassen/{kartenklasseId}/karten` (`I0022`), **archivierte Karten eingeschlossen**.
+- [x] Der Dateiname folgt der Form `<board-slug>-zeiten-<von>_<bis>.csv`, der Slug ohne echte Umlaute (`ae/oe/ue/ss`) und ohne Zeichen, die ein Dateisystem nicht mag. Die genannten Grenzen sind die **gelieferten**, nie die angefragten — ein Name, der eine nicht gelieferte Spanne nennt, lügt.
+- [x] Ein Bestand **ohne jeden Zeiteintrag** antwortet **200 mit der Kopfzeile allein** — **nicht 404** und kein leerer Rumpf. Eine Datei mit Kopfzeile ist die Antwort „hier wurde nichts erfasst", wie die leere Zeilenliste bei `soll-ist`.
+- [x] Unbekanntes Board → **404**, Code `board-unbekannt`, Meldung mit der Board-Nummer, Kompensation `GET /api/boards`.
+- [x] Unbekannte Kartenklasse → **404**, Code `kartenklasse-unbekannt`; eine Kartenklasse eines **fremden** Boards ist der eigene Fall `kartenklasse-fremd`.
+- [x] Unlesbares `von` oder `bis` (z. B. `?von=gestern`) → **400** mit eigenem Befund: die Meldung nennt den **gelesenen Wert**, **welche der beiden Grenzen** gemeint ist und die erwartete Form `YYYY-MM-DD`.
+- [x] Ein **fehlendes** `von` oder `bis` ist kein Fehler — die Grenze schneidet dann nicht.
+- [x] Der Fehlervertragstest aus `B0102` nimmt **beide** neuen Routen auf.
+- [x] **Ohne Schirm prüfbar**: alle Kriterien dieser Gruppe sind an der Antwort allein zu zeigen.
 
 ### Der Schirm reicht die Datei heraus (`F0066`)
 
 Fertig-Kriterium wörtlich: *„Auf `/auswertungen` ist `Zeiten exportieren` wählbar und zeigt für den gewählten Bestand zwei Zeitraumgrenzen, die Zählzeile Einträge · Karten · Kontributoren mit den laufenden getrennt genannt, den Dateinamen und den Verweis, der die Datei wirklich herunterlädt — direkt von der WebApi; der Aufruf im Fuß folgt der Wahl; die vier Ränder tragen: Board ohne Kartenklasse, Bestand ohne jeden Zeiteintrag, leerer Ausschnitt trotz vorhandener Zeiten, WebApi nicht erreichbar."*
 
 - [ ] Der Punkt `Zeiten exportieren` im Umschalter ist **wählbar** — kein gesperrter `span#auswertung-zeitexport` mehr; `Puffer-Verbrauch` und `Rohdaten über die API` bleiben gesperrt.
-- [ ] Board- und Kartenklassenwahl bleiben **gemeinsam** für alle drei Auswertungen; ein Wechsel wirft die Wahl nicht weg.
-- [ ] Die Filterzeile trägt für den Zeitexport **zwei** Datumsfelder statt des einen `Beginn` des Burndowns; **beide dürfen leer bleiben**.
-- [ ] Eine Änderung an `von` oder `bis` lässt **Zahlen, Dateiname und Verweis** folgen — über einen erneuten Abruf des Stands, nicht über eine zweite Rechnung im Schirm.
-- [ ] Die **Zählzeile** kommt gerechnet aus der API; der Schirm zählt nichts nach.
-- [ ] Läuft mindestens ein Eintrag, **sagt die Zeile es dazu** („davon n laufend — ohne Ende und ohne Dauer in der Datei") — dieselbe Trennung, die der Zeitenblock aus `I0026` schon macht.
-- [ ] Der Verweis `CSV` ist ein **`<a href>` auf die WebApi**; ein Klick löst einen **echten Browser-Download** mit dem gerechneten Dateinamen aus.
-- [ ] Eine **verdrehte Spanne** zeigt der Schirm als **Zurückweisung der API** über den vorhandenen Block `auswertung-zurueckweisung` — **keine zweite Prüfung in der Oberfläche**, sonst stünde dieselbe Regel an zwei Stellen.
-- [ ] Der **Fuß** zeigt den Aufruf der gewählten Auswertung: `GET …/soll-ist`, `GET …/burndown?seit=…` bzw. `GET …/zeitexport.csv`.
-- [ ] Rand 1 — **Board ohne Kartenklasse**: der vorhandene Hinweis `auswertung-ohne-kartenklasse` trägt auch hier.
-- [ ] Rand 2 — **Bestand ohne jeden Zeiteintrag**: Meldung mit Werten und Kompensationsaktion („Starte einen Timer auf einer Karte oder trage eine Zeit nach") statt eines Verweises auf eine leere Datei.
-- [ ] Rand 3 — **leerer Ausschnitt trotz vorhandener Zeiten**: dieselbe Form, aber mit der gewählten Spanne in der Meldung — der Unterschied zu Rand 2 muss lesbar sein.
-- [ ] Rand 4 — **WebApi nicht erreichbar**: lesbare Meldung über `WebApiAufruf.MitAusfallmeldung`; der Umschalter bleibt stehen.
-- [ ] **Der Verweis verschwindet bei null Einträgen** — die API liefert trotzdem 200 mit der Kopfzeile für den, der die Adresse direkt ruft: die Oberfläche darf **weniger** anbieten als die API, nicht mehr.
-- [ ] **Kein Gestaltungsliteral** in der neuen Fläche — geprüft wie in `AuswertungsflaecheTests`.
+- [x] Board- und Kartenklassenwahl bleiben **gemeinsam** für alle drei Auswertungen; ein Wechsel wirft die Wahl nicht weg.
+- [x] Die Filterzeile trägt für den Zeitexport **zwei** Datumsfelder statt des einen `Beginn` des Burndowns; **beide dürfen leer bleiben**.
+- [x] Eine Änderung an `von` oder `bis` lässt **Zahlen, Dateiname und Verweis** folgen — über einen erneuten Abruf des Stands, nicht über eine zweite Rechnung im Schirm.
+- [x] Die **Zählzeile** kommt gerechnet aus der API; der Schirm zählt nichts nach.
+- [x] Läuft mindestens ein Eintrag, **sagt die Zeile es dazu** („davon n laufend — ohne Ende und ohne Dauer in der Datei") — dieselbe Trennung, die der Zeitenblock aus `I0026` schon macht.
+- [x] Der Verweis `CSV` ist ein **`<a href>` auf die WebApi**; ein Klick löst einen **echten Browser-Download** mit dem gerechneten Dateinamen aus.
+- [x] Eine **verdrehte Spanne** zeigt der Schirm als **Zurückweisung der API** über den vorhandenen Block `auswertung-zurueckweisung` — **keine zweite Prüfung in der Oberfläche**, sonst stünde dieselbe Regel an zwei Stellen.
+- [x] Der **Fuß** zeigt den Aufruf der gewählten Auswertung: `GET …/soll-ist`, `GET …/burndown?seit=…` bzw. `GET …/zeitexport.csv`.
+- [x] Rand 1 — **Board ohne Kartenklasse**: der vorhandene Hinweis `auswertung-ohne-kartenklasse` trägt auch hier.
+- [x] Rand 2 — **Bestand ohne jeden Zeiteintrag**: Meldung mit Werten und Kompensationsaktion („Starte einen Timer auf einer Karte oder trage eine Zeit nach") statt eines Verweises auf eine leere Datei.
+- [x] Rand 3 — **leerer Ausschnitt trotz vorhandener Zeiten**: dieselbe Form, aber mit der gewählten Spanne in der Meldung — der Unterschied zu Rand 2 muss lesbar sein.
+- [x] Rand 4 — **WebApi nicht erreichbar**: lesbare Meldung über `WebApiAufruf.MitAusfallmeldung`; der Umschalter bleibt stehen.
+- [x] **Der Verweis verschwindet bei null Einträgen** — die API liefert trotzdem 200 mit der Kopfzeile für den, der die Adresse direkt ruft: die Oberfläche darf **weniger** anbieten als die API, nicht mehr.
+- [x] **Kein Gestaltungsliteral** in der neuen Fläche — geprüft wie in `AuswertungsflaecheTests`.
 
 ### Der grüne Bestand bleibt grün
 
-- [ ] `Zeitraumfilter` wächst um eine **benannte** Grenze und ein Paar; der Burndown ruft ihn unverändert mit dem Namen `seit`. **`ZeitraumfilterTests` und `B0494` bleiben grün.**
-- [ ] `Anhangbasisadresse` heißt danach `WebApibasisadresse`; **Wert und Voreinstellung bleiben unverändert** (interne Basisadresse als Rückfall, `WebApi:OeffentlicheBasisAdresse` für den LAN-Betrieb). `Program.cs`, `Kartendetail.razor` und die Tests ziehen mit, der Anhang-Download bleibt grün.
-- [ ] `I0033` und `I0034` werden **nicht** umgebaut: `soll-ist`, `burndown`, `SollIstTabelle.razor` und `Burndownkurve.razor` bleiben, wie sie sind. Sie **wachsen** nur dort, wo eine dritte Auskunft dazukommt.
-- [ ] **Keine Migration, keine Schemaänderung.** `Zeiteintrag`, `Kontributor` und `Kartenklassenzuordnung` werden nur gelesen.
-- [ ] `I0037` bleibt unberührt.
+- [x] `Zeitraumfilter` wächst um eine **benannte** Grenze und ein Paar; der Burndown ruft ihn unverändert mit dem Namen `seit`. **`ZeitraumfilterTests` und `B0494` bleiben grün.**
+- [x] `Anhangbasisadresse` heißt danach `WebApibasisadresse`; **Wert und Voreinstellung bleiben unverändert** (interne Basisadresse als Rückfall, `WebApi:OeffentlicheBasisAdresse` für den LAN-Betrieb). `Program.cs`, `Kartendetail.razor` und die Tests ziehen mit, der Anhang-Download bleibt grün.
+- [x] `I0033` und `I0034` werden **nicht** umgebaut: `soll-ist`, `burndown`, `SollIstTabelle.razor` und `Burndownkurve.razor` bleiben, wie sie sind. Sie **wachsen** nur dort, wo eine dritte Auskunft dazukommt.
+- [x] **Keine Migration, keine Schemaänderung.** `Zeiteintrag`, `Kontributor` und `Kartenklassenzuordnung` werden nur gelesen.
+- [x] `I0037` bleibt unberührt.
 
 ### Was dieser Slice ausdrücklich nicht tut
 
-- [ ] **Kein Kontributorenfilter** am Schirm, obwohl das Artboard einen zeichnet — die Datei führt den Kontributor in **jeder** Zeile.
-- [ ] **Keine Summen, kein zweites Blatt, kein XLSX, kein JSON-Zeilenexport.**
-- [ ] **Kein Verlauf, keine Rohdaten je Karte** — das ist `I0037`: **board**weit, JSON, **ohne** Kartenklasse.
-- [ ] Kein Puffer-Verbrauch (`I0035`).
-- [ ] Kein JS-Interop, keine eigene `.js`-Datei, keine Blazor-Durchreiche für die Bytes.
+- [x] **Kein Kontributorenfilter** am Schirm, obwohl das Artboard einen zeichnet — die Datei führt den Kontributor in **jeder** Zeile.
+- [x] **Keine Summen, kein zweites Blatt, kein XLSX, kein JSON-Zeilenexport.**
+- [x] **Kein Verlauf, keine Rohdaten je Karte** — das ist `I0037`: **board**weit, JSON, **ohne** Kartenklasse.
+- [x] Kein Puffer-Verbrauch (`I0035`).
+- [x] Kein JS-Interop, keine eigene `.js`-Datei, keine Blazor-Durchreiche für die Bytes.
 
 ## Betroffene Verzeichnisstruktur
 

@@ -1,6 +1,6 @@
 ---
 id: R00036
-status: Neu
+status: In Arbeit
 datum: 2026-09-07
 ---
 
@@ -62,63 +62,63 @@ Der Wert ist nicht die Kontrolle, sondern die **Kalibrierung**: der gemessene Fa
 
 Fertig-Kriterium wörtlich: *„Ein Import schreibt je Karte das Aufwandsband ihres Teilbaums; ein zweiter Lauf zieht ein geändertes Band nach, und eine vor diesem Slice angelegte Karte bekommt ihr Band beim nächsten Lauf. Ohne Auswertung und ohne Schirm an der zurückgelesenen Zahl prüfbar."*
 
-- [ ] Ein Import auf eine Datei mit Aufwänden legt je Karte ein Sollband an; ein zurückgelesener Iststand nennt es.
-- [ ] **Die Zelle wird als Band gelesen**: `0,4` → `0,4–0,4`; `2` → `2,0–2,0`; `2-4` → `2,0–4,0`; `0,4-1,5` → `0,4–1,5`; leer oder unlesbar → **kein Band** und **keine Ausnahme**.
-- [ ] **Das Band einer Karte ist die Summe ihres Teilbaums**, nicht ihre eigene Zelle: eine Interaction-Zeile trägt in der WBS keinen Aufwand. Rechenbeispiel an der echten Datei: die Karte `[I0022]` hat vier Bubbles mit `0,4`, `0,4`, `2` und `0,4-1,5` und trägt damit **3,2–4,3 h**; die Karte `[I0030]` hat 31 Bubbles und trägt **38,0–44,0 h**.
-- [ ] `option`, `ausbau` und `verworfen` zählen **samt Teilbaum** nicht mit.
-- [ ] Ein zweiter Lauf auf **geändertem** Aufwand meldet die Karte `geaendert` und schreibt das neue Band; ein Knoten, dessen Aufwand verschwindet, verliert sein Band.
-- [ ] **Prüfbar ohne Auswertung und ohne Schirm**: alle Kriterien dieser Gruppe sind an der zurückgelesenen Zahl zu zeigen.
+- [x] Ein Import auf eine Datei mit Aufwänden legt je Karte ein Sollband an; ein zurückgelesener Iststand nennt es.
+- [x] **Die Zelle wird als Band gelesen**: `0,4` → `0,4–0,4`; `2` → `2,0–2,0`; `2-4` → `2,0–4,0`; `0,4-1,5` → `0,4–1,5`; leer oder unlesbar → **kein Band** und **keine Ausnahme**.
+- [x] **Das Band einer Karte ist die Summe ihres Teilbaums**, nicht ihre eigene Zelle: eine Interaction-Zeile trägt in der WBS keinen Aufwand. Rechenbeispiel an der echten Datei: die Karte `[I0022]` hat vier Bubbles mit `0,4`, `0,4`, `2` und `0,4-1,5` und trägt damit **3,2–4,3 h**; die Karte `[I0030]` hat 31 Bubbles und trägt **38,0–44,0 h**.
+- [x] `option`, `ausbau` und `verworfen` zählen **samt Teilbaum** nicht mit.
+- [x] Ein zweiter Lauf auf **geändertem** Aufwand meldet die Karte `geaendert` und schreibt das neue Band; ein Knoten, dessen Aufwand verschwindet, verliert sein Band.
+- [x] **Prüfbar ohne Auswertung und ohne Schirm**: alle Kriterien dieser Gruppe sind an der zurückgelesenen Zahl zu zeigen.
 
 ### Der Vergleich über die API (`F0061`)
 
 Fertig-Kriterium wörtlich: *„`GET /api/boards/{boardId}/kartenklassen/{kartenklasseId}/soll-ist` liefert je Karte des Bestands Nummer, Titel, erfasste Zeit, Sollband und Abweichung sowie eine Summenzeile über den Bestand; unbekanntes Board und unbekannte Kartenklasse werden mit Grund, Werten und Kompensationsaktion zurückgewiesen."*
 
-- [ ] Der Aufruf antwortet **200** mit je einer Zeile pro Karte des Bestands: Kartennummer, `KarteId`, Titel, erfasste Zeit, Sollband, Abweichung, Archivstand.
-- [ ] Der **Bestand** ist Board × Kartenklasse — dasselbe Set, das `GET .../kartenklassen/{kartenklasseId}/karten` (`I0022`) liefert, **archivierte Karten eingeschlossen**.
-- [ ] Die **Abweichung** ist dreiwertig: `unter dem Band`, `im Band`, `über dem Band um h`. Rechenbeispiel gegen `38,0–44,0 h`: Ist `2:24` → *unter dem Band*; Ist `40:00` → *im Band*; Ist `50:00` → *über dem Band um 6,0 h*.
-- [ ] Eine Karte **ohne Sollband** trägt kein Sollband und **keine** Abweichung — nicht `im Band`, nicht `0`.
-- [ ] Die **Summenzeile** trägt die Summe der Ist-Zeiten und die Summe der Sollbänder; **die Summe eines Bandes ist selbst ein Band** (Untergrenzen zu Untergrenze, Obergrenzen zu Obergrenze), und sie zählt nur Karten mit Band. Ihre Abweichung wird nach derselben Regel gebildet.
-- [ ] **Überlappende Zeiteinträge zählen doppelt**, und eine Summe über 24 h an einem Tag ist richtig: Personenstunden gegen Personenstunden. Ein laufender Timer (`Ende IS NULL`) zählt nicht mit.
-- [ ] Unbekanntes Board → **404** mit Grund, der die Board-Nummer nennt, und der Kompensationsaktion `GET /api/boards`.
-- [ ] Unbekannte Kartenklasse → **404** mit Grund, der ihre Nummer nennt, und der Kompensationsaktion `GET /api/boards/{boardId}/kartenklassen`; eine Kartenklasse eines **fremden** Boards ist der eigene Fall `kartenklasse-fremd`.
-- [ ] **Ohne Schirm prüfbar**: alle Kriterien dieser Gruppe sind an der Antwort allein zu zeigen.
+- [x] Der Aufruf antwortet **200** mit je einer Zeile pro Karte des Bestands: Kartennummer, `KarteId`, Titel, erfasste Zeit, Sollband, Abweichung, Archivstand.
+- [x] Der **Bestand** ist Board × Kartenklasse — dasselbe Set, das `GET .../kartenklassen/{kartenklasseId}/karten` (`I0022`) liefert, **archivierte Karten eingeschlossen**.
+- [x] Die **Abweichung** ist dreiwertig: `unter dem Band`, `im Band`, `über dem Band um h`. Rechenbeispiel gegen `38,0–44,0 h`: Ist `2:24` → *unter dem Band*; Ist `40:00` → *im Band*; Ist `50:00` → *über dem Band um 6,0 h*.
+- [x] Eine Karte **ohne Sollband** trägt kein Sollband und **keine** Abweichung — nicht `im Band`, nicht `0`.
+- [x] Die **Summenzeile** trägt die Summe der Ist-Zeiten und die Summe der Sollbänder; **die Summe eines Bandes ist selbst ein Band** (Untergrenzen zu Untergrenze, Obergrenzen zu Obergrenze), und sie zählt nur Karten mit Band. Ihre Abweichung wird nach derselben Regel gebildet.
+- [x] **Überlappende Zeiteinträge zählen doppelt**, und eine Summe über 24 h an einem Tag ist richtig: Personenstunden gegen Personenstunden. Ein laufender Timer (`Ende IS NULL`) zählt nicht mit.
+- [x] Unbekanntes Board → **404** mit Grund, der die Board-Nummer nennt, und der Kompensationsaktion `GET /api/boards`.
+- [x] Unbekannte Kartenklasse → **404** mit Grund, der ihre Nummer nennt, und der Kompensationsaktion `GET /api/boards/{boardId}/kartenklassen`; eine Kartenklasse eines **fremden** Boards ist der eigene Fall `kartenklasse-fremd`.
+- [x] **Ohne Schirm prüfbar**: alle Kriterien dieser Gruppe sind an der Antwort allein zu zeigen.
 
 ### Der Schirm zeigt den Vergleich (`F0062`)
 
 Fertig-Kriterium wörtlich: *„`/auswertungen` ist aus der Kopfzeile erreichbar und zeigt für den gewählten Bestand die Tabelle Karte · Ist · Soll · Abweichung mit Summenzeile; die vier Ränder tragen: Bestand ohne Karten, Karte ohne Zeiteintrag, Karte ohne Soll, WebApi nicht erreichbar."*
 
-- [ ] Der Punkt „Auswertungen" in der Kopfzeile führt auf `/auswertungen` — kein gesperrter `span` mehr.
-- [ ] Der Schirm lässt **Board und Kartenklasse** wählen und zeigt danach die Tabelle **Karte · Ist · Soll · Abweichung** in Kartennummernfolge, darunter die Summenzeile.
-- [ ] Das **Ist** steht als `h:mm` und läuft über 24 hinaus (`Dauerform`), das **Soll** als Band in Stunden mit Dezimalkomma (`38,0–44,0 h`).
-- [ ] Rand 1 — **Bestand ohne Karten**: lesbare Leermeldung statt leerer Tabelle.
-- [ ] Rand 2 — **Karte ohne Zeiteintrag**: steht mit `0:00` da, fällt nicht heraus.
-- [ ] Rand 3 — **Karte ohne Soll**: steht mit `—` in Soll und Abweichung; die **Fußzeile nennt, wie viele es sind**, damit die Summe nicht als vollständig gelesen wird.
-- [ ] Rand 4 — **WebApi nicht erreichbar**: lesbare Meldung statt Ausnahmeseite.
-- [ ] **Archivierte Karten stehen markiert mit** — ihre Zeit wurde geleistet.
+- [x] Der Punkt „Auswertungen" in der Kopfzeile führt auf `/auswertungen` — kein gesperrter `span` mehr.
+- [x] Der Schirm lässt **Board und Kartenklasse** wählen und zeigt danach die Tabelle **Karte · Ist · Soll · Abweichung** in Kartennummernfolge, darunter die Summenzeile.
+- [x] Das **Ist** steht als `h:mm` und läuft über 24 hinaus (`Dauerform`), das **Soll** als Band in Stunden mit Dezimalkomma (`38,0–44,0 h`).
+- [x] Rand 1 — **Bestand ohne Karten**: lesbare Leermeldung statt leerer Tabelle.
+- [x] Rand 2 — **Karte ohne Zeiteintrag**: steht mit `0:00` da, fällt nicht heraus.
+- [x] Rand 3 — **Karte ohne Soll**: steht mit `—` in Soll und Abweichung; die **Fußzeile nennt, wie viele es sind**, damit die Summe nicht als vollständig gelesen wird.
+- [x] Rand 4 — **WebApi nicht erreichbar**: lesbare Meldung statt Ausnahmeseite.
+- [x] **Archivierte Karten stehen markiert mit** — ihre Zeit wurde geleistet.
 
 ### Die Sollzeit ist nicht von Hand änderbar
 
-- [ ] Weder `Karte` noch `Kartendetail` zeigen ein Sollzeitfeld, und es gibt keinen Endpunkt, der es setzt. Der einzige Erzeuger ist der Import.
+- [x] Weder `Karte` noch `Kartendetail` zeigen ein Sollzeitfeld, und es gibt keinen Endpunkt, der es setzt. Der einzige Erzeuger ist der Import.
 
 ### Die benannte Änderung an grünem Bestand
 
-- [ ] `I0030`: `Kartenentwurf`, `Kartenentwurfsbildner` und `WbsImportRepository.Schreibe` wachsen um das Sollband.
-- [ ] `I0031`: `Kartenabbild`, `Kartenabbildvergleich`, `Karteniststand`, `Kartenaktualisierungsauftrag` und `LiesIststand` wachsen um das Sollband.
-- [ ] `I0026` wird **nicht** angefasst.
-- [ ] **Zwei grüne E2E-Zusagen kippen und werden nachgezogen**: `RahmenE2ETests.cs:53-58` erwartet `aria-disabled="true"` am Punkt „Auswertungen" und **zwei** Navigationsverweise, `KontributorenlisteE2ETests.cs:27` erwartet dasselbe Attribut. Nach `B0485` sind es **drei** Verweise ohne `aria-disabled`.
+- [x] `I0030`: `Kartenentwurf`, `Kartenentwurfsbildner` und `WbsImportRepository.Schreibe` wachsen um das Sollband.
+- [x] `I0031`: `Kartenabbild`, `Kartenabbildvergleich`, `Karteniststand`, `Kartenaktualisierungsauftrag` und `LiesIststand` wachsen um das Sollband.
+- [x] `I0026` wird **nicht** angefasst.
+- [x] **Zwei grüne E2E-Zusagen kippen und werden nachgezogen**: `RahmenE2ETests.cs:53-58` erwartet `aria-disabled="true"` am Punkt „Auswertungen" und **zwei** Navigationsverweise, `KontributorenlisteE2ETests.cs:27` erwartet dasselbe Attribut. Nach `B0485` sind es **drei** Verweise ohne `aria-disabled`.
 
 ### Der grüne Bestand bleibt grün
 
-- [ ] **Das Sollband ist nullbar** — jede Zusage von `I0030` und `I0031` gilt unverändert weiter: eine Datei ohne Aufwandsspalte erzeugt dieselben Karten wie heute.
-- [ ] **Eine Folge ist gewollt und wird nicht als Rückschritt gelesen**: `B0452` („zweiter Lauf: 0 angelegt, 0 geändert") gilt weiter für zwei Läufe **desselben** Standes. Eine Karte aus einem Lauf **vor** diesem Slice wird beim nächsten Lauf **einmalig** `geaendert` — das ist Schritt 3 des Artboards.
-- [ ] Die Suiten von `R00033`, `R00034` und `R00035` bleiben grün.
+- [x] **Das Sollband ist nullbar** — jede Zusage von `I0030` und `I0031` gilt unverändert weiter: eine Datei ohne Aufwandsspalte erzeugt dieselben Karten wie heute.
+- [x] **Eine Folge ist gewollt und wird nicht als Rückschritt gelesen**: `B0452` („zweiter Lauf: 0 angelegt, 0 geändert") gilt weiter für zwei Läufe **desselben** Standes. Eine Karte aus einem Lauf **vor** diesem Slice wird beim nächsten Lauf **einmalig** `geaendert` — das ist Schritt 3 des Artboards.
+- [x] Die Suiten von `R00033`, `R00034` und `R00035` bleiben grün.
 
 ### Was dieser Slice ausdrücklich nicht tut
 
 - [ ] **Kein Burndown** (`I0034`), **kein Puffer-Verbrauch** (`I0035`), **kein Zeitexport** (`I0036`).
-- [ ] **`I0037` bleibt unberührt**: hier eine **gerechnete** Antwort über **einen** Bestand, dort die **ungerechneten** Rohdaten über alles und ohne Limit.
+- [x] **`I0037` bleibt unberührt**: hier eine **gerechnete** Antwort über **einen** Bestand, dort die **ungerechneten** Rohdaten über alles und ohne Limit.
 - [ ] **Kein Zeitraumfilter** — der Zeitraum gehört der Kalenderachse, also `I0034`.
-- [ ] Kein Sollzeitfeld an Karte oder Kartendetail, kein Rückfluss ins Markdown.
+- [x] Kein Sollzeitfeld an Karte oder Kartendetail, kein Rückfluss ins Markdown.
 
 ## Betroffene Verzeichnisstruktur
 

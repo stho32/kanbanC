@@ -1,6 +1,6 @@
 ---
 id: R00041
-status: Neu
+status: Erledigt
 datum: 2026-09-08
 ---
 
@@ -95,96 +95,96 @@ Eingelesen wird eine Datei aus einer **anderen** Installation, ausgeleitet mit `
 | Karten | 24, darunter eine **archivierte**, eine **ohne Klasse und ohne Sollband**, eine mit **`WBS-32`**, Sollband 2,0–4,0 h, Verantwortlichem `Stefan` (7) und je einem Eintrag in **allen fünf Listen** | der volle Fall |
 | Zeiteinträge | 2, davon einer **laufend** (`Ende: null`) von `Alt-Kollege` | laufend, stillgelegt |
 
-- [ ] `POST /api/boards/import` mit dieser Datei und `trocken=true` antwortet mit **200** und einem Bericht: Boardname „KanbanC — Release 2", **3** Spalten, **1** Kartenklasse, **2** Kontributoren, **24** Karten, **2** Zeiteinträge, dazu die Zahlen der fünf Listen — und die Datenbank ist danach **unverändert** (Boardliste weiterhin `Betrieb`, `Release 1`; Personenliste weiterhin `Stefan`, `Zora`).
-- [ ] Derselbe Aufruf mit `trocken=false` antwortet mit **201**, einer **neuen** `BoardId` (**3**, nicht 1) und **denselben zehn Zahlen** wie die Vorschau.
-- [ ] `GET /api/boards` liefert danach **drei** Boards; das neue trägt den Namen aus der Datei und lässt sich unter `/boards/3` öffnen.
-- [ ] Ein Aufruf **ohne** das Feld `trocken` schreibt **nichts** und antwortet mit **200** — die Vorgabe ist `true`.
+- [x] `POST /api/boards/import` mit dieser Datei und `trocken=true` antwortet mit **200** und einem Bericht: Boardname „KanbanC — Release 2", **3** Spalten, **1** Kartenklasse, **2** Kontributoren, **24** Karten, **2** Zeiteinträge, dazu die Zahlen der fünf Listen — und die Datenbank ist danach **unverändert** (Boardliste weiterhin `Betrieb`, `Release 1`; Personenliste weiterhin `Stefan`, `Zora`).
+- [x] Derselbe Aufruf mit `trocken=false` antwortet mit **201**, einer **neuen** `BoardId` (**3**, nicht 1) und **denselben zehn Zahlen** wie die Vorschau.
+- [x] `GET /api/boards` liefert danach **drei** Boards; das neue trägt den Namen aus der Datei und lässt sich unter `/boards/3` öffnen.
+- [x] Ein Aufruf **ohne** das Feld `trocken` schreibt **nichts** und antwortet mit **200** — die Vorgabe ist `true`.
 
 ### „Ohne bestehende Boards zu verändern" — die tragende Zusage, bewiesen
 
-- [ ] **Board 1 und Board 2 sind Zeile für Zeile unverändert**: Board, Boardeinstellung, Boardarchivierung, Spalte, Karte, Karteneigenschaft, Karteerledigung, Kartenarchivierung, Kartenklasse, Kartenklassenzuordnung, Kartensollzeit, Etikett, Teilaufgabe, Kommentar, Anhang, Dateiverweis und Zeiteintrag. Geprüft wird der **abgezogene Bestand vor dem Lauf** gegen den Bestand danach, nicht ein Beispiel.
-- [ ] **Ehrlich benannt, was sich doch ändert**: die Tabelle `Kontributor` **wächst** um die Personen der Datei — sie ist als einzige installationsweit und gehört keinem Board. **Keine vorhandene Zeile** wird dabei angefasst: `Stefan` (7) behält Nummer, Name, Art und Stilllegungsstand.
-- [ ] **Die Nummer der Datei überschreibt nichts.** Die Datei nennt `BoardId 1`, und `Board 1` „Betrieb" existiert — nach dem Lauf heißt `Board 1` weiterhin „Betrieb" und hat weiterhin 5 Karten.
-- [ ] **Kein halbes Board bei einem Abbruch.** Bricht das Schreiben nach den Spalten ab, ist danach **kein** neues Board, **keine** Spalte, **keine** Karte und **kein** neuer Kontributor da — der ganze Lauf ist eine Transaktion. Rechenbeispiel: Boardzahl vor dem Lauf 2, nach dem gescheiterten Lauf 2.
-- [ ] **Keine Migration und keine Schemaänderung** — das Schema vor und nach dem Slice ist dasselbe.
+- [x] **Board 1 und Board 2 sind Zeile für Zeile unverändert**: Board, Boardeinstellung, Boardarchivierung, Spalte, Karte, Karteneigenschaft, Karteerledigung, Kartenarchivierung, Kartenklasse, Kartenklassenzuordnung, Kartensollzeit, Etikett, Teilaufgabe, Kommentar, Anhang, Dateiverweis und Zeiteintrag. Geprüft wird der **abgezogene Bestand vor dem Lauf** gegen den Bestand danach, nicht ein Beispiel.
+- [x] **Ehrlich benannt, was sich doch ändert**: die Tabelle `Kontributor` **wächst** um die Personen der Datei — sie ist als einzige installationsweit und gehört keinem Board. **Keine vorhandene Zeile** wird dabei angefasst: `Stefan` (7) behält Nummer, Name, Art und Stilllegungsstand.
+- [x] **Die Nummer der Datei überschreibt nichts.** Die Datei nennt `BoardId 1`, und `Board 1` „Betrieb" existiert — nach dem Lauf heißt `Board 1` weiterhin „Betrieb" und hat weiterhin 5 Karten.
+- [x] **Kein halbes Board bei einem Abbruch.** Bricht das Schreiben nach den Spalten ab, ist danach **kein** neues Board, **keine** Spalte, **keine** Karte und **kein** neuer Kontributor da — der ganze Lauf ist eine Transaktion. Rechenbeispiel: Boardzahl vor dem Lauf 2, nach dem gescheiterten Lauf 2.
+- [x] **Keine Migration und keine Schemaänderung** — das Schema vor und nach dem Slice ist dasselbe.
 
 ### „Das Board erscheint mit seinem Inhalt" — neue Nummern, gleicher Inhalt
 
-- [ ] **Jeder Verweis zeigt auf die neue Nummer**: die Karten liegen in den **neuen** Spalten, tragen die **neue** Kartenklasse, den **neuen** Verantwortlichen; Kommentare, Anhänge und Dateiverweise tragen ihre **neuen** Urheber; die Zeiteinträge zeigen auf die **neue** Karte und den **neuen** Kontributor. Keine Nummer der Datei steht nach dem Lauf in einer Zeile.
-- [ ] **Was ein Mensch liest, bleibt gleich**: die Karte mit `WBS-32` in der Datei trägt danach `WBS-32`. Rechnerisch: `UX_Kartenklassenzuordnung_Kartenklasse_Zaehlerstand` gilt **je Klasse**, die Klasse ist neu, also passt Zählerstand 32 unverändert hinein — und der Zählerstand der Klasse selbst steht danach auf **40** wie in der Datei, sodass die nächste Karte `WBS-41` heißt und nicht `WBS-1`.
-- [ ] **Bezeichnungen kollidieren nicht**: `UX_Spalte_Board_Bezeichnung` (Migration 002) und `UX_Kartenklasse_Board_Praefix` (Migration 016) gelten **je Board** — beim neuen Board kann keiner der Indizes greifen, auch wenn `Betrieb` eine Spalte „Erledigt" und ein Präfix `WBS-` führt.
-- [ ] **Der laufende Zeiteintrag bleibt laufend** (`Ende: null`) — `UX_Zeiteintrag_Karte_Kontributor_Laufend` gilt je Karte und Kontributor, und beide sind neu.
-- [ ] **Die archivierte Karte kommt archiviert an**, die Karte ohne Klasse bleibt ohne Klasse, die Karte ohne Sollband bekommt **kein Ersatzband**, und die Spalte „Erledigt" behält Abschlussmarke und Anzeigegrenze 20.
-- [ ] **Der stillgelegte Kontributor kommt stillgelegt an** — seine Arbeit steht in der Datei, und ein Import, der ihn aktiv anlegte, erfände einen Zustand.
-- [ ] **Gegenprobe durch das Nadelöhr**: das exportierte und wieder eingelesene Board liefert bei `GET /api/boards/{neueId}/export.json` dieselben Inhalte wie die Ausgangsdatei — bis auf die Nummern und den Kopfzeitpunkt.
+- [x] **Jeder Verweis zeigt auf die neue Nummer**: die Karten liegen in den **neuen** Spalten, tragen die **neue** Kartenklasse, den **neuen** Verantwortlichen; Kommentare, Anhänge und Dateiverweise tragen ihre **neuen** Urheber; die Zeiteinträge zeigen auf die **neue** Karte und den **neuen** Kontributor. Keine Nummer der Datei steht nach dem Lauf in einer Zeile.
+- [x] **Was ein Mensch liest, bleibt gleich**: die Karte mit `WBS-32` in der Datei trägt danach `WBS-32`. Rechnerisch: `UX_Kartenklassenzuordnung_Kartenklasse_Zaehlerstand` gilt **je Klasse**, die Klasse ist neu, also passt Zählerstand 32 unverändert hinein — und der Zählerstand der Klasse selbst steht danach auf **40** wie in der Datei, sodass die nächste Karte `WBS-41` heißt und nicht `WBS-1`.
+- [x] **Bezeichnungen kollidieren nicht**: `UX_Spalte_Board_Bezeichnung` (Migration 002) und `UX_Kartenklasse_Board_Praefix` (Migration 016) gelten **je Board** — beim neuen Board kann keiner der Indizes greifen, auch wenn `Betrieb` eine Spalte „Erledigt" und ein Präfix `WBS-` führt.
+- [x] **Der laufende Zeiteintrag bleibt laufend** (`Ende: null`) — `UX_Zeiteintrag_Karte_Kontributor_Laufend` gilt je Karte und Kontributor, und beide sind neu.
+- [x] **Die archivierte Karte kommt archiviert an**, die Karte ohne Klasse bleibt ohne Klasse, die Karte ohne Sollband bekommt **kein Ersatzband**, und die Spalte „Erledigt" behält Abschlussmarke und Anzeigegrenze 20.
+- [x] **Der stillgelegte Kontributor kommt stillgelegt an** — seine Arbeit steht in der Datei, und ein Import, der ihn aktiv anlegte, erfände einen Zustand.
+- [x] **Gegenprobe durch das Nadelöhr**: das exportierte und wieder eingelesene Board liefert bei `GET /api/boards/{neueId}/export.json` dieselben Inhalte wie die Ausgangsdatei — bis auf die Nummern und den Kopfzeitpunkt.
 
 ### Prüfen, bevor geschrieben wird (`F0072`)
 
 Fertig-Kriterium wörtlich: *„`POST /api/boards/import` nimmt eine Datei entgegen und weist zurueck, was kein Board wiederherstellen kann: keine JSON-Datei, kein Exportkopf, eine fremde Fassungsnummer, ein Verweis auf eine Nummer, die nicht in derselben Datei steht. Jede Zurueckweisung nennt Grund, gefundene Werte und Kompensationsaktion; geschrieben wird nichts."*
 
-- [ ] **Kein JSON** (Textdatei, abgeschnittene Datei, leere Datei) → **400**, Grund mit der Meldung des Parsers, Kompensationsaktion „das Board mit dieser Anwendung neu ausleiten".
-- [ ] **Kein Exportkopf** (gültiges JSON ohne `kopf`) → **400** mit demselben Befundträger; eine fremde JSON-Datei ist kein Board.
-- [ ] **Fremde Fassungsnummer** (Kopf mit `fassung: 2`, erwartet `1`) → **400**, der Befund nennt die **gefundene** und die **erwartete** Zahl. Die Fassung wird **zurückgewiesen, nicht geraten**: ein nachsichtiger Leser, der unbekannte Felder überginge, schriebe ein halbes Board.
-- [ ] **Fremder Anwendungsname** im Kopf → **400**; die Zahl allein genügt nicht.
-- [ ] **Ein Verweis ins Leere** weist die **ganze** Datei zurück und nennt **Zeilenart, Feld und Nummer**. Geprüft werden **acht** Verweisarten: Karte → Spalte, Karte → Kartenklasse, Karte → Verantwortlicher, Urheber von Kommentar, Anhang und Dateiverweis, Zeiteintrag → Karte, Zeiteintrag → Kontributor.
-- [ ] **Nach jeder Zurückweisung ist nichts geschrieben** — geprüft am Bestand, nicht am Statuscode: Boardzahl, Kartenzahl und Personenzahl sind unverändert.
-- [ ] **Geprüft wird auch bei `trocken=false`, und zwar vorher** — die Prüfung sitzt vor dem Schreiben, nicht daneben.
-- [ ] **Ohne Board und ohne Datenbank prüfbar**: jedes Kriterium dieser Gruppe ist an der Antwort allein zu zeigen.
+- [x] **Kein JSON** (Textdatei, abgeschnittene Datei, leere Datei) → **400**, Grund mit der Meldung des Parsers, Kompensationsaktion „das Board mit dieser Anwendung neu ausleiten".
+- [x] **Kein Exportkopf** (gültiges JSON ohne `kopf`) → **400** mit demselben Befundträger; eine fremde JSON-Datei ist kein Board.
+- [x] **Fremde Fassungsnummer** (Kopf mit `fassung: 2`, erwartet `1`) → **400**, der Befund nennt die **gefundene** und die **erwartete** Zahl. Die Fassung wird **zurückgewiesen, nicht geraten**: ein nachsichtiger Leser, der unbekannte Felder überginge, schriebe ein halbes Board.
+- [x] **Fremder Anwendungsname** im Kopf → **400**; die Zahl allein genügt nicht.
+- [x] **Ein Verweis ins Leere** weist die **ganze** Datei zurück und nennt **Zeilenart, Feld und Nummer**. Geprüft werden **acht** Verweisarten: Karte → Spalte, Karte → Kartenklasse, Karte → Verantwortlicher, Urheber von Kommentar, Anhang und Dateiverweis, Zeiteintrag → Karte, Zeiteintrag → Kontributor.
+- [x] **Nach jeder Zurückweisung ist nichts geschrieben** — geprüft am Bestand, nicht am Statuscode: Boardzahl, Kartenzahl und Personenzahl sind unverändert.
+- [x] **Geprüft wird auch bei `trocken=false`, und zwar vorher** — die Prüfung sitzt vor dem Schreiben, nicht daneben.
+- [x] **Ohne Board und ohne Datenbank prüfbar**: jedes Kriterium dieser Gruppe ist an der Antwort allein zu zeigen.
 
 ### Vorschau vor dem Schreiben (`F0073`)
 
 Fertig-Kriterium wörtlich: *„Derselbe Aufruf mit `trocken=true` — der Vorgabe — liefert den Namen des Boards und zehn Zahlen, die entstuenden (Spalten, Kartenklassen, Kontributoren, Karten, Etiketten, Teilaufgaben, Kommentare, Anhaenge, Dateiverweise, Zeiteintraege), nennt die Personennamen, die es in dieser Installation schon gibt, und sagt, dass die Anhaenge ohne Inhalt ankommen. Die Datenbank ist danach unveraendert."*
 
-- [ ] Der Bericht trägt **genau zehn** Zahlen, und sie stimmen mit dem Inhalt der Datei überein — im Beispiel 3 / 1 / 2 / 24 / 1 / 1 / 1 / 1 / 1 / 2.
-- [ ] **Dieselben Zahlen stehen im Bericht des geschriebenen Laufs.** Wer Vorschau und Bericht nebeneinanderlegt, sieht, dass unterwegs nichts verlorenging — und ein Agent bekommt ohne zweiten Aufruf, was ein Mensch im Schirm sieht.
-- [ ] **Die doppelten Namen stehen vorher da**: die Vorschau nennt `Stefan`, weil dieser Name in der Personenliste schon steht — und nennt `Alt-Kollege` **nicht**. Bei zwei Personen gleichen Namens in der Datei steht der Name so oft, wie er entsteht.
-- [ ] **Der Anhanghinweis steht im Bericht**, nicht nur in dieser Anforderung: die Anhänge kommen **ohne Inhalt** an.
-- [ ] **`BoardId` ist in der Vorschau `null`** — das Board entsteht erst beim Schreiben, und eine erfundene Nummer wäre eine Zusage, die niemand hält.
-- [ ] **Die Datenbank ist danach unverändert** — geprüft wird, dass der Dienst **keine** Schreibmethode ruft, und zwar am Test-Repository, nicht am Vertrauen.
+- [x] Der Bericht trägt **genau zehn** Zahlen, und sie stimmen mit dem Inhalt der Datei überein — im Beispiel 3 / 1 / 2 / 24 / 1 / 1 / 1 / 1 / 1 / 2.
+- [x] **Dieselben Zahlen stehen im Bericht des geschriebenen Laufs.** Wer Vorschau und Bericht nebeneinanderlegt, sieht, dass unterwegs nichts verlorenging — und ein Agent bekommt ohne zweiten Aufruf, was ein Mensch im Schirm sieht.
+- [x] **Die doppelten Namen stehen vorher da**: die Vorschau nennt `Stefan`, weil dieser Name in der Personenliste schon steht — und nennt `Alt-Kollege` **nicht**. Bei zwei Personen gleichen Namens in der Datei steht der Name so oft, wie er entsteht.
+- [x] **Der Anhanghinweis steht im Bericht**, nicht nur in dieser Anforderung: die Anhänge kommen **ohne Inhalt** an.
+- [x] **`BoardId` ist in der Vorschau `null`** — das Board entsteht erst beim Schreiben, und eine erfundene Nummer wäre eine Zusage, die niemand hält.
+- [x] **Die Datenbank ist danach unverändert** — geprüft wird, dass der Dienst **keine** Schreibmethode ruft, und zwar am Test-Repository, nicht am Vertrauen.
 
 ### Das Board entsteht mit neuen Nummern (`F0074`)
 
 Fertig-Kriterium wörtlich: *„Mit `trocken=false` entsteht in **einer** Transaktion ein neues Board mit neuer `BoardId`; jeder Verweis der Datei zeigt danach auf die neue Nummer, die Kartennummern aus Praefix und Zaehlerstand sind dieselben wie in der Datei, und keine Zeile eines bestehenden Boards ist veraendert. Die Antwort ist 201 mit dem Bericht und der neuen `BoardId`."*
 
-- [ ] **201** mit dem Bericht und der neuen `BoardId`; **200** bleibt der Vorschau vorbehalten — der Unterschied zwischen „so sähe es aus" und „so ist es jetzt" steht im Statuscode.
-- [ ] **Die Adresse trägt keine `boardId`** (`POST /api/boards/import`), weil es das Board noch nicht gibt; kein Konflikt mit `GET /api/boards/{boardId:long}`, dessen `:long`-Constraint `import` nicht zulässt.
-- [ ] Datei und Feld `trocken` reisen im **selben** multipart-Rumpf; `trocken` trägt `[FromForm]`, sonst bände es aus der Query.
-- [ ] **Alle 19 boardbezogenen Tabellen werden bedient**, soweit die Datei sie füllt: Board, Boardeinstellung mit `ZeigtKartenzahl`, Boardarchivierung nur bei archiviertem Board, Spalte, Kartenklasse mit Zählerstand, Kontributor, Kontributorstilllegung, Karte, Karteneigenschaft, Karteerledigung, Kartenarchivierung, Kartenklassenzuordnung mit Zählerstand, Kartensollzeit, Etikett, Teilaufgabe, Kommentar, Anhang, Dateiverweis, Zeiteintrag.
-- [ ] **Der Anhang bekommt seine Zeile, aber keine Bytes.** Ein Abruf seines Inhalts antwortet mit dem **vorhandenen** Befund `anhang-bytes-fehlen` — Grund, Werte und die Kompensation „entfernen und neu anhängen" —, kein Absturz und kein leerer Download, der wie ein Erfolg aussähe.
-- [ ] Der Fehlervertragstest (`FehlervertragTests`, aus `B0102`) nimmt die Route auf — sonst schlägt `Wenn_ein_Endpunkt_hinzukommt_dann_faellt_auf_dass_seine_Fehlerantworten_ungeprueft_sind` fehl.
+- [x] **201** mit dem Bericht und der neuen `BoardId`; **200** bleibt der Vorschau vorbehalten — der Unterschied zwischen „so sähe es aus" und „so ist es jetzt" steht im Statuscode.
+- [x] **Die Adresse trägt keine `boardId`** (`POST /api/boards/import`), weil es das Board noch nicht gibt; kein Konflikt mit `GET /api/boards/{boardId:long}`, dessen `:long`-Constraint `import` nicht zulässt.
+- [x] Datei und Feld `trocken` reisen im **selben** multipart-Rumpf; `trocken` trägt `[FromForm]`, sonst bände es aus der Query.
+- [x] **Alle 19 boardbezogenen Tabellen werden bedient**, soweit die Datei sie füllt: Board, Boardeinstellung mit `ZeigtKartenzahl`, Boardarchivierung nur bei archiviertem Board, Spalte, Kartenklasse mit Zählerstand, Kontributor, Kontributorstilllegung, Karte, Karteneigenschaft, Karteerledigung, Kartenarchivierung, Kartenklassenzuordnung mit Zählerstand, Kartensollzeit, Etikett, Teilaufgabe, Kommentar, Anhang, Dateiverweis, Zeiteintrag.
+- [x] **Der Anhang bekommt seine Zeile, aber keine Bytes.** Ein Abruf seines Inhalts antwortet mit dem **vorhandenen** Befund `anhang-bytes-fehlen` — Grund, Werte und die Kompensation „entfernen und neu anhängen" —, kein Absturz und kein leerer Download, der wie ein Erfolg aussähe.
+- [x] Der Fehlervertragstest (`FehlervertragTests`, aus `B0102`) nimmt die Route auf — sonst schlägt `Wenn_ein_Endpunkt_hinzukommt_dann_faellt_auf_dass_seine_Fehlerantworten_ungeprueft_sind` fehl.
 
 ### Einstieg auf der Boardliste (`F0075`)
 
 Fertig-Kriterium wörtlich: *„Auf `/boards` steht neben „+ Board anlegen" ein zweiter Knopf „Board importieren"; er oeffnet eine Ablegeflaeche, zeigt nach der Dateiwahl die Vorschau mit ihren Zahlen und ihren beiden Preisen und legt erst auf ausdruecklichen Klick an. Danach steht das neue Board in der Liste und laesst sich von dort oeffnen."*
 
-- [ ] Der Knopf steht **im Seitenkopf neben „+ Board anlegen"** und **nicht** im ⋯-Menü einer Kachel: das Menü handelt an einem **vorhandenen** Board, der Import **erzeugt** eines.
-- [ ] **Kein eigener Schirm und keine eigene Route** — der Ablauf sitzt auf `/boards`.
-- [ ] **Zwei Schritte, nicht drei**: Datei wählen und Vorschau ansehen, dann bestätigen. Anders als beim WBS-Import gibt es **nichts zu wählen, nur zu bestätigen**.
-- [ ] **Die beiden Preise stehen vor dem Knopf, nicht danach**: welche Personennamen ein zweites Mal entstehen und dass die Anhänge ohne Inhalt ankommen.
-- [ ] Die Ablegefläche ist **während des Laufs gesperrt** (`R00024`) — eine zweite Ablage während des ersten Laufs verlöre den ersten still.
-- [ ] Nach dem Anlegen führt ein Verweis auf `/boards/{BoardId}`, und die Liste wird **neu geholt** — sie ist die eine Quelle, wie schon nach einer Kacheländerung.
-- [ ] Eine nicht erreichbare WebApi ergibt eine **lesbare Meldung** statt einer Ausnahmeseite (`WebApiAufruf.MitAusfallmeldung`).
-- [ ] **`trocken` reist in beiden Schritten ausdrücklich mit** — im ersten als `true`, im zweiten als `false`; eine Auslassung ließe die Vorgabe stillschweigend gelten.
+- [x] Der Knopf steht **im Seitenkopf neben „+ Board anlegen"** und **nicht** im ⋯-Menü einer Kachel: das Menü handelt an einem **vorhandenen** Board, der Import **erzeugt** eines.
+- [x] **Kein eigener Schirm und keine eigene Route** — der Ablauf sitzt auf `/boards`.
+- [x] **Zwei Schritte, nicht drei**: Datei wählen und Vorschau ansehen, dann bestätigen. Anders als beim WBS-Import gibt es **nichts zu wählen, nur zu bestätigen**.
+- [x] **Die beiden Preise stehen vor dem Knopf, nicht danach**: welche Personennamen ein zweites Mal entstehen und dass die Anhänge ohne Inhalt ankommen.
+- [x] Die Ablegefläche ist **während des Laufs gesperrt** (`R00024`) — eine zweite Ablage während des ersten Laufs verlöre den ersten still.
+- [x] Nach dem Anlegen führt ein Verweis auf `/boards/{BoardId}`, und die Liste wird **neu geholt** — sie ist die eine Quelle, wie schon nach einer Kacheländerung.
+- [x] Eine nicht erreichbare WebApi ergibt eine **lesbare Meldung** statt einer Ausnahmeseite (`WebApiAufruf.MitAusfallmeldung`).
+- [x] **`trocken` reist in beiden Schritten ausdrücklich mit** — im ersten als `true`, im zweiten als `false`; eine Auslassung ließe die Vorgabe stillschweigend gelten.
 
 ### Der grüne Bestand bleibt grün
 
-- [ ] `GET /api/boards/{boardId}/export.json` bleibt **unverändert** — dieser Slice liest die Datei, er ändert sie nicht.
-- [ ] `Boardexport`, `Exportkopf`, `Exportboard`, `Exportspalte` und `Exportkarte` bleiben, wie sie sind. **Kein zweiter Dateityp.**
-- [ ] Der WBS-Import (`I0030`, `I0031`) bleibt unberührt; `Importanfrage`, `Importbericht` und `WbsImportEndpunkte` werden **nicht** angefasst.
-- [ ] `Nichtgefunden`, `Doppelt` und `Stillgelegt` bleiben unverändert; der neue Befundträger tritt **daneben**.
-- [ ] `POST /api/boards` (Board anlegen) und `GET /api/boards/{boardId}` bleiben unverändert erreichbar.
-- [ ] **Keine Migration, keine Schemaänderung.**
+- [x] `GET /api/boards/{boardId}/export.json` bleibt **unverändert** — dieser Slice liest die Datei, er ändert sie nicht.
+- [x] `Boardexport`, `Exportkopf`, `Exportboard`, `Exportspalte` und `Exportkarte` bleiben, wie sie sind. **Kein zweiter Dateityp.**
+- [x] Der WBS-Import (`I0030`, `I0031`) bleibt unberührt; `Importanfrage`, `Importbericht` und `WbsImportEndpunkte` werden **nicht** angefasst.
+- [x] `Nichtgefunden`, `Doppelt` und `Stillgelegt` bleiben unverändert; der neue Befundträger tritt **daneben**.
+- [x] `POST /api/boards` (Board anlegen) und `GET /api/boards/{boardId}` bleiben unverändert erreichbar.
+- [x] **Keine Migration, keine Schemaänderung.**
 
 ### Was dieser Slice ausdrücklich nicht tut
 
-- [ ] **Kein Zusammenführen von Kontributoren** — jeder Kontributor der Datei entsteht neu.
-- [ ] **Kein Wiedererkennen** eines schon importierten Boards: dieselbe Datei zweimal eingelesen ergibt **zwei** unabhängige Boards.
-- [ ] **Kein Überschreiben oder Aktualisieren** eines bestehenden Boards, kein Soll-Ist-Abgleich wie beim WBS-Import (`I0031`).
-- [ ] **Keine Anhangbytes**, kein Archiv aus JSON und Dateien, kein ZIP.
-- [ ] **Kein Löschweg für ein Board** — er fehlt im Bestand und wird hier nicht nachgeholt.
-- [ ] **Kein Ereignis auf dem Live-Kanal**; ein importiertes Board erscheint bei anderen Betrachtern erst nach dem nächsten Laden.
-- [ ] **Kein Import mehrerer Boards** aus einer Datei, kein Gesamtimport einer Installation.
-- [ ] **Kein Fortschrittsbalken, kein Strom, kein Chunking.**
+- [x] **Kein Zusammenführen von Kontributoren** — jeder Kontributor der Datei entsteht neu.
+- [x] **Kein Wiedererkennen** eines schon importierten Boards: dieselbe Datei zweimal eingelesen ergibt **zwei** unabhängige Boards.
+- [x] **Kein Überschreiben oder Aktualisieren** eines bestehenden Boards, kein Soll-Ist-Abgleich wie beim WBS-Import (`I0031`).
+- [x] **Keine Anhangbytes**, kein Archiv aus JSON und Dateien, kein ZIP.
+- [x] **Kein Löschweg für ein Board** — er fehlt im Bestand und wird hier nicht nachgeholt.
+- [x] **Kein Ereignis auf dem Live-Kanal**; ein importiertes Board erscheint bei anderen Betrachtern erst nach dem nächsten Laden.
+- [x] **Kein Import mehrerer Boards** aus einer Datei, kein Gesamtimport einer Installation.
+- [x] **Kein Fortschrittsbalken, kein Strom, kein Chunking.**
 
 ## Betroffene Verzeichnisstruktur
 

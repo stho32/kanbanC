@@ -1,6 +1,6 @@
 ---
 id: R00037
-status: Neu
+status: In Arbeit
 datum: 2026-09-07
 ---
 
@@ -63,63 +63,63 @@ Fertig-Kriterium der Interaction wörtlich: *„Der Restumfang über die Zeit is
 Das durchgehende Rechenbeispiel: Bestand aus **fünf** Karten, heute ist der **07.09.2026**.
 `K1` erledigt am **03.09.**, `K2` und `K3` am **05.09.**, `K4` **ohne** `ErledigtAm` (archiviert), `K5` erledigt am **09.09.** (künftiges Datum).
 
-- [ ] Ohne `seit` läuft die Achse vom frühesten `ErledigtAm` bis heute: **03., 04., 05., 06., 07.09.** — fünf Tage, lückenlos.
-- [ ] Die offenen Karten am Tagesende ergeben die Reihe **4, 4, 2, 2, 2**: am 03. ist `K1` bereits erledigt, am 05. kommen `K2` und `K3` dazu; `K4` (ohne Datum) und `K5` (künftiges Datum) sind an **jedem** Tag offen.
-- [ ] Die erledigten Karten je Tag: **03. → `K1`**, 04. → keine, **05. → `K2`, `K3`**, 06. → keine, 07. → keine. Tage ohne Abschluss stehen mit `0` in der Reihe und **fehlen nicht**.
-- [ ] Das künftige `ErledigtAm` von `K5` **verlängert die Achse nicht** — sie endet am 07.09.
-- [ ] Die Kopfzahlen: **offen 2 · erledigt 3 · im Bestand 5**. `offen` ist der Wert der Kurve am letzten Tag, `erledigt` ist `im Bestand − offen`.
-- [ ] `?seit=2026-09-05` liefert die Achse **05., 06., 07.** mit der Reihe **2, 2, 2** — die **Kopfzahlen bleiben 2 · 3 · 5**, weil sie dem ganzen Bestand gelten und nicht dem Ausschnitt.
-- [ ] `?seit=2026-09-01` (vor dem frühesten Abschluss) liefert sieben Tage mit führendem flachem Stück **5, 5, 4, 4, 2, 2, 2**.
-- [ ] `?seit=2026-09-20` (nach heute) liefert **genau den einen Tag heute**, nicht die leere Reihe.
-- [ ] Die Zahl der **Karten ohne Erledigungsdatum in Abschlussspalte oder Archiv** ist **1** (`K4`).
+- [x] Ohne `seit` läuft die Achse vom frühesten `ErledigtAm` bis heute: **03., 04., 05., 06., 07.09.** — fünf Tage, lückenlos.
+- [x] Die offenen Karten am Tagesende ergeben die Reihe **4, 4, 2, 2, 2**: am 03. ist `K1` bereits erledigt, am 05. kommen `K2` und `K3` dazu; `K4` (ohne Datum) und `K5` (künftiges Datum) sind an **jedem** Tag offen.
+- [x] Die erledigten Karten je Tag: **03. → `K1`**, 04. → keine, **05. → `K2`, `K3`**, 06. → keine, 07. → keine. Tage ohne Abschluss stehen mit `0` in der Reihe und **fehlen nicht**.
+- [x] Das künftige `ErledigtAm` von `K5` **verlängert die Achse nicht** — sie endet am 07.09.
+- [x] Die Kopfzahlen: **offen 2 · erledigt 3 · im Bestand 5**. `offen` ist der Wert der Kurve am letzten Tag, `erledigt` ist `im Bestand − offen`.
+- [x] `?seit=2026-09-05` liefert die Achse **05., 06., 07.** mit der Reihe **2, 2, 2** — die **Kopfzahlen bleiben 2 · 3 · 5**, weil sie dem ganzen Bestand gelten und nicht dem Ausschnitt.
+- [x] `?seit=2026-09-01` (vor dem frühesten Abschluss) liefert sieben Tage mit führendem flachem Stück **5, 5, 4, 4, 2, 2, 2**.
+- [x] `?seit=2026-09-20` (nach heute) liefert **genau den einen Tag heute**, nicht die leere Reihe.
+- [x] Die Zahl der **Karten ohne Erledigungsdatum in Abschlussspalte oder Archiv** ist **1** (`K4`).
 
 ### Die Burndown-Reihe über die API (`F0063`)
 
 Fertig-Kriterium wörtlich: *„`GET /api/boards/{boardId}/kartenklassen/{kartenklasseId}/burndown` liefert für den Kartenbestand je Kalendertag lückenlos den Stand offener Karten am Tagesende und die an dem Tag erledigten Karten mit Nummer und Titel, dazu die Kopfzahlen offen · erledigt · im Bestand und die Zahl der Karten ohne Erledigungsdatum in Abschlussspalte oder Archiv; `?seit=YYYY-MM-DD` schneidet den Beginn; unbekanntes Board, unbekannte Kartenklasse und unlesbares `seit` werden mit Grund, Werten und Kompensationsaktion zurückgewiesen. Ohne Schirm allein an der 200-Antwort prüfbar."*
 
-- [ ] Der Aufruf antwortet **200** mit einer Tagesliste in Kalenderfolge und den vier Kopfzahlen.
-- [ ] Der **Bestand** ist Board × Kartenklasse — dasselbe Set wie `GET .../kartenklassen/{kartenklasseId}/karten` (`I0022`), **archivierte Karten eingeschlossen**.
-- [ ] Das **Ende der Achse ist immer heute**, auch wenn seit Tagen nichts erledigt wurde; es gibt **keinen `bis`-Parameter**.
-- [ ] Der **Beginn** ist das angefragte `seit`, sonst das früheste `ErledigtAm` des Bestands, sonst heute.
-- [ ] Ein Bestand **ohne Karten** antwortet **200** mit dem einen Tag heute, der Reihe `0` und den Kopfzahlen `0 · 0 · 0` — **nicht 404**.
-- [ ] Ein Bestand **ohne jedes Erledigungsdatum** antwortet **200** mit dem einen Tag heute; alle Karten stehen offen.
-- [ ] Unbekanntes Board → **404**, Code `board-unbekannt`, Meldung mit der Board-Nummer, Kompensation `GET /api/boards`.
-- [ ] Unbekannte Kartenklasse → **404**, Code `kartenklasse-unbekannt`; eine Kartenklasse eines **fremden** Boards ist der eigene Fall `kartenklasse-fremd`.
-- [ ] Unlesbares `seit` (z. B. `?seit=gestern`) → **400** mit **eigenem Befund**: die Meldung nennt den **gelesenen Wert** und die erwartete Form `YYYY-MM-DD`, die Kompensation nennt die Route ohne Parameter.
-- [ ] Ein **fehlendes** `seit` ist kein Fehler — es ist die Standardachse.
-- [ ] Der Fehlervertragstest aus `B0102` nimmt die neue Route auf.
-- [ ] **Ohne Schirm prüfbar**: alle Kriterien dieser Gruppe sind an der Antwort allein zu zeigen.
+- [x] Der Aufruf antwortet **200** mit einer Tagesliste in Kalenderfolge und den vier Kopfzahlen.
+- [x] Der **Bestand** ist Board × Kartenklasse — dasselbe Set wie `GET .../kartenklassen/{kartenklasseId}/karten` (`I0022`), **archivierte Karten eingeschlossen**.
+- [x] Das **Ende der Achse ist immer heute**, auch wenn seit Tagen nichts erledigt wurde; es gibt **keinen `bis`-Parameter**.
+- [x] Der **Beginn** ist das angefragte `seit`, sonst das früheste `ErledigtAm` des Bestands, sonst heute.
+- [x] Ein Bestand **ohne Karten** antwortet **200** mit dem einen Tag heute, der Reihe `0` und den Kopfzahlen `0 · 0 · 0` — **nicht 404**.
+- [x] Ein Bestand **ohne jedes Erledigungsdatum** antwortet **200** mit dem einen Tag heute; alle Karten stehen offen.
+- [x] Unbekanntes Board → **404**, Code `board-unbekannt`, Meldung mit der Board-Nummer, Kompensation `GET /api/boards`.
+- [x] Unbekannte Kartenklasse → **404**, Code `kartenklasse-unbekannt`; eine Kartenklasse eines **fremden** Boards ist der eigene Fall `kartenklasse-fremd`.
+- [x] Unlesbares `seit` (z. B. `?seit=gestern`) → **400** mit **eigenem Befund**: die Meldung nennt den **gelesenen Wert** und die erwartete Form `YYYY-MM-DD`, die Kompensation nennt die Route ohne Parameter.
+- [x] Ein **fehlendes** `seit` ist kein Fehler — es ist die Standardachse.
+- [x] Der Fehlervertragstest aus `B0102` nimmt die neue Route auf.
+- [x] **Ohne Schirm prüfbar**: alle Kriterien dieser Gruppe sind an der Antwort allein zu zeigen.
 
 ### Der Schirm zeichnet die Kurve (`F0064`)
 
 Fertig-Kriterium wörtlich: *„Auf `/auswertungen` ist `Burndown` wählbar und zeigt für den gewählten Bestand die Kurve offener Karten über Kalendertage, die Kopfzahlen offen · erledigt · im Bestand darüber, die Tagestabelle Tag · erledigt · offen · Karten darunter, den Zeitraum als Bedienelement und den API-Aufruf im Fuß; die vier Ränder tragen: Bestand ohne Karten, Bestand ohne jedes Erledigungsdatum, alle Karten erledigt, WebApi nicht erreichbar."*
 
 - [ ] Der Punkt `Burndown` im Umschalter ist **wählbar** — kein gesperrter `span` mehr; die übrigen drei bleiben gesperrt.
-- [ ] Board- und Kartenklassenwahl bleiben **gemeinsam** für beide Auswertungen: derselbe Bestand, ein Wechsel der Auswertung wirft die Wahl nicht weg.
-- [ ] Die Kurve ist eine **SVG-`<polyline>`**, deren `points`-Attribut so viele Paare trägt, wie die Achse Tage hat, und deren Werte der Tagesreihe folgen. Am letzten Punkt steht der Wert lesbar.
-- [ ] Die **Kopfzahlen** stehen über der Kurve, die **Tagestabelle** darunter mit Tag · erledigt · offen · Karten; die Kartennummern des Tages stehen in der Zeile.
-- [ ] Die Tabelle zeigt **nur Tage mit mindestens einem Abschluss**, die Kurve **alle** — und beide entstehen aus **derselben** Reihe, ohne zweite Rechnung.
+- [x] Board- und Kartenklassenwahl bleiben **gemeinsam** für beide Auswertungen: derselbe Bestand, ein Wechsel der Auswertung wirft die Wahl nicht weg.
+- [x] Die Kurve ist eine **SVG-`<polyline>`**, deren `points`-Attribut so viele Paare trägt, wie die Achse Tage hat, und deren Werte der Tagesreihe folgen. Am letzten Punkt steht der Wert lesbar.
+- [x] Die **Kopfzahlen** stehen über der Kurve, die **Tagestabelle** darunter mit Tag · erledigt · offen · Karten; die Kartennummern des Tages stehen in der Zeile.
+- [x] Die Tabelle zeigt **nur Tage mit mindestens einem Abschluss**, die Kurve **alle** — und beide entstehen aus **derselben** Reihe, ohne zweite Rechnung.
 - [ ] Der **Zeitraum** ist ein Bedienelement neben Board und Kartenklasse; seine Vorgabe zeigt den frühesten Erledigungstag, und eine Änderung lässt Kurve, Kopfzahlen und Tabelle folgen.
-- [ ] Der **Fuß** zeigt den Aufruf der gewählten Auswertung: `GET …/soll-ist` bzw. `GET …/burndown?seit=…` — nicht mehr fest den einen.
-- [ ] Rand 1 — **Bestand ohne Karten**: lesbare Leermeldung statt leerer Fläche.
-- [ ] Rand 2 — **Bestand ohne jedes Erledigungsdatum**: Meldung **mit Kompensationsaktion** („eine Karte in die Abschlussspalte ziehen oder einen früheren Beginn wählen") statt einer Kurve aus einem Punkt.
-- [ ] Rand 3 — **alle Karten erledigt**: die Kurve endet auf **0**, und das ist kein Sonderfall, sondern das Ergebnis.
-- [ ] Rand 4 — **WebApi nicht erreichbar**: lesbare Meldung über `WebApiAufruf.MitAusfallmeldung` statt Ausnahmeseite; der Umschalter bleibt stehen.
-- [ ] Die **Fußzeile nennt die Zahl der Karten ohne Erledigungsdatum** in Abschlussspalte oder Archiv — gezeigt statt versteckt, wie `I0033` es mit den Karten ohne Soll hält.
-- [ ] **Kein Gestaltungsliteral** in `Burndownkurve.razor` und in der Stilvorlage der Fläche: Farben und Maße kommen aus `gestaltung.css` — geprüft wie in `AuswertungsflaecheTests`.
+- [x] Der **Fuß** zeigt den Aufruf der gewählten Auswertung: `GET …/soll-ist` bzw. `GET …/burndown?seit=…` — nicht mehr fest den einen.
+- [x] Rand 1 — **Bestand ohne Karten**: lesbare Leermeldung statt leerer Fläche.
+- [x] Rand 2 — **Bestand ohne jedes Erledigungsdatum**: Meldung **mit Kompensationsaktion** („eine Karte in die Abschlussspalte ziehen oder einen früheren Beginn wählen") statt einer Kurve aus einem Punkt.
+- [x] Rand 3 — **alle Karten erledigt**: die Kurve endet auf **0**, und das ist kein Sonderfall, sondern das Ergebnis.
+- [x] Rand 4 — **WebApi nicht erreichbar**: lesbare Meldung über `WebApiAufruf.MitAusfallmeldung` statt Ausnahmeseite; der Umschalter bleibt stehen.
+- [x] Die **Fußzeile nennt die Zahl der Karten ohne Erledigungsdatum** in Abschlussspalte oder Archiv — gezeigt statt versteckt, wie `I0033` es mit den Karten ohne Soll hält.
+- [x] **Kein Gestaltungsliteral** in `Burndownkurve.razor` und in der Stilvorlage der Fläche: Farben und Maße kommen aus `gestaltung.css` — geprüft wie in `AuswertungsflaecheTests`.
 
 ### Der grüne Bestand bleibt grün
 
-- [ ] `I0033` wird **nicht** umgebaut: `LiesSollIst`, `AuswertungsService.SollIst`, `SollIstTabelle.razor` und die Route `soll-ist` bleiben, wie sie sind. Sie **wachsen** nur dort, wo eine zweite Auskunft dazukommt.
-- [ ] `Auswertungen.razor` führt den Soll-Ist-Vergleich nach diesem Slice **unverändert**; die Suite von `R00036` bleibt grün.
-- [ ] **Keine Migration, keine Schemaänderung.** `Karteerledigung` und `Kartenarchivierung` werden nur gelesen.
+- [x] `I0033` wird **nicht** umgebaut: `LiesSollIst`, `AuswertungsService.SollIst`, `SollIstTabelle.razor` und die Route `soll-ist` bleiben, wie sie sind. Sie **wachsen** nur dort, wo eine zweite Auskunft dazukommt.
+- [x] `Auswertungen.razor` führt den Soll-Ist-Vergleich nach diesem Slice **unverändert**; die Suite von `R00036` bleibt grün.
+- [x] **Keine Migration, keine Schemaänderung.** `Karteerledigung` und `Kartenarchivierung` werden nur gelesen.
 - [ ] `I0037` bleibt unberührt.
 
 ### Was dieser Slice ausdrücklich nicht tut
 
-- [ ] **Kein Sollstrich, keine Prognoselinie, keine Stunden auf der Y-Achse** — alle drei setzten eine geplante Dauer voraus, die die Vision ausschließt („Burndown und Critical Chain rechnen aus den Ist-Daten; sie planen nicht").
-- [ ] **Kein `bis`-Parameter**, kein `ArchiviertAm`, kein Verlauf je Karte.
-- [ ] **Kein Diagrammpaket**, kein JS-Interop, kein Canvas.
+- [x] **Kein Sollstrich, keine Prognoselinie, keine Stunden auf der Y-Achse** — alle drei setzten eine geplante Dauer voraus, die die Vision ausschließt („Burndown und Critical Chain rechnen aus den Ist-Daten; sie planen nicht").
+- [x] **Kein `bis`-Parameter**, kein `ArchiviertAm`, kein Verlauf je Karte.
+- [x] **Kein Diagrammpaket**, kein JS-Interop, kein Canvas.
 - [ ] Kein Puffer-Verbrauch (`I0035`), kein Zeitexport (`I0036`), keine Rohdaten (`I0037`).
 
 ## Betroffene Verzeichnisstruktur

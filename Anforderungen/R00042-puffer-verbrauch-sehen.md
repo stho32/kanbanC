@@ -1,6 +1,6 @@
 ---
 id: R00042
-status: Neu
+status: In Arbeit
 datum: 2026-09-08
 ---
 
@@ -70,81 +70,81 @@ Das durchgehende Beispiel: Bestand aus **fünf** Karten der Kartenklasse `WBS` a
 | `K4` | 1,0–3,0 | 0,0 | nein | **0,0** |
 | `K5` | *kein Band* | 8,0 | nein | *kein Wert* (nicht 0) |
 
-- [ ] **Kettenpuffer** = `Σ Bis − Σ Von` = `10,5 − 5,4` = **5,1 h**. `K5` zählt in keiner der beiden Summen mit.
-- [ ] **Verbrauchte Stunden** = `3,0 + 0,0 + 1,0 + 0,0` = **4,0 h**. Die 8,0 h von `K5` gehen **nicht** ein — ohne Band gibt es nichts zu verbrauchen.
-- [ ] **Verbrauchsanteil** = `4,0 / 5,1` = **78 %** (78,4 %, kaufmännisch auf ganze Prozent).
-- [ ] **Fortschritt (Soll-gewichtet)** = `Σ Von der erledigten Karten / Σ Von der Kette` = `4,0 / 5,4` = **74 %**.
-- [ ] **Zweite Kopfzahl nach Kartenzahl**: **2 von 5 erledigt**. Beide Lesarten stehen nebeneinander, wie `I0034` es hält.
-- [ ] **Karten ohne Soll**: **1** (`K5`) — als Zahl in der Fußzeile, wie in `I0033` und `I0034`.
-- [ ] `K1` überschreitet mit 5,0 h auch ihre **Obergrenze** von 4,0 h; ihr Verbrauch bleibt **3,0 h und wird nicht auf 2,0 h gedeckelt**. Der Kettenanteil darf über 100 % laufen — das ist die rote Zone, keine Zahl, die man kappt.
-- [ ] `K2` liegt mit 0,2 h **unter** ihrer Untergrenze von 0,4 h; ihr Verbrauch ist **0,0 und nicht −0,2**. Ohne diese Regel verdeckte eine kaum begonnene Karte den Überzug einer anderen.
+- [x] **Kettenpuffer** = `Σ Bis − Σ Von` = `10,5 − 5,4` = **5,1 h**. `K5` zählt in keiner der beiden Summen mit.
+- [x] **Verbrauchte Stunden** = `3,0 + 0,0 + 1,0 + 0,0` = **4,0 h**. Die 8,0 h von `K5` gehen **nicht** ein — ohne Band gibt es nichts zu verbrauchen.
+- [x] **Verbrauchsanteil** = `4,0 / 5,1` = **78 %** (78,4 %, kaufmännisch auf ganze Prozent).
+- [x] **Fortschritt (Soll-gewichtet)** = `Σ Von der erledigten Karten / Σ Von der Kette` = `4,0 / 5,4` = **74 %**.
+- [x] **Zweite Kopfzahl nach Kartenzahl**: **2 von 5 erledigt**. Beide Lesarten stehen nebeneinander, wie `I0034` es hält.
+- [x] **Karten ohne Soll**: **1** (`K5`) — als Zahl in der Fußzeile, wie in `I0033` und `I0034`.
+- [x] `K1` überschreitet mit 5,0 h auch ihre **Obergrenze** von 4,0 h; ihr Verbrauch bleibt **3,0 h und wird nicht auf 2,0 h gedeckelt**. Der Kettenanteil darf über 100 % laufen — das ist die rote Zone, keine Zahl, die man kappt.
+- [x] `K2` liegt mit 0,2 h **unter** ihrer Untergrenze von 0,4 h; ihr Verbrauch ist **0,0 und nicht −0,2**. Ohne diese Regel verdeckte eine kaum begonnene Karte den Überzug einer anderen.
 
 ### Die drei Leerfälle sind drei verschiedene Fälle
 
-- [ ] **Bestand ohne Karten** → **200**, alle vier Größen ohne Wert, Kartenanzahl 0 — **nicht 404**.
-- [ ] **Bestand ohne jedes Sollband** → **200**; Kettenpuffer, Verbrauch, Anteil und Fortschritt sind **ohne Wert** (`null`), **nicht 0,0**. Ohne Band gibt es weder Puffer noch Verbrauch (dieselbe Regel wie `Abweichungsrechner`).
-- [ ] **Kette ohne Puffer** — jede Karte trägt eine **Punktschätzung**, also `Σ Bis − Σ Von = 0`: **200** mit Kettenpuffer **`0,0 h`** (eine echte Zahl!), verbrauchten Stunden als Zahl und **Verbrauchsanteil ohne Wert** statt einer Division durch null. Der **Fortschritt bleibt eine Zahl**, solange `Σ Von > 0`.
-- [ ] Rechenbeispiel dazu: drei Karten mit `2,0–2,0` / 3,0 h Ist, `0,4–0,4` / 0,6 h und `1,0–1,0` / 1,4 h ergeben **Kettenpuffer 0,0 h · verbraucht 1,6 h** (`1,0 + 0,2 + 0,4`) **· Anteil ohne Wert · Fortschritt nach `Σ Von`**.
-- [ ] **Der Unterschied zwischen „kein Band" (`null`) und „kein Puffer" (`0,0`) ist prüfbar** und wird nicht eingeebnet — er ist der Regelfall: **469 von 559 Aufwandszeilen der eigenen WBS sind Punktschätzungen**.
+- [x] **Bestand ohne Karten** → **200**, alle vier Größen ohne Wert, Kartenanzahl 0 — **nicht 404**.
+- [x] **Bestand ohne jedes Sollband** → **200**; Kettenpuffer, Verbrauch, Anteil und Fortschritt sind **ohne Wert** (`null`), **nicht 0,0**. Ohne Band gibt es weder Puffer noch Verbrauch (dieselbe Regel wie `Abweichungsrechner`).
+- [x] **Kette ohne Puffer** — jede Karte trägt eine **Punktschätzung**, also `Σ Bis − Σ Von = 0`: **200** mit Kettenpuffer **`0,0 h`** (eine echte Zahl!), verbrauchten Stunden als Zahl und **Verbrauchsanteil ohne Wert** statt einer Division durch null. Der **Fortschritt bleibt eine Zahl**, solange `Σ Von > 0`.
+- [x] Rechenbeispiel dazu: drei Karten mit `2,0–2,0` / 3,0 h Ist, `0,4–0,4` / 0,6 h und `1,0–1,0` / 1,4 h ergeben **Kettenpuffer 0,0 h · verbraucht 1,6 h** (`1,0 + 0,2 + 0,4`) **· Anteil ohne Wert · Fortschritt nach `Σ Von`**.
+- [x] **Der Unterschied zwischen „kein Band" (`null`) und „kein Puffer" (`0,0`) ist prüfbar** und wird nicht eingeebnet — er ist der Regelfall: **469 von 559 Aufwandszeilen der eigenen WBS sind Punktschätzungen**.
 
 ### Der Pufferstand über die API (`F0076`)
 
 Fertig-Kriterium wörtlich: *„`GET /api/boards/{boardId}/kartenklassen/{kartenklasseId}/puffer` liefert für den Kartenbestand den Kettenpuffer in Stunden, die verbrauchten Stunden und ihren Anteil, den Soll-gewichteten Fortschritt und je Karte Nummer, Titel, Sollband, erfasste Zeit und verbrauchten Puffer; ein Bestand ohne Band und eine Kette ohne Puffer antworten 200 ohne Prozentwerte statt eines Fehlers; unbekanntes Board, unbekannte und fremde Kartenklasse antworten 404 mit Grund, Werten und Kompensationsaktion."*
 
-- [ ] Der Aufruf antwortet **200** mit Kopfzahlen und Kartenzeilen in **Kartennummernfolge** — derselbe Schnitt und dieselbe Ordnung wie `soll-ist`.
-- [ ] Der **Bestand** ist Board × Kartenklasse, dasselbe Set wie `GET …/kartenklassen/{kartenklasseId}/karten` (`I0022`), **archivierte Karten eingeschlossen** — ihre Zeit wurde geleistet.
-- [ ] Je Zeile stehen **Nummer, Titel, Sollband, erfasste Zeit und verbrauchter Puffer**; eine Karte ohne Band trägt Band und Verbrauch **ohne Wert**.
-- [ ] Die **erfasste Zeit** kommt über denselben Weg wie in `I0033`: ein **laufender Timer zählt nicht mit** (`AND e.Ende IS NOT NULL`).
-- [ ] „**Erledigt**" heißt wortgleich wie in `I0034`: **`ErledigtAm` ist gesetzt** — nicht „steht in einer Abschlussspalte", nicht „ist archiviert".
-- [ ] **Kein Zeitraumparameter.** Ein `?seit=` oder `?von=` wird nicht gelesen und nicht dokumentiert.
-- [ ] Unbekanntes Board → **404**, Code `board-unbekannt`, Meldung mit der Board-Nummer, Kompensation `GET /api/boards`.
-- [ ] Unbekannte Kartenklasse → **404**, Code `kartenklasse-unbekannt`; eine Kartenklasse eines **fremden** Boards ist der eigene Fall `kartenklasse-fremd` und nennt beide Board-Nummern.
-- [ ] Die **Prüfreihenfolge ist dieselbe wie bei `Burndown`**: erst das Board, dann die Kartenklasse — die Karten einer fremden Klasse werden gar nicht erst gelesen.
-- [ ] **Der Fehlervertragstest (`FehlervertragTests`) nimmt die neue Route auf** — sonst schlägt er fehl, weil er jede Route ohne Fehlerprüfung meldet.
-- [ ] **Ohne Schirm prüfbar**: jedes Kriterium dieser Gruppe ist allein an der Antwort zu zeigen.
+- [x] Der Aufruf antwortet **200** mit Kopfzahlen und Kartenzeilen in **Kartennummernfolge** — derselbe Schnitt und dieselbe Ordnung wie `soll-ist`.
+- [x] Der **Bestand** ist Board × Kartenklasse, dasselbe Set wie `GET …/kartenklassen/{kartenklasseId}/karten` (`I0022`), **archivierte Karten eingeschlossen** — ihre Zeit wurde geleistet.
+- [x] Je Zeile stehen **Nummer, Titel, Sollband, erfasste Zeit und verbrauchter Puffer**; eine Karte ohne Band trägt Band und Verbrauch **ohne Wert**.
+- [x] Die **erfasste Zeit** kommt über denselben Weg wie in `I0033`: ein **laufender Timer zählt nicht mit** (`AND e.Ende IS NOT NULL`).
+- [x] „**Erledigt**" heißt wortgleich wie in `I0034`: **`ErledigtAm` ist gesetzt** — nicht „steht in einer Abschlussspalte", nicht „ist archiviert".
+- [x] **Kein Zeitraumparameter.** Ein `?seit=` oder `?von=` wird nicht gelesen und nicht dokumentiert.
+- [x] Unbekanntes Board → **404**, Code `board-unbekannt`, Meldung mit der Board-Nummer, Kompensation `GET /api/boards`.
+- [x] Unbekannte Kartenklasse → **404**, Code `kartenklasse-unbekannt`; eine Kartenklasse eines **fremden** Boards ist der eigene Fall `kartenklasse-fremd` und nennt beide Board-Nummern.
+- [x] Die **Prüfreihenfolge ist dieselbe wie bei `Burndown`**: erst das Board, dann die Kartenklasse — die Karten einer fremden Klasse werden gar nicht erst gelesen.
+- [x] **Der Fehlervertragstest (`FehlervertragTests`) nimmt die neue Route auf** — sonst schlägt er fehl, weil er jede Route ohne Fehlerprüfung meldet.
+- [x] **Ohne Schirm prüfbar**: jedes Kriterium dieser Gruppe ist allein an der Antwort zu zeigen.
 
 ### Der Schirm zeigt die Fieberkurve (`F0077`)
 
 Fertig-Kriterium wörtlich: *„Auf `/auswertungen` ist `Puffer-Verbrauch` wählbar und zeigt für den gewählten Bestand die Fieberkurve mit den drei Zonen und dem Punkt „heute" (Fortschritt waagerecht, Puffer-Verbrauch senkrecht), darüber Kettenpuffer, verbrauchte Stunden und Anteil sowie den Fortschritt, darunter je Karte Sollband, erfasste Zeit und verbrauchten Puffer; ein Bestand ohne Soll und eine Kette ohne Puffer stehen als Satz statt als Zahl; der Fuß nennt den Aufruf."*
 
-- [ ] Der Punkt `Puffer-Verbrauch` im Umschalter ist **wählbar** — kein gesperrter `span#auswertung-puffer` mehr; die Liste `NochNichtGebaut` **bleibt leer stehen** und wird nicht abgebaut.
-- [ ] Board- und Kartenklassenwahl bleiben **gemeinsam** über alle Auswertungen: ein Wechsel wirft die Wahl nicht weg.
-- [ ] Die **Filterzeile zeigt für diese Auswertung kein Zeitraumelement** — anders als bei `Burndown` und `Zeitexport`.
-- [ ] Die Fläche zeichnet **drei Zonen über zwei Geraden**, Achsen 0–100 % mit Beschriftung: waagerecht **Fortschritt**, senkrecht **Puffer-Verbrauch**.
-- [ ] Die Zonengrenzen sind **festgelegt und geprüft**: grün/gelb verläuft von `(0 %, 0 %)` nach `(100 %, 66,7 %)`, gelb/rot von `(0 %, 33,3 %)` nach `(100 %, 100 %)`.
-- [ ] **Zonenprobe am Rechenbeispiel**: bei 74 % Fortschritt liegt die grün/gelb-Grenze bei **49,3 %** und die gelb/rot-Grenze bei **82,7 %**; der Punkt bei **78 %** liegt damit in **Gelb**. Ein Verbrauch von 90 % läge bei demselben Fortschritt in **Rot**, einer von 30 % in **Grün**.
-- [ ] Der **Punkt „heute"** ist ein `<circle>`, dessen `cx` und `cy` aus Fortschritt und Verbrauch entstehen und im Test lesbar sind; sein Wert steht daneben als Text.
-- [ ] **Über** der Kurve stehen **Kettenpuffer · verbrauchte Stunden · Anteil · Fortschritt**, dazu die Kartenzahl als zweite Lesart des Fortschritts.
-- [ ] **Unter** der Kurve steht je Karte **Nummer, Titel, Sollband, erfasste Zeit und verbrauchter Puffer** — in der Form der `SollIstTabelle`.
-- [ ] **Archivierte Karten stehen markiert in der Tabelle**, sie werden nicht ausgelassen: ihre Zeit wurde geleistet.
-- [ ] Die Tabelle ist die Antwort auf „**welche Karte frisst den Puffer**", die die Kurve nicht gibt.
-- [ ] Rand 1 — **Bestand ohne Karten**: lesbare Leermeldung statt leerer Fläche.
-- [ ] Rand 2 — **Bestand ohne jedes Sollband**: **ein Satz mit Kompensationsaktion** („die WBS-Datei mit Aufwandsspalte erneut einfahren") statt einer Kurve ohne Achsenwerte.
-- [ ] Rand 3 — **Kette ohne Puffer**: **ein Satz** („dieser Bestand trägt nur Punktschätzungen — es gibt keinen Puffer zu verbrauchen") plus die **Stundenzahlen**, die es sehr wohl gibt; **keine Kurve**, weil die senkrechte Achse ohne Nenner keine Bedeutung hat.
-- [ ] Rand 4 — **Verbrauch über 100 %**: der Punkt wird **am oberen Rand gezeigt und der Zahlenwert genannt** (z. B. „137 %"); er wird nicht auf 100 % zurückgezogen.
-- [ ] Rand 5 — **Fortschritt 0 % bei laufender Arbeit**: der Punkt sitzt am linken Rand; jeder Verbrauch über 0 % steht damit sofort in Gelb oder Rot — das ist die Aussage, kein Fehler.
-- [ ] Rand 6 — **Board ohne Kartenklasse**: derselbe Hinweis wie bei den übrigen Auswertungen, kein Aufruf.
-- [ ] Rand 7 — **WebApi nicht erreichbar**: lesbare Meldung über `WebApiAufruf.MitAusfallmeldung` statt Ausnahmeseite; der Umschalter bleibt stehen.
-- [ ] Der **Fuß** zeigt `GET /api/boards/{boardId}/kartenklassen/{kartenklasseId}/puffer` — ohne Abfrageparameter.
+- [x] Der Punkt `Puffer-Verbrauch` im Umschalter ist **wählbar** — kein gesperrter `span#auswertung-puffer` mehr; die Liste `NochNichtGebaut` **bleibt leer stehen** und wird nicht abgebaut.
+- [x] Board- und Kartenklassenwahl bleiben **gemeinsam** über alle Auswertungen: ein Wechsel wirft die Wahl nicht weg.
+- [x] Die **Filterzeile zeigt für diese Auswertung kein Zeitraumelement** — anders als bei `Burndown` und `Zeitexport`.
+- [x] Die Fläche zeichnet **drei Zonen über zwei Geraden**, Achsen 0–100 % mit Beschriftung: waagerecht **Fortschritt**, senkrecht **Puffer-Verbrauch**.
+- [x] Die Zonengrenzen sind **festgelegt und geprüft**: grün/gelb verläuft von `(0 %, 0 %)` nach `(100 %, 66,7 %)`, gelb/rot von `(0 %, 33,3 %)` nach `(100 %, 100 %)`.
+- [x] **Zonenprobe am Rechenbeispiel**: bei 74 % Fortschritt liegt die grün/gelb-Grenze bei **49,3 %** und die gelb/rot-Grenze bei **82,7 %**; der Punkt bei **78 %** liegt damit in **Gelb**. Ein Verbrauch von 90 % läge bei demselben Fortschritt in **Rot**, einer von 30 % in **Grün**.
+- [x] Der **Punkt „heute"** ist ein `<circle>`, dessen `cx` und `cy` aus Fortschritt und Verbrauch entstehen und im Test lesbar sind; sein Wert steht daneben als Text.
+- [x] **Über** der Kurve stehen **Kettenpuffer · verbrauchte Stunden · Anteil · Fortschritt**, dazu die Kartenzahl als zweite Lesart des Fortschritts.
+- [x] **Unter** der Kurve steht je Karte **Nummer, Titel, Sollband, erfasste Zeit und verbrauchter Puffer** — in der Form der `SollIstTabelle`.
+- [x] **Archivierte Karten stehen markiert in der Tabelle**, sie werden nicht ausgelassen: ihre Zeit wurde geleistet.
+- [x] Die Tabelle ist die Antwort auf „**welche Karte frisst den Puffer**", die die Kurve nicht gibt.
+- [x] Rand 1 — **Bestand ohne Karten**: lesbare Leermeldung statt leerer Fläche.
+- [x] Rand 2 — **Bestand ohne jedes Sollband**: **ein Satz mit Kompensationsaktion** („die WBS-Datei mit Aufwandsspalte erneut einfahren") statt einer Kurve ohne Achsenwerte.
+- [x] Rand 3 — **Kette ohne Puffer**: **ein Satz** („dieser Bestand trägt nur Punktschätzungen — es gibt keinen Puffer zu verbrauchen") plus die **Stundenzahlen**, die es sehr wohl gibt; **keine Kurve**, weil die senkrechte Achse ohne Nenner keine Bedeutung hat.
+- [x] Rand 4 — **Verbrauch über 100 %**: der Punkt wird **am oberen Rand gezeigt und der Zahlenwert genannt** (z. B. „137 %"); er wird nicht auf 100 % zurückgezogen.
+- [x] Rand 5 — **Fortschritt 0 % bei laufender Arbeit**: der Punkt sitzt am linken Rand; jeder Verbrauch über 0 % steht damit sofort in Gelb oder Rot — das ist die Aussage, kein Fehler.
+- [x] Rand 6 — **Board ohne Kartenklasse**: derselbe Hinweis wie bei den übrigen Auswertungen, kein Aufruf.
+- [x] Rand 7 — **WebApi nicht erreichbar**: lesbare Meldung über `WebApiAufruf.MitAusfallmeldung` statt Ausnahmeseite; der Umschalter bleibt stehen.
+- [x] Der **Fuß** zeigt `GET /api/boards/{boardId}/kartenklassen/{kartenklasseId}/puffer` — ohne Abfrageparameter.
 - [ ] **Kein Gestaltungsliteral** in `Fieberkurve.razor`, `Pufferflaeche.razor` und ihren Stilvorlagen; geprüft wie in `AuswertungsflaecheTests`.
 
 ### Der grüne Bestand bleibt grün
 
-- [ ] `I0033`, `I0034`, `I0036` und `I0037` werden **nicht umgebaut**: `LiesSollIst`, `LiesErledigungsstaende`, `LiesZeiteintraege`, `AuswertungsService.SollIst` / `Burndown` / `Zeitexport` und die drei bestehenden Routen bleiben, wie sie sind. Sie **wachsen** nur dort, wo eine vierte Auskunft dazukommt.
-- [ ] Die Suiten von `R00036`, `R00037`, `R00038` und `R00039` bleiben grün.
-- [ ] **Keine Migration, keine Schemaänderung, keine neue Spalte.**
-- [ ] **`KanbanC.Blazor` bekommt keine Projektreferenz auf `KanbanC.BL`** — der Weg führt über HTTP.
+- [x] `I0033`, `I0034`, `I0036` und `I0037` werden **nicht umgebaut**: `LiesSollIst`, `LiesErledigungsstaende`, `LiesZeiteintraege`, `AuswertungsService.SollIst` / `Burndown` / `Zeitexport` und die drei bestehenden Routen bleiben, wie sie sind. Sie **wachsen** nur dort, wo eine vierte Auskunft dazukommt.
+- [x] Die Suiten von `R00036`, `R00037`, `R00038` und `R00039` bleiben grün.
+- [x] **Keine Migration, keine Schemaänderung, keine neue Spalte.**
+- [x] **`KanbanC.Blazor` bekommt keine Projektreferenz auf `KanbanC.BL`** — der Weg führt über HTTP.
 
 ### Was diese Anforderung ausdrücklich nicht leistet
 
-- [ ] **Kein kritischer Pfad und keine Reihenfolge.** Die Menge heißt „Kette", weil **ohne Abhängigkeitsgraph jede Karte auf ihr liegt** — das ist die konservative Lesart, keine gerechnete.
-- [ ] **Kein Feeding-Buffer**, keine Puffer zweiter Ordnung.
-- [ ] **Keine Ressourcenkonkurrenz**, keine Kontributorenauslastung.
-- [ ] **Keine Aussage darüber, welche Karte den Termin treibt.** Die Tabelle sagt, welche Karte am meisten verbraucht hat — nicht, welche kritisch ist.
-- [ ] **Keine Kalenderaussage.** Die waagerechte Achse ist **erledigtes Soll, nicht verstrichene Zeit**: **ein ruhendes Board bewegt den Punkt nicht.**
-- [ ] **Keine Bahn über Kalendertage.** „Ablesbar" meint den **Stand** — ein Punkt „heute", keine Historie der Punkte. Rechenbar wäre sie; bestellt ist sie nicht (Ausbaustufe).
-- [ ] **Kein Board-Termin.** `Starttermin` und `Zieltermin` werden nicht gelesen.
-- [ ] **Kein Abhängigkeitsgraph** und **kein Slice, der einen vorschlägt** — siehe „Verworfene Alternativen".
+- [x] **Kein kritischer Pfad und keine Reihenfolge.** Die Menge heißt „Kette", weil **ohne Abhängigkeitsgraph jede Karte auf ihr liegt** — das ist die konservative Lesart, keine gerechnete.
+- [x] **Kein Feeding-Buffer**, keine Puffer zweiter Ordnung.
+- [x] **Keine Ressourcenkonkurrenz**, keine Kontributorenauslastung.
+- [x] **Keine Aussage darüber, welche Karte den Termin treibt.** Die Tabelle sagt, welche Karte am meisten verbraucht hat — nicht, welche kritisch ist.
+- [x] **Keine Kalenderaussage.** Die waagerechte Achse ist **erledigtes Soll, nicht verstrichene Zeit**: **ein ruhendes Board bewegt den Punkt nicht.**
+- [x] **Keine Bahn über Kalendertage.** „Ablesbar" meint den **Stand** — ein Punkt „heute", keine Historie der Punkte. Rechenbar wäre sie; bestellt ist sie nicht (Ausbaustufe).
+- [x] **Kein Board-Termin.** `Starttermin` und `Zieltermin` werden nicht gelesen.
+- [x] **Kein Abhängigkeitsgraph** und **kein Slice, der einen vorschlägt** — siehe „Verworfene Alternativen".
 
 ## Betroffene Verzeichnisstruktur
 

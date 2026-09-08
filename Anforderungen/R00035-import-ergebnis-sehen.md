@@ -1,6 +1,6 @@
 ---
 id: R00035
-status: Neu
+status: In Arbeit
 datum: 2026-09-07
 ---
 
@@ -64,56 +64,56 @@ Für den Agenten gilt dasselbe auf der Vertragsseite: seine 201-Antwort nennt an
 
 Fertig-Kriterium des Features, wörtlich: *„Der Schreiblauf antwortet mit einem Bericht, in dem jede Zeile mit Karte ihre Kartennummer und ihre KarteId trägt — auch die neu angelegten — und der Kopf des Laufs Zeitpunkt, Urheber und Datei nennt; die fünf Zahlen und die Gründe bleiben, wie `I0031` sie gebaut hat."*
 
-- [ ] `WbsImportRepository.Schreibe(...)` liefert je **angelegter** Karte ihren **Dateiverweis**, ihre **`KarteId`** und ihre **Kartennummer**. Rechenbeispiel: ein Lauf mit 4 Anlagen und 6 Aktualisierungen liefert **4** Einträge, nicht 10 und nicht die Zahl `4`.
-- [ ] Der **Schlüssel ist der Dateiverweis** — dieselbe Kupplung, an der `F0055` wiedererkennt. Über ihn und nicht über Reihenfolge oder Titel findet der Dienst die Zeile wieder.
-- [ ] `Importzeile` trägt **`KarteId` neben** `Kartennummer`. Beide sind `null` an übersprungenen Zeilen und an der Zeile des Zielboards — aus ihnen wurde nie eine Karte.
-- [ ] Eine **wiedererkannte** Zeile (`Geaendert`, `Unveraendert`) trägt Nummer **und** `KarteId` aus dem Iststand.
-- [ ] Eine **verwaiste** Zeile trägt Nummer **und** `KarteId` — die Kompensationsaktion lautet „archivieren", und wer archivieren soll, muss hinkommen.
-- [ ] Der Bericht trägt einen **Laufkopf** mit `Zeitpunkt`, `Urhebernummer`, `Urhebername` und `Pfad der Datei`. Der Zeitpunkt ist der des **Laufs**, nicht der der Anzeige.
-- [ ] Der Laufkopf steht **im Bericht** und nicht in der Oberfläche — sonst hätte der Agent ihn nicht und der kopierte Text auch nicht.
-- [ ] Die **fünf Bilanzzahlen ändern sich durch den Nachzug nicht**: nachgetragen wird nur, was vorher unbekannt war. Rechenbeispiel: 4 angelegt vor dem Schreiben, 4 angelegt danach.
-- [ ] `POST /api/boards/{boardId}/wbs-import` **ohne** `trocken` antwortet **201** mit Laufkopf, fünf Zahlen und je angelegter Zeile Kartennummer und `KarteId`, **die auf eine wirklich vorhandene Karte zeigen** — nachgewiesen durch einen Abruf der Karte unter dieser `KarteId`.
-- [ ] Derselbe Aufruf **mit** `trocken=true` nennt an `Angelegt`-Zeilen **weiterhin keine** Nummer und keine `KarteId` — der Unterschied zwischen „so sähe es aus" und „so ist es jetzt" ist Absicht, keine Lücke.
-- [ ] **Kein neuer Endpunkt.** Die 201-Antwort ist der Bericht; ein `GET .../wbs-import/bericht` entsteht nicht.
+- [x] `WbsImportRepository.Schreibe(...)` liefert je **angelegter** Karte ihren **Dateiverweis**, ihre **`KarteId`** und ihre **Kartennummer**. Rechenbeispiel: ein Lauf mit 4 Anlagen und 6 Aktualisierungen liefert **4** Einträge, nicht 10 und nicht die Zahl `4`.
+- [x] Der **Schlüssel ist der Dateiverweis** — dieselbe Kupplung, an der `F0055` wiedererkennt. Über ihn und nicht über Reihenfolge oder Titel findet der Dienst die Zeile wieder.
+- [x] `Importzeile` trägt **`KarteId` neben** `Kartennummer`. Beide sind `null` an übersprungenen Zeilen und an der Zeile des Zielboards — aus ihnen wurde nie eine Karte.
+- [x] Eine **wiedererkannte** Zeile (`Geaendert`, `Unveraendert`) trägt Nummer **und** `KarteId` aus dem Iststand.
+- [x] Eine **verwaiste** Zeile trägt Nummer **und** `KarteId` — die Kompensationsaktion lautet „archivieren", und wer archivieren soll, muss hinkommen.
+- [x] Der Bericht trägt einen **Laufkopf** mit `Zeitpunkt`, `Urhebernummer`, `Urhebername` und `Pfad der Datei`. Der Zeitpunkt ist der des **Laufs**, nicht der der Anzeige.
+- [x] Der Laufkopf steht **im Bericht** und nicht in der Oberfläche — sonst hätte der Agent ihn nicht und der kopierte Text auch nicht.
+- [x] Die **fünf Bilanzzahlen ändern sich durch den Nachzug nicht**: nachgetragen wird nur, was vorher unbekannt war. Rechenbeispiel: 4 angelegt vor dem Schreiben, 4 angelegt danach.
+- [x] `POST /api/boards/{boardId}/wbs-import` **ohne** `trocken` antwortet **201** mit Laufkopf, fünf Zahlen und je angelegter Zeile Kartennummer und `KarteId`, **die auf eine wirklich vorhandene Karte zeigen** — nachgewiesen durch einen Abruf der Karte unter dieser `KarteId`.
+- [x] Derselbe Aufruf **mit** `trocken=true` nennt an `Angelegt`-Zeilen **weiterhin keine** Nummer und keine `KarteId` — der Unterschied zwischen „so sähe es aus" und „so ist es jetzt" ist Absicht, keine Lücke.
+- [x] **Kein neuer Endpunkt.** Die 201-Antwort ist der Bericht; ein `GET .../wbs-import/bericht` entsteht nicht.
 
 ### Der dritte Schritt zeigt den Bericht (`F0059`)
 
 Fertig-Kriterium des Features, wörtlich: *„Schritt 3 zeigt statt der einen Prosazeile den Kopf des Laufs, alle fünf Zahlen und eine Zeile je Knoten mit Marke, Kartennummer und Grund — übersprungene mit ihrer Kennung und ihrem Grund, verwaiste dahinter; jede Zeile mit Karte führt auf sie, und der ganze Bericht lässt sich als Text mitnehmen."*
 
-- [ ] Schritt 3 zeigt den **Laufkopf**: Zeitpunkt, Urheber, Dateiname.
-- [ ] Schritt 3 zeigt **alle fünf** Zahlen, jede auch als **Null**. Heute nennt es drei (`Import.razor:168`); **übersprungen fehlt, obwohl das Fertig-Kriterium der Interaction es ausdrücklich verlangt**, und verwaist ebenso.
-- [ ] Schritt 3 zeigt **eine Zeile je Knoten** mit Marke (`+` angelegt, `~` geändert, `?` nicht mehr in der Datei, `!` Zeile mit Grund), Kennung, Kartennummer, Wirkung und Grund.
-- [ ] **Übersprungene Zeilen sind hier zum ersten Mal im Ergebnis sichtbar** — mit ihrer Kennung (Knoten-ID, oder Zeilennummer, wo die Zeile keine ID hergab) und ihrem Grund. Rechenbeispiel: eine Datei mit einer Zeile im Status `verworfen` zeigt in Schritt 3 `1 übersprungen` **und** die Zeile mit ihrem Grund.
-- [ ] **Verwaiste Zeilen stehen dahinter** — sie haben keine Zeilennummer in der Datei und können nicht einsortiert werden.
-- [ ] Die Zeilenliste ist **eine Komponente**, die **Schritt 2 und Schritt 3** einsetzen: derselbe `Importbericht`, dieselben Marken, derselbe Grund. Schritt 3 fügt nur Nummer und Weg hinzu.
-- [ ] Jede Zeile mit `KarteId` trägt einen Verweis auf **`/karten/{KarteId}`**; eine Zeile ohne Karte trägt keinen. **In der Vorschau** bleibt eine `Angelegt`-Zeile ohne Weg — die Karte gibt es noch nicht —, eine **wiedererkannte** Zeile führt dort schon hin.
-- [ ] Der Weg hängt an der **`KarteId`, nicht an der Nummer**: die Kartenseite ist `/karten/{KarteId:long}`, eine Nummer wäre ein zweiter Suchweg.
-- [ ] **„Bericht als Text kopieren"** legt Kopf, fünf Zahlen und je Berichtszeile eine Textzeile mit Marke, Kennung, Nummer und Grund in die Zwischenablage; fehlt die Zwischenablage, greift der bestehende Rückfall aus `Pfadkopie`/`Kopierergebnis`.
-- [ ] **E2E:** eine Datei mit einer Zeile im Status `verworfen` einfahren → in Schritt 3 stehen fünf Zahlen und die Zeilen, `1 übersprungen` ist darunter, und dem Verweis einer angelegten Zeile folgen landet auf **ihrer** Karte. Der Sprung ist der Beweis, dass die Nummer eine **wirkliche** Karte meint und kein gerechnetes Etikett.
+- [x] Schritt 3 zeigt den **Laufkopf**: Zeitpunkt, Urheber, Dateiname.
+- [x] Schritt 3 zeigt **alle fünf** Zahlen, jede auch als **Null**. Heute nennt es drei (`Import.razor:168`); **übersprungen fehlt, obwohl das Fertig-Kriterium der Interaction es ausdrücklich verlangt**, und verwaist ebenso.
+- [x] Schritt 3 zeigt **eine Zeile je Knoten** mit Marke (`+` angelegt, `~` geändert, `?` nicht mehr in der Datei, `!` Zeile mit Grund), Kennung, Kartennummer, Wirkung und Grund.
+- [x] **Übersprungene Zeilen sind hier zum ersten Mal im Ergebnis sichtbar** — mit ihrer Kennung (Knoten-ID, oder Zeilennummer, wo die Zeile keine ID hergab) und ihrem Grund. Rechenbeispiel: eine Datei mit einer Zeile im Status `verworfen` zeigt in Schritt 3 `1 übersprungen` **und** die Zeile mit ihrem Grund.
+- [x] **Verwaiste Zeilen stehen dahinter** — sie haben keine Zeilennummer in der Datei und können nicht einsortiert werden.
+- [x] Die Zeilenliste ist **eine Komponente**, die **Schritt 2 und Schritt 3** einsetzen: derselbe `Importbericht`, dieselben Marken, derselbe Grund. Schritt 3 fügt nur Nummer und Weg hinzu.
+- [x] Jede Zeile mit `KarteId` trägt einen Verweis auf **`/karten/{KarteId}`**; eine Zeile ohne Karte trägt keinen. **In der Vorschau** bleibt eine `Angelegt`-Zeile ohne Weg — die Karte gibt es noch nicht —, eine **wiedererkannte** Zeile führt dort schon hin.
+- [x] Der Weg hängt an der **`KarteId`, nicht an der Nummer**: die Kartenseite ist `/karten/{KarteId:long}`, eine Nummer wäre ein zweiter Suchweg.
+- [x] **„Bericht als Text kopieren"** legt Kopf, fünf Zahlen und je Berichtszeile eine Textzeile mit Marke, Kennung, Nummer und Grund in die Zwischenablage; fehlt die Zwischenablage, greift der bestehende Rückfall aus `Pfadkopie`/`Kopierergebnis`.
+- [x] **E2E:** eine Datei mit einer Zeile im Status `verworfen` einfahren → in Schritt 3 stehen fünf Zahlen und die Zeilen, `1 übersprungen` ist darunter, und dem Verweis einer angelegten Zeile folgen landet auf **ihrer** Karte. Der Sprung ist der Beweis, dass die Nummer eine **wirkliche** Karte meint und kein gerechnetes Etikett.
 
 ### Die benannte Änderung an grünem Bestand
 
-- [ ] **`int Schreibe(...)` von `IWbsImportRepository` weicht einem Ergebnis je Anlage.** Das ist die einzige Kompatibilitätsbrücke, die dieser Slice bricht — benannt und erwartet, nicht entdeckt.
-- [ ] Mitgezogen werden: **`WbsImportService`** (Aufrufstelle und Nachzug), **`TestWbsImportRepository`** (`KanbanC.BL.Tests/TestHelpers/`) und **`WbsImportRepositoryTests`** (`KanbanC.WebApi.IntegrationTests/Persistenz/Import/`).
-- [ ] Ein Rückgabewert „Anzahl" ist danach **überflüssig**, weil die Liste ihn trägt — ein zweiter Weg zur selben Zahl wäre eine zweite Wahrheit.
-- [ ] Der **Endpunktvertrag bleibt sonst gleich**: dieselbe Route, dasselbe multipart-Formular, dieselben Statuscodes, dieselbe Ereignisregel (0 angelegt und 0 geändert → kein `Importereignis`).
+- [x] **`int Schreibe(...)` von `IWbsImportRepository` weicht einem Ergebnis je Anlage.** Das ist die einzige Kompatibilitätsbrücke, die dieser Slice bricht — benannt und erwartet, nicht entdeckt.
+- [x] Mitgezogen werden: **`WbsImportService`** (Aufrufstelle und Nachzug), **`TestWbsImportRepository`** (`KanbanC.BL.Tests/TestHelpers/`) und **`WbsImportRepositoryTests`** (`KanbanC.WebApi.IntegrationTests/Persistenz/Import/`).
+- [x] Ein Rückgabewert „Anzahl" ist danach **überflüssig**, weil die Liste ihn trägt — ein zweiter Weg zur selben Zahl wäre eine zweite Wahrheit.
+- [x] Der **Endpunktvertrag bleibt sonst gleich**: dieselbe Route, dasselbe multipart-Formular, dieselben Statuscodes, dieselbe Ereignisregel (0 angelegt und 0 geändert → kein `Importereignis`).
 
 ### Der grüne Bestand bleibt grün
 
-- [ ] Die Zeile **`#import-ergebnis`** bleibt als Überschrift stehen, damit die **drei** E2E-Tests aus `R00033`/`R00034` grün bleiben, die auf „n Karten angelegt" prüfen (`WbsImportE2ETests.cs:102`, `:126`, `:164`).
-- [ ] **Schritt 2 verhält sich unverändert**: dieselben fünf Zahlen, dieselben Marken, derselbe Regler, dieselbe Knopfbeschriftung — die Zeilenliste wird herausgehoben, nicht umgebaut.
-- [ ] Der Leser aus `F0051`, der Vergleich aus `F0055` und die Ränderprüfung aus `F0057` sind **nicht Gegenstand** dieses Slice und bleiben unberührt.
-- [ ] Die Bilanzzahlen der Probeläufe bleiben: erster Lauf auf leerem Board **41 angelegt**, zweiter Lauf auf unveränderter Datei **0 angelegt, 0 geändert, 41 unverändert**.
-- [ ] Die Kartenzahlen je Schnittebene bleiben (**9 / 41 / 79 / 445** auf der eingefrorenen Datei), ebenso die Live-Suite aus `R00031`/`R00032`.
-- [ ] Alle bestehenden Tests bleiben grün; `TreatWarningsAsErrors` bleibt aktiv.
+- [x] Die Zeile **`#import-ergebnis`** bleibt als Überschrift stehen, damit die **drei** E2E-Tests aus `R00033`/`R00034` grün bleiben, die auf „n Karten angelegt" prüfen (`WbsImportE2ETests.cs:102`, `:126`, `:164`).
+- [x] **Schritt 2 verhält sich unverändert**: dieselben fünf Zahlen, dieselben Marken, derselbe Regler, dieselbe Knopfbeschriftung — die Zeilenliste wird herausgehoben, nicht umgebaut.
+- [x] Der Leser aus `F0051`, der Vergleich aus `F0055` und die Ränderprüfung aus `F0057` sind **nicht Gegenstand** dieses Slice und bleiben unberührt.
+- [x] Die Bilanzzahlen der Probeläufe bleiben: erster Lauf auf leerem Board **41 angelegt**, zweiter Lauf auf unveränderter Datei **0 angelegt, 0 geändert, 41 unverändert**.
+- [x] Die Kartenzahlen je Schnittebene bleiben (**9 / 41 / 79 / 445** auf der eingefrorenen Datei), ebenso die Live-Suite aus `R00031`/`R00032`.
+- [x] Alle bestehenden Tests bleiben grün; `TreatWarningsAsErrors` bleibt aktiv.
 
 ### Was dieser Slice ausdrücklich nicht tut
 
-- [ ] **Kein Archiv der Läufe** — keine Tabelle `Boardimport`, keine Migration, kein `GET .../bericht`, keine Liste vergangener Läufe.
-- [ ] **Kein Wiederherstellen beim Wiederkommen:** wer die Seite frisch öffnet, sieht **Schritt 1**. Das bleibt so.
-- [ ] **Kein Titel, keine Spalte, keine Teilaufgabenzahl** an der Berichtszeile — bewusste Abweichung von der Artboard-Tabelle (Zustand 5).
-- [ ] **Kein Filtern und kein Ausklappen** der Zeilenliste.
-- [ ] **Keine Nummer an angelegten Zeilen der Vorschau.**
+- [x] **Kein Archiv der Läufe** — keine Tabelle `Boardimport`, keine Migration, kein `GET .../bericht`, keine Liste vergangener Läufe.
+- [x] **Kein Wiederherstellen beim Wiederkommen:** wer die Seite frisch öffnet, sieht **Schritt 1**. Das bleibt so.
+- [x] **Kein Titel, keine Spalte, keine Teilaufgabenzahl** an der Berichtszeile — bewusste Abweichung von der Artboard-Tabelle (Zustand 5).
+- [x] **Kein Filtern und kein Ausklappen** der Zeilenliste.
+- [x] **Keine Nummer an angelegten Zeilen der Vorschau.**
 - [ ] **Kein Rückfluss ins Markdown**, keine Sollzeit an der Karte (`I0033`), kein Löschen oder Archivieren durch den Import.
 
 ## Betroffene Verzeichnisstruktur

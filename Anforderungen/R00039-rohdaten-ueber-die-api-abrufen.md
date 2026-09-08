@@ -1,6 +1,6 @@
 ---
 id: R00039
-status: Neu
+status: In Arbeit
 datum: 2026-09-08
 ---
 
@@ -76,86 +76,86 @@ Board 2 „KanbanC — Release 2" mit den Bahnen „Bereit", „In Arbeit" und *
 | `Z1` | ein **abgeschlossener** Zeiteintrag auf `K24` | Beginn und Ende |
 | `Z2` | ein **laufender** Zeiteintrag auf `K22` (archiviert) | ohne Ende, auf archivierter Karte |
 
-- [ ] `GET /api/boards/2/karten` liefert **24** Karten — `K1`–`K21` vollständig, `K22` **mit Archivmarke**, `K23` mit `Kartenklasse: null`, `K24` mit allen fünf Listen.
-- [ ] **Gegenprobe**: `GET /api/boards/2` liefert für „Erledigt" weiterhin **20** Karten und **ohne** `K22`. Aus dem Rohdatenabruf ist keine Änderung der Anzeige geworden.
-- [ ] `GET /api/boards/2/zeiten` liefert **beide** Einträge in Beginn-Folge; `Z2` steht mit darin, `Ende` ist `null`, obwohl `K22` archiviert ist.
-- [ ] Kein Aufruf trägt `?limit`, `?offset`, `?von`, `?bis` oder `?kartenklasse`; ein mitgegebener unbekannter Abfrageparameter ändert die Antwort nicht.
-- [ ] `GET /api/boards/999/karten` und `GET /api/boards/999/zeiten` → **404**, Code `board-unbekannt`, Meldung mit der Nummer **999**, Kompensation `GET /api/boards` (`Nichtgefunden.Board`, unverändert genutzt).
-- [ ] Ein Board **ohne jede Karte** liefert `[]` mit **200**; ein Board **ohne jeden Zeiteintrag** ebenso.
+- [x] `GET /api/boards/2/karten` liefert **24** Karten — `K1`–`K21` vollständig, `K22` **mit Archivmarke**, `K23` mit `Kartenklasse: null`, `K24` mit allen fünf Listen.
+- [x] **Gegenprobe**: `GET /api/boards/2` liefert für „Erledigt" weiterhin **20** Karten und **ohne** `K22`. Aus dem Rohdatenabruf ist keine Änderung der Anzeige geworden.
+- [x] `GET /api/boards/2/zeiten` liefert **beide** Einträge in Beginn-Folge; `Z2` steht mit darin, `Ende` ist `null`, obwohl `K22` archiviert ist.
+- [x] Kein Aufruf trägt `?limit`, `?offset`, `?von`, `?bis` oder `?kartenklasse`; ein mitgegebener unbekannter Abfrageparameter ändert die Antwort nicht.
+- [x] `GET /api/boards/999/karten` und `GET /api/boards/999/zeiten` → **404**, Code `board-unbekannt`, Meldung mit der Nummer **999**, Kompensation `GET /api/boards` (`Nichtgefunden.Board`, unverändert genutzt).
+- [x] Ein Board **ohne jede Karte** liefert `[]` mit **200**; ein Board **ohne jeden Zeiteintrag** ebenso.
 
 ### „Ohne Limit" — vier Sätze, jeder einzeln prüfbar
 
-- [ ] **Keine Seitengröße.** Es gibt keinen `?limit`, keinen `?offset` und kein Standardmaximum; die Zahl der gelieferten Karten hängt allein am Bestand.
-- [ ] **Keine Anzeigekürzung.** Bei 21 Karten in einer Abschlussspalte mit Grenze 20 liefert die Rohdatenroute **21**. `Abschlussbahn.Gekuerzt` läuft an dieser Route nicht.
-- [ ] **Kein stiller Archivfilter.** Archivierte Karten kommen mit und sind an ihrer **Marke** erkennbar — nicht daran, dass sie fehlen.
-- [ ] **Kein N+1 beim Aufrufer.** Die fünf n-Listen reisen mit; ein Aufrufer, der Etiketten, Teilaufgaben, Kommentare, Anhänge und Dateiverweise aller Karten will, macht **einen** Aufruf, nicht einen je Karte.
-- [ ] Und der Preis wird gezeigt, nicht verschwiegen: die Antwort ist bei großem Bestand **groß**. Ein Test, der 21 Karten mit ihren Listen holt, beweist den Weg; die Größenordnung steht in dieser Anforderung, nicht in einem Limit.
+- [x] **Keine Seitengröße.** Es gibt keinen `?limit`, keinen `?offset` und kein Standardmaximum; die Zahl der gelieferten Karten hängt allein am Bestand.
+- [x] **Keine Anzeigekürzung.** Bei 21 Karten in einer Abschlussspalte mit Grenze 20 liefert die Rohdatenroute **21**. `Abschlussbahn.Gekuerzt` läuft an dieser Route nicht.
+- [x] **Kein stiller Archivfilter.** Archivierte Karten kommen mit und sind an ihrer **Marke** erkennbar — nicht daran, dass sie fehlen.
+- [x] **Kein N+1 beim Aufrufer.** Die fünf n-Listen reisen mit; ein Aufrufer, der Etiketten, Teilaufgaben, Kommentare, Anhänge und Dateiverweise aller Karten will, macht **einen** Aufruf, nicht einen je Karte.
+- [x] Und der Preis wird gezeigt, nicht verschwiegen: die Antwort ist bei großem Bestand **groß**. Ein Test, der 21 Karten mit ihren Listen holt, beweist den Weg; die Größenordnung steht in dieser Anforderung, nicht in einem Limit.
 
 ### „Verläufe" — was das Wort hier heißt, und was es nicht heißt
 
-- [ ] Der **Erledigungsverlauf** ist abrufbar: `ErledigtAm` steht an jeder Karte (`Karteerledigung.ErledigtAm`, die Rohform des Burndowns aus `I0034`) und kommt mit `GET …/karten`.
-- [ ] Der **Zeitverlauf** ist abrufbar: jeder Zeiteintrag mit Beginn und Ende (die Rohform von Soll-Ist und Zeitexport) kommt mit `GET …/zeiten`.
-- [ ] **Damit trägt der Abruf jeden Verlauf, den der Bestand kennt** — und keinen erfundenen.
-- [ ] Es entsteht **keine Route `…/verlaeufe`**, keine Ereignistabelle, keine Migration und keine Schreibpflicht an einer Bewegung. Ein **Bewegungsverlauf** (wer wann welche Karte über welche Grenze bewegt hat) existiert im Bestand nicht und wird hier nicht gebaut; die Adresse steht unter „Offene Fragen".
+- [x] Der **Erledigungsverlauf** ist abrufbar: `ErledigtAm` steht an jeder Karte (`Karteerledigung.ErledigtAm`, die Rohform des Burndowns aus `I0034`) und kommt mit `GET …/karten`.
+- [x] Der **Zeitverlauf** ist abrufbar: jeder Zeiteintrag mit Beginn und Ende (die Rohform von Soll-Ist und Zeitexport) kommt mit `GET …/zeiten`.
+- [x] **Damit trägt der Abruf jeden Verlauf, den der Bestand kennt** — und keinen erfundenen.
+- [x] Es entsteht **keine Route `…/verlaeufe`**, keine Ereignistabelle, keine Migration und keine Schreibpflicht an einer Bewegung. Ein **Bewegungsverlauf** (wer wann welche Karte über welche Grenze bewegt hat) existiert im Bestand nicht und wird hier nicht gebaut; die Adresse steht unter „Offene Fragen".
 
 ### Die Karten des Boards (`F0067`)
 
 Fertig-Kriterium wörtlich: *„`GET /api/boards/{boardId}/karten` liefert **alle** Karten des Boards in **einer** Antwort — auch die archivierten (mit Marke) und die, die die Anzeigegrenze der Abschlussspalte in der Boardantwort wegkürzt —, je Karte ihren Ort (Spalte mit Bezeichnung), ihre Kartenklasse und ihre fünf Listen (Etiketten, Teilaufgaben, Kommentare, Anhänge als Metadaten, Dateiverweise); keine Seitengröße, kein `?limit`, kein `?offset`, keine Sortierregel der Anzeige; ein Board ohne Karten ist 200 mit leerer Liste, ein unbekanntes Board wird mit Grund, Werten und Kompensationsaktion zurückgewiesen. Ohne Schirm allein an der Antwort prüfbar."*
 
-- [ ] Die Antwort ist eine **flache Liste** von Rohdatenkarten — **keine Hülle mit Zählangabe**: es wird nichts gekürzt, also **ist** die Länge der Liste die Zahl (anders als bei `Spalte.Kartenzahl`, wo sie es nicht ist).
-- [ ] Jede Rohdatenkarte trägt die **unveränderte** `Karte` aus dem Bestand plus Ort, Archivmarke, Kartenklasse und die fünf Listen — **Zusammensetzung statt Verdopplung**, wie `Klassenkarte` es schon macht.
-- [ ] Die Kartenklasse reist als **ganzes DTO**; `null` heißt „ohne Klasse".
-- [ ] **Kein Zeiteintragsfeld an der Rohdatenkarte** — die Zeiten haben ihre eigene Route.
-- [ ] Anhänge reisen **als Metadaten**; die Bytes holt der Aufrufer über die bestehende Anhangroute.
-- [ ] Anhang und Dateiverweis bleiben **zwei** Listen: ein Anhang bringt eine Kopie mit, ein Dateiverweis zeigt auf eine Datei, die woanders weiterlebt.
-- [ ] Die Ordnung ist die **Lage im Board** (`ORDER BY s.Position, k.Position`), nicht die Anzeigeordnung der Abschlussbahn.
-- [ ] **Die Route ist eine Adressebene, die es noch nicht gab**: `…/spalten/{spalteId}/karten` ist je Spalte, `…/kartenklassen/{kartenklasseId}/karten` je Klasse. Kein Konflikt mit den bestehenden Routen.
-- [ ] Der Fehlervertragstest (`FehlervertragTests`, aus `B0102`) nimmt die Route auf — sonst schlägt `Wenn_ein_Endpunkt_hinzukommt_dann_faellt_auf_dass_seine_Fehlerantworten_ungeprueft_sind` fehl.
-- [ ] **Ohne Schirm prüfbar**: jedes Kriterium dieser Gruppe ist an der Antwort allein zu zeigen.
+- [x] Die Antwort ist eine **flache Liste** von Rohdatenkarten — **keine Hülle mit Zählangabe**: es wird nichts gekürzt, also **ist** die Länge der Liste die Zahl (anders als bei `Spalte.Kartenzahl`, wo sie es nicht ist).
+- [x] Jede Rohdatenkarte trägt die **unveränderte** `Karte` aus dem Bestand plus Ort, Archivmarke, Kartenklasse und die fünf Listen — **Zusammensetzung statt Verdopplung**, wie `Klassenkarte` es schon macht.
+- [x] Die Kartenklasse reist als **ganzes DTO**; `null` heißt „ohne Klasse".
+- [x] **Kein Zeiteintragsfeld an der Rohdatenkarte** — die Zeiten haben ihre eigene Route.
+- [x] Anhänge reisen **als Metadaten**; die Bytes holt der Aufrufer über die bestehende Anhangroute.
+- [x] Anhang und Dateiverweis bleiben **zwei** Listen: ein Anhang bringt eine Kopie mit, ein Dateiverweis zeigt auf eine Datei, die woanders weiterlebt.
+- [x] Die Ordnung ist die **Lage im Board** (`ORDER BY s.Position, k.Position`), nicht die Anzeigeordnung der Abschlussbahn.
+- [x] **Die Route ist eine Adressebene, die es noch nicht gab**: `…/spalten/{spalteId}/karten` ist je Spalte, `…/kartenklassen/{kartenklasseId}/karten` je Klasse. Kein Konflikt mit den bestehenden Routen.
+- [x] Der Fehlervertragstest (`FehlervertragTests`, aus `B0102`) nimmt die Route auf — sonst schlägt `Wenn_ein_Endpunkt_hinzukommt_dann_faellt_auf_dass_seine_Fehlerantworten_ungeprueft_sind` fehl.
+- [x] **Ohne Schirm prüfbar**: jedes Kriterium dieser Gruppe ist an der Antwort allein zu zeigen.
 
 ### Die Zeiten des Boards (`F0068`)
 
 Fertig-Kriterium wörtlich: *„`GET /api/boards/{boardId}/zeiten` liefert **alle** Zeiteinträge des Boards in Beginn-Folge — laufende ohne Ende, abgeschlossene mit, Einträge auf archivierten Karten und von stillgelegten Kontributoren mit —, je Eintrag `ZeiteintragId`, Karte, Kontributor, Beginn und Ende; keine Seitengröße, kein Zeitraumparameter und kein Ausschnitt nach Kartenklasse; ein Board ohne Zeiteintrag ist 200 mit leerer Liste, ein unbekanntes Board wird mit Grund, Werten und Kompensationsaktion zurückgewiesen. Ohne Schirm allein an der Antwort prüfbar."*
 
-- [ ] Die Antwort besteht aus **`Zeiteintrag`-Zeilen ohne neues DTO** — `ZeiteintragId`, `Karte` als Nummer, ganzer `Kontributor`, `Beginn`, `Ende?`.
-- [ ] **Kein Kartentitel daneben**: den trägt `F0067`; derselbe Titel an zwei Adressen wären zwei Wahrheiten. Die `KarteId` verbindet die beiden Antworten.
-- [ ] Laufende Einträge kommen **mit**, `Ende` ist `null`; abgeschlossene tragen ihr Ende.
-- [ ] Einträge auf **archivierten** Karten und von **stillgelegten** Kontributoren fallen nicht heraus.
-- [ ] Ordnung: `Beginn`, `ZeiteintragId` als Zweitschlüssel; Beginn und Ende als ISO-Text in der Spalte, in C# als `DateTimeOffset`.
-- [ ] **Kein Zeitraumparameter**, anders als `zeitexport`: dieser Abruf sagt „vollständig" zu; ein `von`/`bis` wäre ein zweiter Ort für die Schnittregel aus `B0504`.
-- [ ] Fremder Bestand bleibt draußen: Einträge eines anderen Boards stehen nicht in der Antwort.
-- [ ] Der Fehlervertragstest nimmt auch diese Route auf.
+- [x] Die Antwort besteht aus **`Zeiteintrag`-Zeilen ohne neues DTO** — `ZeiteintragId`, `Karte` als Nummer, ganzer `Kontributor`, `Beginn`, `Ende?`.
+- [x] **Kein Kartentitel daneben**: den trägt `F0067`; derselbe Titel an zwei Adressen wären zwei Wahrheiten. Die `KarteId` verbindet die beiden Antworten.
+- [x] Laufende Einträge kommen **mit**, `Ende` ist `null`; abgeschlossene tragen ihr Ende.
+- [x] Einträge auf **archivierten** Karten und von **stillgelegten** Kontributoren fallen nicht heraus.
+- [x] Ordnung: `Beginn`, `ZeiteintragId` als Zweitschlüssel; Beginn und Ende als ISO-Text in der Spalte, in C# als `DateTimeOffset`.
+- [x] **Kein Zeitraumparameter**, anders als `zeitexport`: dieser Abruf sagt „vollständig" zu; ein `von`/`bis` wäre ein zweiter Ort für die Schnittregel aus `B0504`.
+- [x] Fremder Bestand bleibt draußen: Einträge eines anderen Boards stehen nicht in der Antwort.
+- [x] Der Fehlervertragstest nimmt auch diese Route auf.
 
 ### Der Schirm nennt die zwei Aufrufe (`F0069`)
 
 Fertig-Kriterium wörtlich: *„Auf `/auswertungen` ist `Rohdaten über die API` wählbar und zeigt für das gewählte Board die **zwei** Aufrufe mit vollständigem Pfad statt einer Auswertung; der Fuß folgt der Wahl; die Kartenklassenwahl tritt für diesen Eintrag zurück, weil der Bestand hier das Board ist; `Puffer-Verbrauch` bleibt der einzige gesperrte Eintrag."*
 
-- [ ] Der Punkt `Rohdaten über die API` ist **wählbar** — kein gesperrter `span#auswertung-rohdaten` mehr. `Auswertungen.razor:169` führt ihn heute in `NochNichtGebaut`; danach steht dort nur noch `Puffer-Verbrauch`.
-- [ ] Die Fläche zeigt **zwei** Pfade mit der gewählten Board-Nummer darin: `GET /api/boards/{boardId}/karten` und `GET /api/boards/{boardId}/zeiten`.
-- [ ] Der **Aufruffuß** (aus `B0501`) führt für diese Wahl erstmals **zwei** Pfade; für die übrigen Wahlen bleibt er einzeilig.
-- [ ] Die **Boardwahl bleibt** und füllt beide Pfade; die **Kartenklassenwahl tritt zurück** — sie hätte hier keine Wirkung, und ein Bedienelement ohne Wirkung ist eine stille Lüge.
-- [ ] Der Eintrag **bedient nichts**: **kein Rohdaten-Knopf**, kein Download, kein Abruf aus dem Schirm heraus. Er zeigt die Aufrufe.
-- [ ] Ohne gewähltes Board zeigt die Fläche keine halben Pfade — der Zustand ist derselbe, den die übrigen Auswertungen für „Bestand ungewählt" schon führen.
-- [ ] **Kein Gestaltungsliteral** in der neuen Fläche — geprüft wie in `AuswertungsflaecheTests`.
+- [x] Der Punkt `Rohdaten über die API` ist **wählbar** — kein gesperrter `span#auswertung-rohdaten` mehr. `Auswertungen.razor:169` führt ihn heute in `NochNichtGebaut`; danach steht dort nur noch `Puffer-Verbrauch`.
+- [x] Die Fläche zeigt **zwei** Pfade mit der gewählten Board-Nummer darin: `GET /api/boards/{boardId}/karten` und `GET /api/boards/{boardId}/zeiten`.
+- [x] Der **Aufruffuß** (aus `B0501`) führt für diese Wahl erstmals **zwei** Pfade; für die übrigen Wahlen bleibt er einzeilig.
+- [x] Die **Boardwahl bleibt** und füllt beide Pfade; die **Kartenklassenwahl tritt zurück** — sie hätte hier keine Wirkung, und ein Bedienelement ohne Wirkung ist eine stille Lüge.
+- [x] Der Eintrag **bedient nichts**: **kein Rohdaten-Knopf**, kein Download, kein Abruf aus dem Schirm heraus. Er zeigt die Aufrufe.
+- [x] Ohne gewähltes Board zeigt die Fläche keine halben Pfade — der Zustand ist derselbe, den die übrigen Auswertungen für „Bestand ungewählt" schon führen.
+- [x] **Kein Gestaltungsliteral** in der neuen Fläche — geprüft wie in `AuswertungsflaecheTests`.
 
 ### Der grüne Bestand bleibt grün
 
-- [ ] `GET /api/boards/{boardId}` bleibt **unverändert** die Anzeige: gekürzt, ohne archivierte Karten, ohne die n-Listen. **Zwei Zusagen, zwei Ressourcen.**
-- [ ] `Kartenleser.LiesKartenNachPosition`, `LiesKartenDerSpalte` und `LiesKartenDerKartenklasse` werden **nicht umgebaut**; die neuen Leseformen stehen **daneben**.
-- [ ] Die fünf vorhandenen `LiesXDerKarte` bleiben; jede bekommt ein `LiesXDesBoards` **neben** sich.
-- [ ] `Kartendetail` und `GET /api/karten/{karteId}` bleiben, wie sie sind.
-- [ ] `LiesLaufendeZeiteintraegeDesBoards` bleibt unverändert — die neue Leseform ist **dieselbe Abfrage ohne `AND z.Ende IS NULL`**, nicht ihr Umbau.
-- [ ] **Keine Migration, keine Schemaänderung, kein Schreibweg.** Alle Tabellen werden nur gelesen.
-- [ ] `I0036` (Zeitexport) bleibt unberührt; sein JSON-Zwilling `GET …/zeitexport` trägt weiter **keine Zeilen** — er ist bewusst kein zweiter Weg zu den Daten neben diesem Slice.
+- [x] `GET /api/boards/{boardId}` bleibt **unverändert** die Anzeige: gekürzt, ohne archivierte Karten, ohne die n-Listen. **Zwei Zusagen, zwei Ressourcen.**
+- [x] `Kartenleser.LiesKartenNachPosition`, `LiesKartenDerSpalte` und `LiesKartenDerKartenklasse` werden **nicht umgebaut**; die neuen Leseformen stehen **daneben**.
+- [x] Die fünf vorhandenen `LiesXDerKarte` bleiben; jede bekommt ein `LiesXDesBoards` **neben** sich.
+- [x] `Kartendetail` und `GET /api/karten/{karteId}` bleiben, wie sie sind.
+- [x] `LiesLaufendeZeiteintraegeDesBoards` bleibt unverändert — die neue Leseform ist **dieselbe Abfrage ohne `AND z.Ende IS NULL`**, nicht ihr Umbau.
+- [x] **Keine Migration, keine Schemaänderung, kein Schreibweg.** Alle Tabellen werden nur gelesen.
+- [x] `I0036` (Zeitexport) bleibt unberührt; sein JSON-Zwilling `GET …/zeitexport` trägt weiter **keine Zeilen** — er ist bewusst kein zweiter Weg zu den Daten neben diesem Slice.
 
 ### Was dieser Slice ausdrücklich nicht tut
 
-- [ ] **Keine dritte Route `…/verlaeufe`** — sie hätte keinen Gegenstand.
-- [ ] **Kein Ereignisjournal**, keine Bewegungstabelle, keine Schreibpflicht am Live-Kanal, kein Nachtragen dessen, was vor ihm geschah.
-- [ ] **Kein Rohdaten-Knopf, kein JSON-Download aus dem Browser** — das wäre ein zweiter Export neben `I0036`.
-- [ ] **Keine Rechnung**: keine Summe, kein Band, keine Kurve, keine Anzeigeregel, keine Sortierung nach Erledigungsdatum. Das ist der Unterschied zu `soll-ist` und `burndown`.
-- [ ] **Kein Ausschnitt**: keine Kartenklasse, kein Zeitraum, kein Archivfilter als Parameter, kein Spaltenfilter.
-- [ ] **Kein Strom, kein Chunking, keine Kompressionsverhandlung** — die Antwortform ist ein Stück JSON.
+- [x] **Keine dritte Route `…/verlaeufe`** — sie hätte keinen Gegenstand.
+- [x] **Kein Ereignisjournal**, keine Bewegungstabelle, keine Schreibpflicht am Live-Kanal, kein Nachtragen dessen, was vor ihm geschah.
+- [x] **Kein Rohdaten-Knopf, kein JSON-Download aus dem Browser** — das wäre ein zweiter Export neben `I0036`.
+- [x] **Keine Rechnung**: keine Summe, kein Band, keine Kurve, keine Anzeigeregel, keine Sortierung nach Erledigungsdatum. Das ist der Unterschied zu `soll-ist` und `burndown`.
+- [x] **Kein Ausschnitt**: keine Kartenklasse, kein Zeitraum, kein Archivfilter als Parameter, kein Spaltenfilter.
+- [x] **Kein Strom, kein Chunking, keine Kompressionsverhandlung** — die Antwortform ist ein Stück JSON.
 - [ ] Kein Board-Export als Datei (`I0038`), kein Puffer-Verbrauch (`I0035`).
 
 ## Betroffene Verzeichnisstruktur

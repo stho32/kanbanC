@@ -1,6 +1,6 @@
 ---
 id: R00040
-status: Neu
+status: In Arbeit
 datum: 2026-09-08
 ---
 
@@ -89,71 +89,71 @@ Board 2 „KanbanC — Release 2", Projektboard mit Zieltermin, Bahnen „Bereit
 | `Z1` | abgeschlossener Zeiteintrag auf `K24`, Kontributor `Claude-Agent` (9) | Zeiteintrag mit Ende |
 | `Z2` | **laufender** Zeiteintrag auf `K22` (archiviert), Kontributor `Alt-Kollege` (11, **stillgelegt**) | laufend, archiviert, stillgelegt |
 
-- [ ] `GET /api/boards/2/export.json` antwortet mit **200**, `Content-Type: application/json` und einem Dateinamen im `Content-Disposition` — der Aufruf liefert eine **Datei**, keine nackte Antwort.
-- [ ] Die Datei enthält **24** Karten, **2** Zeiteinträge, **3** Spalten, **1** Kartenklasse und **3** Kontributoren (`Stefan`, `Claude-Agent`, `Alt-Kollege`) — nicht mehr und nicht weniger.
-- [ ] `GET /api/boards/999/export.json` → **404**, Code `board-unbekannt`, Meldung mit der Nummer **999**, Kompensation `GET /api/boards` abrufen.
-- [ ] Ein Board **ohne jede Karte** ergibt **200** und eine vollständige Datei: Kopf, Board, Spalten, leere Listen.
+- [x] `GET /api/boards/2/export.json` antwortet mit **200**, `Content-Type: application/json` und einem Dateinamen im `Content-Disposition` — der Aufruf liefert eine **Datei**, keine nackte Antwort.
+- [x] Die Datei enthält **24** Karten, **2** Zeiteinträge, **3** Spalten, **1** Kartenklasse und **3** Kontributoren (`Stefan`, `Claude-Agent`, `Alt-Kollege`) — nicht mehr und nicht weniger.
+- [x] `GET /api/boards/999/export.json` → **404**, Code `board-unbekannt`, Meldung mit der Nummer **999**, Kompensation `GET /api/boards` abrufen.
+- [x] Ein Board **ohne jede Karte** ergibt **200** und eine vollständige Datei: Kopf, Board, Spalten, leere Listen.
 
 ### „Vollständig" — die fünf Inhalte des Kriteriums
 
-- [ ] **Board**: Name, Art (Projekt), Starttermin, Zieltermin, Kartenzahlanzeige und Archivstand stehen in der Datei.
+- [x] **Board**: Name, Art (Projekt), Starttermin, Zieltermin, Kartenzahlanzeige und Archivstand stehen in der Datei.
 - [ ] **Spalten**: alle drei mit `SpalteId`, Bezeichnung, Position, Abschlussmarke und **Anzeigegrenze 20** — die Grenze wird **berichtet**, nicht **angewendet**.
 - [ ] **Karten**: alle **24** — `K1`–`K21` vollständig (nicht 20), `K22` **mit Archivmarke**, `K23` mit `Kartenklasse: null`, `K24` mit allen fünf Listen; Anhänge **als Metadaten** (AnhangId, Dateiname, Größe, Urheber, Zeitpunkt).
-- [ ] **Klassenzuordnungen**: an `K24` stehen die Kartenklasse **und der Zählerstand 32** — als eigener Wert **neben** der fertigen Nummer `WBS-32`, nicht nur in ihr. Gegenprobe der Notwendigkeit: bei Präfix `AB2` und Stand 3 ergibt `Kartennummer.Aus` „AB203", ebenso bei Präfix `AB` und Stand 203 — aus der Nummer allein ist der Stand **nicht** rückgewinnbar.
-- [ ] **Zeiteinträge**: beide, `Z1` mit Ende, `Z2` ohne (`Ende: null`) und auf einer archivierten Karte von einem **stillgelegten** Kontributor — ihre Arbeit steht in der Datei.
-- [ ] **Sollband**: `K24` trägt `2,0–4,0`, `K23` trägt `null` — **kein Ersatzwert**, wo die Zeile fehlt.
-- [ ] **Gegenprobe zur Vollständigkeit**: `GET /api/boards/2` liefert für „Erledigt" **weiterhin 20** Karten und **ohne** `K22`. Aus dem Export ist keine Änderung der Anzeige geworden.
+- [x] **Klassenzuordnungen**: an `K24` stehen die Kartenklasse **und der Zählerstand 32** — als eigener Wert **neben** der fertigen Nummer `WBS-32`, nicht nur in ihr. Gegenprobe der Notwendigkeit: bei Präfix `AB2` und Stand 3 ergibt `Kartennummer.Aus` „AB203", ebenso bei Präfix `AB` und Stand 203 — aus der Nummer allein ist der Stand **nicht** rückgewinnbar.
+- [x] **Zeiteinträge**: beide, `Z1` mit Ende, `Z2` ohne (`Ende: null`) und auf einer archivierten Karte von einem **stillgelegten** Kontributor — ihre Arbeit steht in der Datei.
+- [x] **Sollband**: `K24` trägt `2,0–4,0`, `K23` trägt `null` — **kein Ersatzwert**, wo die Zeile fehlt.
+- [x] **Gegenprobe zur Vollständigkeit**: `GET /api/boards/2` liefert für „Erledigt" **weiterhin 20** Karten und **ohne** `K22`. Aus dem Export ist keine Änderung der Anzeige geworden.
 
 ### „Ohne die Anwendung lesbar" — drei Proben und eine Gegenprobe, alle an derselben Datei
 
-- [ ] **Probe 1 — parsbar ohne die Anwendung.** Die Datei parst mit `JsonDocument` **ohne einen einzigen KanbanC-Typ**: kein Contracts-Verweis, kein Deserialisierer, keine Kenntnis des Schemas.
-- [ ] **Probe 2 — kein Verweis ins Leere.** **Jede** Nummer, auf die eine Zeile zeigt — Spalte einer Karte, Kartenklasse einer Karte, Kontributor an Karte, Kommentar, Anhang, Dateiverweis und Zeiteintrag, Karte eines Zeiteintrags —, steht als Zeile **in derselben Datei**. Geprüft wird die Menge, nicht ein Beispiel.
-- [ ] **Probe 3 — lesbar, nicht nur auflösbar.** **Neben jeder Nummer steht im selben Dokument ihr Name**: die Spalte mit Bezeichnung, die Kartenklasse mit Name und Präfix, der Kontributor mit Name. Ein Mensch, der die Datei öffnet, liest „Stefan" und nicht „7".
-- [ ] **Gegenprobe** im selben Test: die **archivierte** und die **weggekürzte** Karte stehen darin, während `GET /api/boards/{boardId}` weiter kürzt.
-- [ ] **Keine Zeile der Datei behauptet etwas, was die Datei selbst widerlegt.** Konkret: **kein Zeiteintrag steht zweimal** darin, und **keine Zahl neben einer Spalte nennt eine Kartenzahl, die nicht der Zahl ihrer Karten in der Datei entspricht**. Eine „Kartenzahl: 0" neben 24 Karten wäre genau die stille Lüge, die `Spalte.Kartenzahl` ausdrücklich verhindern soll.
-- [ ] **Der Kopf sagt die Lücke.** Fassungsnummer, Erzeugungszeitpunkt, Name der Anwendung und der Satz, dass die **Bytes** der Anhänge nicht mitreisen, stehen als Text in der Datei — nicht in dieser Anforderung allein.
+- [x] **Probe 1 — parsbar ohne die Anwendung.** Die Datei parst mit `JsonDocument` **ohne einen einzigen KanbanC-Typ**: kein Contracts-Verweis, kein Deserialisierer, keine Kenntnis des Schemas.
+- [x] **Probe 2 — kein Verweis ins Leere.** **Jede** Nummer, auf die eine Zeile zeigt — Spalte einer Karte, Kartenklasse einer Karte, Kontributor an Karte, Kommentar, Anhang, Dateiverweis und Zeiteintrag, Karte eines Zeiteintrags —, steht als Zeile **in derselben Datei**. Geprüft wird die Menge, nicht ein Beispiel.
+- [x] **Probe 3 — lesbar, nicht nur auflösbar.** **Neben jeder Nummer steht im selben Dokument ihr Name**: die Spalte mit Bezeichnung, die Kartenklasse mit Name und Präfix, der Kontributor mit Name. Ein Mensch, der die Datei öffnet, liest „Stefan" und nicht „7".
+- [x] **Gegenprobe** im selben Test: die **archivierte** und die **weggekürzte** Karte stehen darin, während `GET /api/boards/{boardId}` weiter kürzt.
+- [x] **Keine Zeile der Datei behauptet etwas, was die Datei selbst widerlegt.** Konkret: **kein Zeiteintrag steht zweimal** darin, und **keine Zahl neben einer Spalte nennt eine Kartenzahl, die nicht der Zahl ihrer Karten in der Datei entspricht**. Eine „Kartenzahl: 0" neben 24 Karten wäre genau die stille Lüge, die `Spalte.Kartenzahl` ausdrücklich verhindern soll.
+- [x] **Der Kopf sagt die Lücke.** Fassungsnummer, Erzeugungszeitpunkt, Name der Anwendung und der Satz, dass die **Bytes** der Anhänge nicht mitreisen, stehen als Text in der Datei — nicht in dieser Anforderung allein.
 
 ### Die Boarddatei über die API (`F0070`)
 
 Fertig-Kriterium wörtlich: *„`GET /api/boards/{boardId}/export.json` liefert **eine** Datei, die das ganze Board trägt: das Board mit Art, Terminen, Kartenzahlanzeige und Archivstand, seine Spalten mit Position, Abschlussmarke und Anzeigegrenze, seine Kartenklassen mit Präfix und Zählerstand, die referenzierten Kontributoren mit Name, Art und Stilllegung, **alle** Karten samt Ort, Archivmarke, Klassenzuordnung mit Zählerstand, Sollband und den fünf Listen, und **alle** Zeiteinträge; dazu einen Kopf mit Fassungsnummer, Erzeugungszeitpunkt und der Angabe, dass die Bytes der Anhänge nicht mitreisen. Keine Kürzung, kein Archivfilter, keine Seitengröße; ein unbekanntes Board wird mit Grund, Werten und Kompensationsaktion zurückgewiesen. Ohne Schirm allein an der Antwort prüfbar."*
 
-- [ ] **Die Endung steht im Pfad** (`export.json`), dieselbe Adressform wie `zeitexport.csv`; kein Konflikt mit `…/karten` und `…/zeiten`.
-- [ ] Die Auslieferung geht über `Results.File` mit `application/json` — derselbe Weg wie Anhang-Download und Zeitexport. **Dieselbe Route bedient Browser-Download und Agenten-Abruf.**
-- [ ] Der Dateiname nennt **Board und Tag** (`<board>-<datum>.kanbanc.json`), damit zwei Ausleitungen desselben Boards nebeneinander liegen können. Zeichen, die ein Dateisystem nicht trägt, werden **ersetzt, nicht weggelassen**: ein Board „Release 1/2" und ein Board „Release 12" dürfen nicht denselben Namen bekommen.
-- [ ] Es gibt **keine Seitengröße, keinen Archivfilter, keinen Zeitraum, keinen Kartenklassenausschnitt** — kein Abfrageparameter ändert den Inhalt der Datei.
-- [ ] Der Fehlervertragstest (`FehlervertragTests`, aus `B0102`) nimmt die Route auf — sonst schlägt `Wenn_ein_Endpunkt_hinzukommt_dann_faellt_auf_dass_seine_Fehlerantworten_ungeprueft_sind` fehl.
-- [ ] **Ohne Schirm prüfbar**: jedes Kriterium dieser Gruppe ist an der Antwort allein zu zeigen.
+- [x] **Die Endung steht im Pfad** (`export.json`), dieselbe Adressform wie `zeitexport.csv`; kein Konflikt mit `…/karten` und `…/zeiten`.
+- [x] Die Auslieferung geht über `Results.File` mit `application/json` — derselbe Weg wie Anhang-Download und Zeitexport. **Dieselbe Route bedient Browser-Download und Agenten-Abruf.**
+- [x] Der Dateiname nennt **Board und Tag** (`<board>-<datum>.kanbanc.json`), damit zwei Ausleitungen desselben Boards nebeneinander liegen können. Zeichen, die ein Dateisystem nicht trägt, werden **ersetzt, nicht weggelassen**: ein Board „Release 1/2" und ein Board „Release 12" dürfen nicht denselben Namen bekommen.
+- [x] Es gibt **keine Seitengröße, keinen Archivfilter, keinen Zeitraum, keinen Kartenklassenausschnitt** — kein Abfrageparameter ändert den Inhalt der Datei.
+- [x] Der Fehlervertragstest (`FehlervertragTests`, aus `B0102`) nimmt die Route auf — sonst schlägt `Wenn_ein_Endpunkt_hinzukommt_dann_faellt_auf_dass_seine_Fehlerantworten_ungeprueft_sind` fehl.
+- [x] **Ohne Schirm prüfbar**: jedes Kriterium dieser Gruppe ist an der Antwort allein zu zeigen.
 
 ### Der Menüpunkt an der Kachel (`F0071`)
 
 Fertig-Kriterium wörtlich: *„Das ⋯-Menü einer Boardkachel führt als dritten Punkt „Exportieren"; ein Klick lädt die Datei mit ihrem Namen in den Browser, ohne die Seite zu verlassen. Der Punkt steht auch an einer archivierten Kachel — ein abgelegtes Board bleibt ausleitbar."*
 
-- [ ] Das Menü führt **drei** Punkte: `Umbenennen`, `Archivieren` (bzw. an der Archivansicht nur `Umbenennen`) und **`Exportieren`** mit Pfeil-nach-unten-Symbol.
-- [ ] Der Punkt ist ein **`<a href>`** und kein `<button>`: der Browser holt die Datei selbst, damit sie nicht durch den Blazor-Kreislauf fließt und der Download Name, Fortschritt und Abbruch behält.
-- [ ] Der Verweis zeigt **direkt auf die WebApi** (öffentliche Basisadresse), nicht auf eine Blazor-Route.
-- [ ] Ein Klick **verlässt die Seite nicht**: die Boardliste bleibt stehen, das Menü schließt wie bei den zwei vorhandenen Punkten.
-- [ ] Der Punkt steht **auch an der archivierten Kachel** — dort, wo `Archivieren` fehlt und `zurückholen` steht.
-- [ ] Die geladene Datei trägt **denselben Namen**, den die Route im `Content-Disposition` nennt.
-- [ ] **Kein Gestaltungsliteral** in der Menüzeile; Werte aus `gestaltung.css`.
-- [ ] **Keine Ausfallmeldung am Menüpunkt**: eine nicht erreichbare WebApi meldet der Browser selbst — `WebApiAufruf.MitAusfallmeldung` gehört zu Aufrufen, die die Anwendung macht.
+- [x] Das Menü führt **drei** Punkte: `Umbenennen`, `Archivieren` (bzw. an der Archivansicht nur `Umbenennen`) und **`Exportieren`** mit Pfeil-nach-unten-Symbol.
+- [x] Der Punkt ist ein **`<a href>`** und kein `<button>`: der Browser holt die Datei selbst, damit sie nicht durch den Blazor-Kreislauf fließt und der Download Name, Fortschritt und Abbruch behält.
+- [x] Der Verweis zeigt **direkt auf die WebApi** (öffentliche Basisadresse), nicht auf eine Blazor-Route.
+- [x] Ein Klick **verlässt die Seite nicht**: die Boardliste bleibt stehen, das Menü schließt wie bei den zwei vorhandenen Punkten.
+- [x] Der Punkt steht **auch an der archivierten Kachel** — dort, wo `Archivieren` fehlt und `zurückholen` steht.
+- [x] Die geladene Datei trägt **denselben Namen**, den die Route im `Content-Disposition` nennt.
+- [x] **Kein Gestaltungsliteral** in der Menüzeile; Werte aus `gestaltung.css`.
+- [x] **Keine Ausfallmeldung am Menüpunkt**: eine nicht erreichbare WebApi meldet der Browser selbst — `WebApiAufruf.MitAusfallmeldung` gehört zu Aufrufen, die die Anwendung macht.
 
 ### Der grüne Bestand bleibt grün
 
-- [ ] `GET /api/boards/{boardId}` bleibt **unverändert** die Anzeige: gekürzt, ohne archivierte Karten, ohne die n-Listen.
-- [ ] `GET /api/boards/{boardId}/karten` und `…/zeiten` bleiben unverändert; die Exportdatei nutzt **dieselben** Leser, statt sie umzubauen.
-- [ ] `Rohdatenkarte` bleibt, wie sie ist — die Exportkarte **setzt zusammen**, statt zu verdoppeln.
-- [ ] **Keine Migration, keine Schemaänderung, kein Schreibweg.** Alle 19 Tabellen werden nur gelesen.
-- [ ] `Kartennummer.Aus` bleibt unverändert; der Zählerstand reist **daneben**, statt die Nummer umzubauen.
-- [ ] Der Zeitexport (`I0036`) und die Anhangroute bleiben unberührt.
+- [x] `GET /api/boards/{boardId}` bleibt **unverändert** die Anzeige: gekürzt, ohne archivierte Karten, ohne die n-Listen.
+- [x] `GET /api/boards/{boardId}/karten` und `…/zeiten` bleiben unverändert; die Exportdatei nutzt **dieselben** Leser, statt sie umzubauen.
+- [x] `Rohdatenkarte` bleibt, wie sie ist — die Exportkarte **setzt zusammen**, statt zu verdoppeln.
+- [x] **Keine Migration, keine Schemaänderung, kein Schreibweg.** Alle 19 Tabellen werden nur gelesen.
+- [x] `Kartennummer.Aus` bleibt unverändert; der Zählerstand reist **daneben**, statt die Nummer umzubauen.
+- [x] Der Zeitexport (`I0036`) und die Anhangroute bleiben unberührt.
 
 ### Was dieser Slice ausdrücklich nicht tut
 
-- [ ] **Kein Import** — `I0039` liest die Datei, dieser Slice schreibt sie. Keine Dateiwahl, keine Vorschau, kein Bericht: der Ablauf, den das Artboard als Lücke markiert, gehört dorthin.
-- [ ] **Kein Archiv aus JSON und Dateien**, keine Anhangbytes, kein ZIP — das wäre keine „eigenständige Datei" mehr, sondern ein eigener Slice.
-- [ ] **Keine Kopie der SQLite-Datei** — sie wäre ohne Werkzeug unlesbar und trüge das Schema statt des Boards.
-- [ ] **Kein Export mehrerer Boards**, kein Gesamtexport der Installation, keine Personenliste der Installation.
-- [ ] **Kein eigener Schirm, kein Dialog, kein Fortschrittsbalken.** Ein Export ist ein Klick und eine Datei.
-- [ ] **Kein Strom, kein Chunking, keine Kompressionsverhandlung, kein ETag.**
+- [x] **Kein Import** — `I0039` liest die Datei, dieser Slice schreibt sie. Keine Dateiwahl, keine Vorschau, kein Bericht: der Ablauf, den das Artboard als Lücke markiert, gehört dorthin.
+- [x] **Kein Archiv aus JSON und Dateien**, keine Anhangbytes, kein ZIP — das wäre keine „eigenständige Datei" mehr, sondern ein eigener Slice.
+- [x] **Keine Kopie der SQLite-Datei** — sie wäre ohne Werkzeug unlesbar und trüge das Schema statt des Boards.
+- [x] **Kein Export mehrerer Boards**, kein Gesamtexport der Installation, keine Personenliste der Installation.
+- [x] **Kein eigener Schirm, kein Dialog, kein Fortschrittsbalken.** Ein Export ist ein Klick und eine Datei.
+- [x] **Kein Strom, kein Chunking, keine Kompressionsverhandlung, kein ETag.**
 
 ## Betroffene Verzeichnisstruktur
 
