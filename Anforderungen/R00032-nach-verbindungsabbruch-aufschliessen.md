@@ -1,6 +1,6 @@
 ---
 id: R00032
-status: Neu
+status: In Arbeit
 datum: 2026-09-07
 ---
 
@@ -67,62 +67,62 @@ Der dritte ist ein **Befund am Bestand**, der hier mit erledigt wird: `Component
 
 ### Fall 1 — die Sicht merkt, dass die Leitung weg ist
 
-- [ ] Reißt die Ereignisleitung ab, erscheint in der Kopfzeile **jeder** offenen Sicht dieses Blazor-Prozesses die Marke „nicht live · Stand von HH:mm".
-- [ ] Steht die Leitung, steht an dieser Stelle **nichts** — keine „live"-Marke, kein Nullwert, keine graue Attrappe.
-- [ ] Die Marke nennt einen **Zeitpunkt** und keine mitzählende Dauer; sie steht nach fünf Minuten Trennung unverändert da.
-- [ ] Der Zeitpunkt ist der des **Abrisses**. Rechenbeispiel: letztes Ereignis 07:10, Abriss 09:12 — die Marke sagt **09:12**, nicht 07:10.
-- [ ] Kommt die Leitung zurück, verschwindet die Marke.
-- [ ] Während der Trennung ist die Fläche **zurückgenommen und weiterhin lesbar** — Kartentitel, Bahnennamen und Zahlen bleiben erkennbar.
-- [ ] Die Zurücknahme gilt dem **ganzen Schirm** (eine Klasse am Layout), nicht einer einzelnen Komponente.
-- [ ] Der Verbindungsstand hängt am `Ereignisverteiler`; es entsteht **kein zweiter Dienst**, an dem sich Sichten anmelden.
-- [ ] Eine Sicht, die verlassen wird, meldet sich ab — der Singleton hält keine toten Kreisläufe fest.
+- [x] Reißt die Ereignisleitung ab, erscheint in der Kopfzeile **jeder** offenen Sicht dieses Blazor-Prozesses die Marke „nicht live · Stand von HH:mm".
+- [x] Steht die Leitung, steht an dieser Stelle **nichts** — keine „live"-Marke, kein Nullwert, keine graue Attrappe.
+- [x] Die Marke nennt einen **Zeitpunkt** und keine mitzählende Dauer; sie steht nach fünf Minuten Trennung unverändert da.
+- [x] Der Zeitpunkt ist der des **Abrisses**. Rechenbeispiel: letztes Ereignis 07:10, Abriss 09:12 — die Marke sagt **09:12**, nicht 07:10.
+- [x] Kommt die Leitung zurück, verschwindet die Marke.
+- [x] Während der Trennung ist die Fläche **zurückgenommen und weiterhin lesbar** — Kartentitel, Bahnennamen und Zahlen bleiben erkennbar.
+- [x] Die Zurücknahme gilt dem **ganzen Schirm** (eine Klasse am Layout), nicht einer einzelnen Komponente.
+- [x] Der Verbindungsstand hängt am `Ereignisverteiler`; es entsteht **kein zweiter Dienst**, an dem sich Sichten anmelden.
+- [x] Eine Sicht, die verlassen wird, meldet sich ab — der Singleton hält keine toten Kreisläufe fest.
 
 ### Fall 1 — das Aufschließen
 
-- [ ] Kommt die Leitung zurück, holt ein offenes Board seinen Stand über `LadeBoard` **frisch**; die Karten stehen danach dort, wo sie jetzt liegen, und die Bahnenzahlen stimmen.
-- [ ] Es wird **nichts nachgespielt** — es gibt keinen Ereignisspeicher und keine Folgenummer.
-- [ ] Ein Band über den Bahnen nennt Zahl und Zeitpunkt: „Wieder verbunden. 4 Änderungen seit 09:12 sind nachgeholt und unten markiert." mit einem „schließen".
-- [ ] Die Zahl entsteht aus dem **Vergleich** des frisch geholten Bildes mit dem alten. Rechenbeispiel: „Bereit" trug A, B, C, D, danach trägt „Bereit" A, D und „In Arbeit" B, C — das sind **2** geänderte Karten (B und C), nicht 4 und nicht 0.
-- [ ] Verglichen wird die **Lage** (Spalte und Position). Eine neu erschienene und eine verschwundene Karte zählen mit; eine unverändert liegende zählt nicht.
-- [ ] **Null Änderungen ergeben kein Band** — die Sicht war getrennt, aber es ist nichts passiert.
-- [ ] Jede geänderte Karte trägt eine **Nachholmarke** mit dem Wortlaut „geändert, während die Verbindung weg war" — **ohne Namen und ohne Uhrzeit**.
-- [ ] Die Nachholmarke hat **keine Frist**: sie verschwindet nicht von selbst, sondern erst, wenn das Band geschlossen wird.
-- [ ] „Schließen" räumt Band **und** Nachholmarken zusammen weg.
-- [ ] Übersteigt die Zahl die Zusammenfassungsschwelle (**etwa zehn**, Größenordnung), erscheinen **keine** einzelnen Marken; das Band nennt nur die Zahl. Rechenbeispiel: 4 geänderte Karten → Band **und** 4 Marken; 25 geänderte Karten → Band ohne Marken.
-- [ ] **Läuft gerade ein Zug**, wartet das Aufschließen bis zum Loslassen — dieselbe Regel wie für eine fremde Bewegung, kein zweiter Mechanismus.
-- [ ] Eine geöffnete Kartenseite holt nach der Rückkehr ihr Kartendetail frisch; die Kopfzeile nennt die aktuelle Spalte.
-- [ ] Die Kartenseite bekommt **kein Band und keine Zahl** — sie zeigt eine Karte, nicht einen Bestand.
-- [ ] **Steht ein Feld offen**, wird nichts ausgetauscht: der ungesendete Text bleibt stehen, die Meldung wartet sichtbar und wird nach dem Schließen des Felds eingespielt.
-- [ ] Die **erste** Verbindung nach dem Start der Anwendung meldet **keine** Rückkehr: eine frisch geöffnete Sicht schließt nicht gegen ein Bild auf, das sie nie hatte, und zeigt kein Band.
+- [x] Kommt die Leitung zurück, holt ein offenes Board seinen Stand über `LadeBoard` **frisch**; die Karten stehen danach dort, wo sie jetzt liegen, und die Bahnenzahlen stimmen.
+- [x] Es wird **nichts nachgespielt** — es gibt keinen Ereignisspeicher und keine Folgenummer.
+- [x] Ein Band über den Bahnen nennt Zahl und Zeitpunkt: „Wieder verbunden. 4 Änderungen seit 09:12 sind nachgeholt und unten markiert." mit einem „schließen".
+- [x] Die Zahl entsteht aus dem **Vergleich** des frisch geholten Bildes mit dem alten. Rechenbeispiel: „Bereit" trug A, B, C, D, danach trägt „Bereit" A, D und „In Arbeit" B, C — das sind **2** geänderte Karten (B und C), nicht 4 und nicht 0.
+- [x] Verglichen wird die **Lage** (Spalte und Position). Eine neu erschienene und eine verschwundene Karte zählen mit; eine unverändert liegende zählt nicht.
+- [x] **Null Änderungen ergeben kein Band** — die Sicht war getrennt, aber es ist nichts passiert.
+- [x] Jede geänderte Karte trägt eine **Nachholmarke** mit dem Wortlaut „geändert, während die Verbindung weg war" — **ohne Namen und ohne Uhrzeit**.
+- [x] Die Nachholmarke hat **keine Frist**: sie verschwindet nicht von selbst, sondern erst, wenn das Band geschlossen wird.
+- [x] „Schließen" räumt Band **und** Nachholmarken zusammen weg.
+- [x] Übersteigt die Zahl die Zusammenfassungsschwelle (**etwa zehn**, Größenordnung), erscheinen **keine** einzelnen Marken; das Band nennt nur die Zahl. Rechenbeispiel: 4 geänderte Karten → Band **und** 4 Marken; 25 geänderte Karten → Band ohne Marken.
+- [x] **Läuft gerade ein Zug**, wartet das Aufschließen bis zum Loslassen — dieselbe Regel wie für eine fremde Bewegung, kein zweiter Mechanismus.
+- [x] Eine geöffnete Kartenseite holt nach der Rückkehr ihr Kartendetail frisch; die Kopfzeile nennt die aktuelle Spalte.
+- [x] Die Kartenseite bekommt **kein Band und keine Zahl** — sie zeigt eine Karte, nicht einen Bestand.
+- [x] **Steht ein Feld offen**, wird nichts ausgetauscht: der ungesendete Text bleibt stehen, die Meldung wartet sichtbar und wird nach dem Schließen des Felds eingespielt.
+- [x] Die **erste** Verbindung nach dem Start der Anwendung meldet **keine** Rückkehr: eine frisch geöffnete Sicht schließt nicht gegen ein Bild auf, das sie nie hatte, und zeigt kein Band.
 - [ ] Fällt die WebApi zwischen Rückkehr und Neuabruf wieder aus, landet der Fehler an derselben Stelle wie jeder andere (`WebApiAufruf.MitAusfallmeldung`) — keine Ausnahmeseite.
 
 ### Fall 2 — der abgerissene Browserkreislauf
 
-- [ ] **Jede** Zeile des Trennungsdialogs ist deutsch — alle sieben Texte aus `ReconnectModal.razor`, einschließlich der beiden Knöpfe.
+- [x] **Jede** Zeile des Trennungsdialogs ist deutsch — alle sieben Texte aus `ReconnectModal.razor`, einschließlich der beiden Knöpfe.
 - [ ] Der Dialog nennt den Zeitpunkt, seit dem der Schirm alt ist: „Was du siehst, ist der Stand von 09:12."
-- [ ] Der Zeitpunkt entsteht **im Browser**, weil der Server in diesem Fall nicht erreichbar ist.
-- [ ] Die Element-Ids und die `components-*-visible`-Klassen bleiben **unverändert** — das Blazor-Laufzeitteil findet den Dialog über sie.
-- [ ] Der Dialog erscheint weiterhin bei Trennung und verschwindet beim Wiederanschluss; „Erneut verbinden" tut, was „Retry" tat.
-- [ ] Nach einem kurzen Abriss und Wiederanschluss zeigt die Seite den **aktuellen** Stand — der Kreislauf hat serverseitig weitergelebt.
+- [x] Der Zeitpunkt entsteht **im Browser**, weil der Server in diesem Fall nicht erreichbar ist.
+- [x] Die Element-Ids und die `components-*-visible`-Klassen bleiben **unverändert** — das Blazor-Laufzeitteil findet den Dialog über sie.
+- [x] Der Dialog erscheint weiterhin bei Trennung und verschwindet beim Wiederanschluss; „Erneut verbinden" tut, was „Retry" tat.
+- [x] Nach einem kurzen Abriss und Wiederanschluss zeigt die Seite den **aktuellen** Stand — der Kreislauf hat serverseitig weitergelebt.
 
 ### Was dieser Slice ausdrücklich nicht tut
 
-- [ ] **Kein Ereignisjournal, kein Ereignisspeicher, keine Folgenummer** in der WebApi.
-- [ ] **Kein Nachspielen** verpasster Ereignisse — nur ein frisches Holen mit Vergleich.
-- [ ] **Kein Wer und kein Wann an der Nachholmarke** — der Zeitpunkt steht einmal im Band.
-- [ ] **Keine Ereignisspur und kein Laufband** (`D0007.dc.html`, Rand C — ohne Knoten in der WBS).
-- [ ] **Kein Angebot über einem offenen Feld** bei einer fremden **Feldänderung** — das gehört dem Slice, der Feldänderungen nachzieht, und den gibt es nicht.
-- [ ] **Keine mitlaufende Dauer, die angehalten werden müsste** — im Bestand tickt nichts; `I0028` hat den Sekundentakt ausdrücklich einem eigenen Slice überlassen, den es nicht gibt.
-- [ ] **Kein neuer Endpunkt, kein neues Contracts-DTO, keine Migration, kein neues Paket.**
-- [ ] **Kein Nachziehen anderer Gegenstände** — Kartenänderungen, Kommentare, Etiketten, Teilaufgaben, Anhänge, Klassen, Farbe, Archivierung, Spalten und Boards, Zeitereignisse bleiben draußen wie in `R00031`.
+- [x] **Kein Ereignisjournal, kein Ereignisspeicher, keine Folgenummer** in der WebApi.
+- [x] **Kein Nachspielen** verpasster Ereignisse — nur ein frisches Holen mit Vergleich.
+- [x] **Kein Wer und kein Wann an der Nachholmarke** — der Zeitpunkt steht einmal im Band.
+- [x] **Keine Ereignisspur und kein Laufband** (`D0007.dc.html`, Rand C — ohne Knoten in der WBS).
+- [x] **Kein Angebot über einem offenen Feld** bei einer fremden **Feldänderung** — das gehört dem Slice, der Feldänderungen nachzieht, und den gibt es nicht.
+- [x] **Keine mitlaufende Dauer, die angehalten werden müsste** — im Bestand tickt nichts; `I0028` hat den Sekundentakt ausdrücklich einem eigenen Slice überlassen, den es nicht gibt.
+- [x] **Kein neuer Endpunkt, kein neues Contracts-DTO, keine Migration, kein neues Paket.**
+- [x] **Kein Nachziehen anderer Gegenstände** — Kartenänderungen, Kommentare, Etiketten, Teilaufgaben, Anhänge, Klassen, Farbe, Archivierung, Spalten und Boards, Zeitereignisse bleiben draußen wie in `R00031`.
 
 ### Der grüne Bestand bleibt grün
 
-- [ ] Die **`R00031`-Suite** bleibt grün: die Einflugmarke, ihre Frist, die Warteregeln am Board und auf der Kartenseite und die Wiederaufnahme der Leitung verhalten sich unverändert.
-- [ ] `Ereignisleitung` meldet weiterhin jedes gelesene Element an den Verteiler; das zweite Ereignis (Verbindungsstand) tritt **daneben**, nicht an seine Stelle.
-- [ ] Die bestehende Ausfallmeldung schreibender Aufrufe (`WebApiAufruf.MitAusfallmeldung`) bleibt unverändert — während Fall 1 ist die Oberfläche **bedienbar**, und ein scheiternder Schreibaufruf meldet sich wie bisher.
-- [ ] Alle bestehenden E2E-Tests bleiben grün, obwohl in jedem Lauf nun ein Verbindungsstand mitläuft.
-- [ ] Die vorhandenen Konfigurationsschlüssel `Oberflaeche:MarkenstandzeitInSekunden` und `Oberflaeche:WiederaufnahmepauseInSekunden` behalten Namen und Bedeutung.
+- [x] Die **`R00031`-Suite** bleibt grün: die Einflugmarke, ihre Frist, die Warteregeln am Board und auf der Kartenseite und die Wiederaufnahme der Leitung verhalten sich unverändert.
+- [x] `Ereignisleitung` meldet weiterhin jedes gelesene Element an den Verteiler; das zweite Ereignis (Verbindungsstand) tritt **daneben**, nicht an seine Stelle.
+- [x] Die bestehende Ausfallmeldung schreibender Aufrufe (`WebApiAufruf.MitAusfallmeldung`) bleibt unverändert — während Fall 1 ist die Oberfläche **bedienbar**, und ein scheiternder Schreibaufruf meldet sich wie bisher.
+- [x] Alle bestehenden E2E-Tests bleiben grün, obwohl in jedem Lauf nun ein Verbindungsstand mitläuft.
+- [x] Die vorhandenen Konfigurationsschlüssel `Oberflaeche:MarkenstandzeitInSekunden` und `Oberflaeche:WiederaufnahmepauseInSekunden` behalten Namen und Bedeutung.
 
 ## Betroffene Verzeichnisstruktur
 

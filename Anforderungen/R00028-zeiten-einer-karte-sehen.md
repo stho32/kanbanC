@@ -1,6 +1,6 @@
 ---
 id: R00028
-status: Neu
+status: In Arbeit
 datum: 2026-09-06
 ---
 
@@ -49,69 +49,69 @@ Das durchgehende Rechenbeispiel: Karte 14 trägt drei Einträge — `#7` Claude 
 
 ### Die Karte zeigt ihre Zeiteinträge
 
-- [ ] Auf `/karten/14` steht im Abschnitt „Zeiten" eine Liste mit **drei** Zeilen; die Kopfzahl daneben zeigt `3`.
-- [ ] Die Reihenfolge ist **neueste zuerst**: `#7`, `#6`, `#5` — nicht die Beginn-aufsteigende Folge, in der die API sie liefert.
-- [ ] Jede Zeile trägt den Initialenkreis ihres Kontributors (dasselbe Kürzel und dieselbe Artfarbe wie in der Kommentarliste), den Zeitraum und — wenn abgeschlossen — die Dauer.
-- [ ] Zeile `#6` liest sich `gestern 17:40 – 18:25` mit der Dauer `0:45`; Zeile `#5` liest sich `gestern 11:05 – 11:42` mit `0:37`.
-- [ ] Die Liste ist **nicht** nach Kontributor gruppiert: `#7` (Claude) steht über `#6` (Stefan), obwohl `#5` demselben Kontributor gehört wie `#7`.
-- [ ] Ein Reload der Seite zeigt dieselbe Liste in derselben Reihenfolge.
+- [x] Auf `/karten/14` steht im Abschnitt „Zeiten" eine Liste mit **drei** Zeilen; die Kopfzahl daneben zeigt `3`.
+- [x] Die Reihenfolge ist **neueste zuerst**: `#7`, `#6`, `#5` — nicht die Beginn-aufsteigende Folge, in der die API sie liefert.
+- [x] Jede Zeile trägt den Initialenkreis ihres Kontributors (dasselbe Kürzel und dieselbe Artfarbe wie in der Kommentarliste), den Zeitraum und — wenn abgeschlossen — die Dauer.
+- [x] Zeile `#6` liest sich `gestern 17:40 – 18:25` mit der Dauer `0:45`; Zeile `#5` liest sich `gestern 11:05 – 11:42` mit `0:37`.
+- [x] Die Liste ist **nicht** nach Kontributor gruppiert: `#7` (Claude) steht über `#6` (Stefan), obwohl `#5` demselben Kontributor gehört wie `#7`.
+- [x] Ein Reload der Seite zeigt dieselbe Liste in derselben Reihenfolge.
 
 ### Und deren Summe je Kontributor
 
-- [ ] Über der Liste steht **je Kontributor mit abgeschlossener Zeit** eine Zeile mit Initialenkreis, Name und Summe.
-- [ ] Im Beispiel: Stefan `0:45` und Claude `0:37` — Claude **nicht** `2:51`, weil `#7` noch läuft.
-- [ ] Die Reihenfolge ist absteigend nach Summe, bei Gleichstand nach Name: Stefan (`0:45`) steht über Claude (`0:37`).
-- [ ] Neben dem Timerknopf steht die Gesamtsumme als **`Ist 1:22`** (0:45 + 0:37) — nicht `3:36`.
-- [ ] Ein **stillgelegter** Kontributor bekommt seine Summenzeile wie jeder andere; seine erfasste Zeit verschwindet nicht mit seiner Stilllegung.
-- [ ] Es steht **kein „von h:mm Soll"** neben der Ist-Summe.
+- [x] Über der Liste steht **je Kontributor mit abgeschlossener Zeit** eine Zeile mit Initialenkreis, Name und Summe.
+- [x] Im Beispiel: Stefan `0:45` und Claude `0:37` — Claude **nicht** `2:51`, weil `#7` noch läuft.
+- [x] Die Reihenfolge ist absteigend nach Summe, bei Gleichstand nach Name: Stefan (`0:45`) steht über Claude (`0:37`).
+- [x] Neben dem Timerknopf steht die Gesamtsumme als **`Ist 1:22`** (0:45 + 0:37) — nicht `3:36`.
+- [x] Ein **stillgelegter** Kontributor bekommt seine Summenzeile wie jeder andere; seine erfasste Zeit verschwindet nicht mit seiner Stilllegung.
+- [x] Es steht **kein „von h:mm Soll"** neben der Ist-Summe.
 
 ### Laufend und abgeschlossen sind unterscheidbar
 
-- [ ] Zeile `#7` liest sich `heute 09:12 – läuft` und trägt **keine** Dauer.
-- [ ] Sie unterscheidet sich von den abgeschlossenen an mindestens drei Merkmalen, die nicht nur Farbe sind: Akzentkante links, das Wort „läuft" an der Stelle des Endes, und ein **Stoppquadrat** als Handlung rechts.
+- [x] Zeile `#7` liest sich `heute 09:12 – läuft` und trägt **keine** Dauer.
+- [x] Sie unterscheidet sich von den abgeschlossenen an mindestens drei Merkmalen, die nicht nur Farbe sind: Akzentkante links, das Wort „läuft" an der Stelle des Endes, und ein **Stoppquadrat** als Handlung rechts.
 - [ ] Eine abgeschlossene Zeile trägt **keine** Handlung — kein Stift, kein Löschen, kein Stoppquadrat.
-- [ ] Der Stoppknopf oben erscheint unverändert nur für den **eigenen** laufenden Timer, trägt weiterhin „läuft seit hh:mm" (`#zeiten-laeuft`) und weiterhin **keine** Dauer.
+- [x] Der Stoppknopf oben erscheint unverändert nur für den **eigenen** laufenden Timer, trägt weiterhin „läuft seit hh:mm" (`#zeiten-laeuft`) und weiterhin **keine** Dauer.
 
 ### Der laufende Eintrag zählt nicht in die Summe
 
-- [ ] Claudes Summenzeile lautet `0:37 · 1 läuft` — die laufende Messung ist **genannt**, aber nicht addiert.
-- [ ] Wird `#7` gestoppt, etwa um 09:49, wächst Claudes Summe auf `1:14`, die Gesamtsumme auf `Ist 1:59`, und der Zusatz `· 1 läuft` verschwindet.
-- [ ] Ein Kontributor, für den **nur** ein Timer läuft und der keine abgeschlossene Zeit hat, bekommt **keine** Summenzeile mit `0:00`.
-- [ ] Die angezeigte Summe ändert sich nicht dadurch, dass die Seite länger offen steht — sie wird nicht nachgeführt.
+- [x] Claudes Summenzeile lautet `0:37 · 1 läuft` — die laufende Messung ist **genannt**, aber nicht addiert.
+- [x] Wird `#7` gestoppt, etwa um 09:49, wächst Claudes Summe auf `1:14`, die Gesamtsumme auf `Ist 1:59`, und der Zusatz `· 1 läuft` verschwindet.
+- [x] Ein Kontributor, für den **nur** ein Timer läuft und der keine abgeschlossene Zeit hat, bekommt **keine** Summenzeile mit `0:00`.
+- [x] Die angezeigte Summe ändert sich nicht dadurch, dass die Seite länger offen steht — sie wird nicht nachgeführt.
 
 ### Dauer und Zeitraum als Text
 
-- [ ] `1:22`, `0:45` und `0:37` erscheinen mit Stunde ohne führende Null und zweistelliger Minute.
-- [ ] Eine Dauer jenseits eines Tages läuft in den Stunden weiter: 26 Stunden und 3 Minuten erscheinen als `26:03`, **nicht** als `1:02:03` und nicht gekappt.
-- [ ] Eine Spanne unter einer Minute erscheint als `0:00`; eine negative Spanne erscheint nie — sie wird zu `0:00`.
-- [ ] Ein Eintrag von vorgestern trägt statt „gestern" das ISO-Datum, in derselben Form wie die Kommentar-Metazeile: `2026-09-04 11:05 – 11:42`.
+- [x] `1:22`, `0:45` und `0:37` erscheinen mit Stunde ohne führende Null und zweistelliger Minute.
+- [x] Eine Dauer jenseits eines Tages läuft in den Stunden weiter: 26 Stunden und 3 Minuten erscheinen als `26:03`, **nicht** als `1:02:03` und nicht gekappt.
+- [x] Eine Spanne unter einer Minute erscheint als `0:00`; eine negative Spanne erscheint nie — sie wird zu `0:00`.
+- [x] Ein Eintrag von vorgestern trägt statt „gestern" das ISO-Datum, in derselben Form wie die Kommentar-Metazeile: `2026-09-04 11:05 – 11:42`.
 
 ### Überlappungen werden gezeigt, nicht gemeldet
 
 - [ ] Zwei Einträge desselben Kontributors, deren Zeiträume sich überschneiden, stehen beide in der Liste, jeder mit seinem eigenen Zeitraum, in Zeitfolge.
 - [ ] Es erscheint **keine** Warnung und **keine** stille Korrektur — kein Zeitraum wird gekürzt, kein Eintrag ausgelassen.
-- [ ] Drei überlappende Einträge desselben Tages von je 10 Stunden (08:00–18:00, 09:00–19:00, 10:00–20:00) ergeben die Summe **`30:00`** — sie wird weder auf 24 Stunden gekappt noch als Tag ausgewiesen.
+- [x] Drei überlappende Einträge desselben Tages von je 10 Stunden (08:00–18:00, 09:00–19:00, 10:00–20:00) ergeben die Summe **`30:00`** — sie wird weder auf 24 Stunden gekappt noch als Tag ausgewiesen.
 
 ### Leerzustand
 
-- [ ] Eine Karte ohne Zeiteintrag zeigt den Satz **„Noch keine Zeit erfasst."**
-- [ ] Sie zeigt **keine** Summenzeile, **keine** Kopfzahl, **keine** Liste und **keine** Ist-Summe `0:00`.
-- [ ] Der Knopf „Timer starten" steht unverändert dort.
-- [ ] Mit dem ersten Start verschwindet der Satz, und die laufende Zeile erscheint — **ohne** Summenzeile, weil noch nichts abgeschlossen ist.
+- [x] Eine Karte ohne Zeiteintrag zeigt den Satz **„Noch keine Zeit erfasst."**
+- [x] Sie zeigt **keine** Summenzeile, **keine** Kopfzahl, **keine** Liste und **keine** Ist-Summe `0:00`.
+- [x] Der Knopf „Timer starten" steht unverändert dort.
+- [x] Mit dem ersten Start verschwindet der Satz, und die laufende Zeile erscheint — **ohne** Summenzeile, weil noch nichts abgeschlossen ist.
 
 ### Fremde laufende Timer sind in der Oberfläche beendbar
 
-- [ ] Das Stoppquadrat steht an **jeder** laufenden Zeile, auch an der eines fremden Kontributors und auch ohne gewählte Identität.
-- [ ] Ein Klick darauf beendet **genau diesen** Eintrag: die Zeile bekommt ihr Ende und ihre Dauer, die Summenzeile des Kontributors wächst, die Gesamtsumme wächst — **ohne** zweiten Abruf der Kartenseite.
-- [ ] Der beendete Eintrag trägt weiterhin **seinen** Kontributor: gestoppt wurde der Timer, nicht die Urheberschaft.
-- [ ] Läuft mein eigener Timer, beenden **beide** Wege denselben Eintrag — der Stoppknopf oben und das Stoppquadrat an seiner Zeile; danach steht oben wieder „Timer starten".
-- [ ] Ein Reload zeigt den beendeten Eintrag mit Ende und Dauer.
+- [x] Das Stoppquadrat steht an **jeder** laufenden Zeile, auch an der eines fremden Kontributors und auch ohne gewählte Identität.
+- [x] Ein Klick darauf beendet **genau diesen** Eintrag: die Zeile bekommt ihr Ende und ihre Dauer, die Summenzeile des Kontributors wächst, die Gesamtsumme wächst — **ohne** zweiten Abruf der Kartenseite.
+- [x] Der beendete Eintrag trägt weiterhin **seinen** Kontributor: gestoppt wurde der Timer, nicht die Urheberschaft.
+- [x] Läuft mein eigener Timer, beenden **beide** Wege denselben Eintrag — der Stoppknopf oben und das Stoppquadrat an seiner Zeile; danach steht oben wieder „Timer starten".
+- [x] Ein Reload zeigt den beendeten Eintrag mit Ende und Dauer.
 
 ### Was dieser Slice ausdrücklich nicht tut
 
 - [ ] Es entsteht **kein** Nachtragsformular, **kein** Stift an abgeschlossenen Zeilen und **kein** Löschen — das ist `I0025`.
 - [ ] Es entsteht **keine** neue HTTP-Route, kein neues Endpunkt-Glied und kein neues Glied am `ZeitenApiKlient`.
-- [ ] Es entsteht **keine** Migration und **kein** neues Feld an `Kartendetail` oder `Zeiteintrag`.
+- [x] Es entsteht **keine** Migration und **kein** neues Feld an `Kartendetail` oder `Zeiteintrag`.
 - [ ] Es entsteht **keine** Summe in SQL und keine Zeitsumme in `KanbanC.BL`.
 - [ ] Es entsteht **keine** Live-Nachführung und keine mitlaufende Dauer — das ist `I0028`.
 - [ ] Es entsteht **keine** Kopfzeilenübersicht laufender Timer — das ist `I0027`.
@@ -119,9 +119,9 @@ Das durchgehende Rechenbeispiel: Karte 14 trägt drei Einträge — `#7` Claude 
 ### Der grüne Bestand bleibt grün
 
 - [ ] Die Suiten aus `R00026` (Timer starten) und `R00027` (Timer stoppen) laufen unverändert grün; `#zeitenabschnitt`, `#timer-starten`, `#timer-stoppen` und `#zeiten-laeuft` behalten Kennung und Bedeutung.
-- [ ] Die Integrations- und Endpunkttests der WebApi bleiben **unverändert** — das ist zugleich der Beleg, dass serverseitig nichts fehlt.
-- [ ] `Zeitpunktform.AlsText` und `AlsTageszeit` verhalten sich unverändert; die neue Form kommt daneben, nicht an ihre Stelle.
-- [ ] Build ohne Warnung (`TreatWarningsAsErrors`).
+- [x] Die Integrations- und Endpunkttests der WebApi bleiben **unverändert** — das ist zugleich der Beleg, dass serverseitig nichts fehlt.
+- [x] `Zeitpunktform.AlsText` und `AlsTageszeit` verhalten sich unverändert; die neue Form kommt daneben, nicht an ihre Stelle.
+- [x] Build ohne Warnung (`TreatWarningsAsErrors`).
 
 ## Betroffene Verzeichnisstruktur
 

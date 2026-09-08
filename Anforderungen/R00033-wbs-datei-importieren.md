@@ -1,6 +1,6 @@
 ---
 id: R00033
-status: Neu
+status: In Arbeit
 datum: 2026-09-07
 ---
 
@@ -86,87 +86,87 @@ Der dritte ist die Zusage an Agenten. Ein Mensch lädt eine Datei über die Able
 
 ### Die Datei wird gelesen (`F0051`)
 
-- [ ] Aus Frontmatter und Knotentabelle entsteht ein Knotenbaum mit **ID, Ebene, Eltern, Name, Status und den Textspalten**, in **Dateireihenfolge**.
-- [ ] Das Frontmatter liefert `application`, `sprache` und `zuletzt`; **ohne Block oder ohne `application:` ist es keine WBS**.
-- [ ] Eine Datei ohne `application:` **oder** ohne Knotentabelle wird zurückgewiesen — mit Dateiname, den fehlenden Angaben und dem Weg über `/planung anlegen`; **kein Board wird berührt**.
-- [ ] Eine Knotenzeile zerfällt in **zwölf Zellen**. Rechenbeispiel: die 540 Knotenzeilen von `kanbanc.md` liefern beim Zerlegen jeweils genau **14 Teile** (zwölf Zellen zwischen zwei leeren Rändern).
-- [ ] Ein **maskiertes Trennzeichen** `\|` in einer Zelle bleibt Zeichen und erhöht die Zellenzahl nicht.
-- [ ] Eine Zeile mit **abweichender Zellenzahl** wird als übersprungen gemeldet, mit Zeilennummer und gefundener Zahl.
-- [ ] Eine Zeile mit **unbekannter Ebene, unbekanntem Status oder leerem Namen** wird übersprungen — mit dem gefundenen Wert im Grund.
-- [ ] Ein Knoten mit **unbekanntem Eltern** wird übersprungen; sein Teilbaum verschwindet nicht still, sondern wird mitgemeldet.
-- [ ] Der Leser braucht **kein Board**: er ist ohne eines vollständig prüfbar.
-- [ ] Die **echte Datei** läuft durch: `kanbanc.md` (Stand 2026-09-07) ergibt **540 Knoten** — 1 Application, 9 Dialogs, 41 Interactions, 54 Features, 435 Bubbles — und **null** übersprungene Zeilen.
-- [ ] Eine **Zelle mit 8.000 Zeichen** und eine **Zeile mit 8.200 Zeichen** laufen unbeschadet durch.
+- [x] Aus Frontmatter und Knotentabelle entsteht ein Knotenbaum mit **ID, Ebene, Eltern, Name, Status und den Textspalten**, in **Dateireihenfolge**.
+- [x] Das Frontmatter liefert `application`, `sprache` und `zuletzt`; **ohne Block oder ohne `application:` ist es keine WBS**.
+- [x] Eine Datei ohne `application:` **oder** ohne Knotentabelle wird zurückgewiesen — mit Dateiname, den fehlenden Angaben und dem Weg über `/planung anlegen`; **kein Board wird berührt**.
+- [x] Eine Knotenzeile zerfällt in **zwölf Zellen**. Rechenbeispiel: die 540 Knotenzeilen von `kanbanc.md` liefern beim Zerlegen jeweils genau **14 Teile** (zwölf Zellen zwischen zwei leeren Rändern).
+- [x] Ein **maskiertes Trennzeichen** `\|` in einer Zelle bleibt Zeichen und erhöht die Zellenzahl nicht.
+- [x] Eine Zeile mit **abweichender Zellenzahl** wird als übersprungen gemeldet, mit Zeilennummer und gefundener Zahl.
+- [x] Eine Zeile mit **unbekannter Ebene, unbekanntem Status oder leerem Namen** wird übersprungen — mit dem gefundenen Wert im Grund.
+- [x] Ein Knoten mit **unbekanntem Eltern** wird übersprungen; sein Teilbaum verschwindet nicht still, sondern wird mitgemeldet.
+- [x] Der Leser braucht **kein Board**: er ist ohne eines vollständig prüfbar.
+- [x] Die **echte Datei** läuft durch: `kanbanc.md` (Stand 2026-09-07) ergibt **540 Knoten** — 1 Application, 9 Dialogs, 41 Interactions, 54 Features, 435 Bubbles — und **null** übersprungene Zeilen.
+- [x] Eine **Zelle mit 8.000 Zeichen** und eine **Zeile mit 8.200 Zeichen** laufen unbeschadet durch.
 
 ### Zeigen vor Schreiben (`F0052`)
 
-- [ ] `POST /api/boards/{boardId}/wbs-import` mit `trocken=true` liefert **200** mit Bilanz und Zeilen und **schreibt nichts** — nach dem Aufruf steht keine Karte mehr auf dem Board als davor.
-- [ ] **Fehlt `trocken`, wird nichts geschrieben**: die Vorgabe ist `true`.
-- [ ] Die **Schnittebene** ist ein Feld der Anfrage mit der Vorgabe `Interaction`; sie reist als **Wort** im JSON (`"Interaction"`), wie `Ereignisweg` und `Kontributorart`.
-- [ ] Die Antwort nennt die **Kartenzahl je Wahl**. Rechenbeispiel für `kanbanc.md`: Dialog **9**, Interaction **41**, Feature **79**, Bubble **445**.
-- [ ] **Über der Schnittebene wird Etikett, die Schnittebene wird Karte, darunter wird Teilaufgabe** — flach, in Dateireihenfolge.
+- [x] `POST /api/boards/{boardId}/wbs-import` mit `trocken=true` liefert **200** mit Bilanz und Zeilen und **schreibt nichts** — nach dem Aufruf steht keine Karte mehr auf dem Board als davor.
+- [x] **Fehlt `trocken`, wird nichts geschrieben**: die Vorgabe ist `true`.
+- [x] Die **Schnittebene** ist ein Feld der Anfrage mit der Vorgabe `Interaction`; sie reist als **Wort** im JSON (`"Interaction"`), wie `Ereignisweg` und `Kontributorart`.
+- [x] Die Antwort nennt die **Kartenzahl je Wahl**. Rechenbeispiel für `kanbanc.md`: Dialog **9**, Interaction **41**, Feature **79**, Bubble **445**.
+- [x] **Über der Schnittebene wird Etikett, die Schnittebene wird Karte, darunter wird Teilaufgabe** — flach, in Dateireihenfolge.
 - [ ] **Kein Knoten geht still verloren:** ein Knoten oberhalb der Schnittebene, der keinen Nachfahren auf der Schnittebene hat, wird selbst zur Karte. Rechenbeispiel: bei Feature-Schnitt sind es **79** Karten — 54 Features plus 25 Interactions ohne Feature.
-- [ ] Die **Application wird das gewählte Zielboard** und wird **nie** angelegt; ein Import auf ein nicht vorhandenes Board ergibt **404** mit der Boardnummer und dem Weg zur Board-Liste.
-- [ ] Der **Titel** lautet `[I0001] Board anlegen` — ID in eckigen Klammern, dann der Name.
-- [ ] Die **Beschreibung** entsteht aus Fertig-Kriterium, Notiz und `Braucht`; **Aufwand, `Eingabe → Ausgabe` und `Ausbaustufe` werden nicht übernommen**. Verantwortlicher, Fälligkeit und Farbe bleiben leer.
-- [ ] Die **Zielspalte** folgt dem Status: `gruen` → Abschlussspalte, **alles andere** → erste Spalte nach Position. Rechenbeispiel für `kanbanc.md` bei Interaction-Schnitt: **31** Karten in die Abschlussspalte, **10** in die erste.
-- [ ] `bestehend` zählt wie `gruen` (Abschlussspalte, Haken). Beleg: der Skill `work-breakdown-structure` rechnet „alle zählenden Kinder `gruen` (oder `bestehend`) → `gruen`". In `kanbanc.md` trägt genau **eine** Zeile diesen Status (`B0380`).
-- [ ] `verworfen`, `option` und `ausbau` werden **übersprungen mit Grund** — sie zählen auch in der WBS nicht.
-- [ ] Hat das Board **keine Kartenklasse** oder gehört die genannte einem anderen Board, wird zurückgewiesen — mit Boardname, Klassennummer und dem Weg über den Layout-Modus. **Der Import legt nie eine Klasse an.**
-- [ ] Fehlt der **Urheber** (`kontributor`), wird zurückgewiesen — mit dem Weg zur Kontributorenliste.
+- [x] Die **Application wird das gewählte Zielboard** und wird **nie** angelegt; ein Import auf ein nicht vorhandenes Board ergibt **404** mit der Boardnummer und dem Weg zur Board-Liste.
+- [x] Der **Titel** lautet `[I0001] Board anlegen` — ID in eckigen Klammern, dann der Name.
+- [x] Die **Beschreibung** entsteht aus Fertig-Kriterium, Notiz und `Braucht`; **Aufwand, `Eingabe → Ausgabe` und `Ausbaustufe` werden nicht übernommen**. Verantwortlicher, Fälligkeit und Farbe bleiben leer.
+- [x] Die **Zielspalte** folgt dem Status: `gruen` → Abschlussspalte, **alles andere** → erste Spalte nach Position. Rechenbeispiel für `kanbanc.md` bei Interaction-Schnitt: **31** Karten in die Abschlussspalte, **10** in die erste.
+- [x] `bestehend` zählt wie `gruen` (Abschlussspalte, Haken). Beleg: der Skill `work-breakdown-structure` rechnet „alle zählenden Kinder `gruen` (oder `bestehend`) → `gruen`". In `kanbanc.md` trägt genau **eine** Zeile diesen Status (`B0380`).
+- [x] `verworfen`, `option` und `ausbau` werden **übersprungen mit Grund** — sie zählen auch in der WBS nicht.
+- [x] Hat das Board **keine Kartenklasse** oder gehört die genannte einem anderen Board, wird zurückgewiesen — mit Boardname, Klassennummer und dem Weg über den Layout-Modus. **Der Import legt nie eine Klasse an.**
+- [x] Fehlt der **Urheber** (`kontributor`), wird zurückgewiesen — mit dem Weg zur Kontributorenliste.
 - [ ] Der **Importbericht** trägt `angelegt`, `geaendert`, `unveraendert`, `uebersprungen` und eine Zeile je Knoten; `geaendert` und `unveraendert` sind in diesem Slice **immer 0** (sie füllt `I0031`).
-- [ ] Der Endpunkt nimmt **multipart** an (`datei`, `klasse`, `schnittebene`, `pfad`, `trocken`, `kontributor`) und ist wie der Anhang von der Antiforgery-Prüfung ausgenommen.
+- [x] Der Endpunkt nimmt **multipart** an (`datei`, `klasse`, `schnittebene`, `pfad`, `trocken`, `kontributor`) und ist wie der Anhang von der Antiforgery-Prüfung ausgenommen.
 
 ### Die Knoten werden Karten (`F0053`)
 
-- [ ] Derselbe Aufruf **ohne `trocken`** antwortet **201** mit demselben Bericht, und die Karten stehen auf dem Board.
-- [ ] Geschrieben wird in **einer Transaktion**: bricht ein Schritt ab, steht danach **keine** Karte des Laufs.
-- [ ] Jede Karte trägt eine **Kartennummer** der gewählten Klasse; der **Zählerstand wächst je Karte**. Rechenbeispiel: Klasse `WBS` mit Stand 0, 41 Karten → Nummern `WBS01` bis `WBS41`, Stand danach **41**.
-- [ ] `UNIQUE(Kartenklasse, Zaehlerstand)` wird durch den Lauf **nicht** verletzt.
-- [ ] Jede Karte trägt das **Etikett** ihres Dialogs (Beispiel: `Boards führen`); bei tieferer Schnittebene zusätzlich die Namen der Vorfahren bis zum Dialog.
-- [ ] Jede Karte trägt ihre Nachfahren als **Teilaufgaben**, flach, in Dateireihenfolge, mit der **ID vorn** (`B0405 Probe: die echte WBS-Datei durch den Leser`).
-- [ ] Eine Teilaufgabe mit Status `gruen` (oder `bestehend`) ist **abgehakt**. Rechenbeispiel für `kanbanc.md` bei Interaction-Schnitt: **489** Teilaufgaben, davon **454** abgehakt.
-- [ ] Jede Karte trägt den **Dateiverweis** `<pfad>#<ID>` — Beispiel `Dokumentation/Planung/kanbanc.md#I0001`.
-- [ ] Fehlt das Feld `pfad`, gilt der **Dateiname** der hochgeladenen Datei.
-- [ ] Eine Karte, die in der **Abschlussspalte** entsteht, bekommt `ErledigtAm` auf den **Tag des Laufs** — sonst stünden alle grünen Karten in der Datumsgruppierung aus `I0013` in einer Gruppe **ohne Datum**.
-- [ ] Der **Einstieg** sitzt im Layout-Modus des Boards unter der Klassenpflege; **ohne Kartenklasse** steht dort der Weg dorthin statt des Knopfes.
-- [ ] **Schritt 1** nutzt die vorhandene Ablegefläche aus `R00024` unverändert; **beide Sperrgründe gelten** (keine Identität gewählt, ein Vorgang läuft).
-- [ ] **Schritt 1** zeigt den gleichwertigen API-Aufruf daneben.
-- [ ] **Schritt 2** zeigt den Baum links lesend, die Wirkung rechts und die Schnittebene als Regler **mit der Kartenzahl je Wahl**.
+- [x] Derselbe Aufruf **ohne `trocken`** antwortet **201** mit demselben Bericht, und die Karten stehen auf dem Board.
+- [x] Geschrieben wird in **einer Transaktion**: bricht ein Schritt ab, steht danach **keine** Karte des Laufs.
+- [x] Jede Karte trägt eine **Kartennummer** der gewählten Klasse; der **Zählerstand wächst je Karte**. Rechenbeispiel: Klasse `WBS` mit Stand 0, 41 Karten → Nummern `WBS01` bis `WBS41`, Stand danach **41**.
+- [x] `UNIQUE(Kartenklasse, Zaehlerstand)` wird durch den Lauf **nicht** verletzt.
+- [x] Jede Karte trägt das **Etikett** ihres Dialogs (Beispiel: `Boards führen`); bei tieferer Schnittebene zusätzlich die Namen der Vorfahren bis zum Dialog.
+- [x] Jede Karte trägt ihre Nachfahren als **Teilaufgaben**, flach, in Dateireihenfolge, mit der **ID vorn** (`B0405 Probe: die echte WBS-Datei durch den Leser`).
+- [x] Eine Teilaufgabe mit Status `gruen` (oder `bestehend`) ist **abgehakt**. Rechenbeispiel für `kanbanc.md` bei Interaction-Schnitt: **489** Teilaufgaben, davon **454** abgehakt.
+- [x] Jede Karte trägt den **Dateiverweis** `<pfad>#<ID>` — Beispiel `Dokumentation/Planung/kanbanc.md#I0001`.
+- [x] Fehlt das Feld `pfad`, gilt der **Dateiname** der hochgeladenen Datei.
+- [x] Eine Karte, die in der **Abschlussspalte** entsteht, bekommt `ErledigtAm` auf den **Tag des Laufs** — sonst stünden alle grünen Karten in der Datumsgruppierung aus `I0013` in einer Gruppe **ohne Datum**.
+- [x] Der **Einstieg** sitzt im Layout-Modus des Boards unter der Klassenpflege; **ohne Kartenklasse** steht dort der Weg dorthin statt des Knopfes.
+- [x] **Schritt 1** nutzt die vorhandene Ablegefläche aus `R00024` unverändert; **beide Sperrgründe gelten** (keine Identität gewählt, ein Vorgang läuft).
+- [x] **Schritt 1** zeigt den gleichwertigen API-Aufruf daneben.
+- [x] **Schritt 2** zeigt den Baum links lesend, die Wirkung rechts und die Schnittebene als Regler **mit der Kartenzahl je Wahl**.
 - [ ] **Schritt 3** ist **eine Zeile** („41 Karten angelegt") plus der Weg zum Board.
-- [ ] Fällt die WebApi während des Imports aus, erscheint die bestehende **Ausfallmeldung** (`WebApiAufruf.MitAusfallmeldung`), keine Ausnahmeseite.
+- [x] Fällt die WebApi während des Imports aus, erscheint die bestehende **Ausfallmeldung** (`WebApiAufruf.MitAusfallmeldung`), keine Ausnahmeseite.
 
 ### Ein Vorgang, eine Meldung (`F0054`)
 
-- [ ] Ein erfolgreicher Import meldet auf `GET /api/ereignisse` **genau ein** Ereignis mit Board, Urheber, Weg, Zeitpunkt und der **Zahl der Karten**.
-- [ ] Es ist **ein** Ereignis, nicht eines je Karte. Rechenbeispiel: 41 angelegte Karten ergeben **1** Ereignis, 445 ebenfalls **1**.
-- [ ] Das Ereignis trägt eine **eigene Ereignisart** neben `kartenereignis`; beide laufen über denselben Strom, und ein Abonnent unterscheidet sie **am Artnamen**, ohne den Rumpf zu lesen.
-- [ ] Die bestehende `EreignisstromProbeTests`-Suite bleibt grün; `Kartenereignis` behält Gestalt und Artnamen.
-- [ ] Jede offene Sicht **dieses** Boards lädt danach **einmal** neu; eine Sicht auf ein anderes Board lädt **nicht**.
-- [ ] Es entsteht **keine Einflugmarke je Karte** — 41 Marken wären Rauschen.
-- [ ] Ein **zurückgewiesener** Import meldet **nichts**.
-- [ ] Ein Import mit `trocken=true` meldet **nichts**.
-- [ ] Die Meldung entsteht im **Endpunkt**, nicht im Dienst — wie `B0375` es festgelegt hat.
+- [x] Ein erfolgreicher Import meldet auf `GET /api/ereignisse` **genau ein** Ereignis mit Board, Urheber, Weg, Zeitpunkt und der **Zahl der Karten**.
+- [x] Es ist **ein** Ereignis, nicht eines je Karte. Rechenbeispiel: 41 angelegte Karten ergeben **1** Ereignis, 445 ebenfalls **1**.
+- [x] Das Ereignis trägt eine **eigene Ereignisart** neben `kartenereignis`; beide laufen über denselben Strom, und ein Abonnent unterscheidet sie **am Artnamen**, ohne den Rumpf zu lesen.
+- [x] Die bestehende `EreignisstromProbeTests`-Suite bleibt grün; `Kartenereignis` behält Gestalt und Artnamen.
+- [x] Jede offene Sicht **dieses** Boards lädt danach **einmal** neu; eine Sicht auf ein anderes Board lädt **nicht**.
+- [x] Es entsteht **keine Einflugmarke je Karte** — 41 Marken wären Rauschen.
+- [x] Ein **zurückgewiesener** Import meldet **nichts**.
+- [x] Ein Import mit `trocken=true` meldet **nichts**.
+- [x] Die Meldung entsteht im **Endpunkt**, nicht im Dienst — wie `B0375` es festgelegt hat.
 
 ### Was dieser Slice ausdrücklich nicht tut
 
 - [ ] **Keine Wiedererkennung.** Läuft dieselbe Datei ein zweites Mal, entstehen die Karten **erneut**. Das ist `I0031`; Schritt 2 sagt es in einer Zeile, statt es zu verschweigen.
 - [ ] **Kein Bericht mit einer Zeile je Knoten im Schirm** — das ist `I0032`. Der Bericht reist in der Antwort, der Schirm nennt die Zahl.
 - [ ] **Keine Sollzeit an der Karte.** Die Spalte `Aufwand` kommt mit diesem Slice **nicht** ins System; die Lücke hat die Adresse `I0033`.
-- [ ] **Kein Speichern der Importdatei**, weder als Anhang noch daneben.
-- [ ] **Kein Anlegen eines Boards** und **keiner Kartenklasse**.
-- [ ] **Kein Häkchen je Teilbaum** in der Vorschau — die Schnittebene beantwortet die Frage schon vor dem Schreiben (C24).
-- [ ] **Keine Zeile „zuletzt eingefahren"** im Einstieg — sie bräuchte eine Tabelle `Boardimport`, und ein Archiv der Läufe hat keinen Knoten.
-- [ ] **Kein Rückfluss ins Markdown** — die Vision führt ihn als offene Richtungsfrage.
-- [ ] **Kein eigenes Herkunftsfeld an der Karte** — es bräuchte einen Knoten unter `D0004`.
+- [x] **Kein Speichern der Importdatei**, weder als Anhang noch daneben.
+- [x] **Kein Anlegen eines Boards** und **keiner Kartenklasse**.
+- [x] **Kein Häkchen je Teilbaum** in der Vorschau — die Schnittebene beantwortet die Frage schon vor dem Schreiben (C24).
+- [x] **Keine Zeile „zuletzt eingefahren"** im Einstieg — sie bräuchte eine Tabelle `Boardimport`, und ein Archiv der Läufe hat keinen Knoten.
+- [x] **Kein Rückfluss ins Markdown** — die Vision führt ihn als offene Richtungsfrage.
+- [x] **Kein eigenes Herkunftsfeld an der Karte** — es bräuchte einen Knoten unter `D0004`.
 - [ ] **Keine neue Migration, kein neues Paket, kein neues Schema.**
 
 ### Der grüne Bestand bleibt grün
 
-- [ ] Die **Ablegefläche** aus `R00024` verhält sich am Anhang unverändert; Sperre und Text sind wiederverwendet, nicht kopiert.
-- [ ] Die **Kartennummern** aus `R00023` bleiben unverändert; der Import nutzt denselben Weg zur nächsten Nummer.
-- [ ] Die **Live-Suite** aus `R00031` und `R00032` bleibt grün: Kartenereignis, Einflugmarke, Warteregeln, Aufschließen und die Wiederaufnahme der Leitung verhalten sich unverändert.
-- [ ] Die **Datumsgruppierung** aus `R00015` zeigt die importierten grünen Karten unter dem Tag des Laufs — nicht in einer Gruppe ohne Datum.
+- [x] Die **Ablegefläche** aus `R00024` verhält sich am Anhang unverändert; Sperre und Text sind wiederverwendet, nicht kopiert.
+- [x] Die **Kartennummern** aus `R00023` bleiben unverändert; der Import nutzt denselben Weg zur nächsten Nummer.
+- [x] Die **Live-Suite** aus `R00031` und `R00032` bleibt grün: Kartenereignis, Einflugmarke, Warteregeln, Aufschließen und die Wiederaufnahme der Leitung verhalten sich unverändert.
+- [x] Die **Datumsgruppierung** aus `R00015` zeigt die importierten grünen Karten unter dem Tag des Laufs — nicht in einer Gruppe ohne Datum.
 - [ ] Alle bestehenden E2E-Tests bleiben grün.
 
 ## Betroffene Verzeichnisstruktur

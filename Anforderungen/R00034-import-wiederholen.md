@@ -1,6 +1,6 @@
 ---
 id: R00034
-status: Neu
+status: In Arbeit
 datum: 2026-09-07
 ---
 
@@ -61,73 +61,73 @@ Damit war die Brücke aus `R00033` faktisch eine Einbahnstraße mit einer einzig
 
 ### Vier Fächer statt einem (`F0055`)
 
-- [ ] Der Iststand einer Kartenklasse auf einem Board wird in **einem** Lesevorgang geholt und trägt je Karte: Nummer, Titel, Beschreibung, Etiketten, Teilaufgaben mit Position und Haken, Herkunftsverweis, Spalte, Archivstand, **erfasste Zeit** und **Kommentarzahl**.
-- [ ] Soll und Ist werden über ein gemeinsames **`Kartenabbild`** verglichen (Titel, Beschreibung, Etiketten, Teilaufgaben) — beide Seiten behalten daneben, was nur ihnen gehört.
-- [ ] Der Vergleicher liefert vier Fächer: **`ZuErstellen`**, **`ZuAktualisieren`**, **`Unveraendert`** und **`Verwaist`**. Rechenbeispiel: Soll `{A,B}`, Ist `{B',C}` mit `B ≠ B'` ergibt 1 zu erstellen (A), 1 zu ändern (B), 0 unverändert, 1 verwaist (C).
+- [x] Der Iststand einer Kartenklasse auf einem Board wird in **einem** Lesevorgang geholt und trägt je Karte: Nummer, Titel, Beschreibung, Etiketten, Teilaufgaben mit Position und Haken, Herkunftsverweis, Spalte, Archivstand, **erfasste Zeit** und **Kommentarzahl**.
+- [x] Soll und Ist werden über ein gemeinsames **`Kartenabbild`** verglichen (Titel, Beschreibung, Etiketten, Teilaufgaben) — beide Seiten behalten daneben, was nur ihnen gehört.
+- [x] Der Vergleicher liefert vier Fächer: **`ZuErstellen`**, **`ZuAktualisieren`**, **`Unveraendert`** und **`Verwaist`**. Rechenbeispiel: Soll `{A,B}`, Ist `{B',C}` mit `B ≠ B'` ergibt 1 zu erstellen (A), 1 zu ändern (B), 0 unverändert, 1 verwaist (C).
 - [ ] **Geändert heißt Feld für Feld festgelegt:** zwei Abbilder sind gleich, wenn **Titel**, **Beschreibung**, **Etikettenmenge** und die **ID-tragenden Teilaufgaben mit ihren Haken** übereinstimmen. Reihenfolge der Etiketten spielt keine Rolle (Menge, nicht Liste).
-- [ ] **Nie verglichen** und damit nie ein Grund für „geändert": Spalte, Position, Verantwortlicher, Fälligkeit, Farbe, Zeiten, Kommentare, Anhänge, Kartennummer, Archivstand, `ErledigtAm`. Rechenbeispiel: eine Karte, die von „Bereit" nach „In Arbeit" gezogen wurde und 4:20 erfasste Zeit trägt, ist bei unveränderter Datei **unverändert**.
-- [ ] Der **Dateiverweis steht auf keiner der beiden Listen** — er ist der Schlüssel und kein Vergleichsfeld.
-- [ ] Der Teilaufgabenabgleich trennt **anzulegen**, **zu ändern**, **unverändert** und **fremd**; Abgleichsschlüssel ist die **ID vorn** (`B0405 …`).
-- [ ] Eine Teilaufgabe **ohne ID-Präfix** ist fremd: sie steht außerhalb des Vergleichs, wird nie geändert und nie entfernt. Rechenbeispiel: eine Karte mit 12 ID-tragenden und 2 von Hand angelegten Teilaufgaben hat nach dem Lauf **14**.
-- [ ] Ein **Etikett**, das die Datei nicht erzeugen kann, bleibt an der Karte und macht sie nicht „geändert".
-- [ ] Der `Importbericht` trägt **fünf** Zahlen: `Angelegt`, `Geaendert`, `Unveraendert`, `Uebersprungen`, `Verwaist`.
-- [ ] Jede Zeile trägt ihre **Wirkung** aus `Angelegt`, `Geaendert`, `Unveraendert`, `Verwaist`, `Etikett`, `Teilaufgabe`, `Zielboard`, `Uebersprungen` — und, wo es eine gibt, die **Kartennummer**.
-- [ ] Die Zeilen stehen in **Dateireihenfolge**; **verwaiste Karten stehen dahinter** — sie haben keine Zeilennummer in der Datei.
-- [ ] Die Zeile einer verwaisten Karte nennt **Kartennummer, Spalte, erfasste Zeit und Kommentarzahl** und die Kompensationsaktion **archivieren** (`I0014`). Beispiel: „`WBS-47` steht nicht mehr in der Datei — unberührt geblieben, in „In Arbeit", 4:20 erfasste Zeit, 2 Kommentare. Wenn sie weg soll: archivieren."
-- [ ] `POST /api/boards/{boardId}/wbs-import` mit `trocken=true` auf ein bereits eingefahrenes Board liefert **200** mit **0 angelegt** und **n unverändert** und **schreibt nichts** — die Kartenzahl vor und nach dem Aufruf ist gleich.
+- [x] **Nie verglichen** und damit nie ein Grund für „geändert": Spalte, Position, Verantwortlicher, Fälligkeit, Farbe, Zeiten, Kommentare, Anhänge, Kartennummer, Archivstand, `ErledigtAm`. Rechenbeispiel: eine Karte, die von „Bereit" nach „In Arbeit" gezogen wurde und 4:20 erfasste Zeit trägt, ist bei unveränderter Datei **unverändert**.
+- [x] Der **Dateiverweis steht auf keiner der beiden Listen** — er ist der Schlüssel und kein Vergleichsfeld.
+- [x] Der Teilaufgabenabgleich trennt **anzulegen**, **zu ändern**, **unverändert** und **fremd**; Abgleichsschlüssel ist die **ID vorn** (`B0405 …`).
+- [x] Eine Teilaufgabe **ohne ID-Präfix** ist fremd: sie steht außerhalb des Vergleichs, wird nie geändert und nie entfernt. Rechenbeispiel: eine Karte mit 12 ID-tragenden und 2 von Hand angelegten Teilaufgaben hat nach dem Lauf **14**.
+- [x] Ein **Etikett**, das die Datei nicht erzeugen kann, bleibt an der Karte und macht sie nicht „geändert".
+- [x] Der `Importbericht` trägt **fünf** Zahlen: `Angelegt`, `Geaendert`, `Unveraendert`, `Uebersprungen`, `Verwaist`.
+- [x] Jede Zeile trägt ihre **Wirkung** aus `Angelegt`, `Geaendert`, `Unveraendert`, `Verwaist`, `Etikett`, `Teilaufgabe`, `Zielboard`, `Uebersprungen` — und, wo es eine gibt, die **Kartennummer**.
+- [x] Die Zeilen stehen in **Dateireihenfolge**; **verwaiste Karten stehen dahinter** — sie haben keine Zeilennummer in der Datei.
+- [x] Die Zeile einer verwaisten Karte nennt **Kartennummer, Spalte, erfasste Zeit und Kommentarzahl** und die Kompensationsaktion **archivieren** (`I0014`). Beispiel: „`WBS-47` steht nicht mehr in der Datei — unberührt geblieben, in „In Arbeit", 4:20 erfasste Zeit, 2 Kommentare. Wenn sie weg soll: archivieren."
+- [x] `POST /api/boards/{boardId}/wbs-import` mit `trocken=true` auf ein bereits eingefahrenes Board liefert **200** mit **0 angelegt** und **n unverändert** und **schreibt nichts** — die Kartenzahl vor und nach dem Aufruf ist gleich.
 
 ### Der zweite Lauf schreibt nur die Unterschiede (`F0056`)
 
-- [ ] Derselbe Aufruf **ohne `trocken`**, zweimal hintereinander, antwortet **201** und lässt **dieselbe Kartenzahl** auf dem Board stehen. Rechenbeispiel: 41 Karten nach dem ersten Lauf, 41 nach dem zweiten — **keine** Dublette.
-- [ ] Anlegen und Aktualisieren laufen in **einer** Transaktion: ein erzwungener Fehler mittendrin lässt weder eine neue Karte noch eine halb nachgezogene zurück.
-- [ ] Eine wiedererkannte Karte zieht **Titel, Beschreibung, Etiketten und Teilaufgaben samt Haken** nach.
-- [ ] **Die Datei gewinnt auch beim Haken.** Wird eine Teilaufgabe am Board abgehakt und ist ihr Knoten in der Datei nicht `gruen`, ist der Haken nach dem nächsten Lauf **zurückgenommen**.
-- [ ] **Nie stillschweigend:** jede zurückgenommene Abhakung steht als **Grund an ihrer Zeile**, mit der Kompensationsaktion „setze den Knoten in der Datei auf `gruen`". Rechenbeispiel: 3 am Board gesetzte Haken auf nicht-grünen Knoten ergeben 3 Gründe, nicht eine Sammelmeldung.
-- [ ] **Kartennummer und Zählerstand bleiben:** die Kartenklassenzuordnung einer wiedererkannten Karte wird nicht angefasst, `UNIQUE(Kartenklasse, Zaehlerstand)` bleibt unverletzt. Rechenbeispiel: Zählerstand 41 nach dem ersten Lauf, 41 nach einem zweiten ohne neue Knoten; kommen 4 Knoten dazu, steht er danach auf **45** und die Nummern `WBS-01`…`WBS-41` sind unverändert.
-- [ ] **Der Zählerstand wächst je *neuer* Karte** — nicht je Karte des Laufs. Das ist die benannte Abweichung von `B0421` aus `R00033`.
-- [ ] **Spalte und Position bleiben.** Steht der Knoten in der Datei inzwischen auf `gruen` und die Karte in „In Arbeit", **zieht die Karte nicht um**; die Abweichung erscheint als Grund an ihrer Zeile („Status `gruen`, Karte steht in „In Arbeit"").
-- [ ] Ein **dritter** Lauf auf unveränderter Datei meldet **alles unverändert** und schreibt nichts. Auf der eingefrorenen Datei geprüft: zweiter Lauf **0 angelegt, 0 geändert, 41 unverändert**.
-- [ ] Ein Lauf mit **0 angelegt und 0 geändert** meldet **kein** Importereignis; jeder andere meldet **eines** mit `Kartenzahl` = angelegt + geändert. Rechenbeispiel: 4 angelegt und 6 geändert ergibt ein Ereignis mit **10**.
-- [ ] Der Schirm zeigt die **fünfte Zahl** und je Zeile eine Marke (`+` angelegt, `~` geändert, `?` nicht mehr in der Datei, `!` Zeile mit Grund).
-- [ ] Die **Knopfbeschriftung** nennt beide Zahlen („4 anlegen, 6 ändern") statt nur der angelegten; ein Lauf mit 0 angelegt und n geändert ist **nicht** gesperrt — das ist die Korrektur an `Import.razor`, das heute auf `Angelegt == 0` sperrt.
-- [ ] **E2E:** importieren, am Board eine Teilaufgabe abhaken und eine Karte in eine andere Bahn ziehen, denselben Import wiederholen → keine Dublette, gleiche Kartennummern, Karte steht noch in ihrer Bahn, Haken zurückgenommen **und gemeldet**.
+- [x] Derselbe Aufruf **ohne `trocken`**, zweimal hintereinander, antwortet **201** und lässt **dieselbe Kartenzahl** auf dem Board stehen. Rechenbeispiel: 41 Karten nach dem ersten Lauf, 41 nach dem zweiten — **keine** Dublette.
+- [x] Anlegen und Aktualisieren laufen in **einer** Transaktion: ein erzwungener Fehler mittendrin lässt weder eine neue Karte noch eine halb nachgezogene zurück.
+- [x] Eine wiedererkannte Karte zieht **Titel, Beschreibung, Etiketten und Teilaufgaben samt Haken** nach.
+- [x] **Die Datei gewinnt auch beim Haken.** Wird eine Teilaufgabe am Board abgehakt und ist ihr Knoten in der Datei nicht `gruen`, ist der Haken nach dem nächsten Lauf **zurückgenommen**.
+- [x] **Nie stillschweigend:** jede zurückgenommene Abhakung steht als **Grund an ihrer Zeile**, mit der Kompensationsaktion „setze den Knoten in der Datei auf `gruen`". Rechenbeispiel: 3 am Board gesetzte Haken auf nicht-grünen Knoten ergeben 3 Gründe, nicht eine Sammelmeldung.
+- [x] **Kartennummer und Zählerstand bleiben:** die Kartenklassenzuordnung einer wiedererkannten Karte wird nicht angefasst, `UNIQUE(Kartenklasse, Zaehlerstand)` bleibt unverletzt. Rechenbeispiel: Zählerstand 41 nach dem ersten Lauf, 41 nach einem zweiten ohne neue Knoten; kommen 4 Knoten dazu, steht er danach auf **45** und die Nummern `WBS-01`…`WBS-41` sind unverändert.
+- [x] **Der Zählerstand wächst je *neuer* Karte** — nicht je Karte des Laufs. Das ist die benannte Abweichung von `B0421` aus `R00033`.
+- [x] **Spalte und Position bleiben.** Steht der Knoten in der Datei inzwischen auf `gruen` und die Karte in „In Arbeit", **zieht die Karte nicht um**; die Abweichung erscheint als Grund an ihrer Zeile („Status `gruen`, Karte steht in „In Arbeit"").
+- [x] Ein **dritter** Lauf auf unveränderter Datei meldet **alles unverändert** und schreibt nichts. Auf der eingefrorenen Datei geprüft: zweiter Lauf **0 angelegt, 0 geändert, 41 unverändert**.
+- [x] Ein Lauf mit **0 angelegt und 0 geändert** meldet **kein** Importereignis; jeder andere meldet **eines** mit `Kartenzahl` = angelegt + geändert. Rechenbeispiel: 4 angelegt und 6 geändert ergibt ein Ereignis mit **10**.
+- [x] Der Schirm zeigt die **fünfte Zahl** und je Zeile eine Marke (`+` angelegt, `~` geändert, `?` nicht mehr in der Datei, `!` Zeile mit Grund).
+- [x] Die **Knopfbeschriftung** nennt beide Zahlen („4 anlegen, 6 ändern") statt nur der angelegten; ein Lauf mit 0 angelegt und n geändert ist **nicht** gesperrt — das ist die Korrektur an `Import.razor`, das heute auf `Angelegt == 0` sperrt.
+- [x] **E2E:** importieren, am Board eine Teilaufgabe abhaken und eine Karte in eine andere Bahn ziehen, denselben Import wiederholen → keine Dublette, gleiche Kartennummern, Karte steht noch in ihrer Bahn, Haken zurückgenommen **und gemeldet**.
 
 ### Die Ränder der Wiedererkennung (`F0057`)
 
-- [ ] Tragen zwei Karten desselben Boards **denselben Herkunftsverweis**, wird der Lauf **vor der Vorschau** zurückgewiesen — mit **beiden Kartennummern** und dem Weg „Verweis an einer der beiden entfernen (`I0019`) oder eine archivieren (`I0014`)". Grund: welche nachzuziehen wäre, ist nicht entscheidbar.
-- [ ] Treffen die **Knoten-IDs** der Anfrage auf vorhandene Karten, die **Pfade** aber nicht, wird zurückgewiesen — mit dem **Pfad des ersten Laufs**, dem Pfad der Anfrage und der Kompensationsaktion „`pfad` auf den Wert des ersten Laufs setzen".
-- [ ] Weicht die **Schnittebene** der Anfrage von der Ebene der wiedererkannten Kartenknoten ab, wird zurückgewiesen — mit **beiden Ebenen**, der Kartenzahl und dem Weg über eine **zweite Kartenklasse** (`I0020`).
-- [ ] Die vorige Schnittebene wird **aus der Ebene der verwiesenen Knoten abgeleitet**; es gibt **kein** neues Anfragefeld und **kein** Übersteuerungs-Flag.
-- [ ] In allen drei Lagen **entsteht keine Karte** und **wird kein Board berührt**; die API antwortet **400** mit Grund, Werten und Kompensationsaktion.
-- [ ] Ein **einzelner** vom Menschen entfernter Verweis weist den Lauf **nicht** zurück: die Karte wird angelegt, und an ihrer Zeile steht der **Dublettenverdacht mit der Nummer der ähnlichen Karte** und dem Weg „Dateiverweis `pfad#ID` an der alten Karte nachtragen (`I0019`), dann die neue archivieren".
-- [ ] Der **Titel bleibt Verdachtsmoment und wird nie Schlüssel**: er löst den Hinweis aus, aber nie eine Wiedererkennung und nie ein Nachziehen.
-- [ ] Rechenbeispiel zur Grenze: auf der eingefrorenen Datei (41 Karten, Interaction-Schnitt) erzeugte ein Lauf mit Bubble-Schnitt **436 neue Karten**, ließe **32** verwaist zurück und erkennte **9** wieder — flächiger Ausfall, deshalb Zurückweisung. Ein einzelner entfernter Verweis erzeugt **eine** Dublette — deshalb Meldung.
+- [x] Tragen zwei Karten desselben Boards **denselben Herkunftsverweis**, wird der Lauf **vor der Vorschau** zurückgewiesen — mit **beiden Kartennummern** und dem Weg „Verweis an einer der beiden entfernen (`I0019`) oder eine archivieren (`I0014`)". Grund: welche nachzuziehen wäre, ist nicht entscheidbar.
+- [x] Treffen die **Knoten-IDs** der Anfrage auf vorhandene Karten, die **Pfade** aber nicht, wird zurückgewiesen — mit dem **Pfad des ersten Laufs**, dem Pfad der Anfrage und der Kompensationsaktion „`pfad` auf den Wert des ersten Laufs setzen".
+- [x] Weicht die **Schnittebene** der Anfrage von der Ebene der wiedererkannten Kartenknoten ab, wird zurückgewiesen — mit **beiden Ebenen**, der Kartenzahl und dem Weg über eine **zweite Kartenklasse** (`I0020`).
+- [x] Die vorige Schnittebene wird **aus der Ebene der verwiesenen Knoten abgeleitet**; es gibt **kein** neues Anfragefeld und **kein** Übersteuerungs-Flag.
+- [x] In allen drei Lagen **entsteht keine Karte** und **wird kein Board berührt**; die API antwortet **400** mit Grund, Werten und Kompensationsaktion.
+- [x] Ein **einzelner** vom Menschen entfernter Verweis weist den Lauf **nicht** zurück: die Karte wird angelegt, und an ihrer Zeile steht der **Dublettenverdacht mit der Nummer der ähnlichen Karte** und dem Weg „Dateiverweis `pfad#ID` an der alten Karte nachtragen (`I0019`), dann die neue archivieren".
+- [x] Der **Titel bleibt Verdachtsmoment und wird nie Schlüssel**: er löst den Hinweis aus, aber nie eine Wiedererkennung und nie ein Nachziehen.
+- [x] Rechenbeispiel zur Grenze: auf der eingefrorenen Datei (41 Karten, Interaction-Schnitt) erzeugte ein Lauf mit Bubble-Schnitt **436 neue Karten**, ließe **32** verwaist zurück und erkennte **9** wieder — flächiger Ausfall, deshalb Zurückweisung. Ein einzelner entfernter Verweis erzeugt **eine** Dublette — deshalb Meldung.
 
 ### Die benannte Änderung an grünem Bestand
 
-- [ ] **`Importwirkung.Karte` entfällt** zugunsten von `Angelegt`, `Geaendert`, `Unveraendert` und `Verwaist`. Nach `I0030` war jede Karte „Karte"; ab hier ist „Karte" keine Auskunft mehr, sondern die Frage.
-- [ ] `Uebersprungen` bleibt daneben — es ist **keins der vier Fächer**, sondern die fünfte Zahl aus `I0030` (Zeilen, die nie eine Karte werden).
-- [ ] Die Anpassung ist erwartet und benannt: **`Kartenentwurfsbildner`** (setzt `Angelegt` statt `Karte`), **`KartenentwurfsbildnerTests`**, **`WbsImportEndpunkteTests`**, **`ImportApiKlientTests`** und **`Import.razor`**.
-- [ ] Der Endpunktvertrag bleibt sonst gleich: dieselbe Route, dasselbe multipart-Formular, dieselben Statuscodes.
+- [x] **`Importwirkung.Karte` entfällt** zugunsten von `Angelegt`, `Geaendert`, `Unveraendert` und `Verwaist`. Nach `I0030` war jede Karte „Karte"; ab hier ist „Karte" keine Auskunft mehr, sondern die Frage.
+- [x] `Uebersprungen` bleibt daneben — es ist **keins der vier Fächer**, sondern die fünfte Zahl aus `I0030` (Zeilen, die nie eine Karte werden).
+- [x] Die Anpassung ist erwartet und benannt: **`Kartenentwurfsbildner`** (setzt `Angelegt` statt `Karte`), **`KartenentwurfsbildnerTests`**, **`WbsImportEndpunkteTests`**, **`ImportApiKlientTests`** und **`Import.razor`**.
+- [x] Der Endpunktvertrag bleibt sonst gleich: dieselbe Route, dasselbe multipart-Formular, dieselben Statuscodes.
 
 ### Was dieser Slice ausdrücklich nicht tut
 
-- [ ] **Kein Löschen und kein Archivieren** durch den Import — auch nicht von verwaisten Karten. Das Fach heißt `Verwaist` und nicht `ZuLoeschen`, weil aus ihm nie gelöscht wird.
-- [ ] **Kein Umziehen** einer Karte in eine andere Spalte; die Spalte wird weiterhin **nur beim Anlegen** aus dem Status gesetzt.
-- [ ] **Kein Rückfluss ins Markdown** — die Vision führt ihn als offene Richtungsfrage.
-- [ ] **Kein neues Schema, keine Migration, kein neues Paket.**
-- [ ] **Keine Berichtsansicht** mit Filtern, Ausklappen und Kopieren — das ist `I0032`.
-- [ ] **Keine Sollzeit an der Karte** (`Aufwand`) — das ist `I0033`.
-- [ ] **Kein Archiv der Läufe** und kein Speichern der Importdatei; auch dieser Slice bringt keine Tabelle `Boardimport`.
-- [ ] **Keine Wiedererkennung am Titel** und keine zweite Kupplung neben dem Dateiverweis.
+- [x] **Kein Löschen und kein Archivieren** durch den Import — auch nicht von verwaisten Karten. Das Fach heißt `Verwaist` und nicht `ZuLoeschen`, weil aus ihm nie gelöscht wird.
+- [x] **Kein Umziehen** einer Karte in eine andere Spalte; die Spalte wird weiterhin **nur beim Anlegen** aus dem Status gesetzt.
+- [x] **Kein Rückfluss ins Markdown** — die Vision führt ihn als offene Richtungsfrage.
+- [x] **Kein neues Schema, keine Migration, kein neues Paket.**
+- [x] **Keine Berichtsansicht** mit Filtern, Ausklappen und Kopieren — das ist `I0032`.
+- [x] **Keine Sollzeit an der Karte** (`Aufwand`) — das ist `I0033`.
+- [x] **Kein Archiv der Läufe** und kein Speichern der Importdatei; auch dieser Slice bringt keine Tabelle `Boardimport`.
+- [x] **Keine Wiedererkennung am Titel** und keine zweite Kupplung neben dem Dateiverweis.
 
 ### Der grüne Bestand bleibt grün
 
-- [ ] Der **erste** Lauf auf ein leeres Board verhält sich unverändert: 41 Karten, 489 Teilaufgaben, 454 abgehakt, 31 in der Abschlussspalte, `ErledigtAm` am Tag des Laufs.
-- [ ] Der Leser aus `F0051` bleibt unberührt: `Frontmatterleser`, `Zeilenzerleger`, `Knotenleser`, `Wbsbaumbildner` und die Probe an der eingefrorenen Datei sind nicht Gegenstand dieses Slice.
-- [ ] Die **Kartenzahlen je Schnittebene** aus `I0030` bleiben unverändert (9 / 41 / 79 / 445 auf der eingefrorenen Datei).
-- [ ] Die **Live-Suite** aus `R00031` und `R00032` bleibt grün; `Kartenereignis` behält Gestalt und Artnamen, `Importereignis` behält seine Felder.
-- [ ] Die **Datumsgruppierung** aus `R00015` bleibt unverändert — `ErledigtAm` wird von einem zweiten Lauf nicht überschrieben.
+- [x] Der **erste** Lauf auf ein leeres Board verhält sich unverändert: 41 Karten, 489 Teilaufgaben, 454 abgehakt, 31 in der Abschlussspalte, `ErledigtAm` am Tag des Laufs.
+- [x] Der Leser aus `F0051` bleibt unberührt: `Frontmatterleser`, `Zeilenzerleger`, `Knotenleser`, `Wbsbaumbildner` und die Probe an der eingefrorenen Datei sind nicht Gegenstand dieses Slice.
+- [x] Die **Kartenzahlen je Schnittebene** aus `I0030` bleiben unverändert (9 / 41 / 79 / 445 auf der eingefrorenen Datei).
+- [x] Die **Live-Suite** aus `R00031` und `R00032` bleibt grün; `Kartenereignis` behält Gestalt und Artnamen, `Importereignis` behält seine Felder.
+- [x] Die **Datumsgruppierung** aus `R00015` bleibt unverändert — `ErledigtAm` wird von einem zweiten Lauf nicht überschrieben.
 - [ ] Alle bestehenden E2E-Tests bleiben grün.
 
 ## Betroffene Verzeichnisstruktur

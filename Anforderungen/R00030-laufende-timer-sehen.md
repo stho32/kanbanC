@@ -1,6 +1,6 @@
 ---
 id: R00030
-status: Neu
+status: In Arbeit
 datum: 2026-09-07
 ---
 
@@ -60,94 +60,94 @@ Das durchgehende Beispiel geht **über zwei Boards**, weil „alle" sonst nicht 
 
 ### Alle gerade laufenden Timer — über alle Boards
 
-- [ ] Auf **jeder** Seite der Anwendung (`/boards`, `/boards/1`, `/karten/14`, `/kontributoren`) steht dieselbe Plakette mit demselben Stand.
-- [ ] Sie zählt **beide** Einträge, obwohl sie auf zwei verschiedenen Boards liegen: `2 laufen` — auch wenn gerade Board 1 offen steht und `Board.LaufendeZeiteintraege` dort nur `#8` kennt.
-- [ ] Ein dritter Timer auf einem dritten Board macht daraus `3 laufen`.
-- [ ] Ein **abgeschlossener** Eintrag zählt nie mit: wird `#9` beendet, steht `1 läuft`.
+- [x] Auf **jeder** Seite der Anwendung (`/boards`, `/boards/1`, `/karten/14`, `/kontributoren`) steht dieselbe Plakette mit demselben Stand.
+- [x] Sie zählt **beide** Einträge, obwohl sie auf zwei verschiedenen Boards liegen: `2 laufen` — auch wenn gerade Board 1 offen steht und `Board.LaufendeZeiteintraege` dort nur `#8` kennt.
+- [x] Ein dritter Timer auf einem dritten Board macht daraus `3 laufen`.
+- [x] Ein **abgeschlossener** Eintrag zählt nie mit: wird `#9` beendet, steht `1 läuft`.
 
 ### Die Plakette zählt und nennt keine Dauer
 
-- [ ] Die Beschriftung lautet bei genau einem laufenden Timer **`1 läuft`**, sonst **`n laufen`** — `2 laufen`, `3 laufen`.
-- [ ] Sie enthält **keine Dauer** (`1:36`) und **keine Startzeit** (`seit 08:04`).
-- [ ] Sie ist **gefüllt**, weil `#8` Stefan gehört und Stefan gewählt ist.
-- [ ] Wird die Identität auf Claude gewechselt, bleibt sie gefüllt (`#9` gehört dann mir); wird sie auf einen dritten Kontributor gewechselt oder **abgewählt**, wird sie ruhig — die Zahl bleibt `2 laufen`.
-- [ ] Ohne gewählte Identität ist jeder laufende Timer ein fremder: die Plakette ist ruhig, nie gefüllt.
-- [ ] Ihr `title` nennt **alle** einzeln, in Beginn-Folge, mit Trenner ` · `: `Stefan seit 08:04 · Claude seit 09:12`.
-- [ ] Die angezeigte Zahl ändert sich **nicht** dadurch, dass die Seite länger offen steht — sie wird nicht nachgeführt (siehe „Aktualität und ihre Grenze").
+- [x] Die Beschriftung lautet bei genau einem laufenden Timer **`1 läuft`**, sonst **`n laufen`** — `2 laufen`, `3 laufen`.
+- [x] Sie enthält **keine Dauer** (`1:36`) und **keine Startzeit** (`seit 08:04`).
+- [x] Sie ist **gefüllt**, weil `#8` Stefan gehört und Stefan gewählt ist.
+- [x] Wird die Identität auf Claude gewechselt, bleibt sie gefüllt (`#9` gehört dann mir); wird sie auf einen dritten Kontributor gewechselt oder **abgewählt**, wird sie ruhig — die Zahl bleibt `2 laufen`.
+- [x] Ohne gewählte Identität ist jeder laufende Timer ein fremder: die Plakette ist ruhig, nie gefüllt.
+- [x] Ihr `title` nennt **alle** einzeln, in Beginn-Folge, mit Trenner ` · `: `Stefan seit 08:04 · Claude seit 09:12`.
+- [x] Die angezeigte Zahl ändert sich **nicht** dadurch, dass die Seite länger offen steht — sie wird nicht nachgeführt (siehe „Aktualität und ihre Grenze").
 
 ### Das Popover zeigt Karte und Kontributor
 
-- [ ] Ein Klick auf die Plakette klappt ein Popover mit dem Titel **„Läuft gerade …"** auf; ein zweiter Klick, ein Klick daneben und `Escape` schließen es — dieselbe Mechanik wie die Identitätswahl.
-- [ ] Höchstens **eines** der beiden Popover ist offen: das Öffnen der Identitätswahl schließt die Laufzeitliste und umgekehrt.
-- [ ] Es zeigt **zwei** Zeilen. Zeile 1: Initialenkreis `ST`, `WBS-21 Timer starten und stoppen`, `seit 08:04`; darunter `KanbanC — Release 2 · für mich`.
+- [x] Ein Klick auf die Plakette klappt ein Popover mit dem Titel **„Läuft gerade …"** auf; ein zweiter Klick, ein Klick daneben und `Escape` schließen es — dieselbe Mechanik wie die Identitätswahl.
+- [x] Höchstens **eines** der beiden Popover ist offen: das Öffnen der Identitätswahl schließt die Laufzeitliste und umgekehrt.
+- [x] Es zeigt **zwei** Zeilen. Zeile 1: Initialenkreis `ST`, `WBS-21 Timer starten und stoppen`, `seit 08:04`; darunter `KanbanC — Release 2 · für mich`.
 - [ ] Zeile 2: Initialenkreis `KI`, `WBS-14 WBS-Import: Markdown-Baum`, `seit 09:12`; darunter `Beschaffung · Claude`.
-- [ ] **Stefans Zeile steht oben**, weil eigene Zeilen Vorrang haben — auch dann, wenn Claudes Timer länger liefe (Gegenprobe: Claude seit 07:00, Stefan seit 08:04 → Stefan bleibt oben).
-- [ ] Unter den eigenen und unter den fremden gilt jeweils **Beginn aufsteigend**: laufen zwei eigene seit 08:04 und 09:30, steht 08:04 oben.
-- [ ] Die Liste ist **nicht** gruppiert — weder nach Kontributor noch nach Board.
-- [ ] Eine Zeile trägt **keine Dauer**; die Zeitangabe ist die Startzeit.
+- [x] **Stefans Zeile steht oben**, weil eigene Zeilen Vorrang haben — auch dann, wenn Claudes Timer länger liefe (Gegenprobe: Claude seit 07:00, Stefan seit 08:04 → Stefan bleibt oben).
+- [x] Unter den eigenen und unter den fremden gilt jeweils **Beginn aufsteigend**: laufen zwei eigene seit 08:04 und 09:30, steht 08:04 oben.
+- [x] Die Liste ist **nicht** gruppiert — weder nach Kontributor noch nach Board.
+- [x] Eine Zeile trägt **keine Dauer**; die Zeitangabe ist die Startzeit.
 - [ ] Der Initialenkreis trägt dasselbe Kürzel und dieselbe Artfarbe wie in der Kommentar- und Zeitenliste der Kartenseite.
-- [ ] Eine Karte **ohne** Kartenklasse trägt keine Nummer: die Zeile zeigt dann nur den Titel, ohne Lücke und ohne Platzhalter.
+- [x] Eine Karte **ohne** Kartenklasse trägt keine Nummer: die Zeile zeigt dann nur den Titel, ohne Lücke und ohne Platzhalter.
 
 ### Eine Zeile führt zur Karte
 
-- [ ] Ein Klick auf Kartennummer und Titel führt auf `/karten/21` bzw. `/karten/14`.
-- [ ] Mit dem Seitenwechsel schließt sich das Popover.
-- [ ] Der Sprung funktioniert auch aus einer Zeile, deren Karte **archiviert** ist — die Kartenseite ist dann der einzige Weg dorthin.
+- [x] Ein Klick auf Kartennummer und Titel führt auf `/karten/21` bzw. `/karten/14`.
+- [x] Mit dem Seitenwechsel schließt sich das Popover.
+- [x] Der Sprung funktioniert auch aus einer Zeile, deren Karte **archiviert** ist — die Kartenseite ist dann der einzige Weg dorthin.
 
 ### Aus dem Popover wird gestoppt
 
-- [ ] Jede Zeile trägt ein **Stoppquadrat**, auch die fremde (`#9`, Claude) und auch ohne gewählte Identität.
-- [ ] Ein Klick darauf beendet **genau diesen** Eintrag: die Zeile fällt aus der Liste, die Plakette zeigt danach `1 läuft`.
-- [ ] Wird auch die letzte Zeile gestoppt, **verschwindet die Plakette** — das Popover schließt mit ihr.
-- [ ] Der beendete Eintrag trägt weiterhin **seinen** Kontributor: gestoppt wurde der Timer, nicht die Urheberschaft.
-- [ ] Es gibt im Popover **keinen Startknopf** und keine Möglichkeit, einen Timer anzulegen.
-- [ ] Ein Stopp aus dem Popover und ein Stopp auf der Kartenseite beenden denselben Eintrag und ergeben denselben Zustand — es entsteht kein zweiter Weg, nur ein zweiter Ort.
+- [x] Jede Zeile trägt ein **Stoppquadrat**, auch die fremde (`#9`, Claude) und auch ohne gewählte Identität.
+- [x] Ein Klick darauf beendet **genau diesen** Eintrag: die Zeile fällt aus der Liste, die Plakette zeigt danach `1 läuft`.
+- [x] Wird auch die letzte Zeile gestoppt, **verschwindet die Plakette** — das Popover schließt mit ihr.
+- [x] Der beendete Eintrag trägt weiterhin **seinen** Kontributor: gestoppt wurde der Timer, nicht die Urheberschaft.
+- [x] Es gibt im Popover **keinen Startknopf** und keine Möglichkeit, einen Timer anzulegen.
+- [x] Ein Stopp aus dem Popover und ein Stopp auf der Kartenseite beenden denselben Eintrag und ergeben denselben Zustand — es entsteht kein zweiter Weg, nur ein zweiter Ort.
 - [ ] Nach dem Stopp wird die Liste **frisch geholt**, nicht in der Hand nachgezogen: sie geht über alle Boards und kann sich unterdessen anderswo geändert haben.
 
 ### Archivierte Karten und stillgelegte Kontributoren
 
-- [ ] Wird Karte 14 archiviert, während `#9` läuft, **bleibt die Zeile stehen** und trägt den Zusatz **„archiviert"**.
-- [ ] Dasselbe gilt, wenn statt der Karte ihr **Board** archiviert wird — ein Feld, eine Kennzeichnung, weil die Folge dieselbe ist: die Karte steht in keiner Bahn mehr.
-- [ ] Wird Claude nach dem Start **stillgelegt**, bleibt seine Zeile stehen und trägt den Zusatz **„stillgelegt"**.
-- [ ] Beide Zeilen bleiben **stoppbar** — das Popover ist dann der einzige Ort, an dem der Eintrag noch erreichbar ist.
-- [ ] Beide zählen in die Plakette mit: `2 laufen` bleibt `2 laufen`.
+- [x] Wird Karte 14 archiviert, während `#9` läuft, **bleibt die Zeile stehen** und trägt den Zusatz **„archiviert"**.
+- [x] Dasselbe gilt, wenn statt der Karte ihr **Board** archiviert wird — ein Feld, eine Kennzeichnung, weil die Folge dieselbe ist: die Karte steht in keiner Bahn mehr.
+- [x] Wird Claude nach dem Start **stillgelegt**, bleibt seine Zeile stehen und trägt den Zusatz **„stillgelegt"**.
+- [x] Beide Zeilen bleiben **stoppbar** — das Popover ist dann der einzige Ort, an dem der Eintrag noch erreichbar ist.
+- [x] Beide zählen in die Plakette mit: `2 laufen` bleibt `2 laufen`.
 
 ### Der Endpunkt `GET /api/zeiten/laufend`
 
-- [ ] `GET /api/zeiten/laufend` antwortet mit **200** und einer Liste aus zwei Einträgen.
-- [ ] Je Eintrag trägt die Antwort den **unveränderten** `zeiteintrag` (mit `zeiteintragId`, `karte`, ganzem `kontributor`, `beginn`, `ende: null`), die ganze `karte`, dazu `board`, `boardname` und `archiviert`.
-- [ ] `zeiteintrag` hat **dieselbe Gestalt** wie in `GET /api/karten/14` und in `POST …/zeiten/laufend`: es gibt kein zweites Zeiteintrag-DTO.
-- [ ] Läuft **nichts**, antwortet die Route mit **200 und `[]`** — nie mit 404: es fehlt nichts.
-- [ ] Die Reihenfolge der API-Antwort ist **Beginn aufsteigend**, `zeiteintragId` als Zweitschlüssel; die Vorrangordnung „eigene zuerst" entsteht in der Oberfläche, weil die API kein „mich" kennt.
-- [ ] Die Route ist **board- und kartenlos**: sie nennt weder eine `boardId` noch eine `karteId` im Pfad.
-- [ ] Der Routentabellen-Test führt danach **sechs** Zeitenrouten statt fünf; die fünf bestehenden behalten Pfad und Verb unverändert.
-- [ ] `GET /api/zeiten/laufend` und `PUT /api/karten/14/zeiten/9/ende` greifen nebeneinander — die neue Route verdeckt keine bestehende.
+- [x] `GET /api/zeiten/laufend` antwortet mit **200** und einer Liste aus zwei Einträgen.
+- [x] Je Eintrag trägt die Antwort den **unveränderten** `zeiteintrag` (mit `zeiteintragId`, `karte`, ganzem `kontributor`, `beginn`, `ende: null`), die ganze `karte`, dazu `board`, `boardname` und `archiviert`.
+- [x] `zeiteintrag` hat **dieselbe Gestalt** wie in `GET /api/karten/14` und in `POST …/zeiten/laufend`: es gibt kein zweites Zeiteintrag-DTO.
+- [x] Läuft **nichts**, antwortet die Route mit **200 und `[]`** — nie mit 404: es fehlt nichts.
+- [x] Die Reihenfolge der API-Antwort ist **Beginn aufsteigend**, `zeiteintragId` als Zweitschlüssel; die Vorrangordnung „eigene zuerst" entsteht in der Oberfläche, weil die API kein „mich" kennt.
+- [x] Die Route ist **board- und kartenlos**: sie nennt weder eine `boardId` noch eine `karteId` im Pfad.
+- [x] Der Routentabellen-Test führt danach **sechs** Zeitenrouten statt fünf; die fünf bestehenden behalten Pfad und Verb unverändert.
+- [x] `GET /api/zeiten/laufend` und `PUT /api/karten/14/zeiten/9/ende` greifen nebeneinander — die neue Route verdeckt keine bestehende.
 
 ### Aktualität und ihre Grenze
 
 - [ ] Die Liste wird geholt: beim Aufbau des Blazor-Kreislaufs, bei **jedem** Seitenwechsel, beim **Aufklappen** des Popovers und nach einem eigenen Start oder Stopp auf der Kartenseite.
-- [ ] Starte ich auf `/karten/21` einen Timer, zeigt die Plakette **ohne Seitenwechsel und ohne Reload** eine um eins höhere Zahl.
-- [ ] Stoppe ich ihn dort wieder, sinkt sie entsprechend.
-- [ ] Das aufgeklappte Popover zeigt nie einen alten Stand: das Aufklappen holt.
-- [ ] **Die benannte Lücke:** startet jemand *anders* einen Timer, während meine Seite offen steht, bleibt meine Zahl bis zum nächsten dieser Anlässe unverändert. Das ist gewollt und wird von `I0028` geschlossen.
-- [ ] Es entsteht **kein** Abfragetakt, **kein** Hintergrundtimer und **keine** mitlaufende Uhr.
+- [x] Starte ich auf `/karten/21` einen Timer, zeigt die Plakette **ohne Seitenwechsel und ohne Reload** eine um eins höhere Zahl.
+- [x] Stoppe ich ihn dort wieder, sinkt sie entsprechend.
+- [x] Das aufgeklappte Popover zeigt nie einen alten Stand: das Aufklappen holt.
+- [x] **Die benannte Lücke:** startet jemand *anders* einen Timer, während meine Seite offen steht, bleibt meine Zahl bis zum nächsten dieser Anlässe unverändert. Das ist gewollt und wird von `I0028` geschlossen.
+- [x] Es entsteht **kein** Abfragetakt, **kein** Hintergrundtimer und **keine** mitlaufende Uhr.
 
 ### Was dieser Slice ausdrücklich nicht tut
 
-- [ ] Es entsteht **keine** Migration und **keine** Schemaänderung.
-- [ ] Es entsteht **kein** zweites Zeiteintrag-DTO und **kein** Feld an `Zeiteintrag`, `Karte`, `Board` oder `Kartendetail`.
-- [ ] Es entsteht **kein** Startknopf außerhalb der Kartenseite.
+- [x] Es entsteht **keine** Migration und **keine** Schemaänderung.
+- [x] Es entsteht **kein** zweites Zeiteintrag-DTO und **kein** Feld an `Zeiteintrag`, `Karte`, `Board` oder `Kartendetail`.
+- [x] Es entsteht **kein** Startknopf außerhalb der Kartenseite.
 - [ ] Es entsteht **keine** Live-Nachführung, kein SignalR-Kanal und keine gerenderte Dauer — das ist `I0028`.
 - [ ] Es entsteht **keine** Auswertung, keine Summe und kein Soll-Ist — das ist `I0033`.
 - [ ] Es entsteht **kein** eigener Schirm und **kein** neuer Navigationspunkt; „Auswertungen" bleibt gesperrt.
 
 ### Der grüne Bestand bleibt grün
 
-- [ ] Die Suiten aus `R00026`, `R00027`, `R00028` und `R00029` laufen unverändert grün; `#zeitenabschnitt`, `#timer-starten`, `#timer-stoppen` und `#zeiten-laeuft` behalten Kennung und Bedeutung.
-- [ ] Die Identitätswahl behält `#identitaet`, `#identitaetspopover` und ihr Verhalten; die `R00013`- und `R00005`-Suiten bleiben grün.
-- [ ] `Laufplakette` an der Karte in der Bahn bleibt unverändert — sie nennt weiterhin eine **Startzeit**, nicht eine Anzahl.
-- [ ] Die fünf bestehenden Zeitenrouten und ihre Integrationstests bleiben unverändert.
-- [ ] Build ohne Warnung (`TreatWarningsAsErrors`).
+- [x] Die Suiten aus `R00026`, `R00027`, `R00028` und `R00029` laufen unverändert grün; `#zeitenabschnitt`, `#timer-starten`, `#timer-stoppen` und `#zeiten-laeuft` behalten Kennung und Bedeutung.
+- [x] Die Identitätswahl behält `#identitaet`, `#identitaetspopover` und ihr Verhalten; die `R00013`- und `R00005`-Suiten bleiben grün.
+- [x] `Laufplakette` an der Karte in der Bahn bleibt unverändert — sie nennt weiterhin eine **Startzeit**, nicht eine Anzahl.
+- [x] Die fünf bestehenden Zeitenrouten und ihre Integrationstests bleiben unverändert.
+- [x] Build ohne Warnung (`TreatWarningsAsErrors`).
 
 ## Betroffene Verzeichnisstruktur
 

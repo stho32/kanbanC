@@ -1,6 +1,6 @@
 ---
 id: R00031
-status: Neu
+status: In Arbeit
 datum: 2026-09-07
 ---
 
@@ -61,67 +61,67 @@ Und dritter Nutzen, der über das Sehen hinausgeht: **die Einflugmarke macht den
 
 ### Der Rückweg von der WebApi in die Oberfläche
 
-- [ ] `GET /api/ereignisse` antwortet mit **200** und `Content-Type: text/event-stream` und schließt nicht.
-- [ ] Nach einem erfolgreichen `PUT /api/boards/{boardId}/karten/{karteId}/lage` liefert der Strom **genau ein** Ereignis mit **Board**, **Karte**, **Zielspalte**, **Urheber**, **Weg** und **Zeitpunkt**.
-- [ ] **Zwei gleichzeitige Abonnenten** bekommen dasselbe Ereignis; keiner bekommt es doppelt, keiner gar nicht.
-- [ ] Eine **zurückgewiesene** Bewegung (Zielspalte gehört nicht zum Board, unbekannte Karte, ungültige Position) meldet **nichts** — der Strom bleibt still.
-- [ ] Bewegt sich nichts, bleibt der Strom **offen und leer** — kein 404, kein Schließen, keine Fehlermeldung.
-- [ ] Trägt die Anfrage `X-KanbanC-Weg: oberflaeche`, steht im Ereignis der Weg `Oberflaeche`; **fehlt der Kopf, steht `Api`**.
-- [ ] Nennt der Rumpf einen `Kontributor`, steht dessen Id als Urheber im Ereignis; nennt er keinen, ist der Urheber `null` und die Bewegung wird trotzdem ausgeführt.
-- [ ] Die Blazor-Anwendung hält **genau eine** Leitung je Prozess — nicht eine je Browser und nicht eine je Kreislauf.
-- [ ] Wird die WebApi angehalten und neu gestartet, während die Blazor-Anwendung läuft, **nimmt die Leitung sich von selbst wieder auf**; die nächste Bewegung nach dem Neustart erreicht die offenen Sichten wieder ohne Zutun.
-- [ ] Nachgeholt wird beim Wiederaufnehmen **nichts** — was während der Trennung geschah, bleibt ungemeldet (das ist `I0029`).
+- [x] `GET /api/ereignisse` antwortet mit **200** und `Content-Type: text/event-stream` und schließt nicht.
+- [x] Nach einem erfolgreichen `PUT /api/boards/{boardId}/karten/{karteId}/lage` liefert der Strom **genau ein** Ereignis mit **Board**, **Karte**, **Zielspalte**, **Urheber**, **Weg** und **Zeitpunkt**.
+- [x] **Zwei gleichzeitige Abonnenten** bekommen dasselbe Ereignis; keiner bekommt es doppelt, keiner gar nicht.
+- [x] Eine **zurückgewiesene** Bewegung (Zielspalte gehört nicht zum Board, unbekannte Karte, ungültige Position) meldet **nichts** — der Strom bleibt still.
+- [x] Bewegt sich nichts, bleibt der Strom **offen und leer** — kein 404, kein Schließen, keine Fehlermeldung.
+- [x] Trägt die Anfrage `X-KanbanC-Weg: oberflaeche`, steht im Ereignis der Weg `Oberflaeche`; **fehlt der Kopf, steht `Api`**.
+- [x] Nennt der Rumpf einen `Kontributor`, steht dessen Id als Urheber im Ereignis; nennt er keinen, ist der Urheber `null` und die Bewegung wird trotzdem ausgeführt.
+- [x] Die Blazor-Anwendung hält **genau eine** Leitung je Prozess — nicht eine je Browser und nicht eine je Kreislauf.
+- [x] Wird die WebApi angehalten und neu gestartet, während die Blazor-Anwendung läuft, **nimmt die Leitung sich von selbst wieder auf**; die nächste Bewegung nach dem Neustart erreicht die offenen Sichten wieder ohne Zutun.
+- [x] Nachgeholt wird beim Wiederaufnehmen **nichts** — was während der Trennung geschah, bleibt ungemeldet (das ist `I0029`).
 
 ### Das offene Board zieht nach
 
-- [ ] Bewegt ein **zweiter Browser** eine Karte auf Board X, zeigt ein offenes Board X die Karte **ohne Zutun** an ihrer neuen Stelle.
-- [ ] Dasselbe gilt für einen **Aufruf der API ohne Browser** (`PUT …/lage` mit `HttpClient`).
-- [ ] Die Karte steht **an der Stelle, an die der Urheber sie gelegt hat** — nicht oben und nicht unten. Rechenbeispiel: liegt „Bereit" mit A, B, C und legt der Urheber D auf Position 1, steht danach in jeder Sicht A, D, B, C.
-- [ ] Die **Bahnenzahlen** stimmen nach dem Nachziehen. Rechenbeispiel: „Bereit" 6 → **5**, „In Arbeit" 3 → **4**.
-- [ ] In der Herkunftsbahn bleibt **kein Platzhalter** stehen.
-- [ ] Ein Ereignis zu einem **anderen** Board lässt das offene Board unberührt.
-- [ ] **Hält jemand gerade eine Karte in der Hand**, ordnet sich unter der Maus nichts um: die fremde Bewegung wird **sichtbar zurückgehalten** („1 Änderung wartet") und beim Loslassen eingespielt.
-- [ ] Wird die Sicht verlassen (Seitenwechsel, geschlossener Browser), hört sie auf zuzuhören — der Verteiler hält keine toten Kreisläufe fest.
+- [x] Bewegt ein **zweiter Browser** eine Karte auf Board X, zeigt ein offenes Board X die Karte **ohne Zutun** an ihrer neuen Stelle.
+- [x] Dasselbe gilt für einen **Aufruf der API ohne Browser** (`PUT …/lage` mit `HttpClient`).
+- [x] Die Karte steht **an der Stelle, an die der Urheber sie gelegt hat** — nicht oben und nicht unten. Rechenbeispiel: liegt „Bereit" mit A, B, C und legt der Urheber D auf Position 1, steht danach in jeder Sicht A, D, B, C.
+- [x] Die **Bahnenzahlen** stimmen nach dem Nachziehen. Rechenbeispiel: „Bereit" 6 → **5**, „In Arbeit" 3 → **4**.
+- [x] In der Herkunftsbahn bleibt **kein Platzhalter** stehen.
+- [x] Ein Ereignis zu einem **anderen** Board lässt das offene Board unberührt.
+- [x] **Hält jemand gerade eine Karte in der Hand**, ordnet sich unter der Maus nichts um: die fremde Bewegung wird **sichtbar zurückgehalten** („1 Änderung wartet") und beim Loslassen eingespielt.
+- [x] Wird die Sicht verlassen (Seitenwechsel, geschlossener Browser), hört sie auf zuzuhören — der Verteiler hält keine toten Kreisläufe fest.
 
 ### Die Einflugmarke
 
-- [ ] Eine fremde Bewegung trägt an der Karte eine **Akzentkante** und eine **Fußzeile** aus Wer, über welchen Weg und wann.
-- [ ] Ein Mensch an der Oberfläche wird **ohne Weg** genannt: „Nina Barth · vor 3 Sek".
-- [ ] Ein Aufruf der API wird **mit Weg** genannt: „Claude-Agent · über die API · gerade eben".
-- [ ] Ein **unbekannter oder fehlender Urheber** ergibt eine Marke ohne Namen, keinen Absturz.
-- [ ] Der Name kommt aus der **Kontributorenliste**, nicht aus dem Ereignis — ein Umbenennen zieht von selbst nach.
-- [ ] Die **eigene** Handlung bekommt **keine** Marke. Rechenbeispiel: zieht Stefan in Browser 1 eine Karte, trägt sie in Browser 1 **keine** Marke und in Browser 2 eine — auch dann, wenn in Browser 2 ebenfalls „Stefan" gewählt ist.
-- [ ] Jede Marke **verschwindet nach etwa zehn Sekunden** von selbst; danach steht die Karte wieder ruhig.
-- [ ] Die Unterscheidung Mensch/API läuft über **Anwesenheit und Wortlaut**, **nie über die Farbe** — Olive und Terrakotta tragen in diesem Projekt die Art des Kontributors.
-- [ ] „Etwa zehn Sekunden" ist eine **Größenordnung, kein Messwert**: geprüft wird, dass die Marke von selbst verschwindet, nicht ihre Standzeit auf die Sekunde.
+- [x] Eine fremde Bewegung trägt an der Karte eine **Akzentkante** und eine **Fußzeile** aus Wer, über welchen Weg und wann.
+- [x] Ein Mensch an der Oberfläche wird **ohne Weg** genannt: „Nina Barth · vor 3 Sek".
+- [x] Ein Aufruf der API wird **mit Weg** genannt: „Claude-Agent · über die API · gerade eben".
+- [x] Ein **unbekannter oder fehlender Urheber** ergibt eine Marke ohne Namen, keinen Absturz.
+- [x] Der Name kommt aus der **Kontributorenliste**, nicht aus dem Ereignis — ein Umbenennen zieht von selbst nach.
+- [x] Die **eigene** Handlung bekommt **keine** Marke. Rechenbeispiel: zieht Stefan in Browser 1 eine Karte, trägt sie in Browser 1 **keine** Marke und in Browser 2 eine — auch dann, wenn in Browser 2 ebenfalls „Stefan" gewählt ist.
+- [x] Jede Marke **verschwindet nach etwa zehn Sekunden** von selbst; danach steht die Karte wieder ruhig.
+- [x] Die Unterscheidung Mensch/API läuft über **Anwesenheit und Wortlaut**, **nie über die Farbe** — Olive und Terrakotta tragen in diesem Projekt die Art des Kontributors.
+- [x] „Etwa zehn Sekunden" ist eine **Größenordnung, kein Messwert**: geprüft wird, dass die Marke von selbst verschwindet, nicht ihre Standzeit auf die Sekunde.
 
 ### Die offene Kartenseite zieht nach
 
-- [ ] Wird die geöffnete Karte von jemand anderem bewegt, nennt die **Kopfzeile der Kartenseite** ihre **neue Spalte** ohne Zutun.
-- [ ] Die Kartenseite trägt dabei dieselbe **Einflugmarke** wie die Karte am Board.
-- [ ] Ein Ereignis zu einer **anderen Karte** lässt die offene Kartenseite unberührt.
-- [ ] **Steht ein Feld offen** (Titel, Beschreibung, Fälligkeit, …), wird **nichts ausgetauscht**: die Meldung wartet **sichtbar**, und der **ungesendete Text bleibt stehen**.
-- [ ] Nach dem Schließen des Felds wird die zurückgehaltene Meldung eingespielt.
-- [ ] Es gibt **kein Angebot über einem offenen Feld** — eine Bewegung fasst kein Feld an.
+- [x] Wird die geöffnete Karte von jemand anderem bewegt, nennt die **Kopfzeile der Kartenseite** ihre **neue Spalte** ohne Zutun.
+- [x] Die Kartenseite trägt dabei dieselbe **Einflugmarke** wie die Karte am Board.
+- [x] Ein Ereignis zu einer **anderen Karte** lässt die offene Kartenseite unberührt.
+- [x] **Steht ein Feld offen** (Titel, Beschreibung, Fälligkeit, …), wird **nichts ausgetauscht**: die Meldung wartet **sichtbar**, und der **ungesendete Text bleibt stehen**.
+- [x] Nach dem Schließen des Felds wird die zurückgehaltene Meldung eingespielt.
+- [x] Es gibt **kein Angebot über einem offenen Feld** — eine Bewegung fasst kein Feld an.
 
 ### Was dieser Slice ausdrücklich nicht tut
 
 - [ ] **Nur die Kartenbewegung** zieht nach. Nicht dabei: Kartenanlage und -änderung, Kommentare, Etiketten, Teilaufgaben, Anhänge, Dateiverweise, Klassenzuordnung und Farbe.
-- [ ] **Die Archivierung zieht nicht nach** — sie ist keine Bewegung und hat keinen WBS-Knoten.
-- [ ] **Spalten- und Boardänderungen** ziehen nicht nach.
-- [ ] **Zeitereignisse** ziehen nicht nach; die Kopfzeilenplakette aus `R00030` behält ihre vier Ladeanlässe und ihre benannte Lücke.
-- [ ] **Keine mitlaufende Dauer** — weder in der Kopfzeile noch an der Karte noch auf der Kartenseite.
-- [ ] **Keine Ereignisspur und kein Laufband** — eine Liste vergangener Ereignisse ist etwas anderes als eine ankommende Änderung.
+- [x] **Die Archivierung zieht nicht nach** — sie ist keine Bewegung und hat keinen WBS-Knoten.
+- [x] **Spalten- und Boardänderungen** ziehen nicht nach.
+- [x] **Zeitereignisse** ziehen nicht nach; die Kopfzeilenplakette aus `R00030` behält ihre vier Ladeanlässe und ihre benannte Lücke.
+- [x] **Keine mitlaufende Dauer** — weder in der Kopfzeile noch an der Karte noch auf der Kartenseite.
+- [x] **Keine Ereignisspur und kein Laufband** — eine Liste vergangener Ereignisse ist etwas anderes als eine ankommende Änderung.
 - [ ] **Kein Ereignisspeicher, keine Folgenummer, kein Nachholen** verpasster Änderungen.
 - [ ] **Kein deutsches `ReconnectModal`**, keine alternde Kopfzeile, keine Zusammenfassung mehrerer verpasster Änderungen — alles `I0029`.
-- [ ] **Keine Migration**, kein Schema, kein neues NuGet-Paket.
+- [x] **Keine Migration**, kein Schema, kein neues NuGet-Paket.
 
 ### Der grüne Bestand bleibt grün
 
 - [ ] Die **`R00007`-Suite** (Karte verschieben) bleibt unangetastet grün: `Kartenlage` wächst um ein Feld **mit Vorgabewert**, bestehende Aufrufe `new Kartenlage(a, b)` compilieren weiter, und ein JSON ohne das Feld wird zu `null`.
-- [ ] Der **Routentabellen-Test** der WebApi zählt die neue Route mit; ein Test, der sie nicht mitzählt, ist rot — das ist gewollt.
-- [ ] Die bestehende Behandlung **zurückgewiesener Züge** in `Board.razor` bleibt unverändert: sie ist bereits gebaut (`B0380` steht auf `bestehend`).
-- [ ] Der **`Laufzeitmelder`** aus `R00030` bleibt bestehen und wird **nicht** ersetzt — er ist der Weg für die eigene Handlung ohne Umweg über die WebApi.
+- [x] Der **Routentabellen-Test** der WebApi zählt die neue Route mit; ein Test, der sie nicht mitzählt, ist rot — das ist gewollt.
+- [x] Die bestehende Behandlung **zurückgewiesener Züge** in `Board.razor` bleibt unverändert: sie ist bereits gebaut (`B0380` steht auf `bestehend`).
+- [x] Der **`Laufzeitmelder`** aus `R00030` bleibt bestehen und wird **nicht** ersetzt — er ist der Weg für die eigene Handlung ohne Umweg über die WebApi.
 - [ ] Alle bestehenden E2E-Tests bleiben grün, obwohl in jedem Lauf nun eine Ereignisleitung mitläuft.
 
 ## Betroffene Verzeichnisstruktur

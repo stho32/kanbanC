@@ -1,6 +1,6 @@
 ---
 id: R00029
-status: Neu
+status: In Arbeit
 datum: 2026-09-06
 ---
 
@@ -51,93 +51,93 @@ Dazu die Lage, die die Vision selbst erzeugt: ein Agent, der ohne Bildschirm arb
 
 ### Ein Zeiteintrag lässt sich von Hand erfassen
 
-- [ ] `POST /api/karten/{karteId}/zeiten` mit `{ kontributor, beginn, ende }` antwortet **201** und liefert den angelegten `Zeiteintrag` mit `zeiteintragId`, `karte`, ganzem `kontributor`, `beginn` und **gesetztem** `ende`.
-- [ ] Der Eintrag erscheint danach in `GET /api/karten/{karteId}` unter `zeiteintraege` und überlebt einen Neustart der WebApi.
-- [ ] `ende` ist beim Nachtragen **pflichtig**: eine Anfrage ohne `ende` ist kein Nachtrag, sondern ein Start (`POST …/zeiten/laufend`, `R00026`) und wird nicht als Nachtrag angenommen.
-- [ ] Rechenbeispiel: `beginn` 2026-09-05T12:00:00Z, `ende` 2026-09-05T13:30:00Z ergibt einen Eintrag, dessen Dauer in der Oberfläche als `1:30` erscheint.
-- [ ] Ein Nachtrag lässt den partiellen Index nie anschlagen — er trägt immer ein Ende. Ein für dasselbe Paar (Karte, Kontributor) **laufender** Eintrag steht einem Nachtrag deshalb nicht im Weg und bleibt unverändert laufen.
+- [x] `POST /api/karten/{karteId}/zeiten` mit `{ kontributor, beginn, ende }` antwortet **201** und liefert den angelegten `Zeiteintrag` mit `zeiteintragId`, `karte`, ganzem `kontributor`, `beginn` und **gesetztem** `ende`.
+- [x] Der Eintrag erscheint danach in `GET /api/karten/{karteId}` unter `zeiteintraege` und überlebt einen Neustart der WebApi.
+- [x] `ende` ist beim Nachtragen **pflichtig**: eine Anfrage ohne `ende` ist kein Nachtrag, sondern ein Start (`POST …/zeiten/laufend`, `R00026`) und wird nicht als Nachtrag angenommen.
+- [x] Rechenbeispiel: `beginn` 2026-09-05T12:00:00Z, `ende` 2026-09-05T13:30:00Z ergibt einen Eintrag, dessen Dauer in der Oberfläche als `1:30` erscheint.
+- [x] Ein Nachtrag lässt den partiellen Index nie anschlagen — er trägt immer ein Ende. Ein für dasselbe Paar (Karte, Kontributor) **laufender** Eintrag steht einem Nachtrag deshalb nicht im Weg und bleibt unverändert laufen.
 
 ### Ein Zeiteintrag lässt sich korrigieren
 
-- [ ] `PUT /api/karten/{karteId}/zeiten/{zeiteintragId}` mit `{ kontributor, beginn, ende }` antwortet **200** und liefert den geänderten Eintrag; `zeiteintragId` und `karte` bleiben, was sie waren.
-- [ ] Alle drei Felder sind änderbar: `kontributor`, `beginn` und `ende`. Die **Karte** ist nicht änderbar.
-- [ ] Rechenbeispiel: ein Eintrag 17:40 – 18:25 (`0:45`) wird auf 17:40 – 18:40 geändert und liest sich danach mit `1:00`; die Summe seines Kontributors wächst um genau `0:15`.
-- [ ] `ende` ist beim Ändern **nullbar**: `ende: null` macht den Eintrag wieder laufend.
+- [x] `PUT /api/karten/{karteId}/zeiten/{zeiteintragId}` mit `{ kontributor, beginn, ende }` antwortet **200** und liefert den geänderten Eintrag; `zeiteintragId` und `karte` bleiben, was sie waren.
+- [x] Alle drei Felder sind änderbar: `kontributor`, `beginn` und `ende`. Die **Karte** ist nicht änderbar.
+- [x] Rechenbeispiel: ein Eintrag 17:40 – 18:25 (`0:45`) wird auf 17:40 – 18:40 geändert und liest sich danach mit `1:00`; die Summe seines Kontributors wächst um genau `0:15`.
+- [x] `ende` ist beim Ändern **nullbar**: `ende: null` macht den Eintrag wieder laufend.
 
 ### Ein laufender Eintrag ist änderbar
 
-- [ ] Ein Eintrag ohne `ende` lässt sich ändern; ein mitgegebenes `ende` beendet ihn — dasselbe Ergebnis wie ein Stopp, nur mit selbstgewähltem Zeitpunkt.
-- [ ] Setzt eine Änderung `ende` auf `null` zurück, während für dasselbe Paar (Karte, Kontributor) **schon ein anderer** Eintrag läuft, antwortet der Aufruf mit **400** und einem lesbaren Befund, der die `zeiteintragId` des anderen nennt; Kompensation: „diesen stoppen oder ändern".
-- [ ] In diesem Fall kommt **nie** eine `SqliteException` des partiellen Index `UX_Zeiteintrag_Karte_Kontributor_Laufend` durch — geprüft wird vor dem `UPDATE`.
-- [ ] Läuft für dasselbe Paar **kein** anderer, gelingt der Rückfall auf „laufend" und `GET /api/karten/{karteId}` zeigt den Eintrag danach ohne `ende`.
+- [x] Ein Eintrag ohne `ende` lässt sich ändern; ein mitgegebenes `ende` beendet ihn — dasselbe Ergebnis wie ein Stopp, nur mit selbstgewähltem Zeitpunkt.
+- [x] Setzt eine Änderung `ende` auf `null` zurück, während für dasselbe Paar (Karte, Kontributor) **schon ein anderer** Eintrag läuft, antwortet der Aufruf mit **400** und einem lesbaren Befund, der die `zeiteintragId` des anderen nennt; Kompensation: „diesen stoppen oder ändern".
+- [x] In diesem Fall kommt **nie** eine `SqliteException` des partiellen Index `UX_Zeiteintrag_Karte_Kontributor_Laufend` durch — geprüft wird vor dem `UPDATE`.
+- [x] Läuft für dasselbe Paar **kein** anderer, gelingt der Rückfall auf „laufend" und `GET /api/karten/{karteId}` zeigt den Eintrag danach ohne `ende`.
 
 ### Ein Zeiteintrag lässt sich löschen
 
-- [ ] `DELETE /api/karten/{karteId}/zeiten/{zeiteintragId}` antwortet **200** und liefert das ganze `Kartendetail` **ohne** die gelöschte Zeile — Hausform `EntferneAnhang` (`KartenService.cs:413`).
-- [ ] Der Eintrag ist danach auch nach einem Reload fort; die Summe seines Kontributors ist um genau seine Dauer kleiner.
-- [ ] Ein laufender Eintrag ist ebenso löschbar wie ein abgeschlossener; das Paar (Karte, Kontributor) ist danach wieder frei.
+- [x] `DELETE /api/karten/{karteId}/zeiten/{zeiteintragId}` antwortet **200** und liefert das ganze `Kartendetail` **ohne** die gelöschte Zeile — Hausform `EntferneAnhang` (`KartenService.cs:413`).
+- [x] Der Eintrag ist danach auch nach einem Reload fort; die Summe seines Kontributors ist um genau seine Dauer kleiner.
+- [x] Ein laufender Eintrag ist ebenso löschbar wie ein abgeschlossener; das Paar (Karte, Kontributor) ist danach wieder frei.
 
 ### „Das Ende liegt vor dem Beginn" wird zurückgewiesen
 
-- [ ] Liegt `ende` vor `beginn`, antwortet der Aufruf mit **400** und dem Code `zeiteintrag-ende-vor-beginn`; die Meldung nennt **beide** Werte, die Kompensation lautet sinngemäß „den Aufruf mit einem `ende` nach dem `beginn` wiederholen".
-- [ ] Der Code steht **nicht** in `Nichtgefunden.AlleCodes` (`Nichtgefunden.cs:22`) und bildet deshalb auf 400 ab, wie `kontributor-stillgelegt` und `dateiverweis-doppelt`.
-- [ ] Die Regel gilt beim Nachtragen **und** beim Ändern.
-- [ ] Rechenbeispiel: `beginn` 15:30, `ende` 14:00 wird zurückgewiesen; `beginn` 14:00, `ende` 14:00 (**Dauer null**) wird **angenommen** — dieselbe Entscheidung wie in `R00027`.
-- [ ] Nichts wird geschrieben: nach einer Zurückweisung steht kein neuer Eintrag in `zeiteintraege`, und ein bestehender ist unverändert.
+- [x] Liegt `ende` vor `beginn`, antwortet der Aufruf mit **400** und dem Code `zeiteintrag-ende-vor-beginn`; die Meldung nennt **beide** Werte, die Kompensation lautet sinngemäß „den Aufruf mit einem `ende` nach dem `beginn` wiederholen".
+- [x] Der Code steht **nicht** in `Nichtgefunden.AlleCodes` (`Nichtgefunden.cs:22`) und bildet deshalb auf 400 ab, wie `kontributor-stillgelegt` und `dateiverweis-doppelt`.
+- [x] Die Regel gilt beim Nachtragen **und** beim Ändern.
+- [x] Rechenbeispiel: `beginn` 15:30, `ende` 14:00 wird zurückgewiesen; `beginn` 14:00, `ende` 14:00 (**Dauer null**) wird **angenommen** — dieselbe Entscheidung wie in `R00027`.
+- [x] Nichts wird geschrieben: nach einer Zurückweisung steht kein neuer Eintrag in `zeiteintraege`, und ein bestehender ist unverändert.
 
 ### Ein Zeitpunkt in der Zukunft wird zurückgewiesen
 
-- [ ] Liegt `beginn` oder `ende` mehr als **eine Minute** nach der Serveruhr, antwortet der Aufruf mit **400** und dem Code `zeiteintrag-in-der-zukunft`; die Meldung nennt den beanstandeten Wert **und** die Toleranz, die Kompensation lautet sinngemäß „den Zeitpunkt in die Vergangenheit legen".
-- [ ] Rechenbeispiel: bei Serveruhr 14:00:30 wird `ende` 14:01:00 **angenommen** (30 s voraus, innerhalb der Toleranz) und `ende` 14:02:00 **zurückgewiesen** (90 s voraus).
-- [ ] Die Uhr wird in die Prüfung **hereingereicht** und nicht in ihr gelesen — Muster `Zeitmessungsende.Fuer`; beide Ränder sind ohne Zeitmanipulation prüfbar.
-- [ ] Ein `ende: null` (laufend) wird von dieser Regel nicht beanstandet; geprüft wird nur, was gesetzt ist.
+- [x] Liegt `beginn` oder `ende` mehr als **eine Minute** nach der Serveruhr, antwortet der Aufruf mit **400** und dem Code `zeiteintrag-in-der-zukunft`; die Meldung nennt den beanstandeten Wert **und** die Toleranz, die Kompensation lautet sinngemäß „den Zeitpunkt in die Vergangenheit legen".
+- [x] Rechenbeispiel: bei Serveruhr 14:00:30 wird `ende` 14:01:00 **angenommen** (30 s voraus, innerhalb der Toleranz) und `ende` 14:02:00 **zurückgewiesen** (90 s voraus).
+- [x] Die Uhr wird in die Prüfung **hereingereicht** und nicht in ihr gelesen — Muster `Zeitmessungsende.Fuer`; beide Ränder sind ohne Zeitmanipulation prüfbar.
+- [x] Ein `ende: null` (laufend) wird von dieser Regel nicht beanstandet; geprüft wird nur, was gesetzt ist.
 
 ### Überlappungen bleiben erlaubt und ungeprüft
 
-- [ ] Zwei Zeiteinträge desselben Kontributors dürfen sich zeitlich überlappen — auf derselben Karte und auf verschiedenen. Es entsteht **keine** Zurückweisung und **keine** Warnung.
-- [ ] Rechenbeispiel: drei nachgetragene Einträge desselben Tages für denselben Kontributor (08:00–18:00, 09:00–19:00, 10:00–20:00) werden alle drei angenommen; seine Summe auf der Karte lautet `30:00`, ungekappt und nicht als „1 Tag 6:00".
-- [ ] Die **einzige** Schranke bleibt der partielle Index: zwei **laufende** Einträge desselben Paares (Karte, Kontributor) gibt es weiterhin nicht.
+- [x] Zwei Zeiteinträge desselben Kontributors dürfen sich zeitlich überlappen — auf derselben Karte und auf verschiedenen. Es entsteht **keine** Zurückweisung und **keine** Warnung.
+- [x] Rechenbeispiel: drei nachgetragene Einträge desselben Tages für denselben Kontributor (08:00–18:00, 09:00–19:00, 10:00–20:00) werden alle drei angenommen; seine Summe auf der Karte lautet `30:00`, ungekappt und nicht als „1 Tag 6:00".
+- [x] Die **einzige** Schranke bleibt der partielle Index: zwei **laufende** Einträge desselben Paares (Karte, Kontributor) gibt es weiterhin nicht.
 
 ### Wer darf — Kontributor und Stilllegung
 
-- [ ] Der Kontributor reist beim Nachtragen **und** beim Ändern im Rumpf mit; er wird nie erraten.
-- [ ] Niemand ist an den eigenen Kontributor gebunden: für einen fremden Kontributor darf nachgetragen und geändert werden.
-- [ ] Für einen **stillgelegten** Kontributor wird **nicht** nachgetragen: 400 mit dem Code `kontributor-stillgelegt`, Meldung und Kompensationsweg wie beim Start (`Stillgelegt.Zeitmesser`, `Stillgelegt.cs:62`).
-- [ ] Beim **Ändern** greift die Stilllegung **nur bei Kontributorwechsel**: ein Eintrag eines später Stillgelegten bleibt in Beginn und Ende korrigierbar, solange sein Kontributor derselbe bleibt.
-- [ ] Rechenbeispiel: Eintrag `#6` gehört dem stillgelegten Stefan. `PUT` mit `kontributor: Stefan` und geändertem `ende` **gelingt**; `PUT` mit `kontributor: Claude → Stefan` (Wechsel **auf** den Stillgelegten) wird **zurückgewiesen**.
+- [x] Der Kontributor reist beim Nachtragen **und** beim Ändern im Rumpf mit; er wird nie erraten.
+- [x] Niemand ist an den eigenen Kontributor gebunden: für einen fremden Kontributor darf nachgetragen und geändert werden.
+- [x] Für einen **stillgelegten** Kontributor wird **nicht** nachgetragen: 400 mit dem Code `kontributor-stillgelegt`, Meldung und Kompensationsweg wie beim Start (`Stillgelegt.Zeitmesser`, `Stillgelegt.cs:62`).
+- [x] Beim **Ändern** greift die Stilllegung **nur bei Kontributorwechsel**: ein Eintrag eines später Stillgelegten bleibt in Beginn und Ende korrigierbar, solange sein Kontributor derselbe bleibt.
+- [x] Rechenbeispiel: Eintrag `#6` gehört dem stillgelegten Stefan. `PUT` mit `kontributor: Stefan` und geändertem `ende` **gelingt**; `PUT` mit `kontributor: Claude → Stefan` (Wechsel **auf** den Stillgelegten) wird **zurückgewiesen**.
 
 ### Fehlerantworten für Agenten
 
-- [ ] Eine unbekannte `karteId` antwortet **404** mit `karte-unbekannt` und dem Weg zurück über `GET /api/boards` (`Nichtgefunden.Karte(karteId)`).
-- [ ] Eine `zeiteintragId`, die es **an dieser Karte** nicht gibt, antwortet **404** mit `zeiteintrag-unbekannt` und dem Weg zurück über `GET /api/karten/{karteId}` (`Nichtgefunden.Zeiteintrag`, `Nichtgefunden.cs:99`) — auch dann, wenn es die Nummer an einer anderen Karte gibt.
-- [ ] Gibt es schon die **Karte** nicht, meldet der Aufruf die Karte und nicht den Zeiteintrag: eine Kompensation, die auf eine 404-Adresse zeigt, wäre nicht ausführbar (Muster `BefundZumFehlendenZeiteintrag`, `ZeitenService.cs:67`).
-- [ ] Ein unbekannter `kontributor` antwortet **404** mit `kontributor-unbekannt`.
-- [ ] Jeder Befund dieses Slice nennt Grund **mit Werten** und Kompensationsaktion; kein Befund verweist auf eine Adresse, die es nicht gibt.
+- [x] Eine unbekannte `karteId` antwortet **404** mit `karte-unbekannt` und dem Weg zurück über `GET /api/boards` (`Nichtgefunden.Karte(karteId)`).
+- [x] Eine `zeiteintragId`, die es **an dieser Karte** nicht gibt, antwortet **404** mit `zeiteintrag-unbekannt` und dem Weg zurück über `GET /api/karten/{karteId}` (`Nichtgefunden.Zeiteintrag`, `Nichtgefunden.cs:99`) — auch dann, wenn es die Nummer an einer anderen Karte gibt.
+- [x] Gibt es schon die **Karte** nicht, meldet der Aufruf die Karte und nicht den Zeiteintrag: eine Kompensation, die auf eine 404-Adresse zeigt, wäre nicht ausführbar (Muster `BefundZumFehlendenZeiteintrag`, `ZeitenService.cs:67`).
+- [x] Ein unbekannter `kontributor` antwortet **404** mit `kontributor-unbekannt`.
+- [x] Jeder Befund dieses Slice nennt Grund **mit Werten** und Kompensationsaktion; kein Befund verweist auf eine Adresse, die es nicht gibt.
 
 ### In der Oberfläche
 
-- [ ] Am Fuß der Einträgeliste steht eine aufklappbare Zeile mit Kontributor, Tag, „von", „bis" und der gerechneten Dauer („ergibt 1:30"); „Nachtragen" legt an, „Abbrechen" klappt zu.
-- [ ] Der Kontributor ist mit der **gewählten Identität** vorbelegt und bleibt änderbar.
-- [ ] Eine bestehende Zeile öffnet sich **an Ort und Stelle** mit demselben Formular — **ohne** den Tag, gefüllt — und trägt „Sichern", „Verwerfen" und „Eintrag löschen".
-- [ ] Es ist immer **höchstens eine** Zeile zugleich offen; die Liste bleibt dabei sichtbar (kein Dialogfenster).
-- [ ] Eine Zurückweisung erscheint als **Gründeliste**, die Eingaben bleiben stehen, und „ergibt" zeigt `—`.
-- [ ] Nach einem gelungenen Nachtrag, einer Änderung oder einer Löschung ziehen Liste, Summen je Kontributor und Ist-Summe (`R00028`) nach; jeder Stand überlebt den Reload.
+- [x] Am Fuß der Einträgeliste steht eine aufklappbare Zeile mit Kontributor, Tag, „von", „bis" und der gerechneten Dauer („ergibt 1:30"); „Nachtragen" legt an, „Abbrechen" klappt zu.
+- [x] Der Kontributor ist mit der **gewählten Identität** vorbelegt und bleibt änderbar.
+- [x] Eine bestehende Zeile öffnet sich **an Ort und Stelle** mit demselben Formular — **ohne** den Tag, gefüllt — und trägt „Sichern", „Verwerfen" und „Eintrag löschen".
+- [x] Es ist immer **höchstens eine** Zeile zugleich offen; die Liste bleibt dabei sichtbar (kein Dialogfenster).
+- [x] Eine Zurückweisung erscheint als **Gründeliste**, die Eingaben bleiben stehen, und „ergibt" zeigt `—`.
+- [x] Nach einem gelungenen Nachtrag, einer Änderung oder einer Löschung ziehen Liste, Summen je Kontributor und Ist-Summe (`R00028`) nach; jeder Stand überlebt den Reload.
 - [ ] Eine Buchung über Mitternacht wird über **zwei** Einträge erfasst; das Formular trägt dafür keinen zweiten Tag.
 
 ### Was dieser Slice ausdrücklich nicht tut
 
-- [ ] **Keine Migration** und keine Schemaänderung.
-- [ ] **Keine Überlappungswarnung** und keine stille Korrektur überlappender Zeiten.
-- [ ] **Keine Änderung am zweiten Stopp** (`PUT …/zeiten/{id}/ende` bleibt, wie `R00027` es gebaut hat) — die fällig gewordene Frage steht unter „Offene Fragen".
-- [ ] **Keine Kartenänderung am Zeiteintrag**: ein Eintrag wandert nicht auf eine andere Karte, er wird gelöscht und neu angelegt.
+- [x] **Keine Migration** und keine Schemaänderung.
+- [x] **Keine Überlappungswarnung** und keine stille Korrektur überlappender Zeiten.
+- [x] **Keine Änderung am zweiten Stopp** (`PUT …/zeiten/{id}/ende` bleibt, wie `R00027` es gebaut hat) — die fällig gewordene Frage steht unter „Offene Fragen".
+- [x] **Keine Kartenänderung am Zeiteintrag**: ein Eintrag wandert nicht auf eine andere Karte, er wird gelöscht und neu angelegt.
 - [ ] **Keine Kopfzeilen-Übersicht** (`I0027`), **keine Live-Nachführung** (`I0028`), **kein Soll-Ist** (`I0033`), **kein Export** (`I0036`).
 
 ### Der grüne Bestand bleibt grün
 
-- [ ] `POST …/zeiten/laufend` und `PUT …/zeiten/{id}/ende` verhalten sich unverändert (`R00026`, `R00027`); der Routentabellen-Test wächst um die drei neuen Routen, ohne die bestehenden zu verändern.
-- [ ] Kein Konflikt zwischen `…/zeiten/laufend` und `…/zeiten/{zeiteintragId:long}`: der `long`-Constraint trennt die Nummer vom Wort.
-- [ ] Zeitenblock, Bilanz, Ist-Summe, Leerzustand und Stoppquadrat aus `R00028` bleiben in Kennung, Wortlaut und Verhalten; die `R00028`-Suite bleibt grün.
-- [ ] Der Fehlervertrag bleibt geschlossen: die beiden neuen Codes sind in `FehlervertragTests` erfasst und bilden auf 400 ab.
+- [x] `POST …/zeiten/laufend` und `PUT …/zeiten/{id}/ende` verhalten sich unverändert (`R00026`, `R00027`); der Routentabellen-Test wächst um die drei neuen Routen, ohne die bestehenden zu verändern.
+- [x] Kein Konflikt zwischen `…/zeiten/laufend` und `…/zeiten/{zeiteintragId:long}`: der `long`-Constraint trennt die Nummer vom Wort.
+- [x] Zeitenblock, Bilanz, Ist-Summe, Leerzustand und Stoppquadrat aus `R00028` bleiben in Kennung, Wortlaut und Verhalten; die `R00028`-Suite bleibt grün.
+- [x] Der Fehlervertrag bleibt geschlossen: die beiden neuen Codes sind in `FehlervertragTests` erfasst und bilden auf 400 ab.
 
 ## Betroffene Verzeichnisstruktur
 

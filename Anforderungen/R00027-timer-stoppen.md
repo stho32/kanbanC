@@ -1,6 +1,6 @@
 ---
 id: R00027
-status: Neu
+status: In Arbeit
 datum: 2026-09-06
 ---
 
@@ -56,59 +56,59 @@ Das Fertig-Kriterium des Slice lautet wörtlich: **„Der gestoppte Timer hinter
 
 ### Der gestoppte Timer — der Stopp geschieht
 
-- [ ] `PUT /api/karten/{karteId}/zeiten/{zeiteintragId}/ende` **ohne Rumpf** antwortet mit **200** und dem beendeten `Zeiteintrag`.
-- [ ] Es gibt **genau einen** Erfolgsstatus: 201 wäre falsch, weil nichts entsteht.
-- [ ] Der Aufruf nennt **keinen** Kontributor — weder im Rumpf noch in der Adresse noch als Query.
-- [ ] Ein **fremder** laufender Timer lässt sich über die API genauso beenden wie der eigene; die Antwort ist dieselbe.
-- [ ] Ein Timer eines **stillgelegten** Kontributors lässt sich beenden — der Stopp wird **nicht** mit `kontributor-stillgelegt` zurückgewiesen.
+- [x] `PUT /api/karten/{karteId}/zeiten/{zeiteintragId}/ende` **ohne Rumpf** antwortet mit **200** und dem beendeten `Zeiteintrag`.
+- [x] Es gibt **genau einen** Erfolgsstatus: 201 wäre falsch, weil nichts entsteht.
+- [x] Der Aufruf nennt **keinen** Kontributor — weder im Rumpf noch in der Adresse noch als Query.
+- [x] Ein **fremder** laufender Timer lässt sich über die API genauso beenden wie der eigene; die Antwort ist dieselbe.
+- [x] Ein Timer eines **stillgelegten** Kontributors lässt sich beenden — der Stopp wird **nicht** mit `kontributor-stillgelegt` zurückgewiesen.
 
 ### Hinterlässt einen Zeiteintrag mit Beginn, Ende und Kontributor
 
-- [ ] Der zurückgegebene Eintrag trägt denselben `zeiteintragId`, dieselbe `karte`, denselben **unveränderten** `beginn` und denselben **Kontributor** wie vor dem Stopp — als ganzer Kontributor (Nummer, Name, Art, `stillgelegtAm`), nicht als nackte Nummer.
-- [ ] `ende` ist nach dem Stopp **nicht null** und ein Zeitpunkt in UTC im Format `O`.
-- [ ] `GET /api/karten/{karteId}` trägt denselben Eintrag mit `beginn`, `ende` und Kontributor — das ist die tragende Zusage des Slice.
-- [ ] Nach einem Neustart der WebApi steht derselbe beendete Eintrag noch da: er liegt in der Datenbank, nicht im Prozessgedächtnis.
-- [ ] `GET /api/boards/{boardId}` führt den beendeten Eintrag **nicht** mehr in den laufenden Einträgen; laufen sonst keine, ist die Liste **leer** — kein `null`, kein Fehler.
+- [x] Der zurückgegebene Eintrag trägt denselben `zeiteintragId`, dieselbe `karte`, denselben **unveränderten** `beginn` und denselben **Kontributor** wie vor dem Stopp — als ganzer Kontributor (Nummer, Name, Art, `stillgelegtAm`), nicht als nackte Nummer.
+- [x] `ende` ist nach dem Stopp **nicht null** und ein Zeitpunkt in UTC im Format `O`.
+- [x] `GET /api/karten/{karteId}` trägt denselben Eintrag mit `beginn`, `ende` und Kontributor — das ist die tragende Zusage des Slice.
+- [x] Nach einem Neustart der WebApi steht derselbe beendete Eintrag noch da: er liegt in der Datenbank, nicht im Prozessgedächtnis.
+- [x] `GET /api/boards/{boardId}` führt den beendeten Eintrag **nicht** mehr in den laufenden Einträgen; laufen sonst keine, ist die Liste **leer** — kein `null`, kein Fehler.
 
 ### Der zweite Stopp verschiebt nichts
 
-- [ ] Ein zweiter `PUT …/ende` auf **denselben** Eintrag antwortet mit **200** — nicht 400, nicht 404, nicht 409.
-- [ ] Das `ende` ist danach **identisch** mit dem des ersten Stopps; es wird nie nach hinten geschoben.
-- [ ] **Rechenbeispiel:** Eintrag 7, `beginn` 08:04. Erster Stopp um 09:40 → 200, `ende` = 09:40. Zweiter Stopp um 11:15 → 200, `ende` = **09:40**, nicht 11:15. Die gemessene Dauer bleibt 1:36 und wächst nicht auf 3:11.
-- [ ] Der Schutz sitzt **im Schreibweg selbst** (`AND Ende IS NULL` im `UPDATE`), nicht nur in einer vorgelagerten Prüfung: ein Aufruf, der die Prüfung überholt, schreibt trotzdem kein zweites Ende.
-- [ ] Nach dem zweiten Stopp ist die Zeiteinträge-Liste der Karte um **keinen** Eintrag gewachsen.
+- [x] Ein zweiter `PUT …/ende` auf **denselben** Eintrag antwortet mit **200** — nicht 400, nicht 404, nicht 409.
+- [x] Das `ende` ist danach **identisch** mit dem des ersten Stopps; es wird nie nach hinten geschoben.
+- [x] **Rechenbeispiel:** Eintrag 7, `beginn` 08:04. Erster Stopp um 09:40 → 200, `ende` = 09:40. Zweiter Stopp um 11:15 → 200, `ende` = **09:40**, nicht 11:15. Die gemessene Dauer bleibt 1:36 und wächst nicht auf 3:11.
+- [x] Der Schutz sitzt **im Schreibweg selbst** (`AND Ende IS NULL` im `UPDATE`), nicht nur in einer vorgelagerten Prüfung: ein Aufruf, der die Prüfung überholt, schreibt trotzdem kein zweites Ende.
+- [x] Nach dem zweiten Stopp ist die Zeiteinträge-Liste der Karte um **keinen** Eintrag gewachsen.
 
 ### Dauer null ja, negative Dauer nie
 
-- [ ] Start und Stopp im **selben** Zeitpunkt ergeben einen gültigen Eintrag mit `ende` = `beginn`; die Dauer ist **0:00** und der Aufruf wird **nicht** zurückgewiesen.
-- [ ] Springt die Uhr zwischen Start und Stopp **zurück**, wird `ende` auf den `beginn` **geklemmt**; es entsteht nie ein `ende` **vor** dem `beginn`.
-- [ ] **Rechenbeispiel:** `beginn` 08:04:00, Uhr beim Stopp 08:03:30 → `ende` = **08:04:00**, Dauer 0:00 — nicht 08:03:30 und nicht eine Dauer von minus 30 Sekunden.
-- [ ] Die Klemmung ist eine **stille Korrektur**: der Aufruf antwortet mit 200 und ohne Meldung; welches `ende` gilt, sagt der zurückgegebene Eintrag selbst.
-- [ ] Es gibt in diesem Slice **keine** Zurückweisung „Das Ende liegt vor dem Beginn" — die gehört `I0025`, wo der Mensch beide Zeitpunkte selbst eingibt und korrigieren kann.
+- [x] Start und Stopp im **selben** Zeitpunkt ergeben einen gültigen Eintrag mit `ende` = `beginn`; die Dauer ist **0:00** und der Aufruf wird **nicht** zurückgewiesen.
+- [x] Springt die Uhr zwischen Start und Stopp **zurück**, wird `ende` auf den `beginn` **geklemmt**; es entsteht nie ein `ende` **vor** dem `beginn`.
+- [x] **Rechenbeispiel:** `beginn` 08:04:00, Uhr beim Stopp 08:03:30 → `ende` = **08:04:00**, Dauer 0:00 — nicht 08:03:30 und nicht eine Dauer von minus 30 Sekunden.
+- [x] Die Klemmung ist eine **stille Korrektur**: der Aufruf antwortet mit 200 und ohne Meldung; welches `ende` gilt, sagt der zurückgegebene Eintrag selbst.
+- [x] Es gibt in diesem Slice **keine** Zurückweisung „Das Ende liegt vor dem Beginn" — die gehört `I0025`, wo der Mensch beide Zeitpunkte selbst eingibt und korrigieren kann.
 
 ### Nach dem Stopp lässt sich neu starten
 
-- [ ] Nach dem Stopp legt `POST /api/karten/{karteId}/zeiten/laufend` mit **demselben** Kontributor auf **derselben** Karte einen **neuen** Eintrag an: **201**, neue `zeiteintragId`.
-- [ ] Der beendete Eintrag bleibt daneben stehen; die Karte trägt danach **zwei** Einträge, einen abgeschlossenen und einen laufenden.
-- [ ] Der partielle `UNIQUE`-Index schlägt dabei **nicht** an — er gibt das Paar frei, sobald `Ende` steht.
+- [x] Nach dem Stopp legt `POST /api/karten/{karteId}/zeiten/laufend` mit **demselben** Kontributor auf **derselben** Karte einen **neuen** Eintrag an: **201**, neue `zeiteintragId`.
+- [x] Der beendete Eintrag bleibt daneben stehen; die Karte trägt danach **zwei** Einträge, einen abgeschlossenen und einen laufenden.
+- [x] Der partielle `UNIQUE`-Index schlägt dabei **nicht** an — er gibt das Paar frei, sobald `Ende` steht.
 
 ### Fehlerantworten für Agenten
 
-- [ ] **Unbekannte Karte** → HTTP 404 mit `karte-unbekannt`, Grund **mit der Nummer** und ausführbarer Kompensationsaktion.
-- [ ] **Zeiteintrag, den es an dieser Karte nicht gibt** → HTTP 404 mit einem eigenen Code, Grund mit **beiden** Nummern (Karte und Zeiteintrag) und Kompensationsaktion.
-- [ ] Der 404 ist **zweistufig**: gibt es schon die Karte nicht, antwortet der Befund über die **Karte** — ein Befund über den Zeiteintrag schickte den Aufrufer auf eine Kartenadresse, die selbst 404 antwortet, und die Kompensation wäre nicht ausführbar.
-- [ ] Ein Zeiteintrag, den es zwar gibt, der aber an einer **anderen** Karte liegt, wird wie ein unbekannter behandelt — dieselbe Regel wie bei Anhang und Dateiverweis.
-- [ ] Jede Zurückweisung hinterlässt **keine** Änderung; nach einem abgelehnten Aufruf tragen die Zeiteinträge der Karte dieselben Werte wie zuvor.
-- [ ] `FehlervertragTests` deckt die neue Route ab; sie steht **nicht** auf `RoutenOhneFehlerantwort`.
+- [x] **Unbekannte Karte** → HTTP 404 mit `karte-unbekannt`, Grund **mit der Nummer** und ausführbarer Kompensationsaktion.
+- [x] **Zeiteintrag, den es an dieser Karte nicht gibt** → HTTP 404 mit einem eigenen Code, Grund mit **beiden** Nummern (Karte und Zeiteintrag) und Kompensationsaktion.
+- [x] Der 404 ist **zweistufig**: gibt es schon die Karte nicht, antwortet der Befund über die **Karte** — ein Befund über den Zeiteintrag schickte den Aufrufer auf eine Kartenadresse, die selbst 404 antwortet, und die Kompensation wäre nicht ausführbar.
+- [x] Ein Zeiteintrag, den es zwar gibt, der aber an einer **anderen** Karte liegt, wird wie ein unbekannter behandelt — dieselbe Regel wie bei Anhang und Dateiverweis.
+- [x] Jede Zurückweisung hinterlässt **keine** Änderung; nach einem abgelehnten Aufruf tragen die Zeiteinträge der Karte dieselben Werte wie zuvor.
+- [x] `FehlervertragTests` deckt die neue Route ab; sie steht **nicht** auf `RoutenOhneFehlerantwort`.
 
 ### In der Oberfläche
 
-- [ ] Läuft für die gewählte Identität auf dieser Karte ein Timer, steht im Abschnitt „Zeiten" ein Knopf **„Stoppen"** an derselben Stelle, an der zuvor die stille Zeile stand — mit der Angabe, seit wann er läuft.
-- [ ] Nach dem Klick steht dort wieder **„Timer starten"** und **kein** Stoppknopf mehr.
-- [ ] Die Plakette auf der Karte in der Bahn ist danach **fort** und bleibt es nach dem Reload.
-- [ ] Ein anschließender Start auf derselben Karte läuft wieder — der Weg „stoppen, später weiterarbeiten" funktioniert durch die Oberfläche.
-- [ ] Der Knopf zeigt **keine gerenderte Dauer** (kein „Stoppen 1:36"): ohne Live-Kanal wäre sie ab der ersten Sekunde falsch.
-- [ ] Fällt die WebApi aus, erscheint eine lesbare Meldung statt einer Ausnahmeseite — derselbe Weg wie beim Start.
+- [x] Läuft für die gewählte Identität auf dieser Karte ein Timer, steht im Abschnitt „Zeiten" ein Knopf **„Stoppen"** an derselben Stelle, an der zuvor die stille Zeile stand — mit der Angabe, seit wann er läuft.
+- [x] Nach dem Klick steht dort wieder **„Timer starten"** und **kein** Stoppknopf mehr.
+- [x] Die Plakette auf der Karte in der Bahn ist danach **fort** und bleibt es nach dem Reload.
+- [x] Ein anschließender Start auf derselben Karte läuft wieder — der Weg „stoppen, später weiterarbeiten" funktioniert durch die Oberfläche.
+- [x] Der Knopf zeigt **keine gerenderte Dauer** (kein „Stoppen 1:36"): ohne Live-Kanal wäre sie ab der ersten Sekunde falsch.
+- [x] Fällt die WebApi aus, erscheint eine lesbare Meldung statt einer Ausnahmeseite — derselbe Weg wie beim Start.
 
 ### Was dieser Slice ausdrücklich nicht tut
 
@@ -116,15 +116,15 @@ Das Fertig-Kriterium des Slice lautet wörtlich: **„Der gestoppte Timer hinter
 - [ ] **Fremde Timer sind in der Oberfläche nicht beendbar**: an einer fremden Plakette auf der Karte in der Bahn hängt weiterhin **keine** Handlung. Über die API geht es.
 - [ ] Es gibt **kein** Nachtragen und **kein** Ändern eines Eintrags von Hand — das ist `I0025`; `PUT /api/karten/{karteId}/zeiten/{zeiteintragId}` (ohne `/ende`) entsteht hier **nicht**.
 - [ ] Es gibt **keine** Kopfzeilen-Übersicht der laufenden Timer — das ist `I0027`.
-- [ ] Es entsteht **keine** Migration und **keine** Schemaänderung.
+- [x] Es entsteht **keine** Migration und **keine** Schemaänderung.
 
 ### Der grüne Bestand bleibt grün
 
 - [ ] Die Testsuiten aus `R00001`–`R00026` laufen weiter; **eine benannte Ausnahme** (siehe „Änderungen an bestehenden Klassen"): der Routentabellen-Test aus `R00026` erwartet ab hier **zwei** Zeitenrouten statt einer, und sein Name sagt das auch.
-- [ ] `ZeitenEndpunkteTests.Wenn_mehrere_Timer_gestartet_und_wiederholt_wurden_dann_traegt_kein_einziger_Eintrag_ein_Ende` bleibt **unangetastet grün** — sie ruft den Stopp nicht auf.
-- [ ] `POST /api/karten/{karteId}/zeiten/laufend` antwortet unverändert; Start und Idempotenz des Starts ändern sich nicht.
-- [ ] `GET /api/boards/{boardId}` und `GET /api/karten/{karteId}` antworten im Übrigen unverändert.
-- [ ] Der zweite Lauf der Migrationen auf einer bestehenden Datei lässt Schema und Daten unverändert; es kommt keine Datei hinzu.
+- [x] `ZeitenEndpunkteTests.Wenn_mehrere_Timer_gestartet_und_wiederholt_wurden_dann_traegt_kein_einziger_Eintrag_ein_Ende` bleibt **unangetastet grün** — sie ruft den Stopp nicht auf.
+- [x] `POST /api/karten/{karteId}/zeiten/laufend` antwortet unverändert; Start und Idempotenz des Starts ändern sich nicht.
+- [x] `GET /api/boards/{boardId}` und `GET /api/karten/{karteId}` antworten im Übrigen unverändert.
+- [x] Der zweite Lauf der Migrationen auf einer bestehenden Datei lässt Schema und Daten unverändert; es kommt keine Datei hinzu.
 
 ## Betroffene Verzeichnisstruktur
 
